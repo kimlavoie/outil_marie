@@ -1,0 +1,147 @@
+{
+  "rooms": [
+    {
+      "name": "POLY",
+      "price_internal": 175.0,
+      "price_external": 0.0
+    },
+    {
+      "name": "SALON",
+      "price_internal": 50.0,
+      "price_external": 100.0
+    },
+    {
+      "name": "SFB-SALON-HALL",
+      "price_internal": 200.0,
+      "price_external": 0.0
+    },
+    {
+      "name": "SFB-POLY",
+      "price_internal": 375.0,
+      "price_external": 0.0
+    },
+    {
+      "name": "HALL SFB",
+      "price_internal": 0.0,
+      "price_external": 0.0
+    }
+  ],
+  "departments": [
+    "ACEECJ",
+    "ANIMATION PÉDAGOGIQUE (ALEXANDRA  HÉBERT)",
+    "BICQ",
+    "BRI - BUREAU DE LA RECHERCHE ET DE L'INNOVATION",
+    "CLIENT EXTERNE",
+    "COMMUNICATION",
+    "DIRECTION DES SERVICES INFORMATIONNELLES",
+    "DIRECTION DES ÉTUDES (ENSEIGNANTS)",
+    "DIRECTION GÉNÉRALE",
+    "DRH - DIRECTION DES RESSOURCES HUMAINES",
+    "DSATC",
+    "FONDATION ASSELIN",
+    "PARTENARIAT",
+    "VIE ÉTUDIANTE (SOPHIE HUPPÉ)"
+  ],
+  "accounts": [
+    {
+      "code": "892-9020-00-849",
+      "description": "SCOLAIRE"
+    },
+    {
+      "code": "892-9020-01-849",
+      "description": "SCOLAIRE"
+    },
+    {
+      "code": "892-9020-04-849",
+      "description": "SCOLAIRE"
+    },
+    {
+      "code": "892-9020-00-851",
+      "description": "GOUV QC"
+    },
+    {
+      "code": "892-9020-01-851",
+      "description": "GOUV QC"
+    },
+    {
+      "code": "892-9020-04-851",
+      "description": "GOUV QC"
+    },
+    {
+      "code": "892-9020-00-853",
+      "description": "MUNICIPAL"
+    },
+    {
+      "code": "892-9020-01-853",
+      "description": "MUNICIPAL"
+    },
+    {
+      "code": "892-9020-04-853",
+      "description": "MUNICIPAL"
+    },
+    {
+      "code": "892-9020-00-864",
+      "description": "BAR SFB"
+    },
+    {
+      "code": "892-9020-01-864",
+      "description": "BAR POLY"
+    },
+    {
+      "code": "892-9020-00-869",
+      "description": "VESTIAIRE"
+    },
+    {
+      "code": "892-9020-01-869",
+      "description": "VESTIAIRE"
+    },
+    {
+      "code": "892-9020-00-870",
+      "description": "CIE EXTERNE (SFB, DT, HOTES)"
+    },
+    {
+      "code": "892-9020-01-870",
+      "description": "CIE EXTERNE (POLY, DT, HOTES)"
+    },
+    {
+      "code": "892-9020-04-870",
+      "description": "CIE EXTERNE (AGENT)"
+    },
+    {
+      "code": "892-9020-05-870",
+      "description": "CIE EXTERNE (PROJO CINÉ-CLUB)"
+    },
+    {
+      "code": "892-9020-06-870",
+      "description": "CIE EXTERNE (PROJO SFB)"
+    },
+    {
+      "code": "892-9020-07-870",
+      "description": "CIE EXTERNE (PROJO POLY)"
+    },
+    {
+      "code": "892-9020-00-889",
+      "description": "INTERNE (SFB, HOTES)"
+    },
+    {
+      "code": "892-9020-01-889",
+      "description": "INTERNE (POLY, HOTES)"
+    },
+    {
+      "code": "892-9020-04-889",
+      "description": "INTERNE (AGENT)"
+    },
+    {
+      "code": "892-9020-05-889",
+      "description": "INTERNE (PROJO CINÉ-CLUB)"
+    },
+    {
+      "code": "892-9020-06-889",
+      "description": "INTERNE (PROJO SFB)"
+    },
+    {
+      "code": "892-9020-07-889",
+      "description": "INTERNE (PROJO POLY)"
+    }
+  ]
+}
