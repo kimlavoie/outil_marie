@@ -288,6 +288,68 @@ body {
   box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
 }
 
+/* Pill Toggle Buttons (form multi-select: salles, services techniques) */
+.pill-toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill-toggle {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.pill-toggle:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.pill-toggle.active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+}
+
+/* Date + time side-by-side row inside form groups */
+.datetime-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.datetime-input-row .datepicker-wrapper {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.datetime-input-row input[type="time"] {
+  width: 110px;
+  max-width: 110px;
+  flex: 0 0 110px;
+}
+
+.form-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin: 24px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
 /* Views Wrapper */
 .view-container {
   flex-grow: 1;
@@ -645,8 +707,8 @@ tr:hover td {
 .drawer {
   position: fixed;
   top: 0;
-  right: -550px;
-  width: 550px;
+  right: -720px;
+  width: 720px;
   max-width: 90vw;
   height: 100%;
   background-color: var(--bg-card);
@@ -751,7 +813,7 @@ label {
 
 .distribution-row {
   display: grid;
-  grid-template-columns: 1.5fr 1.5fr auto;
+  grid-template-columns: 1.5fr 1fr 1.2fr auto;
   gap: 12px;
   align-items: center;
   animation: slideDown 0.25s ease;
@@ -988,6 +1050,145 @@ label {
   justify-content: flex-end;
   gap: 12px;
   background-color: var(--bg-main);
+}
+
+/* Activity Read-Only Detail View */
+.detail-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detail-hero-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.detail-hero-id {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.detail-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.detail-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.detail-stat-box {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.detail-stat-box-val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.detail-stat-box-lbl {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.detail-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin: 22px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detail-section-title:first-of-type {
+  margin-top: 0;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+}
+
+.detail-row-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.detail-row-value {
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.detail-full-row {
+  grid-column: 1 / -1;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.detail-tag {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.detail-dist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.detail-dist-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detail-dist-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detail-dist-table tfoot td {
+  border-bottom: none;
+  font-weight: 700;
+  padding-top: 10px;
 }
 
 /* Settings Tabbed Section */

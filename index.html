@@ -445,6 +445,11 @@
           <input type="text" id="form-activity-name" class="form-input" required placeholder="Ex: Réunion SCOUTS">
         </div>
 
+        <div class="form-group">
+          <label for="form-activity-attendees">Nombre de personnes attendues</label>
+          <input type="number" id="form-activity-attendees" class="form-input" min="0" placeholder="Ex: 50">
+        </div>
+
         <div class="form-group-row">
           <div class="form-group">
             <label for="form-activity-responsable">Responsable Facturation</label>
@@ -459,9 +464,40 @@
           </div>
         </div>
 
-        <div class="form-group-row">
-          <div class="form-group">
-            <label for="form-activity-start">Date Début (AAAA-MM-JJ)</label>
+        <!-- Installation et démontage -->
+        <div class="form-section-title">Installation et démontage</div>
+        <div class="form-group">
+          <label for="form-activity-install-date">Date et heure d'installation</label>
+          <div class="datetime-input-row">
+            <div class="datepicker-wrapper">
+              <input type="text" id="form-activity-install-date" class="form-input" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
+              <button type="button" class="datepicker-trigger-btn" data-target="form-activity-install-date" title="Sélectionner depuis le calendrier">
+                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
+              </button>
+              <div class="calendar-popover" id="cal-popover-form-activity-install-date"></div>
+            </div>
+            <input type="time" id="form-activity-install-time" class="form-input">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="form-activity-dismantle-date">Date et heure de démontage</label>
+          <div class="datetime-input-row">
+            <div class="datepicker-wrapper">
+              <input type="text" id="form-activity-dismantle-date" class="form-input" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
+              <button type="button" class="datepicker-trigger-btn" data-target="form-activity-dismantle-date" title="Sélectionner depuis le calendrier">
+                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
+              </button>
+              <div class="calendar-popover" id="cal-popover-form-activity-dismantle-date"></div>
+            </div>
+            <input type="time" id="form-activity-dismantle-time" class="form-input">
+          </div>
+        </div>
+
+        <!-- Dates et heures de l'événement -->
+        <div class="form-section-title">Dates et heures de l'événement</div>
+        <div class="form-group">
+          <label for="form-activity-start">Date et heure de début (AAAA-MM-JJ)</label>
+          <div class="datetime-input-row">
             <div class="datepicker-wrapper">
               <input type="text" id="form-activity-start" class="form-input" required placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
               <button type="button" class="datepicker-trigger-btn" data-target="form-activity-start" title="Sélectionner depuis le calendrier">
@@ -469,9 +505,12 @@
               </button>
               <div class="calendar-popover" id="cal-popover-form-activity-start"></div>
             </div>
+            <input type="time" id="form-activity-start-time" class="form-input">
           </div>
-          <div class="form-group">
-            <label for="form-activity-end">Date Fin (AAAA-MM-JJ)</label>
+        </div>
+        <div class="form-group">
+          <label for="form-activity-end">Date et heure de fin (AAAA-MM-JJ)</label>
+          <div class="datetime-input-row">
             <div class="datepicker-wrapper">
               <input type="text" id="form-activity-end" class="form-input" required placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
               <button type="button" class="datepicker-trigger-btn" data-target="form-activity-end" title="Sélectionner depuis le calendrier">
@@ -479,30 +518,97 @@
               </button>
               <div class="calendar-popover" id="cal-popover-form-activity-end"></div>
             </div>
+            <input type="time" id="form-activity-end-time" class="form-input">
           </div>
         </div>
-        
+
         <!-- Help text for days of the week -->
         <div id="form-activity-dates-helper" style="margin-top: -8px; margin-bottom: 12px; font-size: 0.78rem; color: var(--text-secondary); display: none; align-items: center; gap: 6px;">
           <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: var(--primary);"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm3.3 14.3L11 12.5V7h1.5v4.7l3.7 2.2-.7 1.4z"/></svg>
           <span><strong>Jours de la semaine :</strong> <span id="form-activity-days-list" style="color: var(--text-primary);"></span></span>
         </div>
 
+        <!-- Description -->
+        <div class="form-group">
+          <label for="form-activity-description">Description de l'activité</label>
+          <textarea id="form-activity-description" class="form-input" rows="3" placeholder="Décrivez l'activité..."></textarea>
+        </div>
+
+        <!-- Responsable de l'activité -->
+        <div class="form-section-title">Responsable de l'activité</div>
         <div class="form-group-row">
           <div class="form-group">
-            <label for="form-activity-salle">Salle</label>
-            <select id="form-activity-salle" class="select-input" style="padding: 10px 14px;" required>
-              <!-- Populated dynamically -->
+            <label for="form-activity-manager-firstname">Prénom</label>
+            <input type="text" id="form-activity-manager-firstname" class="form-input" placeholder="Prénom">
+          </div>
+          <div class="form-group">
+            <label for="form-activity-manager-lastname">Nom</label>
+            <input type="text" id="form-activity-manager-lastname" class="form-input" placeholder="Nom">
+          </div>
+        </div>
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="form-activity-manager-type">Employé ou étudiant</label>
+            <select id="form-activity-manager-type" class="select-input" style="padding: 10px 14px;">
+              <option value="employe">Employé</option>
+              <option value="etudiant">Étudiant</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="form-activity-category">Catégorie</label>
-            <select id="form-activity-category" class="select-input" style="padding: 10px 14px;">
-              <option value="Bleu">Bleu</option>
-              <option value="Vert">Vert</option>
-              <option value="Jaune">Jaune</option>
-            </select>
+            <label for="form-activity-manager-phone">Numéro de téléphone</label>
+            <input type="tel" id="form-activity-manager-phone" class="form-input" placeholder="Ex: 514-555-1234">
           </div>
+        </div>
+        <div class="form-group">
+          <label for="form-activity-manager-email">Courriel</label>
+          <input type="email" id="form-activity-manager-email" class="form-input" placeholder="nom@exemple.com">
+        </div>
+
+        <div class="form-group">
+          <label for="form-activity-salle-group">Salle(s)</label>
+          <div id="form-activity-salle-group" class="pill-toggle-group">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Services techniques -->
+        <div class="form-group">
+          <label for="form-activity-services-group">Services techniques</label>
+          <div id="form-activity-services-group" class="pill-toggle-group">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Consommation -->
+        <div class="form-group">
+          <label for="form-activity-consumption-group">Consommation</label>
+          <div id="form-activity-consumption-group" class="pill-toggle-group">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+        <div class="form-group" id="form-activity-consumption-special-group" style="display: none;">
+          <label for="form-activity-consumption-special">Précisez les produits (commande spéciale)</label>
+          <input type="text" id="form-activity-consumption-special" class="form-input" placeholder="Précisez les produits...">
+        </div>
+
+        <!-- Service d'hôtes.ses -->
+        <div class="form-group">
+          <label for="form-activity-host-services-group">Service d'hôtes.ses</label>
+          <div id="form-activity-host-services-group" class="pill-toggle-group">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Type d'événement -->
+        <div class="form-group">
+          <label for="form-activity-event-type">Type d'événement</label>
+          <select id="form-activity-event-type" class="select-input" style="padding: 10px 14px;" required>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+        <div class="form-group" id="form-activity-event-type-other-group" style="display: none;">
+          <label for="form-activity-event-type-other">Précisez le type d'événement</label>
+          <input type="text" id="form-activity-event-type-other" class="form-input" placeholder="Précisez...">
         </div>
 
         <div class="form-group-row">
@@ -518,15 +624,10 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="form-activity-ref">Numéro Facture, RI ou Encaissement (Optionnel - Clé de Rapprochement)</label>
-          <input type="text" id="form-activity-ref" class="form-input" placeholder="RIXXXXXX, Numéro 162XXX, etc.">
-        </div>
-
         <!-- Accounts Dynamic Distribution Interface -->
         <div class="distribution-section">
           <div class="distribution-header">
-            <label>Ventilation par compte de revenus</label>
+            <label>Ventilation par compte de revenus (avec Numéro Facture, RI ou Encaissement par compte)</label>
             <button type="button" id="form-add-distribution-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
               + Ajouter
             </button>
@@ -668,6 +769,25 @@
     </div>
     <div class="modal-footer">
       <button id="recon-detail-modal-close-btn" class="btn btn-secondary">Fermer</button>
+    </div>
+  </div>
+
+  <!-- 6. Activity Read-Only Detail Modal -->
+  <div id="activity-detail-modal" class="modal" style="width: 720px; max-width: 95vw;">
+    <div class="modal-header">
+      <h3 id="activity-detail-title" class="modal-title">Détails de l'activité</h3>
+      <button id="activity-detail-modal-close" class="btn-icon">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="modal-content">
+      <div id="activity-detail-content">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="activity-detail-edit-btn" class="btn btn-primary btn-secondary">Modifier</button>
+      <button id="activity-detail-close-btn" class="btn btn-secondary">Fermer</button>
     </div>
   </div>
 

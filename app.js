@@ -57,6 +57,18 @@ const DEFAULT_CONFIG = {
   ]
 };
 
+const TECHNICAL_SERVICES = ["Microphone", "Écran projecteur", "Éclairage de scène", "Musique d'ambiance", "Fichier audio, vidéo ou présentation PowerPoint"];
+const CONSUMPTION_OPTIONS = ["Consommation de breuvage avec alcool", "Consommation de breuvage sans alcool", "Cueillette au bar et paiement de ce qui est consommé", "Breuvages aux frais des participants (service de bar)", "Commande spéciale de produit"];
+const HOST_SERVICES_OPTIONS = ["Service de bar payant", "Surveillance aux portes", "Distribution de breuvages et nettoyages de coupes", "Distribution de bouchées", "Aide au montage", "Aide au démontage"];
+const EVENT_TYPES = [
+  { value: "pedagogique", label: "Activité pédagogique" },
+  { value: "parascolaire", label: "Activité parascolaire" },
+  { value: "spectacle", label: "Spectacle" },
+  { value: "conference", label: "Conférence" },
+  { value: "diffusion", label: "Diffusion d'un film ou d'un court métrage" },
+  { value: "autre", label: "Autre" }
+];
+
 // Global App State
 let appState = {
   settings: {
@@ -73,7 +85,7 @@ let appState = {
 // Period Helpers
 function getFiscalYear(dateStr) {
   if (!dateStr) return "";
-  const date = new Date(dateStr);
+  const date = parseLocalDateStr(dateStr);
   if (isNaN(date.getTime())) return "";
   const year = date.getFullYear();
   const month = date.getMonth(); // 0-11
@@ -82,7 +94,7 @@ function getFiscalYear(dateStr) {
 
 function getQuarterNumber(dateStr) {
   if (!dateStr) return null;
-  const date = new Date(dateStr);
+  const date = parseLocalDateStr(dateStr);
   if (isNaN(date.getTime())) return null;
   const month = date.getMonth();
   if (month >= 6 && month <= 8) return 1;
@@ -115,6 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initPeriodSelector();
   initNavigation();
   initFormHandlers();
+  initActivityDetailModal();
   initSettingsHandlers();
   initReconciliationHandlers();
   initBackupHandlers();
@@ -145,6 +158,8 @@ function loadDatabase() {
       if (appState.settings.accounts) {
         appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
       }
+
+      migrateActivities();
     } catch (e) {
       console.error("Error parsing local database, using defaults", e);
       seedDatabase();
@@ -152,6 +167,46 @@ function loadDatabase() {
   } else {
     seedDatabase();
   }
+}
+
+// Migrate legacy activity records to the current data shape (room_name -> rooms, new fields)
+function migrateActivities() {
+  appState.activities.forEach(act => {
+    if (act.room_name !== undefined) {
+      if (!act.rooms) act.rooms = act.room_name ? [act.room_name] : [];
+      delete act.room_name;
+    }
+    if (!act.rooms) act.rooms = [];
+    if (act.attendees_count === undefined) act.attendees_count = 0;
+    if (act.install_date === undefined) act.install_date = "";
+    if (act.install_time === undefined) act.install_time = "";
+    if (act.dismantle_date === undefined) act.dismantle_date = "";
+    if (act.dismantle_time === undefined) act.dismantle_time = "";
+    if (act.start_time === undefined) act.start_time = "";
+    if (act.end_time === undefined) act.end_time = "";
+    if (act.description === undefined) act.description = "";
+    if (!act.activity_manager) {
+      act.activity_manager = { first_name: "", last_name: "", type: "employe", phone: "", email: "" };
+    }
+    if (!act.technical_services) act.technical_services = [];
+    if (!act.consumption) act.consumption = [];
+    if (act.consumption_special_products === undefined) act.consumption_special_products = "";
+    if (!act.host_services) act.host_services = [];
+    if (act.event_type === undefined) act.event_type = "";
+    if (act.event_type_other === undefined) act.event_type_other = "";
+
+    // Legacy: reference was a single field on the activity. Move it onto each
+    // distribution (per-account reference) since it is now defined per compte.
+    if (act.reference !== undefined) {
+      (act.distributions || []).forEach(d => {
+        if (d.reference === undefined) d.reference = act.reference;
+      });
+      delete act.reference;
+    }
+    (act.distributions || []).forEach(d => {
+      if (d.reference === undefined) d.reference = "";
+    });
+  });
 }
 
 // Seed Initial Database with empty activities list
@@ -284,24 +339,59 @@ function renderAll() {
 
 // Populate dropdown elements globally
 function populateDropdowns() {
-  const roomsSelects = [
-    document.getElementById("form-activity-salle"),
-    document.getElementById("filter-salle")
-  ];
+  const filterSalleSelect = document.getElementById("filter-salle");
   const deptsSelects = [
     document.getElementById("form-activity-dept")
   ];
-  
-  // Rooms dropdowns
-  roomsSelects.forEach(select => {
-    if (!select) return;
-    const isFilter = select.id.includes("filter");
-    select.innerHTML = isFilter ? '<option value="">Toutes les salles</option>' : '';
+
+  // Filter Salle dropdown (single-select filter, unaffected by multi-room support)
+  if (filterSalleSelect) {
+    filterSalleSelect.innerHTML = '<option value="">Toutes les salles</option>';
     appState.settings.rooms.forEach(r => {
-      select.innerHTML += `<option value="${r.name}">${r.name} (Int: ${r.price_internal}$, Ext: ${r.price_external}$)</option>`;
+      filterSalleSelect.innerHTML += `<option value="${r.name}">${r.name} (Int: ${r.price_internal}$, Ext: ${r.price_external}$)</option>`;
     });
-  });
-  
+  }
+
+  // Form Salle pill group (multi-select)
+  const salleGroup = document.getElementById("form-activity-salle-group");
+  if (salleGroup) {
+    const previouslyActive = Array.from(salleGroup.querySelectorAll(".pill-toggle.active")).map(b => b.dataset.value);
+    salleGroup.innerHTML = "";
+    appState.settings.rooms.forEach(r => {
+      const isActive = previouslyActive.includes(r.name);
+      salleGroup.innerHTML += `<button type="button" class="pill-toggle${isActive ? ' active' : ''}" data-value="${r.name}">${r.name}</button>`;
+    });
+  }
+
+  // Form Services techniques pill group (multi-select, static list)
+  const servicesGroup = document.getElementById("form-activity-services-group");
+  if (servicesGroup && !servicesGroup.dataset.populated) {
+    servicesGroup.innerHTML = TECHNICAL_SERVICES.map(s => `<button type="button" class="pill-toggle" data-value="${s}">${s}</button>`).join("");
+    servicesGroup.dataset.populated = "true";
+  }
+
+  // Form Consommation pill group (multi-select, static list)
+  const consumptionGroup = document.getElementById("form-activity-consumption-group");
+  if (consumptionGroup && !consumptionGroup.dataset.populated) {
+    consumptionGroup.innerHTML = CONSUMPTION_OPTIONS.map(s => `<button type="button" class="pill-toggle" data-value="${s}">${s}</button>`).join("");
+    consumptionGroup.dataset.populated = "true";
+  }
+
+  // Form Service d'hôtes.ses pill group (multi-select, static list)
+  const hostServicesGroup = document.getElementById("form-activity-host-services-group");
+  if (hostServicesGroup && !hostServicesGroup.dataset.populated) {
+    hostServicesGroup.innerHTML = HOST_SERVICES_OPTIONS.map(s => `<button type="button" class="pill-toggle" data-value="${s}">${s}</button>`).join("");
+    hostServicesGroup.dataset.populated = "true";
+  }
+
+  // Form Event type dropdown
+  const eventTypeSelect = document.getElementById("form-activity-event-type");
+  if (eventTypeSelect && !eventTypeSelect.dataset.populated) {
+    eventTypeSelect.innerHTML = '<option value="">Sélectionner...</option>' +
+      EVENT_TYPES.map(t => `<option value="${t.value}">${t.label}</option>`).join("");
+    eventTypeSelect.dataset.populated = "true";
+  }
+
   // Departments dropdowns
   deptsSelects.forEach(select => {
     if (!select) return;
@@ -337,10 +427,24 @@ function calculateDaysCount(startStr, endStr) {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 }
 
+// Joined list of distinct RI/Facture references across an activity's per-account distributions
+function getActivityReferences(act) {
+  const refs = (act.distributions || []).map(d => (d.reference || "").trim()).filter(Boolean);
+  return [...new Set(refs)].join(", ");
+}
+
+// Sum of price_internal across all rooms booked for an activity
+function getRoomsInternalPrice(act) {
+  return (act.rooms || []).reduce((sum, name) => {
+    const room = appState.settings.rooms.find(r => r.name === name);
+    return sum + (room ? room.price_internal : 0);
+  }, 0);
+}
+
 // Helper: Check which quarter a date belongs to
 function getQuarter(dateStr) {
   if (!dateStr) return null;
-  const date = new Date(dateStr);
+  const date = parseLocalDateStr(dateStr);
   if (isNaN(date)) return null;
   const month = date.getMonth(); // 0-11
   // Q1: Jul-Sep (months 6, 7, 8)
@@ -383,8 +487,7 @@ function renderDashboard() {
     // Internal free valuation: client is internal, and no actual charge (revenue is zero)
     if (act.client_type === "interne" && activityRevenue === 0) {
       const days = calculateDaysCount(act.date_start, act.date_end);
-      const room = appState.settings.rooms.find(r => r.name === act.room_name);
-      const price = room ? room.price_internal : 0;
+      const price = getRoomsInternalPrice(act);
       totalInternalFree += days * price;
     }
   });
@@ -476,7 +579,7 @@ function renderDashboardCharts() {
       return;
     }
     
-    const rName = act.room_name || "Inconnue";
+    const rName = (act.rooms && act.rooms.length) ? act.rooms.join(", ") : "Inconnue";
     const sumDist = act.distributions.reduce((sum, dist) => sum + dist.amount, 0);
     roomSums[rName] = (roomSums[rName] || 0) + sumDist;
   });
@@ -597,15 +700,17 @@ function renderActivities() {
   // Filter activities
   const filtered = appState.activities.filter(act => {
     // Search filter: ID, Name, Responsable, Reference, or any ventilated Account Code
-    const matchesSearch = 
+    const matchesSearch =
       act.id.toLowerCase().includes(searchQuery) ||
       act.name.toLowerCase().includes(searchQuery) ||
       act.responsable.toLowerCase().includes(searchQuery) ||
-      act.reference.toLowerCase().includes(searchQuery) ||
-      act.distributions.some(d => d.account_code.toLowerCase().includes(searchQuery));
+      act.distributions.some(d =>
+        d.account_code.toLowerCase().includes(searchQuery) ||
+        (d.reference || "").toLowerCase().includes(searchQuery)
+      );
       
     // Salle filter
-    const matchesSalle = !filterSalle || act.room_name === filterSalle;
+    const matchesSalle = !filterSalle || (act.rooms || []).includes(filterSalle);
     
     // Client type filter
     const matchesClientType = !filterClientType || act.client_type === filterClientType;
@@ -644,12 +749,12 @@ function renderActivities() {
         valB = b.date_start || "";
         break;
       case "room_name":
-        valA = (a.room_name || "").toLowerCase();
-        valB = (b.room_name || "").toLowerCase();
+        valA = (a.rooms || []).join(", ").toLowerCase();
+        valB = (b.rooms || []).join(", ").toLowerCase();
         break;
       case "reference":
-        valA = (a.reference || "").toLowerCase();
-        valB = (b.reference || "").toLowerCase();
+        valA = getActivityReferences(a).toLowerCase();
+        valB = getActivityReferences(b).toLowerCase();
         break;
       case "totalRev":
         valA = a.distributions.reduce((sum, d) => sum + d.amount, 0);
@@ -657,13 +762,11 @@ function renderActivities() {
         break;
       case "sansFrais":
         const daysA = calculateDaysCount(a.date_start, a.date_end);
-        const roomA = appState.settings.rooms.find(r => r.name === a.room_name);
-        const priceA = roomA ? roomA.price_internal : 0;
+        const priceA = getRoomsInternalPrice(a);
         valA = a.client_type === "interne" ? (daysA * priceA) : 0;
-        
+
         const daysB = calculateDaysCount(b.date_start, b.date_end);
-        const roomB = appState.settings.rooms.find(r => r.name === b.room_name);
-        const priceB = roomB ? roomB.price_internal : 0;
+        const priceB = getRoomsInternalPrice(b);
         valB = b.client_type === "interne" ? (daysB * priceB) : 0;
         break;
     }
@@ -694,7 +797,7 @@ function renderActivities() {
             const accDesc = appState.settings.accounts.find(a => a.code === d.account_code)?.description || '';
             return `
               <span class="font-mono" style="background-color: var(--bg-main); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: var(--radius-sm); color: var(--text-secondary);" title="${accDesc}">
-                <strong>${d.account_code}</strong>: ${formatCurrency(d.amount)}
+                <strong>${d.account_code}</strong>: ${formatCurrency(d.amount)}${d.reference ? ` (${d.reference})` : ''}
               </span>
             `;
           }).join("")}
@@ -707,22 +810,22 @@ function renderActivities() {
     let daysCount = 0;
     if (act.date_start && act.date_end) {
       daysCount = calculateDaysCount(act.date_start, act.date_end);
-      const start = new Date(act.date_start).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
-      const end = new Date(act.date_end).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
+      const start = parseLocalDateStr(act.date_start).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
+      const end = parseLocalDateStr(act.date_end).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
       datesText = `${start} au ${end} (${daysCount}j)`;
     }
     
     // Sans Frais estimated cost if internal client
     let sansFraisText = "-";
     if (act.client_type === "interne" && isFilled) {
-      const room = appState.settings.rooms.find(r => r.name === act.room_name);
-      const price = room ? room.price_internal : 0;
+      const price = getRoomsInternalPrice(act);
       sansFraisText = formatCurrency(daysCount * price);
     }
     
     // Reconciliation badge if ledger file has been uploaded
+    const activityReferences = getActivityReferences(act);
     let statusBadge = "";
-    if (ledgerTransactions.length > 0 && isFilled && act.reference) {
+    if (ledgerTransactions.length > 0 && isFilled && activityReferences) {
       // Find reconciliation statuses for this activity
       const related = reconciliationResults.filter(r => r.activityId === act.id);
       if (related.length > 0) {
@@ -741,7 +844,7 @@ function renderActivities() {
     }
     
     tbody.innerHTML += `
-      <tr class="${isFilled ? '' : 'row-empty'}" style="${isFilled ? '' : 'opacity: 0.5; font-style: italic;'}">
+      <tr class="activity-row ${isFilled ? '' : 'row-empty'}" data-id="${act.id}" style="cursor: pointer; ${isFilled ? '' : 'opacity: 0.5; font-style: italic;'}">
         <td class="font-mono bold">${act.id}</td>
         <td>
           <span class="bold">${isFilled ? act.name : 'Vierge'}</span> ${statusBadge}
@@ -749,8 +852,8 @@ function renderActivities() {
         </td>
         <td>${isFilled && act.responsable ? act.responsable : '-'}</td>
         <td>${datesText}</td>
-        <td>${isFilled ? `${act.room_name} (${act.client_type})` : '-'}</td>
-        <td class="font-mono">${isFilled && act.reference ? act.reference : '-'}</td>
+        <td>${isFilled ? `${(act.rooms || []).join(", ")} (${act.client_type})` : '-'}</td>
+        <td class="font-mono">${isFilled && activityReferences ? activityReferences : '-'}</td>
         <td class="bold">${isFilled ? formatCurrency(totalRev) : '-'}</td>
         <td style="color: var(--text-muted);">${sansFraisText}</td>
         <td class="text-right" style="white-space: nowrap;">
@@ -765,16 +868,25 @@ function renderActivities() {
     `;
   });
   
+  // Attach row click listeners to open the read-only activity detail view
+  document.querySelectorAll(".activity-row").forEach(row => {
+    row.addEventListener("click", () => {
+      openActivityDetailModal(row.getAttribute("data-id"));
+    });
+  });
+
   // Attach edit buttons event listeners
   document.querySelectorAll(".edit-act-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
       openActivityDrawer(btn.getAttribute("data-id"));
     });
   });
-  
+
   // Attach delete buttons event listeners
   document.querySelectorAll(".delete-act-list-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
       const id = btn.getAttribute("data-id");
       if (confirm(`Voulez-vous vraiment supprimer l'activité ${id} ?`)) {
         appState.activities = appState.activities.filter(a => a.id !== id);
@@ -841,7 +953,30 @@ function initFormHandlers() {
   document.getElementById("form-activity-start").addEventListener("change", updateFormDatesHelper);
   document.getElementById("form-activity-end").addEventListener("input", updateFormDatesHelper);
   document.getElementById("form-activity-end").addEventListener("change", updateFormDatesHelper);
-  
+
+  // Pill toggle groups (salles, services techniques, consommation, hôtes.ses)
+  initPillToggle("form-activity-salle-group");
+  initPillToggle("form-activity-services-group");
+  initPillToggle("form-activity-consumption-group");
+  initPillToggle("form-activity-host-services-group");
+
+  // Consommation "Commande spéciale de produit" reveals a free-text field
+  document.getElementById("form-activity-consumption-group").addEventListener("click", (e) => {
+    const btn = e.target.closest(".pill-toggle");
+    if (!btn || btn.dataset.value !== "Commande spéciale de produit") return;
+    const specialGroup = document.getElementById("form-activity-consumption-special-group");
+    specialGroup.style.display = btn.classList.contains("active") ? "flex" : "none";
+    if (!btn.classList.contains("active")) {
+      document.getElementById("form-activity-consumption-special").value = "";
+    }
+  });
+
+  // Event type "Autre" reveals a free-text field
+  document.getElementById("form-activity-event-type").addEventListener("change", (e) => {
+    const otherGroup = document.getElementById("form-activity-event-type-other-group");
+    otherGroup.style.display = e.target.value === "autre" ? "flex" : "none";
+  });
+
   // Keyboard Shortcuts: Navigation, Add, and Escape
   window.addEventListener("keydown", (e) => {
     // Alt + [1-6] for switching tabs
@@ -864,6 +999,7 @@ function initFormHandlers() {
     // Escape to close drawers and modals
     if (e.key === "Escape") {
       closeActivityDrawer();
+      closeActivityDetailModal();
       if (typeof closeSettingsModal === "function") {
         closeSettingsModal("account");
         closeSettingsModal("room");
@@ -894,36 +1030,61 @@ function openActivityDrawer(id = null) {
       document.getElementById("form-activity-id").value = act.id;
       document.getElementById("form-activity-id").disabled = true; // Cannot edit active key
       document.getElementById("form-activity-name").value = act.name;
+      document.getElementById("form-activity-attendees").value = act.attendees_count || "";
       document.getElementById("form-activity-responsable").value = act.responsable;
       document.getElementById("form-activity-client-type").value = act.client_type;
+      document.getElementById("form-activity-install-date").value = act.install_date || "";
+      document.getElementById("form-activity-install-time").value = act.install_time || "";
+      document.getElementById("form-activity-dismantle-date").value = act.dismantle_date || "";
+      document.getElementById("form-activity-dismantle-time").value = act.dismantle_time || "";
       document.getElementById("form-activity-start").value = act.date_start;
+      document.getElementById("form-activity-start-time").value = act.start_time || "";
       document.getElementById("form-activity-end").value = act.date_end;
-      document.getElementById("form-activity-salle").value = act.room_name;
-      document.getElementById("form-activity-category").value = act.category;
+      document.getElementById("form-activity-end-time").value = act.end_time || "";
+      document.getElementById("form-activity-description").value = act.description || "";
+      document.getElementById("form-activity-manager-firstname").value = act.activity_manager?.first_name || "";
+      document.getElementById("form-activity-manager-lastname").value = act.activity_manager?.last_name || "";
+      document.getElementById("form-activity-manager-type").value = act.activity_manager?.type || "employe";
+      document.getElementById("form-activity-manager-phone").value = act.activity_manager?.phone || "";
+      document.getElementById("form-activity-manager-email").value = act.activity_manager?.email || "";
+      setPillGroupActive("form-activity-salle-group", act.rooms || []);
+      setPillGroupActive("form-activity-services-group", act.technical_services || []);
+      setPillGroupActive("form-activity-consumption-group", act.consumption || []);
+      setPillGroupActive("form-activity-host-services-group", act.host_services || []);
+      document.getElementById("form-activity-consumption-special").value = act.consumption_special_products || "";
+      document.getElementById("form-activity-consumption-special-group").style.display = (act.consumption || []).includes("Commande spéciale de produit") ? "flex" : "none";
       document.getElementById("form-activity-remi").value = act.remi_hours;
       document.getElementById("form-activity-dept").value = act.department;
-      document.getElementById("form-activity-ref").value = act.reference;
-      
+      document.getElementById("form-activity-event-type").value = act.event_type || "";
+      document.getElementById("form-activity-event-type-other").value = act.event_type_other || "";
+      document.getElementById("form-activity-event-type-other-group").style.display = act.event_type === "autre" ? "flex" : "none";
+
       // Load distributions
       act.distributions.forEach(d => {
-        addDistributionRow(d.account_code, d.amount);
+        addDistributionRow(d.account_code, d.amount, d.reference);
       });
-      
+
       // Show delete button
       deleteBtn.style.display = "inline-flex";
     }
   } else {
     // New Mode
     titleEl.textContent = "Ajouter une activité";
-    
+
     // Only reset and build a fresh form if there is no active draft
     if (!isDraftDirty) {
       form.reset();
       document.getElementById("form-distribution-list").innerHTML = "";
       document.getElementById("form-distribution-total-val").textContent = "0,00 $";
-      
+      setPillGroupActive("form-activity-salle-group", []);
+      setPillGroupActive("form-activity-services-group", []);
+      setPillGroupActive("form-activity-consumption-group", []);
+      setPillGroupActive("form-activity-host-services-group", []);
+      document.getElementById("form-activity-consumption-special-group").style.display = "none";
+      document.getElementById("form-activity-event-type-other-group").style.display = "none";
+
       document.getElementById("form-activity-internal-id").value = "";
-      
+
       // Auto-generate ID: XXYY-ZZZ based on selected fiscal year
       const prefix = appState.selected_year.split("-").map(y => y.substring(2)).join("");
       
@@ -975,22 +1136,23 @@ function closeActivityDrawer() {
   document.getElementById("drawer-backdrop").classList.remove("active");
 }
 
-function addDistributionRow(accountCode = "", amount = 0) {
+function addDistributionRow(accountCode = "", amount = 0, reference = "") {
   const container = document.getElementById("form-distribution-list");
   const rowId = "dist-row-" + Date.now() + Math.random().toString(36).substr(2, 5);
-  
+
   let optionsHtml = '<option value="">Choisir un compte...</option>';
   appState.settings.accounts.forEach(acc => {
     const isSelected = acc.code === accountCode ? 'selected' : '';
     optionsHtml += `<option value="${acc.code}" ${isSelected}>${acc.code} (${acc.description})</option>`;
   });
-  
+
   const rowHtml = `
     <div id="${rowId}" class="distribution-row">
       <select class="select-input dist-account-select" style="padding: 8px 12px; font-size: 0.85rem;">
         ${optionsHtml}
       </select>
       <input type="number" class="form-input dist-amount-input" min="0" step="0.01" value="${amount > 0 ? amount : ''}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="text" class="form-input dist-reference-input" value="${reference ? reference.replace(/"/g, '&quot;') : ''}" placeholder="N° Facture, RI ou Encaissement" style="padding: 8px 12px; font-size: 0.85rem;">
       <button type="button" class="btn-icon delete-dist-row-btn" data-row-id="${rowId}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
@@ -1031,21 +1193,58 @@ function submitActivityForm(e) {
   const internalId = document.getElementById("form-activity-internal-id").value;
   const rawId = document.getElementById("form-activity-id").value.trim();
   const name = document.getElementById("form-activity-name").value.trim();
+  const attendeesCount = parseInt(document.getElementById("form-activity-attendees").value) || 0;
   const responsable = document.getElementById("form-activity-responsable").value.trim();
   const clientType = document.getElementById("form-activity-client-type").value;
+  const installDate = document.getElementById("form-activity-install-date").value;
+  const installTime = document.getElementById("form-activity-install-time").value;
+  const dismantleDate = document.getElementById("form-activity-dismantle-date").value;
+  const dismantleTime = document.getElementById("form-activity-dismantle-time").value;
   const start = document.getElementById("form-activity-start").value;
+  const startTime = document.getElementById("form-activity-start-time").value;
   const end = document.getElementById("form-activity-end").value;
-  const room = document.getElementById("form-activity-salle").value;
-  const category = document.getElementById("form-activity-category").value;
+  const endTime = document.getElementById("form-activity-end-time").value;
+  const description = document.getElementById("form-activity-description").value.trim();
+  const managerFirstName = document.getElementById("form-activity-manager-firstname").value.trim();
+  const managerLastName = document.getElementById("form-activity-manager-lastname").value.trim();
+  const managerType = document.getElementById("form-activity-manager-type").value;
+  const managerPhone = document.getElementById("form-activity-manager-phone").value.trim();
+  const managerEmail = document.getElementById("form-activity-manager-email").value.trim();
+  const rooms = Array.from(document.querySelectorAll("#form-activity-salle-group .pill-toggle.active")).map(b => b.dataset.value);
+  const technicalServices = Array.from(document.querySelectorAll("#form-activity-services-group .pill-toggle.active")).map(b => b.dataset.value);
+  const consumption = Array.from(document.querySelectorAll("#form-activity-consumption-group .pill-toggle.active")).map(b => b.dataset.value);
+  const consumptionSpecialProducts = document.getElementById("form-activity-consumption-special").value.trim();
+  const hostServices = Array.from(document.querySelectorAll("#form-activity-host-services-group .pill-toggle.active")).map(b => b.dataset.value);
   const remi = parseFloat(document.getElementById("form-activity-remi").value) || 0;
   const dept = document.getElementById("form-activity-dept").value;
-  const ref = document.getElementById("form-activity-ref").value.trim();
-  
+  const eventType = document.getElementById("form-activity-event-type").value;
+  const eventTypeOther = document.getElementById("form-activity-event-type-other").value.trim();
+
   if (!rawId || !name || !start || !end) {
     alert("Veuillez remplir tous les champs obligatoires (*).");
     return;
   }
-  
+
+  if (rooms.length === 0) {
+    alert("Veuillez sélectionner au moins une salle.");
+    return;
+  }
+
+  if (!eventType) {
+    alert("Veuillez sélectionner le type d'événement.");
+    return;
+  }
+
+  if (eventType === "autre" && !eventTypeOther) {
+    alert("Veuillez préciser le type d'événement.");
+    return;
+  }
+
+  if (consumption.includes("Commande spéciale de produit") && !consumptionSpecialProducts) {
+    alert("Veuillez préciser les produits pour la commande spéciale.");
+    return;
+  }
+
   // Date format YYYY-MM-DD validation
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   if (!dateRegex.test(start) || isNaN(new Date(start).getTime())) {
@@ -1070,7 +1269,8 @@ function submitActivityForm(e) {
     const acc = row.querySelector(".dist-account-select").value;
     const amtStr = row.querySelector(".dist-amount-input").value.trim();
     const amt = parseFloat(amtStr) || 0;
-    
+    const reference = row.querySelector(".dist-reference-input").value.trim();
+
     if (acc && !amtStr) {
       distErrorMsg = "Veuillez entrer un montant pour chaque compte sélectionné.";
     } else if (acc && amt <= 0) {
@@ -1078,7 +1278,7 @@ function submitActivityForm(e) {
     } else if (!acc && amtStr) {
       distErrorMsg = "Veuillez sélectionner un compte pour chaque montant de ventilation saisi.";
     } else if (acc && amt > 0) {
-      distributions.push({ account_code: acc, amount: amt });
+      distributions.push({ account_code: acc, amount: amt, reference });
     }
   });
   
@@ -1091,14 +1291,33 @@ function submitActivityForm(e) {
     id: rawId,
     responsable,
     name,
+    attendees_count: attendeesCount,
     date_start: start,
     date_end: end,
+    start_time: startTime,
+    end_time: endTime,
+    install_date: installDate,
+    install_time: installTime,
+    dismantle_date: dismantleDate,
+    dismantle_time: dismantleTime,
+    description,
+    activity_manager: {
+      first_name: managerFirstName,
+      last_name: managerLastName,
+      type: managerType,
+      phone: managerPhone,
+      email: managerEmail
+    },
     client_type: clientType,
-    room_name: room,
-    category,
+    rooms,
+    technical_services: technicalServices,
+    consumption,
+    consumption_special_products: consumption.includes("Commande spéciale de produit") ? consumptionSpecialProducts : "",
+    host_services: hostServices,
     remi_hours: remi,
     department: dept,
-    reference: ref,
+    event_type: eventType,
+    event_type_other: eventType === "autre" ? eventTypeOther : "",
     distributions
   };
   
@@ -1145,6 +1364,248 @@ function deleteActivity() {
     }
     renderActivities();
   }
+}
+
+
+/* ==========================================================================
+   2.5 ACTIVITY DETAIL VIEW (Read-only summary modal)
+   ========================================================================== */
+
+let detailModalActivityId = null;
+
+function initActivityDetailModal() {
+  const modal = document.getElementById("activity-detail-modal");
+  const backdrop = document.getElementById("modal-backdrop");
+
+  document.getElementById("activity-detail-modal-close").addEventListener("click", closeActivityDetailModal);
+  document.getElementById("activity-detail-close-btn").addEventListener("click", closeActivityDetailModal);
+  backdrop.addEventListener("click", closeActivityDetailModal);
+
+  document.getElementById("activity-detail-edit-btn").addEventListener("click", () => {
+    const id = detailModalActivityId;
+    closeActivityDetailModal();
+    if (id) openActivityDrawer(id);
+  });
+}
+
+// Human friendly date/time formatting, e.g. "3 juillet 2026 à 14 h 00"
+function formatDetailDateTime(dateStr, timeStr) {
+  if (!dateStr) return "-";
+  const date = parseLocalDateStr(dateStr);
+  if (isNaN(date.getTime())) return "-";
+  let text = date.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+  if (timeStr) {
+    text += ` à ${timeStr.replace(":", " h ")}`;
+  }
+  return text;
+}
+
+function openActivityDetailModal(id) {
+  const act = appState.activities.find(a => a.id === id);
+  if (!act) return;
+
+  detailModalActivityId = id;
+
+  document.getElementById("activity-detail-title").textContent = act.name.trim() !== "" ? act.name : "Activité vierge";
+  document.getElementById("activity-detail-content").innerHTML = buildActivityDetailHtml(act);
+
+  document.getElementById("activity-detail-modal").classList.add("active");
+  document.getElementById("modal-backdrop").classList.add("active");
+}
+
+function closeActivityDetailModal() {
+  document.getElementById("activity-detail-modal").classList.remove("active");
+  document.getElementById("modal-backdrop").classList.remove("active");
+  detailModalActivityId = null;
+}
+
+function buildActivityDetailHtml(act) {
+  const isFilled = act.name.trim() !== "";
+  const totalRev = act.distributions.reduce((sum, d) => sum + d.amount, 0);
+  const days = calculateDaysCount(act.date_start, act.date_end);
+  const sansFrais = act.client_type === "interne" ? days * getRoomsInternalPrice(act) : 0;
+
+  // Reconciliation badge, mirrors the list view logic
+  let statusBadge = "";
+  const activityReferences = getActivityReferences(act);
+  if (ledgerTransactions.length > 0 && isFilled && activityReferences) {
+    const related = reconciliationResults.filter(r => r.activityId === act.id);
+    if (related.length > 0) {
+      const hasDiff = related.some(r => r.status === "diff");
+      const hasUnlogged = related.some(r => r.status === "unlogged");
+      const allValid = related.every(r => r.status === "valid");
+      if (allValid) statusBadge = `<span class="badge badge-success">Rapproché</span>`;
+      else if (hasDiff) statusBadge = `<span class="badge badge-danger">Écart montant</span>`;
+      else if (hasUnlogged) statusBadge = `<span class="badge badge-warning">Non dans GL</span>`;
+    }
+  }
+
+  const clientTypeBadge = act.client_type === "interne"
+    ? `<span class="badge badge-info">Interne</span>`
+    : `<span class="badge badge-warning">Externe</span>`;
+
+  const eventTypeLabel = act.event_type === "autre"
+    ? (act.event_type_other || "Autre")
+    : (EVENT_TYPES.find(t => t.value === act.event_type)?.label || "-");
+
+  const manager = act.activity_manager || {};
+  const managerName = [manager.first_name, manager.last_name].filter(Boolean).join(" ") || "-";
+  const managerTypeLabel = manager.type === "etudiant" ? "Étudiant" : "Employé";
+
+  const tagsOrDash = (arr) => (arr && arr.length)
+    ? `<div class="detail-tags">${arr.map(v => `<span class="detail-tag">${v}</span>`).join("")}</div>`
+    : `<span class="detail-row-value">-</span>`;
+
+  const distRows = (act.distributions || []).map(d => {
+    const accDesc = appState.settings.accounts.find(a => a.code === d.account_code)?.description || '';
+    return `
+      <tr>
+        <td class="font-mono">${d.account_code}</td>
+        <td>${accDesc}</td>
+        <td>${d.reference || '-'}</td>
+        <td class="text-right bold">${formatCurrency(d.amount)}</td>
+      </tr>
+    `;
+  }).join("");
+
+  return `
+    <div class="detail-hero">
+      <div>
+        <div class="detail-hero-name">${isFilled ? act.name : 'Activité vierge'}</div>
+        <div class="detail-hero-id font-mono">${act.id}</div>
+      </div>
+      <div class="detail-hero-badges">
+        ${clientTypeBadge}
+        ${statusBadge}
+      </div>
+    </div>
+
+    <div class="detail-stats-grid">
+      <div class="detail-stat-box">
+        <div class="detail-stat-box-val">${formatCurrency(totalRev)}</div>
+        <div class="detail-stat-box-lbl">Revenu saisi</div>
+      </div>
+      <div class="detail-stat-box">
+        <div class="detail-stat-box-val">${act.client_type === "interne" ? formatCurrency(sansFrais) : '-'}</div>
+        <div class="detail-stat-box-lbl">Sans frais</div>
+      </div>
+      <div class="detail-stat-box">
+        <div class="detail-stat-box-val">${days}</div>
+        <div class="detail-stat-box-lbl">Jour(s)</div>
+      </div>
+      <div class="detail-stat-box">
+        <div class="detail-stat-box-val">${act.attendees_count || 0}</div>
+        <div class="detail-stat-box-lbl">Personnes attendues</div>
+      </div>
+    </div>
+
+    <div class="detail-section-title">Dates et horaires</div>
+    <div class="detail-grid">
+      <div>
+        <div class="detail-row-label">Installation</div>
+        <div class="detail-row-value">${formatDetailDateTime(act.install_date, act.install_time)}</div>
+      </div>
+      <div>
+        <div class="detail-row-label">Démontage</div>
+        <div class="detail-row-value">${formatDetailDateTime(act.dismantle_date, act.dismantle_time)}</div>
+      </div>
+      <div>
+        <div class="detail-row-label">Début de l'événement</div>
+        <div class="detail-row-value">${formatDetailDateTime(act.date_start, act.start_time)}</div>
+      </div>
+      <div>
+        <div class="detail-row-label">Fin de l'événement</div>
+        <div class="detail-row-value">${formatDetailDateTime(act.date_end, act.end_time)}</div>
+      </div>
+    </div>
+
+    <div class="detail-section-title">Lieu et type d'événement</div>
+    <div class="detail-grid">
+      <div>
+        <div class="detail-row-label">Salle(s)</div>
+        ${tagsOrDash(act.rooms)}
+      </div>
+      <div>
+        <div class="detail-row-label">Type d'événement</div>
+        <div class="detail-row-value">${eventTypeLabel}</div>
+      </div>
+      <div>
+        <div class="detail-row-label">Responsable facturation</div>
+        <div class="detail-row-value">${act.responsable || '-'}</div>
+      </div>
+      <div>
+        <div class="detail-row-label">Département</div>
+        <div class="detail-row-value">${act.department || '-'}</div>
+      </div>
+      ${act.description ? `
+      <div class="detail-full-row">
+        <div class="detail-row-label">Description</div>
+        <div class="detail-row-value">${act.description}</div>
+      </div>` : ""}
+    </div>
+
+    <div class="detail-section-title">Responsable de l'activité</div>
+    <div class="detail-grid">
+      <div>
+        <div class="detail-row-label">Nom</div>
+        <div class="detail-row-value">${managerName}</div>
+      </div>
+      <div>
+        <div class="detail-row-label">Statut</div>
+        <div class="detail-row-value">${managerTypeLabel}</div>
+      </div>
+      <div>
+        <div class="detail-row-label">Téléphone</div>
+        <div class="detail-row-value">${manager.phone || '-'}</div>
+      </div>
+      <div>
+        <div class="detail-row-label">Courriel</div>
+        <div class="detail-row-value">${manager.email || '-'}</div>
+      </div>
+    </div>
+
+    <div class="detail-section-title">Services et options</div>
+    <div class="detail-grid">
+      <div>
+        <div class="detail-row-label">Services techniques</div>
+        ${tagsOrDash(act.technical_services)}
+      </div>
+      <div>
+        <div class="detail-row-label">Service d'hôtes.ses</div>
+        ${tagsOrDash(act.host_services)}
+      </div>
+      <div class="detail-full-row">
+        <div class="detail-row-label">Consommation</div>
+        ${tagsOrDash(act.consumption)}
+        ${act.consumption_special_products ? `<div class="detail-row-value" style="margin-top: 6px;">Produits : ${act.consumption_special_products}</div>` : ""}
+      </div>
+      <div>
+        <div class="detail-row-label">Temps Rémi</div>
+        <div class="detail-row-value">${act.remi_hours || 0} h</div>
+      </div>
+    </div>
+
+    <div class="detail-section-title">Ventilation par compte de revenus</div>
+    ${distRows ? `
+      <table class="detail-dist-table">
+        <thead>
+          <tr>
+            <th>Compte</th>
+            <th>Description</th>
+            <th>RI / Facture</th>
+            <th class="text-right">Montant</th>
+          </tr>
+        </thead>
+        <tbody>${distRows}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">Total</td>
+            <td class="text-right">${formatCurrency(totalRev)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    ` : `<div class="detail-row-value">Aucune ventilation saisie.</div>`}
+  `;
 }
 
 
@@ -1326,10 +1787,12 @@ function reconcileLedger() {
       return; // Skip activity outside selected period
     }
     
-    const actRef = cleanRef(act.reference);
-    if (!actRef) {
-      // Active activity but no reference: marked as "unlogged" for all its distributions
-      act.distributions.forEach(dist => {
+    // Check reconciliation for each distribution (reference is now defined per account)
+    act.distributions.forEach(dist => {
+      const distRef = cleanRef(dist.reference);
+
+      if (!distRef) {
+        // Distribution without a reference: marked as "unlogged"
         reconciliationResults.push({
           activityId: act.id,
           activityName: act.name,
@@ -1339,28 +1802,25 @@ function reconcileLedger() {
           amount_gl: 0,
           status: "unlogged"
         });
-      });
-      return;
-    }
-    
-    // Check reconciliation for each distribution
-    act.distributions.forEach(dist => {
+        return;
+      }
+
       // Find matching ledger group key
-      const key = `${dist.account_code}||${actRef}`;
+      const key = `${dist.account_code}||${distRef}`;
       const group = ledgerGroups[key];
-      
+
       if (group) {
         matchedKeys.add(key);
         // Revenue in ledger is negative, so sum * -1 = positive revenue
         const expectedRevenue = group.montant_somme * -1;
         const diff = dist.amount - expectedRevenue;
         const isMatch = Math.abs(diff) < 0.02;
-        
+
         reconciliationResults.push({
           activityId: act.id,
           activityName: act.name,
           account_code: dist.account_code,
-          reference: actRef,
+          reference: distRef,
           amount_saisi: dist.amount,
           amount_gl: expectedRevenue,
           status: isMatch ? "valid" : "diff",
@@ -1373,7 +1833,7 @@ function reconcileLedger() {
           activityId: act.id,
           activityName: act.name,
           account_code: dist.account_code,
-          reference: actRef,
+          reference: distRef,
           amount_saisi: dist.amount,
           amount_gl: 0,
           status: "unlogged",
@@ -1512,11 +1972,10 @@ function renderReconciliationTable() {
       
       // Assign pre-filled fields
       document.getElementById("form-activity-name").value = `Ajustement GL - Réf ${r.reference}`;
-      document.getElementById("form-activity-ref").value = r.reference;
-      
+
       // Clear blank default distribution row and write this one
       document.getElementById("form-distribution-list").innerHTML = "";
-      addDistributionRow(r.account_code, r.amount_gl);
+      addDistributionRow(r.account_code, r.amount_gl, r.reference);
     });
   });
   
@@ -1809,7 +2268,7 @@ function submitRoomForm(e) {
       
       // Update existing activities room name reference!
       appState.activities.forEach(act => {
-        if (act.room_name === originalName) act.room_name = newName;
+        act.rooms = (act.rooms || []).map(r => r === originalName ? newName : r);
       });
     }
   } else {
@@ -1846,41 +2305,79 @@ function renderDepartmentsList() {
         <div class="settings-list-item-info">
           <span class="settings-list-item-code" style="font-family: inherit;">${dept}</span>
         </div>
-        <button class="btn-icon delete-dept-btn" data-name="${dept}" title="Supprimer" style="color: var(--danger);">
-          <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-        </button>
+        <div class="flex gap-2">
+          <button class="btn-icon edit-dept-btn" data-name="${dept}" title="Modifier">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </button>
+          <button class="btn-icon delete-dept-btn" data-name="${dept}" title="Supprimer" style="color: var(--danger);">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        </div>
       </div>
     `;
   });
-  
+
   // Attach listeners
+  document.querySelectorAll(".edit-dept-btn").forEach(btn => {
+    btn.addEventListener("click", () => openDeptModal(btn.getAttribute("data-name")));
+  });
   document.querySelectorAll(".delete-dept-btn").forEach(btn => {
     btn.addEventListener("click", () => deleteDept(btn.getAttribute("data-name")));
   });
 }
 
-function openDeptModal() {
-  document.getElementById("dept-form").reset();
+function openDeptModal(name = null) {
+  const form = document.getElementById("dept-form");
+  const title = document.getElementById("dept-modal-title");
+  form.reset();
+
+  if (name) {
+    title.textContent = "Modifier le département";
+    document.getElementById("form-dept-original-name").value = name;
+    document.getElementById("form-dept-name").value = name;
+  } else {
+    title.textContent = "Ajouter un département";
+    document.getElementById("form-dept-original-name").value = "";
+  }
   openSettingsModal("dept");
 }
 
 function submitDeptForm(e) {
   e.preventDefault();
+  const originalName = document.getElementById("form-dept-original-name").value;
   const name = document.getElementById("form-dept-name").value.trim();
-  
+
   if (!name) {
     alert("Le nom du département est obligatoire.");
     return;
   }
-  
-  if (appState.settings.departments.some(d => d.toUpperCase() === name.toUpperCase())) {
+
+  const duplicate = appState.settings.departments.some(d =>
+    d.toUpperCase() === name.toUpperCase() && d.toUpperCase() !== originalName.toUpperCase()
+  );
+  if (duplicate) {
     alert("Ce département existe déjà.");
     return;
   }
-  
-  appState.settings.departments.push(name);
+
+  if (originalName) {
+    const idx = appState.settings.departments.findIndex(d => d === originalName);
+    if (idx !== -1) {
+      appState.settings.departments[idx] = name;
+
+      // Update existing activities referencing the old department name
+      appState.activities.forEach(act => {
+        if (act.department === originalName) {
+          act.department = name;
+        }
+      });
+    }
+  } else {
+    appState.settings.departments.push(name);
+  }
+
   appState.settings.departments.sort();
-  
+
   saveDatabase();
   closeSettingsModal("dept");
   populateDropdowns();
@@ -2038,20 +2535,19 @@ function exportToExcel() {
       row.push({ t: 'n', f: `E${excelRow}-D${excelRow}+1` });
       
       row.push(isFilled ? act.client_type : ""); // Client interne ou externe
-      row.push(isFilled ? act.category : ""); // CATÉGORIE
-      row.push(isFilled ? act.room_name : ""); // SALLE
+      row.push(isFilled ? (act.category || "") : ""); // CATÉGORIE (champ retiré du formulaire, conservé vide pour ne pas décaler les colonnes)
+      row.push(isFilled ? (act.rooms || []).join(", ") : ""); // SALLE
       row.push(isFilled ? act.remi_hours : 0); // TEMPS RÉMI
       row.push(isFilled ? act.department : ""); // DÉPARTEMENT
-      
+
       // PRIX SALLE SANS FRAIS (formule)
       // Calculated as Nbre jours * Price Internal if client is internal.
       // In excel we can write a formula that checks client type:
       // =IF(G2="interne", F2 * [price_internal], 0)
-      const room = appState.settings.rooms.find(r => r.name === act.room_name);
-      const priceInternal = room ? room.price_internal : 0;
+      const priceInternal = getRoomsInternalPrice(act);
       row.push({ t: 'n', f: `IF(G${excelRow}="interne", F${excelRow}*${priceInternal}, 0)` });
       
-      row.push(isFilled ? act.reference : ""); // NUMÉRO DE FACTURE...
+      row.push(isFilled ? getActivityReferences(act) : ""); // NUMÉRO DE FACTURE... (regroupé par compte)
       
       // Distribute amounts to matching account columns
       accountsOrder.forEach(code => {
@@ -2167,13 +2663,15 @@ function renderAccountReport() {
       if (accountEntries[d.account_code]) {
         accountEntries[d.account_code].push({
           activity: act,
-          amount: d.amount
+          amount: d.amount,
+          reference: d.reference
         });
       } else {
         // Fallback in case account code is not in configured settings list
         accountEntries[d.account_code] = [{
           activity: act,
-          amount: d.amount
+          amount: d.amount,
+          reference: d.reference
         }];
       }
     });
@@ -2231,7 +2729,7 @@ function renderAccountReport() {
             <td>${act.name}</td>
             <td>${datesText}</td>
             <td>${act.department}</td>
-            <td class="font-mono">${act.reference || '-'}</td>
+            <td class="font-mono">${e.reference || '-'}</td>
             <td class="bold text-right font-mono" style="color: var(--success-text);">${formatCurrency(e.amount)}</td>
           </tr>
         `;
@@ -2283,6 +2781,33 @@ function renderAccountReport() {
 /* ==========================================================================
    5.5 PERIOD SELECTOR CONTROLLERS
    ========================================================================== */
+
+// Sets which pills are marked active within a pill-toggle group, based on a list of values
+function setPillGroupActive(containerId, activeValues) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.querySelectorAll(".pill-toggle").forEach(btn => {
+    btn.classList.toggle("active", activeValues.includes(btn.dataset.value));
+  });
+}
+
+// Delegated click handler for a pill-toggle container (survives innerHTML rebuilds)
+function initPillToggle(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest(".pill-toggle");
+    if (!btn || !container.contains(btn)) return;
+
+    btn.classList.toggle("active");
+
+    const internalId = document.getElementById("form-activity-internal-id").value;
+    if (!internalId) {
+      isDraftDirty = true;
+    }
+  });
+}
 
 function initPeriodSelector() {
   // Populate dropdown
@@ -2391,6 +2916,15 @@ function maskDateInput(input) {
   });
 }
 
+// Parses a "YYYY-MM-DD" string as a local date (avoids the UTC-midnight off-by-one
+// that new Date("YYYY-MM-DD") causes in timezones behind UTC).
+function parseLocalDateStr(dateStr) {
+  if (!dateStr) return new Date(NaN);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (!match) return new Date(dateStr);
+  return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+}
+
 function initCustomDatepickers() {
   const wrappers = document.querySelectorAll(".datepicker-wrapper");
   
@@ -2419,7 +2953,7 @@ function initCustomDatepickers() {
       if (!wasActive) {
         // Set display month based on input value if valid
         const val = input.value;
-        const parsed = new Date(val);
+        const parsed = parseLocalDateStr(val);
         if (val && !isNaN(parsed.getTime())) {
           currentDate = parsed;
         } else {
@@ -2460,7 +2994,7 @@ function renderCalendar(popover, input, displayDate) {
   
   // Render current month days
   const activeVal = input.value;
-  const activeDate = activeVal ? new Date(activeVal) : null;
+  const activeDate = activeVal ? parseLocalDateStr(activeVal) : null;
   const activeYear = activeDate ? activeDate.getFullYear() : null;
   const activeMonth = activeDate ? activeDate.getMonth() : null;
   const activeDay = activeDate ? activeDate.getDate() : null;
@@ -2575,9 +3109,9 @@ function updateFormDatesHelper() {
 function getDaysOfWeekInRange(startDateStr, endDateStr) {
   if (!startDateStr || !endDateStr) return "";
   
-  const start = new Date(startDateStr);
-  const end = new Date(endDateStr);
-  
+  const start = parseLocalDateStr(startDateStr);
+  const end = parseLocalDateStr(endDateStr);
+
   if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
     return "";
   }
