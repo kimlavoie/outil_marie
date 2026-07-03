@@ -71,6 +71,31 @@ function goToDayView(dateStr) {
   renderEventCalendar();
 }
 
+// Opens the calendar modal on the day view for a "YYYY-MM-DD" string, or on
+// today's month view if no valid date is provided (used by the "view in
+// calendar" buttons next to date fields in the activity form)
+function openCalendarAtDate(dateStr) {
+  const parsed = dateStr ? parseLocalDateStr(dateStr) : null;
+  if (parsed && !isNaN(parsed.getTime())) {
+    document.getElementById("calendar-modal").classList.add("active");
+    document.getElementById("modal-backdrop").classList.add("active");
+    goToDayView(dateStr);
+  } else {
+    openCalendarModal();
+  }
+}
+
+// Wires the "view in calendar" buttons placed next to date fields in the activity form
+function initViewCalendarButtons() {
+  document.querySelectorAll(".view-calendar-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const targetId = btn.getAttribute("data-target");
+      const input = document.getElementById(targetId);
+      openCalendarAtDate(input ? input.value.trim() : "");
+    });
+  });
+}
+
 // Returns the Sunday that starts the week containing `date`
 function getWeekStart(date) {
   const start = new Date(date);

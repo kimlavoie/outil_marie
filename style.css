@@ -1453,6 +1453,25 @@ label {
   color: var(--primary);
 }
 
+.view-calendar-btn {
+  background-color: var(--primary-light);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  color: var(--primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition: var(--transition-smooth);
+}
+
+.view-calendar-btn:hover {
+  background-color: var(--primary);
+  color: #fff;
+}
+
 .datepicker-wrapper .form-input {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;

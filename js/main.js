@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initBackupHandlers();
   initCustomDatepickers();
   initCalendarModal();
+  initViewCalendarButtons();
 
   // Populate dropdowns once so restoreUiState() has real <option>s to select
   // from, then restore search/filter/sort/pagination state before the
