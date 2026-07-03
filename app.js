@@ -1683,6 +1683,17 @@ function handleJsonBackupFile(file) {
 
 // Generate structured excel matching the original template
 function exportToExcel() {
+  // Helper to convert column index to letter
+  function getExcelColName(colIdx) {
+    let temp, letter = "";
+    while (colIdx > 0) {
+      temp = (colIdx - 1) % 26;
+      letter = String.fromCharCode(65 + temp) + letter;
+      colIdx = (colIdx - temp - 1) / 26;
+    }
+    return letter;
+  }
+
   try {
     const wb = XLSX.utils.book_new();
     
@@ -1755,15 +1766,6 @@ function exportToExcel() {
       // REVENUS TOTAL RÉÈL (written as formula summing distributions)
       // distributions columns start at column index 13 (N) and end at headers.length - 2
       // Let's convert column indices to Excel column letters!
-      function getExcelColName(colIdx) {
-        let temp, letter = "";
-        while (colIdx > 0) {
-          temp = (colIdx - 1) % 26;
-          letter = String.fromCharCode(65 + temp) + letter;
-          colIdx = (colIdx - temp - 1) / 26;
-        }
-        return letter;
-      }
       
       const firstDistCol = getExcelColName(13 + 1); // 1-based index (N)
       const lastDistCol = getExcelColName(13 + accountsOrder.length); // End of accounts
