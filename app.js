@@ -732,12 +732,26 @@ function initFormHandlers() {
   // Delete Button
   document.getElementById("activity-drawer-delete").addEventListener("click", deleteActivity);
   
-  // Keyboard Shortcuts: Alt + N or Alt + A to add, Escape to close
+  // Keyboard Shortcuts: Navigation, Add, and Escape
   window.addEventListener("keydown", (e) => {
+    // Alt + [1-6] for switching tabs
+    if (e.altKey && e.key >= '1' && e.key <= '6') {
+      e.preventDefault();
+      const views = ["dashboard", "activities", "validation", "account-report", "settings", "backup"];
+      const targetView = views[parseInt(e.key) - 1];
+      if (targetView) {
+        const navBtn = document.querySelector(`.nav-item[data-view="${targetView}"] button`);
+        if (navBtn) navBtn.click();
+      }
+    }
+    
+    // Alt + N or Alt + A to open the new activity drawer
     if (e.altKey && (e.key.toLowerCase() === 'n' || e.key.toLowerCase() === 'a')) {
       e.preventDefault();
       openActivityDrawer();
     }
+    
+    // Escape to close drawers and modals
     if (e.key === "Escape") {
       closeActivityDrawer();
       if (typeof closeSettingsModal === "function") {
