@@ -1526,6 +1526,28 @@ label {
   color: #ffffff;
 }
 
+.calendar-day.disabled {
+  color: var(--text-muted);
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.field-error-msg {
+  display: none;
+  color: var(--danger, #d32f2f);
+  font-size: 0.78rem;
+  margin-top: 4px;
+}
+
+.field-error-msg.visible {
+  display: block;
+}
+
+.form-input.invalid {
+  border-color: var(--danger, #d32f2f);
+}
+
 /* Sortable table headers */
 .table-responsive th[data-sort] {
   cursor: pointer;

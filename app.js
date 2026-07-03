@@ -112,6 +112,14 @@ function getDefaultFiscalYear() {
   return month >= 6 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
 }
 
+// Returns the {start, end} "YYYY-MM-DD" bounds (juillet à juin) of a fiscal year string like "2024-2025".
+function getFiscalYearRange(fy) {
+  if (!fy) return null;
+  const match = /^(\d{4})-(\d{4})$/.exec(fy);
+  if (!match) return null;
+  return { start: `${match[1]}-07-01`, end: `${match[2]}-06-30` };
+}
+
 // Ledger State for Validation
 let ledgerTransactions = [];
 let reconciliationResults = [];
@@ -1390,7 +1398,8 @@ function openActivityDrawer(id = null, duplicateFromId = null) {
   }
 
   updateFormDatesHelper();
-  
+  clearDateFieldErrors();
+
   drawer.classList.add("active");
   backdrop.classList.add("active");
   
@@ -1527,7 +1536,28 @@ function submitActivityForm(e) {
       return;
     }
   }
-  
+
+  // Restrict all activity dates to the active fiscal year
+  const fyRange = getFiscalYearRange(appState.selected_year);
+  if (fyRange) {
+    const minDate = parseLocalDateStr(fyRange.start);
+    const maxDate = parseLocalDateStr(fyRange.end);
+    const datesToCheck = [
+      { value: installDate, label: "La date d'installation" },
+      { value: dismantleDate, label: "La date de démontage" },
+      { value: start, label: "La date de début" },
+      { value: end, label: "La date de fin" }
+    ];
+    for (const { value, label } of datesToCheck) {
+      if (!value || !dateRegex.test(value)) continue;
+      const d = parseLocalDateStr(value);
+      if (!isNaN(d.getTime()) && (d < minDate || d > maxDate)) {
+        alert(`${label} doit être comprise dans l'année financière active (${appState.selected_year}).`);
+        return;
+      }
+    }
+  }
+
   // Build distributions array
   const distributions = [];
   let distErrorMsg = "";
@@ -3474,17 +3504,59 @@ function parseLocalDateStr(dateStr) {
   return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
 }
 
+// Validates a date input's value against the active fiscal year and shows/hides
+// the associated .field-error-msg (id: "<input-id>-fy-error") in real time.
+function validateDateFieldFiscalYear(input) {
+  const errorEl = document.getElementById(`${input.id}-fy-error`);
+  if (!errorEl) return true;
+
+  const value = input.value.trim();
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  const fyRange = getFiscalYearRange(appState.selected_year);
+
+  let message = "";
+  if (value && dateRegex.test(value) && fyRange) {
+    const d = parseLocalDateStr(value);
+    const minDate = parseLocalDateStr(fyRange.start);
+    const maxDate = parseLocalDateStr(fyRange.end);
+    if (!isNaN(d.getTime()) && (d < minDate || d > maxDate)) {
+      message = `Cette date doit être comprise dans l'année financière active (${appState.selected_year}).`;
+    }
+  }
+
+  errorEl.textContent = message;
+  errorEl.classList.toggle("visible", !!message);
+  input.classList.toggle("invalid", !!message);
+  return !message;
+}
+
+// Clears all fiscal-year date error messages/styling in the activity form (used on drawer open).
+function clearDateFieldErrors() {
+  document.querySelectorAll("#activity-form .field-error-msg").forEach(el => {
+    el.textContent = "";
+    el.classList.remove("visible");
+  });
+  document.querySelectorAll("#activity-form .form-input.invalid").forEach(el => {
+    el.classList.remove("invalid");
+  });
+}
+
 function initCustomDatepickers() {
   const wrappers = document.querySelectorAll(".datepicker-wrapper");
-  
+
   wrappers.forEach(wrapper => {
     const input = wrapper.querySelector(".form-input");
     const btn = wrapper.querySelector(".datepicker-trigger-btn");
     const popover = wrapper.querySelector(".calendar-popover");
-    
+
     // Auto-mask date formatting on keyboard input
     maskDateInput(input);
-    
+
+    // Real-time validation against the active fiscal year
+    input.addEventListener("input", () => validateDateFieldFiscalYear(input));
+    input.addEventListener("change", () => validateDateFieldFiscalYear(input));
+    input.addEventListener("blur", () => validateDateFieldFiscalYear(input));
+
     let currentDate = new Date(); // Tracks the displayed month
     
     // Close when clicking outside
@@ -3548,9 +3620,15 @@ function renderCalendar(popover, input, displayDate) {
   const activeMonth = activeDate ? activeDate.getMonth() : null;
   const activeDay = activeDate ? activeDate.getDate() : null;
   
+  const fyRange = getFiscalYearRange(appState.selected_year);
+  const minDate = fyRange ? parseLocalDateStr(fyRange.start) : null;
+  const maxDate = fyRange ? parseLocalDateStr(fyRange.end) : null;
+
   for (let i = 1; i <= lastDay; i++) {
     const isSelected = (activeYear === year && activeMonth === month && activeDay === i) ? "selected" : "";
-    daysHtml += `<div class="calendar-day ${isSelected}" data-day="${i}">${i}</div>`;
+    const dayDate = new Date(year, month, i);
+    const isDisabled = (minDate && dayDate < minDate) || (maxDate && dayDate > maxDate);
+    daysHtml += `<div class="calendar-day ${isSelected}${isDisabled ? " disabled" : ""}" ${isDisabled ? "" : `data-day="${i}"`}>${i}</div>`;
   }
   
   // Render next month padding to complete 42 grid cells
