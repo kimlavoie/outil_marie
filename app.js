@@ -731,6 +731,22 @@ function initFormHandlers() {
   
   // Delete Button
   document.getElementById("activity-drawer-delete").addEventListener("click", deleteActivity);
+  
+  // Keyboard Shortcuts: Alt + N or Alt + A to add, Escape to close
+  window.addEventListener("keydown", (e) => {
+    if (e.altKey && (e.key.toLowerCase() === 'n' || e.key.toLowerCase() === 'a')) {
+      e.preventDefault();
+      openActivityDrawer();
+    }
+    if (e.key === "Escape") {
+      closeActivityDrawer();
+      if (typeof closeSettingsModal === "function") {
+        closeSettingsModal("account");
+        closeSettingsModal("room");
+        closeSettingsModal("dept");
+      }
+    }
+  });
 }
 
 // Drawer CRUD Operations
@@ -793,6 +809,15 @@ function openActivityDrawer(id = null) {
   
   drawer.classList.add("active");
   backdrop.classList.add("active");
+  
+  // Set cursor focus on first relevant field after transition slides in
+  setTimeout(() => {
+    if (id) {
+      document.getElementById("form-activity-name").focus();
+    } else {
+      document.getElementById("form-activity-id").focus();
+    }
+  }, 150);
 }
 
 function closeActivityDrawer() {
@@ -1921,8 +1946,10 @@ function exportToExcel() {
     const wsRooms = XLSX.utils.aoa_to_sheet(roomsData);
     XLSX.utils.book_append_sheet(wb, wsRooms, "SALLES");
     
-    // Trigger download
-    XLSX.writeFile(wb, `compta_marie_rapport_${new Date().toISOString().split('T')[0]}.xlsx`);
+    // Trigger download: includes selected period in filename
+    const qStr = appState.selected_quarters.sort().map(q => `T${q}`).join("-");
+    const filename = `compta_marie_rapport_${appState.selected_year}_${qStr || 'aucun'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
   } catch (err) {
     console.error(err);
     alert("Erreur lors de l'export Excel : " + err.message);
