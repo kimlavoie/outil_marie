@@ -261,6 +261,33 @@ body {
   fill: currentColor;
 }
 
+
+/* Quarter Toggle Buttons */
+.quarter-toggle {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.quarter-toggle:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.quarter-toggle.active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+}
+
 /* Views Wrapper */
 .view-container {
   flex-grow: 1;

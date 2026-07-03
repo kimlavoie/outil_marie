@@ -78,7 +78,27 @@
       
       <!-- Top Header Bar -->
       <header class="top-bar">
-        <h1 id="view-title" class="top-bar-title">Tableau de bord</h1>
+        <div style="display: flex; align-items: center; gap: 24px;">
+          <h1 id="view-title" class="top-bar-title">Tableau de bord</h1>
+          
+          <!-- Period Selector Widget -->
+          <div class="period-selector-widget" style="display: flex; align-items: center; gap: 16px; border-left: 1px solid var(--border-color); padding-left: 20px; display: flex;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label for="top-fiscal-year" style="font-size: 0.8rem; font-weight: 700; white-space: nowrap; color: var(--text-secondary);">Année financière :</label>
+              <select id="top-fiscal-year" class="select-input" style="padding: 4px 10px; font-size: 0.8rem; font-weight: 600; border-radius: var(--radius-sm);">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-right: 4px;">Trimestres :</span>
+              <button class="quarter-toggle active" data-q="1" title="Trimestre 1 (Juillet - Septembre)">T1</button>
+              <button class="quarter-toggle active" data-q="2" title="Trimestre 2 (Octobre - Décembre)">T2</button>
+              <button class="quarter-toggle active" data-q="3" title="Trimestre 3 (Janvier - Mars)">T3</button>
+              <button class="quarter-toggle active" data-q="4" title="Trimestre 4 (Avril - Juin)">T4</button>
+            </div>
+          </div>
+        </div>
         <div class="top-bar-actions">
           <button id="quick-export-excel" class="btn btn-secondary">
             <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor; margin-right: 6px;">

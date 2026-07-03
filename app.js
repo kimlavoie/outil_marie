@@ -65,8 +65,38 @@ let appState = {
     departments: [...DEFAULT_CONFIG.departments],
     accounts: [...DEFAULT_CONFIG.accounts]
   },
-  activities: []
+  activities: [],
+  selected_year: "",
+  selected_quarters: [1, 2, 3, 4]
 };
+
+// Period Helpers
+function getFiscalYear(dateStr) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = date.getMonth(); // 0-11
+  return month >= 6 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+}
+
+function getQuarterNumber(dateStr) {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return null;
+  const month = date.getMonth();
+  if (month >= 6 && month <= 8) return 1;
+  if (month >= 9 && month <= 11) return 2;
+  if (month >= 0 && month <= 2) return 3;
+  return 4;
+}
+
+function getDefaultFiscalYear() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  return month >= 6 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+}
 
 // Ledger State for Validation
 let ledgerTransactions = [];
@@ -82,6 +112,7 @@ let chartAccounts = null;
 document.addEventListener("DOMContentLoaded", () => {
   loadDatabase();
   applyTheme(appState.settings.theme || "dark");
+  initPeriodSelector();
   initNavigation();
   initFormHandlers();
   initSettingsHandlers();
@@ -100,6 +131,8 @@ function loadDatabase() {
       const parsed = JSON.parse(localData);
       appState.settings = parsed.settings || appState.settings;
       appState.activities = parsed.activities || [];
+      appState.selected_year = parsed.selected_year || getDefaultFiscalYear();
+      appState.selected_quarters = parsed.selected_quarters || [1, 2, 3, 4];
       
       // Safety check: ensure accounts, rooms, departments exist
       if (!appState.settings.accounts) appState.settings.accounts = [...DEFAULT_CONFIG.accounts];
@@ -124,6 +157,8 @@ function seedDatabase() {
   };
   
   appState.activities = [];
+  appState.selected_year = getDefaultFiscalYear();
+  appState.selected_quarters = [1, 2, 3, 4];
   saveDatabase();
 }
 
@@ -325,6 +360,13 @@ function renderDashboard() {
     const isFilled = act.name.trim() !== "";
     if (!isFilled) return;
     
+    // Period filter
+    const actYear = getFiscalYear(act.date_start);
+    const actQuarter = getQuarterNumber(act.date_start);
+    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
+      return;
+    }
+    
     filledCount++;
     
     // Revenue sum for this activity
@@ -376,6 +418,10 @@ function renderDashboardCharts() {
   
   appState.activities.forEach(act => {
     if (act.name.trim() === "") return;
+    
+    // Period filter (check fiscal year only for quarters breakdown)
+    if (getFiscalYear(act.date_start) !== appState.selected_year) return;
+    
     const q = getQuarter(act.date_start);
     if (q && quarterlySums.hasOwnProperty(q)) {
       const sumDist = act.distributions.reduce((sum, dist) => sum + dist.amount, 0);
@@ -415,6 +461,14 @@ function renderDashboardCharts() {
   const roomSums = {};
   appState.activities.forEach(act => {
     if (act.name.trim() === "") return;
+    
+    // Period filter
+    const actYear = getFiscalYear(act.date_start);
+    const actQuarter = getQuarterNumber(act.date_start);
+    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
+      return;
+    }
+    
     const rName = act.room_name || "Inconnue";
     const sumDist = act.distributions.reduce((sum, dist) => sum + dist.amount, 0);
     roomSums[rName] = (roomSums[rName] || 0) + sumDist;
@@ -465,6 +519,14 @@ function renderDashboardCharts() {
   const accountSums = {};
   appState.activities.forEach(act => {
     if (act.name.trim() === "") return;
+    
+    // Period filter
+    const actYear = getFiscalYear(act.date_start);
+    const actQuarter = getQuarterNumber(act.date_start);
+    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
+      return;
+    }
+    
     act.distributions.forEach(dist => {
       if (dist.amount > 0) {
         accountSums[dist.account_code] = (accountSums[dist.account_code] || 0) + dist.amount;
@@ -538,7 +600,15 @@ function renderActivities() {
     // Client type filter
     const matchesClientType = !filterClientType || act.client_type === filterClientType;
     
-    return matchesSearch && matchesSalle && matchesClientType;
+    // Period filter
+    let matchesPeriod = false;
+    if (act.date_start) {
+      const fy = getFiscalYear(act.date_start);
+      const q = getQuarterNumber(act.date_start);
+      matchesPeriod = (fy === appState.selected_year) && appState.selected_quarters.includes(q);
+    }
+    
+    return matchesSearch && matchesSalle && matchesClientType && matchesPeriod;
   });
   
   if (filtered.length === 0) {
@@ -1009,6 +1079,15 @@ function reconcileLedger() {
   const ledgerGroups = {};
   
   ledgerTransactions.forEach(tx => {
+    // Period filter: Check transaction date against selected year and quarters
+    const txDateStr = String(tx["Date versée"] || "").trim();
+    const txYear = getFiscalYear(txDateStr);
+    const txQuarter = getQuarterNumber(txDateStr);
+    
+    if (txYear !== appState.selected_year || !appState.selected_quarters.includes(txQuarter)) {
+      return; // Skip transaction outside selected period
+    }
+
     const acc = String(tx["Poste budgétaire"] || "").trim();
     
     // The reference can be in "No référence" (typically 6-digit numeric) or "Nom" (e.g. RIXXXXXX)
@@ -1044,6 +1123,13 @@ function reconcileLedger() {
   // 2. Loop through all activities in app database
   appState.activities.forEach(act => {
     if (act.name.trim() === "") return; // Skip blank activities
+    
+    // Period filter
+    const actYear = getFiscalYear(act.date_start);
+    const actQuarter = getQuarterNumber(act.date_start);
+    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
+      return; // Skip activity outside selected period
+    }
     
     const actRef = cleanRef(act.reference);
     if (!actRef) {
@@ -1726,8 +1812,16 @@ function exportToExcel() {
     
     const sheetData = [headers];
     
+    // Filter activities for active period
+    const activeActivities = appState.activities.filter(act => {
+      if (act.name.trim() === "") return false;
+      const actYear = getFiscalYear(act.date_start);
+      const actQuarter = getQuarterNumber(act.date_start);
+      return (actYear === appState.selected_year) && appState.selected_quarters.includes(actQuarter);
+    });
+    
     // Add activities rows
-    appState.activities.forEach((act, rIdx) => {
+    activeActivities.forEach((act, rIdx) => {
       const isFilled = act.name.trim() !== "";
       const row = [];
       
@@ -1858,6 +1952,13 @@ function renderAccountReport() {
   appState.activities.forEach(act => {
     if (act.name.trim() === "") return; // Skip blank activities
     
+    // Period filter
+    const actYear = getFiscalYear(act.date_start);
+    const actQuarter = getQuarterNumber(act.date_start);
+    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
+      return;
+    }
+    
     act.distributions.forEach(d => {
       if (accountEntries[d.account_code]) {
         accountEntries[d.account_code].push({
@@ -1972,5 +2073,89 @@ function renderAccountReport() {
         </div>
       </div>
     `;
+  });
+}
+
+/* ==========================================================================
+   5.5 PERIOD SELECTOR CONTROLLERS
+   ========================================================================== */
+
+function initPeriodSelector() {
+  // Populate dropdown
+  populateFiscalYears();
+  
+  // Wire quarter buttons toggling
+  document.querySelectorAll(".quarter-toggle").forEach(btn => {
+    const q = parseInt(btn.getAttribute("data-q"));
+    
+    // Set initial class
+    if (appState.selected_quarters.includes(q)) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+    
+    btn.addEventListener("click", () => {
+      btn.classList.toggle("active");
+      const isActive = btn.classList.contains("active");
+      
+      if (isActive) {
+        if (!appState.selected_quarters.includes(q)) {
+          appState.selected_quarters.push(q);
+        }
+      } else {
+        appState.selected_quarters = appState.selected_quarters.filter(x => x !== q);
+      }
+      
+      saveDatabase();
+      
+      // Re-run validation if ledger has been loaded to update statuses immediately!
+      if (ledgerTransactions.length > 0) {
+        reconcileLedger();
+      }
+      
+      renderAll();
+    });
+  });
+  
+  // Wire year select
+  const yearSelect = document.getElementById("top-fiscal-year");
+  if (yearSelect) {
+    yearSelect.addEventListener("change", (e) => {
+      appState.selected_year = e.target.value;
+      saveDatabase();
+      
+      // Re-run validation if ledger has been loaded to update statuses immediately!
+      if (ledgerTransactions.length > 0) {
+        reconcileLedger();
+      }
+      
+      renderAll();
+    });
+  }
+}
+
+function populateFiscalYears() {
+  const select = document.getElementById("top-fiscal-year");
+  if (!select) return;
+  
+  // Base years
+  const years = new Set(["2024-2025", "2025-2026", "2026-2027", "2027-2028", "2028-2029", "2029-2030"]);
+  
+  // Find any year from activities
+  appState.activities.forEach(act => {
+    if (act.date_start) {
+      const fy = getFiscalYear(act.date_start);
+      if (fy) years.add(fy);
+    }
+  });
+  
+  // Sort them
+  const sortedYears = Array.from(years).sort();
+  
+  select.innerHTML = "";
+  sortedYears.forEach(fy => {
+    const isSelected = fy === appState.selected_year ? 'selected' : '';
+    select.innerHTML += `<option value="${fy}" ${isSelected}>${fy}</option>`;
   });
 }
