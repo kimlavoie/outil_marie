@@ -136,6 +136,10 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Render initial views
   renderAll();
+  updateStickyToolbarOffsets();
+
+  window.addEventListener("resize", updateStickyToolbarOffsets);
+  window.addEventListener("load", updateStickyToolbarOffsets);
 });
 
 // Load DB from LocalStorage
@@ -324,6 +328,19 @@ function renderView(view) {
   } else if (view === "backup") {
     // No special load needed
   }
+  updateStickyToolbarOffsets();
+}
+
+// Measures each .table-toolbar and exposes its height as a CSS variable on its
+// parent .table-card, so sticky column headers below it can offset by that height
+// instead of overlapping the sticky search/filter bar.
+function updateStickyToolbarOffsets() {
+  document.querySelectorAll(".table-card").forEach(card => {
+    const toolbar = card.querySelector(".table-toolbar");
+    if (toolbar) {
+      card.style.setProperty("--table-toolbar-height", `${toolbar.offsetHeight}px`);
+    }
+  });
 }
 
 function renderAll() {
@@ -688,6 +705,8 @@ let activeActivityId = null;
 let isDraftDirty = false;
 let currentSortKey = "id";
 let currentSortOrder = "asc";
+let accountReportSortKey = "id";
+let accountReportSortOrder = "asc";
 
 function renderActivities() {
   const tbody = document.getElementById("activities-table-body");
@@ -2695,7 +2714,46 @@ function renderAccountReport() {
   accountsToRender.forEach(acc => {
     const entries = accountEntries[acc.code] || [];
     const totalAcc = entries.reduce((sum, e) => sum + e.amount, 0);
-    
+
+    // Sort entries according to the current account report sort state
+    entries.sort((a, b) => {
+      let valA = "";
+      let valB = "";
+
+      switch (accountReportSortKey) {
+        case "id":
+          valA = a.activity.id;
+          valB = b.activity.id;
+          break;
+        case "name":
+          valA = a.activity.name.toLowerCase();
+          valB = b.activity.name.toLowerCase();
+          break;
+        case "date_start":
+          valA = a.activity.date_start || "";
+          valB = b.activity.date_start || "";
+          break;
+        case "department":
+          valA = (a.activity.department || "").toLowerCase();
+          valB = (b.activity.department || "").toLowerCase();
+          break;
+        case "reference":
+          valA = (a.reference || "").toLowerCase();
+          valB = (b.reference || "").toLowerCase();
+          break;
+        case "amount":
+          valA = a.amount;
+          valB = b.amount;
+          break;
+      }
+
+      if (typeof valA === "string" && typeof valB === "string") {
+        return accountReportSortOrder === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      } else {
+        return accountReportSortOrder === "asc" ? valA - valB : valB - valA;
+      }
+    });
+
     let tableRowsHtml = "";
     if (entries.length === 0) {
       tableRowsHtml = `
@@ -2729,8 +2787,8 @@ function renderAccountReport() {
     }
     
     container.innerHTML += `
-      <div class="stat-card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column; gap: 0;">
-        <div style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); background-color: var(--primary-light); display: flex; justify-content: space-between; align-items: center;">
+      <div class="stat-card" style="padding: 0; display: flex; flex-direction: column; gap: 0;">
+        <div style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); background-color: var(--primary-light); display: flex; justify-content: space-between; align-items: center; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
           <div>
             <span class="font-mono bold" style="font-size: 1.05rem; color: var(--primary);">${acc.code}</span>
             <span class="bold" style="margin-left: 12px; font-size: 0.95rem; color: var(--text-primary);">${acc.description}</span>
@@ -2744,12 +2802,12 @@ function renderAccountReport() {
           <table style="width: 100%; border-collapse: collapse;">
             <thead>
               <tr style="background-color: var(--bg-main);">
-                <th style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">N° Activité</th>
-                <th style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Nom de l'Activité</th>
-                <th style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Dates d'occupation</th>
-                <th style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Département</th>
-                <th style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">RI / Facture Réf.</th>
-                <th style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); text-align: right;">Montant</th>
+                <th data-sort="id" class="${accountReportSortKey === 'id' ? (accountReportSortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">N° Activité</th>
+                <th data-sort="name" class="${accountReportSortKey === 'name' ? (accountReportSortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Nom de l'Activité</th>
+                <th data-sort="date_start" class="${accountReportSortKey === 'date_start' ? (accountReportSortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Dates d'occupation</th>
+                <th data-sort="department" class="${accountReportSortKey === 'department' ? (accountReportSortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Département</th>
+                <th data-sort="reference" class="${accountReportSortKey === 'reference' ? (accountReportSortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">RI / Facture Réf.</th>
+                <th data-sort="amount" class="${accountReportSortKey === 'amount' ? (accountReportSortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); text-align: right;">Montant</th>
               </tr>
             </thead>
             <tbody>
@@ -2768,6 +2826,22 @@ function renderAccountReport() {
       </div>
     `;
   });
+
+  // Wire up sortable headers (delegated, since tables are rebuilt on each render)
+  container.onclick = (e) => {
+    const th = e.target.closest("th[data-sort]");
+    if (!th || !container.contains(th)) return;
+
+    const sortKey = th.getAttribute("data-sort");
+    if (accountReportSortKey === sortKey) {
+      accountReportSortOrder = accountReportSortOrder === "asc" ? "desc" : "asc";
+    } else {
+      accountReportSortKey = sortKey;
+      accountReportSortOrder = "asc";
+    }
+
+    renderAccountReport();
+  };
 }
 
 /* ==========================================================================

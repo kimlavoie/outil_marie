@@ -355,6 +355,7 @@ body {
   flex-grow: 1;
   padding: 32px;
   overflow-y: auto;
+  overflow-x: auto;
   position: relative;
 }
 
@@ -466,11 +467,14 @@ body {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
+/* Note: .table-card intentionally has no `overflow: hidden` — an overflow
+   value other than visible on an ancestor breaks position: sticky for the
+   toolbar/column headers below. Corner rounding is instead applied directly
+   to the first/last children (see .table-toolbar / .table-responsive). */
 .table-toolbar {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-color);
@@ -479,6 +483,11 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .search-wrapper {
@@ -620,7 +629,7 @@ body {
 
 .table-responsive {
   width: 100%;
-  overflow-x: auto;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 /* Core Table Element */
@@ -639,6 +648,9 @@ th {
   color: var(--text-secondary);
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: var(--table-toolbar-height, 0px);
+  z-index: 2;
 }
 
 td {
