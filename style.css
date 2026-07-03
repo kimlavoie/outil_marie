@@ -629,13 +629,65 @@ body {
 
 .table-responsive {
   width: 100%;
+}
+
+.table-responsive:last-child {
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* Pagination bar (info + prev/next + page-size select), sits below a table */
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+}
+
+.pagination-bar:empty {
+  display: none;
+}
+
+.pagination-bar:last-child {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.pagination-info {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-page-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.pagination-controls .pagination-size-select {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+.pagination-controls .btn-icon:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 /* Core Table Element */
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
 }
 

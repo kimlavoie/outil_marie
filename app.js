@@ -708,6 +708,71 @@ let currentSortOrder = "asc";
 let accountReportSortKey = "id";
 let accountReportSortOrder = "asc";
 
+// Pagination state
+let activitiesPage = 1;
+let activitiesPageSize = 10;
+let reconciliationPage = 1;
+let reconciliationPageSize = 10;
+let accountReportPageSize = 10;
+let accountReportPages = {}; // { [accountCode]: pageNumber }
+
+/* ==========================================================================
+   1.5 GENERIC TABLE PAGINATION HELPER
+   ========================================================================== */
+
+// Pure HTML builder for a pagination bar's contents. Buttons/select carry an
+// optional data-attribute (extraAttr) so a delegated listener can identify
+// which instance was interacted with when several bars share one ancestor.
+function buildPaginationBarHtml({ page, pageSize, totalItems, extraAttr = "" }) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const clampedPage = Math.min(Math.max(1, page), totalPages);
+  const startItem = (clampedPage - 1) * pageSize + 1;
+  const endItem = Math.min(clampedPage * pageSize, totalItems);
+
+  return {
+    clampedPage,
+    html: `
+      <div class="pagination-info">${startItem}–${endItem} sur ${totalItems}</div>
+      <div class="pagination-controls">
+        <button type="button" class="btn-icon pagination-prev" ${extraAttr} ${clampedPage <= 1 ? "disabled" : ""} title="Page précédente">
+          <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+        </button>
+        <span class="pagination-page-label">Page ${clampedPage} / ${totalPages}</span>
+        <button type="button" class="btn-icon pagination-next" ${extraAttr} ${clampedPage >= totalPages ? "disabled" : ""} title="Page suivante">
+          <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg>
+        </button>
+        <select class="select-input pagination-size-select" ${extraAttr} title="Lignes par page">
+          ${[5, 10, 25, 50, 100].map(n => `<option value="${n}" ${n === pageSize ? "selected" : ""}>${n} / page</option>`).join("")}
+        </select>
+      </div>
+    `
+  };
+}
+
+// Renders a pagination bar into the given container element, and wires up its
+// controls directly. Only safe for containers whose innerHTML is replaced
+// wholesale on each render (not appended to in a loop) — see
+// buildPaginationBarHtml for the loop-safe, delegation-friendly alternative.
+// Returns the (possibly clamped) current page, so callers can slice their
+// data with the corrected value.
+function renderPaginationBar(container, { page, pageSize, totalItems, onPageChange, onPageSizeChange }) {
+  if (!container) return page;
+
+  if (totalItems === 0) {
+    container.innerHTML = "";
+    return page;
+  }
+
+  const { clampedPage, html } = buildPaginationBarHtml({ page, pageSize, totalItems });
+  container.innerHTML = html;
+
+  container.querySelector(".pagination-prev").addEventListener("click", () => onPageChange(clampedPage - 1));
+  container.querySelector(".pagination-next").addEventListener("click", () => onPageChange(clampedPage + 1));
+  container.querySelector(".pagination-size-select").addEventListener("change", (e) => onPageSizeChange(parseInt(e.target.value, 10)));
+
+  return clampedPage;
+}
+
 function renderActivities() {
   const tbody = document.getElementById("activities-table-body");
   const searchQuery = document.getElementById("activity-search").value.toLowerCase();
@@ -800,10 +865,20 @@ function renderActivities() {
   
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucune activité trouvée. Cliquez sur "+ Nouvelle Activité" pour en créer une.</td></tr>`;
+    renderPaginationBar(document.getElementById("activities-pagination"), { page: activitiesPage, pageSize: activitiesPageSize, totalItems: 0, onPageChange: () => {}, onPageSizeChange: () => {} });
     return;
   }
-  
-  filtered.forEach(act => {
+
+  activitiesPage = renderPaginationBar(document.getElementById("activities-pagination"), {
+    page: activitiesPage,
+    pageSize: activitiesPageSize,
+    totalItems: filtered.length,
+    onPageChange: (p) => { activitiesPage = p; renderActivities(); },
+    onPageSizeChange: (s) => { activitiesPageSize = s; activitiesPage = 1; renderActivities(); }
+  });
+  const pageItems = filtered.slice((activitiesPage - 1) * activitiesPageSize, activitiesPage * activitiesPageSize);
+
+  pageItems.forEach(act => {
     const isFilled = act.name.trim() !== "";
     const totalRev = act.distributions.reduce((sum, d) => sum + d.amount, 0);
     
@@ -932,9 +1007,10 @@ function initFormHandlers() {
   backdrop.addEventListener("click", closeActivityDrawer);
   
   // Inputs search
-  document.getElementById("activity-search").addEventListener("input", renderActivities);
-  document.getElementById("filter-salle").addEventListener("change", renderActivities);
-  document.getElementById("filter-client-type").addEventListener("change", renderActivities);
+  const resetActivitiesPageAndRender = () => { activitiesPage = 1; renderActivities(); };
+  document.getElementById("activity-search").addEventListener("input", resetActivitiesPageAndRender);
+  document.getElementById("filter-salle").addEventListener("change", resetActivitiesPageAndRender);
+  document.getElementById("filter-client-type").addEventListener("change", resetActivitiesPageAndRender);
   
   // Account distributions buttons
   document.getElementById("form-add-distribution-btn").addEventListener("click", () => {
@@ -1668,6 +1744,7 @@ function initReconciliationHandlers() {
       document.querySelectorAll(".reconcile-tab").forEach(t => t.classList.remove("active"));
       tab.classList.add("active");
       currentReconFilter = tab.getAttribute("data-recon-filter");
+      reconciliationPage = 1;
       renderReconciliationTable();
     });
   });
@@ -1910,10 +1987,22 @@ function renderReconciliationTable() {
   
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucun enregistrement dans cette catégorie.</td></tr>`;
+    renderPaginationBar(document.getElementById("reconciliation-pagination"), { page: reconciliationPage, pageSize: reconciliationPageSize, totalItems: 0, onPageChange: () => {}, onPageSizeChange: () => {} });
     return;
   }
-  
-  filtered.forEach((r, idx) => {
+
+  reconciliationPage = renderPaginationBar(document.getElementById("reconciliation-pagination"), {
+    page: reconciliationPage,
+    pageSize: reconciliationPageSize,
+    totalItems: filtered.length,
+    onPageChange: (p) => { reconciliationPage = p; renderReconciliationTable(); },
+    onPageSizeChange: (s) => { reconciliationPageSize = s; reconciliationPage = 1; renderReconciliationTable(); }
+  });
+  const startIdx = (reconciliationPage - 1) * reconciliationPageSize;
+  const pageItems = filtered.slice(startIdx, startIdx + reconciliationPageSize);
+
+  pageItems.forEach((r, localIdx) => {
+    const idx = startIdx + localIdx;
     // Badges definitions
     const badgeHtml = {
       valid: `<span class="badge badge-success">Conforme</span>`,
@@ -2754,6 +2843,13 @@ function renderAccountReport() {
       }
     });
 
+    // Paginate this account's entries independently from the other fiches
+    const accountPage = accountReportPages[acc.code] || 1;
+    const totalPages = Math.max(1, Math.ceil(entries.length / accountReportPageSize));
+    const clampedAccountPage = Math.min(Math.max(1, accountPage), totalPages);
+    const pageStartIdx = (clampedAccountPage - 1) * accountReportPageSize;
+    const pageEntries = entries.slice(pageStartIdx, pageStartIdx + accountReportPageSize);
+
     let tableRowsHtml = "";
     if (entries.length === 0) {
       tableRowsHtml = `
@@ -2764,7 +2860,7 @@ function renderAccountReport() {
         </tr>
       `;
     } else {
-      entries.forEach(e => {
+      pageEntries.forEach(e => {
         const act = e.activity;
         let datesText = "-";
         if (act.date_start && act.date_end) {
@@ -2799,7 +2895,7 @@ function renderAccountReport() {
         </div>
         
         <div class="table-responsive">
-          <table style="width: 100%; border-collapse: collapse;">
+          <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
             <thead>
               <tr style="background-color: var(--bg-main);">
                 <th data-sort="id" class="${accountReportSortKey === 'id' ? (accountReportSortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">N° Activité</th>
@@ -2823,24 +2919,53 @@ function renderAccountReport() {
             </tbody>
           </table>
         </div>
+        <div class="pagination-bar">${
+          entries.length > 0
+            ? buildPaginationBarHtml({
+                page: clampedAccountPage,
+                pageSize: accountReportPageSize,
+                totalItems: entries.length,
+                extraAttr: `data-account="${acc.code}"`
+              }).html
+            : ""
+        }</div>
       </div>
     `;
   });
 
-  // Wire up sortable headers (delegated, since tables are rebuilt on each render)
+  // Wire up sortable headers and pagination controls (delegated, since the
+  // per-account cards are rebuilt via innerHTML += on every render, which
+  // would otherwise tear down any directly-attached listeners)
   container.onclick = (e) => {
     const th = e.target.closest("th[data-sort]");
-    if (!th || !container.contains(th)) return;
-
-    const sortKey = th.getAttribute("data-sort");
-    if (accountReportSortKey === sortKey) {
-      accountReportSortOrder = accountReportSortOrder === "asc" ? "desc" : "asc";
-    } else {
-      accountReportSortKey = sortKey;
-      accountReportSortOrder = "asc";
+    if (th && container.contains(th)) {
+      const sortKey = th.getAttribute("data-sort");
+      if (accountReportSortKey === sortKey) {
+        accountReportSortOrder = accountReportSortOrder === "asc" ? "desc" : "asc";
+      } else {
+        accountReportSortKey = sortKey;
+        accountReportSortOrder = "asc";
+      }
+      renderAccountReport();
+      return;
     }
 
-    renderAccountReport();
+    const pageBtn = e.target.closest(".pagination-prev, .pagination-next");
+    if (pageBtn && container.contains(pageBtn)) {
+      const code = pageBtn.getAttribute("data-account");
+      const currentPage = accountReportPages[code] || 1;
+      accountReportPages[code] = pageBtn.classList.contains("pagination-prev") ? currentPage - 1 : currentPage + 1;
+      renderAccountReport();
+    }
+  };
+
+  container.onchange = (e) => {
+    const select = e.target.closest(".pagination-size-select");
+    if (select && container.contains(select)) {
+      accountReportPageSize = parseInt(select.value, 10);
+      accountReportPages = {};
+      renderAccountReport();
+    }
   };
 }
 
