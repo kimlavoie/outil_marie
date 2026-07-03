@@ -112,6 +112,14 @@
         </div>
       </header>
 
+      <!-- Global Backup Reminder Alert Banner -->
+      <div id="backup-reminder-banner" class="backup-alert-banner" style="display: none;">
+        <span id="backup-alert-text" class="backup-alert-message">
+          <!-- Dynamically populated via JS -->
+        </span>
+        <button id="backup-banner-action-btn" class="btn-warning-outline">Sauvegarder maintenant</button>
+      </div>
+
       <!-- View Containers -->
       <div class="view-container">
         
@@ -400,6 +408,35 @@
               </div>
             </div>
 
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+            <div class="stat-card" style="gap: 16px;">
+              <h3 class="chart-title">Statut de la Sauvegarde</h3>
+              <p style="font-size: 0.9rem; color: var(--text-secondary);">Consultez la date de la dernière exportation réussie et le statut actuel.</p>
+              <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.95rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                  <span style="color: var(--text-secondary);">Dernière sauvegarde :</span>
+                  <span id="backup-status-date" style="font-weight: 600;">Aucune sauvegarde effectuée</span>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 4px;">
+                  <span style="color: var(--text-secondary);">Statut :</span>
+                  <span id="backup-status-badge-container">
+                    <!-- populated dynamically via JS -->
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card" style="gap: 16px;">
+              <h3 class="chart-title">Paramètres de Rappel</h3>
+              <p style="font-size: 0.9rem; color: var(--text-secondary);">Configurez le nombre de jours au-delà duquel un rappel de sauvegarde vous sera présenté.</p>
+              <div style="display: flex; align-items: center; gap: 12px; margin-top: auto; margin-bottom: auto; background-color: var(--bg-main); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <label for="backup-reminder-days-input" style="font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); cursor: pointer;">Rappeler après :</label>
+                <input type="number" id="backup-reminder-days-input" class="form-input" min="1" max="365" style="width: 80px; padding: 6px 10px; text-align: center;" value="7">
+                <span style="font-size: 0.9rem; color: var(--text-secondary);">jours</span>
+              </div>
+            </div>
           </div>
 
           <!-- Danger Zone to clear local database -->

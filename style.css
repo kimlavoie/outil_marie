@@ -1555,3 +1555,63 @@ label {
   opacity: 1;
   color: var(--primary);
 }
+
+/* Backup alert banner styles */
+.backup-alert-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background-color: var(--warning-light);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  margin: 20px 24px 0 24px;
+  color: var(--warning-text);
+  font-weight: 500;
+  font-size: 0.9rem;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.backup-alert-banner .alert-icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.backup-alert-banner .backup-alert-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-warning-outline {
+  background-color: transparent;
+  border: 1px solid var(--warning);
+  color: var(--warning-text);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-warning-outline:hover {
+  background-color: var(--warning);
+  color: var(--bg-card);
+}
+
