@@ -857,10 +857,17 @@
       </button>
     </div>
     <div class="modal-content">
-      <div class="event-calendar-header">
-        <button type="button" id="event-calendar-prev-btn" class="calendar-nav-btn">&lt;</button>
-        <span id="event-calendar-month-label" class="event-calendar-month-label"></span>
-        <button type="button" id="event-calendar-next-btn" class="calendar-nav-btn">&gt;</button>
+      <div class="event-calendar-toolbar">
+        <div class="event-calendar-header">
+          <button type="button" id="event-calendar-prev-btn" class="calendar-nav-btn">&lt;</button>
+          <span id="event-calendar-month-label" class="event-calendar-month-label"></span>
+          <button type="button" id="event-calendar-next-btn" class="calendar-nav-btn">&gt;</button>
+        </div>
+        <div class="event-calendar-view-switch">
+          <button type="button" class="event-calendar-view-btn" data-view="day">Jour</button>
+          <button type="button" class="event-calendar-view-btn" data-view="week">Semaine</button>
+          <button type="button" class="event-calendar-view-btn active" data-view="month">Mois</button>
+        </div>
       </div>
       <div id="event-calendar-legend" class="event-calendar-legend"></div>
       <div id="event-calendar-grid" class="event-calendar-grid"></div>
