@@ -198,6 +198,10 @@
                   <option value="interne">Interne</option>
                   <option value="externe">Externe</option>
                 </select>
+                <button id="open-calendar-btn" class="btn btn-secondary" title="Voir le calendrier des événements">
+                  <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H5V8h14v13zM7 10h5v5H7z"/></svg>
+                  Calendrier
+                </button>
               </div>
             </div>
             
@@ -738,9 +742,15 @@
     <div class="modal-content">
       <form id="room-form">
         <input type="hidden" id="form-room-original-name">
-        <div class="form-group">
-          <label for="form-room-name">Nom de la salle</label>
-          <input type="text" id="form-room-name" class="form-input" required placeholder="Ex: POLY">
+        <div class="form-group-row">
+          <div class="form-group" style="flex-grow: 1;">
+            <label for="form-room-name">Nom de la salle</label>
+            <input type="text" id="form-room-name" class="form-input" required placeholder="Ex: POLY">
+          </div>
+          <div class="form-group" style="flex-grow: 0;">
+            <label for="form-room-color">Couleur</label>
+            <input type="color" id="form-room-color" class="form-input" value="#4f46e5" style="width: 56px; padding: 4px; cursor: pointer;">
+          </div>
         </div>
         <div class="form-group-row">
           <div class="form-group">
@@ -838,7 +848,40 @@
     </div>
   </div>
 
-  <!-- Main JavaScript File -->
-  <script src="app.js"></script>
+  <!-- 7. Activities Calendar Modal -->
+  <div id="calendar-modal" class="modal" style="width: 980px; max-width: 96vw;">
+    <div class="modal-header">
+      <h3 class="modal-title">Calendrier des activités</h3>
+      <button id="calendar-modal-close" class="btn-icon">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="modal-content">
+      <div class="event-calendar-header">
+        <button type="button" id="event-calendar-prev-btn" class="calendar-nav-btn">&lt;</button>
+        <span id="event-calendar-month-label" class="event-calendar-month-label"></span>
+        <button type="button" id="event-calendar-next-btn" class="calendar-nav-btn">&gt;</button>
+      </div>
+      <div id="event-calendar-legend" class="event-calendar-legend"></div>
+      <div id="event-calendar-grid" class="event-calendar-grid"></div>
+    </div>
+    <div class="modal-footer">
+      <button id="calendar-modal-close-btn" class="btn btn-secondary">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Application Logic (order matters: each file depends on the ones before it) -->
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/activities.js"></script>
+  <script src="js/reconciliation.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/backup.js"></script>
+  <script src="js/account-report.js"></script>
+  <script src="js/datepicker.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
