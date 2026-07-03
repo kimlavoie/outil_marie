@@ -118,6 +118,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initSettingsHandlers();
   initReconciliationHandlers();
   initBackupHandlers();
+  initCustomDatepickers();
+  initActivitiesSort();
   
   // Render initial views
   renderAll();
@@ -138,6 +140,11 @@ function loadDatabase() {
       if (!appState.settings.accounts) appState.settings.accounts = [...DEFAULT_CONFIG.accounts];
       if (!appState.settings.rooms) appState.settings.rooms = [...DEFAULT_CONFIG.rooms];
       if (!appState.settings.departments) appState.settings.departments = [...DEFAULT_CONFIG.departments];
+      
+      // Sort accounts by code
+      if (appState.settings.accounts) {
+        appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
+      }
     } catch (e) {
       console.error("Error parsing local database, using defaults", e);
       seedDatabase();
@@ -153,7 +160,7 @@ function seedDatabase() {
     theme: "dark",
     rooms: [...DEFAULT_CONFIG.rooms],
     departments: [...DEFAULT_CONFIG.departments],
-    accounts: [...DEFAULT_CONFIG.accounts]
+    accounts: [...DEFAULT_CONFIG.accounts].sort((a, b) => a.code.localeCompare(b.code))
   };
   
   appState.activities = [];
@@ -575,6 +582,9 @@ function renderDashboardCharts() {
    ========================================================================== */
 
 let activeActivityId = null;
+let isDraftDirty = false;
+let currentSortKey = "id";
+let currentSortOrder = "asc";
 
 function renderActivities() {
   const tbody = document.getElementById("activities-table-body");
@@ -609,6 +619,61 @@ function renderActivities() {
     }
     
     return matchesSearch && matchesSalle && matchesClientType && matchesPeriod;
+  });
+  
+  // Sort filtered activities
+  filtered.sort((a, b) => {
+    let valA = "";
+    let valB = "";
+    
+    switch (currentSortKey) {
+      case "id":
+        valA = a.id;
+        valB = b.id;
+        break;
+      case "name":
+        valA = a.name.toLowerCase();
+        valB = b.name.toLowerCase();
+        break;
+      case "responsable":
+        valA = (a.responsable || "").toLowerCase();
+        valB = (b.responsable || "").toLowerCase();
+        break;
+      case "date_start":
+        valA = a.date_start || "";
+        valB = b.date_start || "";
+        break;
+      case "room_name":
+        valA = (a.room_name || "").toLowerCase();
+        valB = (b.room_name || "").toLowerCase();
+        break;
+      case "reference":
+        valA = (a.reference || "").toLowerCase();
+        valB = (b.reference || "").toLowerCase();
+        break;
+      case "totalRev":
+        valA = a.distributions.reduce((sum, d) => sum + d.amount, 0);
+        valB = b.distributions.reduce((sum, d) => sum + d.amount, 0);
+        break;
+      case "sansFrais":
+        const daysA = calculateDaysCount(a.date_start, a.date_end);
+        const roomA = appState.settings.rooms.find(r => r.name === a.room_name);
+        const priceA = roomA ? roomA.price_internal : 0;
+        valA = a.client_type === "interne" ? (daysA * priceA) : 0;
+        
+        const daysB = calculateDaysCount(b.date_start, b.date_end);
+        const roomB = appState.settings.rooms.find(r => r.name === b.room_name);
+        const priceB = roomB ? roomB.price_internal : 0;
+        valB = b.client_type === "interne" ? (daysB * priceB) : 0;
+        break;
+    }
+    
+    // Use localeCompare for strings (accents robust) and subtraction for numbers
+    if (typeof valA === "string" && typeof valB === "string") {
+      return currentSortOrder === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    } else {
+      return currentSortOrder === "asc" ? valA - valB : valB - valA;
+    }
   });
   
   if (filtered.length === 0) {
@@ -688,9 +753,12 @@ function renderActivities() {
         <td class="font-mono">${isFilled && act.reference ? act.reference : '-'}</td>
         <td class="bold">${isFilled ? formatCurrency(totalRev) : '-'}</td>
         <td style="color: var(--text-muted);">${sansFraisText}</td>
-        <td class="text-right">
-          <button class="btn-icon edit-act-btn" data-id="${act.id}" title="Modifier">
-            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        <td class="text-right" style="white-space: nowrap;">
+          <button class="btn-icon edit-act-btn" data-id="${act.id}" title="Modifier" style="margin-right: 4px;">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </button>
+          <button class="btn-icon delete-act-list-btn" data-id="${act.id}" title="Supprimer" style="color: var(--danger);">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
           </button>
         </td>
       </tr>
@@ -703,6 +771,21 @@ function renderActivities() {
       openActivityDrawer(btn.getAttribute("data-id"));
     });
   });
+  
+  // Attach delete buttons event listeners
+  document.querySelectorAll(".delete-act-list-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-id");
+      if (confirm(`Voulez-vous vraiment supprimer l'activité ${id} ?`)) {
+        appState.activities = appState.activities.filter(a => a.id !== id);
+        saveDatabase();
+        if (ledgerTransactions.length > 0) {
+          reconcileLedger();
+        }
+        renderAll();
+      }
+    });
+  });
 }
 
 function initFormHandlers() {
@@ -711,7 +794,6 @@ function initFormHandlers() {
   
   // Open drawers buttons
   document.getElementById("add-activity-btn-quick").addEventListener("click", () => openActivityDrawer());
-  document.getElementById("add-activity-btn-main").addEventListener("click", () => openActivityDrawer());
   
   // Close buttons
   document.getElementById("activity-drawer-close").addEventListener("click", closeActivityDrawer);
@@ -724,13 +806,41 @@ function initFormHandlers() {
   document.getElementById("filter-client-type").addEventListener("change", renderActivities);
   
   // Account distributions buttons
-  document.getElementById("form-add-distribution-btn").addEventListener("click", () => addDistributionRow("", 0));
+  document.getElementById("form-add-distribution-btn").addEventListener("click", () => {
+    addDistributionRow("", 0);
+    // Mark as dirty if adding a row in New Mode
+    const internalId = document.getElementById("form-activity-internal-id").value;
+    if (!internalId) {
+      isDraftDirty = true;
+    }
+  });
   
   // Submit Form
   document.getElementById("activity-drawer-submit").addEventListener("click", submitActivityForm);
   
   // Delete Button
   document.getElementById("activity-drawer-delete").addEventListener("click", deleteActivity);
+
+  // Mark form as dirty when inputs are typed or changed
+  const actForm = document.getElementById("activity-form");
+  actForm.addEventListener("input", () => {
+    const internalId = document.getElementById("form-activity-internal-id").value;
+    if (!internalId) {
+      isDraftDirty = true;
+    }
+  });
+  actForm.addEventListener("change", () => {
+    const internalId = document.getElementById("form-activity-internal-id").value;
+    if (!internalId) {
+      isDraftDirty = true;
+    }
+  });
+  
+  // Dates helper updates
+  document.getElementById("form-activity-start").addEventListener("input", updateFormDatesHelper);
+  document.getElementById("form-activity-start").addEventListener("change", updateFormDatesHelper);
+  document.getElementById("form-activity-end").addEventListener("input", updateFormDatesHelper);
+  document.getElementById("form-activity-end").addEventListener("change", updateFormDatesHelper);
   
   // Keyboard Shortcuts: Navigation, Add, and Escape
   window.addEventListener("keydown", (e) => {
@@ -771,12 +881,12 @@ function openActivityDrawer(id = null) {
   const deleteBtn = document.getElementById("activity-drawer-delete");
   const titleEl = document.getElementById("activity-drawer-title");
   
-  form.reset();
-  document.getElementById("form-distribution-list").innerHTML = "";
-  document.getElementById("form-distribution-total-val").textContent = "0,00 $";
-  
   if (id) {
-    // Edit Mode
+    // Edit Mode (Always reset and load the active activity)
+    form.reset();
+    document.getElementById("form-distribution-list").innerHTML = "";
+    document.getElementById("form-distribution-total-val").textContent = "0,00 $";
+    
     titleEl.textContent = `Modifier l'activité ${id}`;
     const act = appState.activities.find(a => a.id === id);
     if (act) {
@@ -805,32 +915,58 @@ function openActivityDrawer(id = null) {
   } else {
     // New Mode
     titleEl.textContent = "Ajouter une activité";
-    document.getElementById("form-activity-internal-id").value = "";
-    document.getElementById("form-activity-id").value = "";
-    document.getElementById("form-activity-id").disabled = false;
-    document.getElementById("form-activity-id").placeholder = "Ex: SFB 2627-032";
     
-    // Defaults for dates
-    document.getElementById("form-activity-start").value = new Date().toISOString().split('T')[0];
-    document.getElementById("form-activity-end").value = new Date().toISOString().split('T')[0];
-    
-    // Add one blank distribution row
-    addDistributionRow("", 0);
+    // Only reset and build a fresh form if there is no active draft
+    if (!isDraftDirty) {
+      form.reset();
+      document.getElementById("form-distribution-list").innerHTML = "";
+      document.getElementById("form-distribution-total-val").textContent = "0,00 $";
+      
+      document.getElementById("form-activity-internal-id").value = "";
+      
+      // Auto-generate ID: XXYY-ZZZ based on selected fiscal year
+      const prefix = appState.selected_year.split("-").map(y => y.substring(2)).join("");
+      
+      let maxSeq = 0;
+      const regex = new RegExp(`^${prefix}-(\\d{3})$`);
+      appState.activities.forEach(act => {
+        const match = act.id.match(regex);
+        if (match) {
+          const seq = parseInt(match[1]);
+          if (seq > maxSeq) {
+            maxSeq = seq;
+          }
+        }
+      });
+      const nextSeq = String(maxSeq + 1).padStart(3, '0');
+      const generatedId = `${prefix}-${nextSeq}`;
+      
+      document.getElementById("form-activity-id").value = generatedId;
+      document.getElementById("form-activity-id").disabled = true; // Auto-generated, no manual edits
+      
+      // Defaults for dates
+      document.getElementById("form-activity-start").value = new Date().toISOString().split('T')[0];
+      document.getElementById("form-activity-end").value = new Date().toISOString().split('T')[0];
+      
+      // Add one blank distribution row
+      addDistributionRow("", 0);
+      
+      // Reset draft flag
+      isDraftDirty = false;
+    }
     
     // Hide delete button
     deleteBtn.style.display = "none";
   }
   
+  updateFormDatesHelper();
+  
   drawer.classList.add("active");
   backdrop.classList.add("active");
   
-  // Set cursor focus on first relevant field after transition slides in
+  // Set cursor focus directly on the first editable field (Nom de l'activité)
   setTimeout(() => {
-    if (id) {
-      document.getElementById("form-activity-name").focus();
-    } else {
-      document.getElementById("form-activity-id").focus();
-    }
+    document.getElementById("form-activity-name").focus();
   }, 150);
 }
 
@@ -851,10 +987,10 @@ function addDistributionRow(accountCode = "", amount = 0) {
   
   const rowHtml = `
     <div id="${rowId}" class="distribution-row">
-      <select class="select-input dist-account-select" required style="padding: 8px 12px; font-size: 0.85rem;">
+      <select class="select-input dist-account-select" style="padding: 8px 12px; font-size: 0.85rem;">
         ${optionsHtml}
       </select>
-      <input type="number" class="form-input dist-amount-input" required min="0" step="0.01" value="${amount > 0 ? amount : ''}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" class="form-input dist-amount-input" min="0" step="0.01" value="${amount > 0 ? amount : ''}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
       <button type="button" class="btn-icon delete-dist-row-btn" data-row-id="${rowId}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
@@ -868,6 +1004,11 @@ function addDistributionRow(accountCode = "", amount = 0) {
   newRow.querySelector(".delete-dist-row-btn").addEventListener("click", () => {
     newRow.remove();
     updateDistributionTotal();
+    // Mark as dirty if removing a row in New Mode
+    const internalId = document.getElementById("form-activity-internal-id").value;
+    if (!internalId) {
+      isDraftDirty = true;
+    }
   });
   
   newRow.querySelector(".dist-amount-input").addEventListener("input", updateDistributionTotal);
@@ -905,6 +1046,17 @@ function submitActivityForm(e) {
     return;
   }
   
+  // Date format YYYY-MM-DD validation
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(start) || isNaN(new Date(start).getTime())) {
+    alert("La date de début doit être au format AAAA-MM-JJ (ex: 2026-09-01) et être une date valide.");
+    return;
+  }
+  if (!dateRegex.test(end) || isNaN(new Date(end).getTime())) {
+    alert("La date de fin doit être au format AAAA-MM-JJ (ex: 2026-09-03) et être une date valide.");
+    return;
+  }
+  
   if (new Date(start) > new Date(end)) {
     alert("La date de début doit être antérieure ou égale à la date de fin.");
     return;
@@ -912,23 +1064,26 @@ function submitActivityForm(e) {
   
   // Build distributions array
   const distributions = [];
-  let distError = false;
+  let distErrorMsg = "";
   
   document.querySelectorAll(".distribution-row").forEach(row => {
     const acc = row.querySelector(".dist-account-select").value;
-    const amt = parseFloat(row.querySelector(".dist-amount-input").value) || 0;
+    const amtStr = row.querySelector(".dist-amount-input").value.trim();
+    const amt = parseFloat(amtStr) || 0;
     
-    if (acc) {
-      if (amt <= 0) {
-        distError = true;
-      } else {
-        distributions.push({ account_code: acc, amount: amt });
-      }
+    if (acc && !amtStr) {
+      distErrorMsg = "Veuillez entrer un montant pour chaque compte sélectionné.";
+    } else if (acc && amt <= 0) {
+      distErrorMsg = "Le montant d'une ventilation doit être supérieur à 0 $.";
+    } else if (!acc && amtStr) {
+      distErrorMsg = "Veuillez sélectionner un compte pour chaque montant de ventilation saisi.";
+    } else if (acc && amt > 0) {
+      distributions.push({ account_code: acc, amount: amt });
     }
   });
   
-  if (distError) {
-    alert("Le montant d'une ventilation doit être supérieur à 0 $.");
+  if (distErrorMsg) {
+    alert(distErrorMsg);
     return;
   }
   
@@ -965,6 +1120,7 @@ function submitActivityForm(e) {
   
   saveDatabase();
   closeActivityDrawer();
+  isDraftDirty = false; // Reset draft flag upon successful submit
   
   // Re-run validation if ledger has been loaded to update statuses immediately!
   if (ledgerTransactions.length > 0) {
@@ -1554,6 +1710,9 @@ function submitAccountForm(e) {
     appState.settings.accounts.push(payload);
   }
   
+  // Sort accounts by code
+  appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
+  
   saveDatabase();
   closeSettingsModal("account");
   populateDropdowns();
@@ -1790,6 +1949,10 @@ function handleJsonBackupFile(file) {
       if (parsed.settings && parsed.activities) {
         if (confirm("La restauration va écraser la base de données actuelle. Continuer ?")) {
           appState = parsed;
+          // Sort accounts on restoration
+          if (appState.settings && appState.settings.accounts) {
+            appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
+          }
           saveDatabase();
           applyTheme(appState.settings.theme || "dark");
           renderAll();
@@ -2199,4 +2362,254 @@ function populateFiscalYears() {
     const isSelected = fy === appState.selected_year ? 'selected' : '';
     select.innerHTML += `<option value="${fy}" ${isSelected}>${fy}</option>`;
   });
+}
+
+function maskDateInput(input) {
+  input.addEventListener("input", (e) => {
+    // Let the user delete normally with backspace
+    if (e.inputType === "deleteContentBackward") {
+      return;
+    }
+    
+    let value = input.value.replace(/\D/g, ""); // Keep only digits
+    if (value.length > 8) {
+      value = value.substring(0, 8);
+    }
+    
+    let formatted = "";
+    if (value.length > 0) {
+      formatted += value.substring(0, 4); // YYYY
+    }
+    if (value.length > 4) {
+      formatted += "-" + value.substring(4, 6); // -MM
+    }
+    if (value.length > 6) {
+      formatted += "-" + value.substring(6, 8); // -DD
+    }
+    
+    input.value = formatted;
+  });
+}
+
+function initCustomDatepickers() {
+  const wrappers = document.querySelectorAll(".datepicker-wrapper");
+  
+  wrappers.forEach(wrapper => {
+    const input = wrapper.querySelector(".form-input");
+    const btn = wrapper.querySelector(".datepicker-trigger-btn");
+    const popover = wrapper.querySelector(".calendar-popover");
+    
+    // Auto-mask date formatting on keyboard input
+    maskDateInput(input);
+    
+    let currentDate = new Date(); // Tracks the displayed month
+    
+    // Close when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!wrapper.contains(e.target)) {
+        popover.classList.remove("active");
+      }
+    });
+    
+    btn.addEventListener("click", () => {
+      // Toggle active
+      const wasActive = popover.classList.contains("active");
+      document.querySelectorAll(".calendar-popover").forEach(p => p.classList.remove("active"));
+      
+      if (!wasActive) {
+        // Set display month based on input value if valid
+        const val = input.value;
+        const parsed = new Date(val);
+        if (val && !isNaN(parsed.getTime())) {
+          currentDate = parsed;
+        } else {
+          currentDate = new Date();
+        }
+        renderCalendar(popover, input, currentDate);
+        popover.classList.add("active");
+      }
+    });
+  });
+}
+
+function renderCalendar(popover, input, displayDate) {
+  const year = displayDate.getFullYear();
+  const month = displayDate.getMonth(); // 0-11
+  
+  // Month names in French
+  const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+  
+  // Days of week headers
+  const daysHeaderHtml = ["D", "L", "M", "M", "J", "V", "S"].map(d => `<div class="calendar-day-header">${d}</div>`).join("");
+  
+  // First day of current month (0: Sunday, 1: Monday, etc)
+  const firstDayIndex = new Date(year, month, 1).getDay();
+  
+  // Last day of current month (number of days)
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  
+  // Last day of previous month
+  const prevLastDay = new Date(year, month, 0).getDate();
+  
+  let daysHtml = "";
+  
+  // Render empty cells for previous month padding
+  for (let x = firstDayIndex; x > 0; x--) {
+    daysHtml += `<div class="calendar-day other-month">${prevLastDay - x + 1}</div>`;
+  }
+  
+  // Render current month days
+  const activeVal = input.value;
+  const activeDate = activeVal ? new Date(activeVal) : null;
+  const activeYear = activeDate ? activeDate.getFullYear() : null;
+  const activeMonth = activeDate ? activeDate.getMonth() : null;
+  const activeDay = activeDate ? activeDate.getDate() : null;
+  
+  for (let i = 1; i <= lastDay; i++) {
+    const isSelected = (activeYear === year && activeMonth === month && activeDay === i) ? "selected" : "";
+    daysHtml += `<div class="calendar-day ${isSelected}" data-day="${i}">${i}</div>`;
+  }
+  
+  // Render next month padding to complete 42 grid cells
+  const totalCells = firstDayIndex + lastDay;
+  const nextMonthPadding = 42 - totalCells;
+  for (let j = 1; j <= nextMonthPadding; j++) {
+    daysHtml += `<div class="calendar-day other-month">${j}</div>`;
+  }
+  
+  popover.innerHTML = `
+    <div class="calendar-header">
+      <button type="button" class="calendar-nav-btn prev-btn">&lt;</button>
+      <span>${monthNames[month]} ${year}</span>
+      <button type="button" class="calendar-nav-btn next-btn">&gt;</button>
+    </div>
+    <div class="calendar-grid">
+      ${daysHeaderHtml}
+      ${daysHtml}
+    </div>
+  `;
+  
+  // Wire nav buttons
+  popover.querySelector(".prev-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    displayDate.setMonth(displayDate.getMonth() - 1);
+    renderCalendar(popover, input, displayDate);
+  });
+  
+  popover.querySelector(".next-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    displayDate.setMonth(displayDate.getMonth() + 1);
+    renderCalendar(popover, input, displayDate);
+  });
+  
+  // Wire day clicks
+  popover.querySelectorAll(".calendar-grid .calendar-day").forEach(dayEl => {
+    dayEl.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const day = dayEl.getAttribute("data-day");
+      if (day) {
+        const paddedMonth = String(month + 1).padStart(2, '0');
+        const paddedDay = String(day).padStart(2, '0');
+        input.value = `${year}-${paddedMonth}-${paddedDay}`;
+        popover.classList.remove("active");
+        
+        // Dispatch input event so validation runs if needed
+        input.dispatchEvent(new Event("change"));
+        input.dispatchEvent(new Event("input"));
+      }
+    });
+  });
+}
+
+function initActivitiesSort() {
+  const headers = document.querySelectorAll("#view-activities table th[data-sort]");
+  
+  // Set initial class on default sort key header
+  const defaultTh = document.querySelector(`#view-activities table th[data-sort="${currentSortKey}"]`);
+  if (defaultTh) {
+    defaultTh.classList.add(currentSortOrder === "asc" ? "sort-asc" : "sort-desc");
+  }
+  
+  headers.forEach(th => {
+    th.addEventListener("click", () => {
+      const sortKey = th.getAttribute("data-sort");
+      if (currentSortKey === sortKey) {
+        currentSortOrder = currentSortOrder === "asc" ? "desc" : "asc";
+      } else {
+        currentSortKey = sortKey;
+        currentSortOrder = "asc";
+      }
+      
+      // Update header classes
+      headers.forEach(h => {
+        h.classList.remove("sort-asc", "sort-desc");
+      });
+      th.classList.add(currentSortOrder === "asc" ? "sort-asc" : "sort-desc");
+      
+      renderActivities();
+    });
+  });
+}
+
+/* ==========================================================================
+   3.8 FORM DATES HELPER FUNCTIONS
+   ========================================================================== */
+
+function updateFormDatesHelper() {
+  const startVal = document.getElementById("form-activity-start").value;
+  const endVal = document.getElementById("form-activity-end").value;
+  const helperEl = document.getElementById("form-activity-dates-helper");
+  const listEl = document.getElementById("form-activity-days-list");
+  
+  if (!helperEl || !listEl) return;
+  
+  const daysText = getDaysOfWeekInRange(startVal, endVal);
+  if (daysText) {
+    listEl.textContent = daysText;
+    helperEl.style.display = "flex";
+  } else {
+    helperEl.style.display = "none";
+  }
+}
+
+function getDaysOfWeekInRange(startDateStr, endDateStr) {
+  if (!startDateStr || !endDateStr) return "";
+  
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+    return "";
+  }
+  
+  // French day names
+  const dayNames = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+  
+  const uniqueDays = new Set();
+  let current = new Date(start);
+  
+  // Limit loop to prevent freezing if dates are extremely far apart (e.g. max 31 days)
+  const maxIterations = 31;
+  let iterations = 0;
+  
+  while (current <= end && iterations < maxIterations) {
+    uniqueDays.add(current.getDay());
+    current.setDate(current.getDate() + 1);
+    iterations++;
+  }
+  
+  // Sort day indexes (1=lundi, 2=mardi, ... 6=samedi, 0=dimanche)
+  const sortedDays = Array.from(uniqueDays).sort((a, b) => {
+    const orderA = a === 0 ? 7 : a;
+    const orderB = b === 0 ? 7 : b;
+    return orderA - orderB;
+  });
+  
+  const dayStrings = sortedDays.map(d => dayNames[d]);
+  
+  if (iterations >= maxIterations) {
+    return "Tous les jours de la semaine";
+  }
+  
+  return dayStrings.join(", ");
 }

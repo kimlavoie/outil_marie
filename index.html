@@ -190,9 +190,6 @@
                   <option value="interne">Interne</option>
                   <option value="externe">Externe</option>
                 </select>
-                <button id="add-activity-btn-main" class="btn btn-primary" title="Raccourci : Alt + N (ou Alt + A)">
-                  + Ajouter
-                </button>
               </div>
             </div>
             
@@ -200,15 +197,15 @@
               <table>
                 <thead>
                   <tr>
-                    <th>N° Activité</th>
-                    <th>Nom de l'Activité</th>
-                    <th>Responsable</th>
-                    <th>Dates / Occ.</th>
-                    <th>Salle</th>
-                    <th>RI / Facture</th>
-                    <th>Revenu Saisi</th>
-                    <th>Sans Frais</th>
-                    <th class="text-right">Actions</th>
+                    <th data-sort="id">N° Activité</th>
+                    <th data-sort="name">Nom de l'Activité</th>
+                    <th data-sort="responsable">Responsable</th>
+                    <th data-sort="date_start">Dates / Occ.</th>
+                    <th data-sort="room_name">Salle</th>
+                    <th data-sort="reference">RI / Facture</th>
+                    <th data-sort="totalRev">Revenu Saisi</th>
+                    <th data-sort="sansFrais">Sans Frais</th>
+                    <th class="text-right" style="width: 100px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="activities-table-body">
@@ -439,8 +436,8 @@
         <input type="hidden" id="form-activity-internal-id">
         
         <div class="form-group">
-          <label for="form-activity-id">Numéro d'activité (Ex: SFB 2627-001)</label>
-          <input type="text" id="form-activity-id" class="form-input" required placeholder="SFB 2627-XXX">
+          <label for="form-activity-id">Numéro d'activité (Généré automatiquement, ex: 2627-001)</label>
+          <input type="text" id="form-activity-id" class="form-input" required placeholder="Généré automatiquement" disabled>
         </div>
         
         <div class="form-group">
@@ -464,13 +461,31 @@
 
         <div class="form-group-row">
           <div class="form-group">
-            <label for="form-activity-start">Date Début</label>
-            <input type="date" id="form-activity-start" class="form-input" required>
+            <label for="form-activity-start">Date Début (AAAA-MM-JJ)</label>
+            <div class="datepicker-wrapper">
+              <input type="text" id="form-activity-start" class="form-input" required placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
+              <button type="button" class="datepicker-trigger-btn" data-target="form-activity-start" title="Sélectionner depuis le calendrier">
+                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
+              </button>
+              <div class="calendar-popover" id="cal-popover-form-activity-start"></div>
+            </div>
           </div>
           <div class="form-group">
-            <label for="form-activity-end">Date Fin</label>
-            <input type="date" id="form-activity-end" class="form-input" required>
+            <label for="form-activity-end">Date Fin (AAAA-MM-JJ)</label>
+            <div class="datepicker-wrapper">
+              <input type="text" id="form-activity-end" class="form-input" required placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
+              <button type="button" class="datepicker-trigger-btn" data-target="form-activity-end" title="Sélectionner depuis le calendrier">
+                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
+              </button>
+              <div class="calendar-popover" id="cal-popover-form-activity-end"></div>
+            </div>
           </div>
+        </div>
+        
+        <!-- Help text for days of the week -->
+        <div id="form-activity-dates-helper" style="margin-top: -8px; margin-bottom: 12px; font-size: 0.78rem; color: var(--text-secondary); display: none; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: var(--primary);"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm3.3 14.3L11 12.5V7h1.5v4.7l3.7 2.2-.7 1.4z"/></svg>
+          <span><strong>Jours de la semaine :</strong> <span id="form-activity-days-list" style="color: var(--text-primary);"></span></span>
         </div>
 
         <div class="form-group-row">
@@ -504,7 +519,7 @@
         </div>
 
         <div class="form-group">
-          <label for="form-activity-ref">Numéro Facture, RI ou Encaissement (Clé de Rapprochement)</label>
+          <label for="form-activity-ref">Numéro Facture, RI ou Encaissement (Optionnel - Clé de Rapprochement)</label>
           <input type="text" id="form-activity-ref" class="form-input" placeholder="RIXXXXXX, Numéro 162XXX, etc.">
         </div>
 
