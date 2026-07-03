@@ -1,2 +1,0 @@
-Ne rien mettre par défaut dans les dates d'activité
-Permettre de dupliquer un événement

@@ -514,7 +514,7 @@ function populateDropdowns() {
   // Departments dropdowns
   deptsSelects.forEach(select => {
     if (!select) return;
-    select.innerHTML = '';
+    select.innerHTML = '<option value="">Sélectionner un département...</option>';
     appState.settings.departments.forEach(d => {
       select.innerHTML += `<option value="${d}">${d}</option>`;
     });
@@ -906,7 +906,9 @@ function renderActivities() {
     
     // Period filter
     let matchesPeriod = false;
-    if (act.date_start) {
+    if (!act.date_start) {
+      matchesPeriod = true;
+    } else {
       const fy = getFiscalYear(act.date_start);
       const q = getQuarterNumber(act.date_start);
       matchesPeriod = (fy === appState.selected_year) && appState.selected_quarters.includes(q);
@@ -1007,11 +1009,19 @@ function renderActivities() {
     // Format dates
     let datesText = "-";
     let daysCount = 0;
-    if (act.date_start && act.date_end) {
-      daysCount = calculateDaysCount(act.date_start, act.date_end);
-      const start = parseLocalDateStr(act.date_start).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
-      const end = parseLocalDateStr(act.date_end).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
-      datesText = `${start} au ${end} (${daysCount}j)`;
+    if (act.date_start || act.date_end) {
+      if (act.date_start && act.date_end) {
+        daysCount = calculateDaysCount(act.date_start, act.date_end);
+        const start = parseLocalDateStr(act.date_start).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
+        const end = parseLocalDateStr(act.date_end).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
+        datesText = `${start} au ${end} (${daysCount}j)`;
+      } else if (act.date_start) {
+        const start = parseLocalDateStr(act.date_start).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
+        datesText = `À partir du ${start}`;
+      } else if (act.date_end) {
+        const end = parseLocalDateStr(act.date_end).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
+        datesText = `Jusqu'au ${end}`;
+      }
     }
     
     // Sans Frais estimated cost if internal client
@@ -1166,6 +1176,9 @@ function initFormHandlers() {
   document.getElementById("form-activity-start").addEventListener("change", updateFormDatesHelper);
   document.getElementById("form-activity-end").addEventListener("input", updateFormDatesHelper);
   document.getElementById("form-activity-end").addEventListener("change", updateFormDatesHelper);
+
+  // Phone number mask
+  maskPhoneInput(document.getElementById("form-activity-manager-phone"));
 
   // Pill toggle groups (salles, services techniques, consommation, hôtes.ses)
   initPillToggle("form-activity-salle-group");
@@ -1484,18 +1497,24 @@ function submitActivityForm(e) {
 
   // Date format YYYY-MM-DD validation
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateRegex.test(start) || isNaN(new Date(start).getTime())) {
-    alert("La date de début doit être au format AAAA-MM-JJ (ex: 2026-09-01) et être une date valide.");
-    return;
+  if (start) {
+    if (!dateRegex.test(start) || isNaN(new Date(start).getTime())) {
+      alert("La date de début doit être au format AAAA-MM-JJ (ex: 2026-09-01) et être une date valide.");
+      return;
+    }
   }
-  if (!dateRegex.test(end) || isNaN(new Date(end).getTime())) {
-    alert("La date de fin doit être au format AAAA-MM-JJ (ex: 2026-09-03) et être une date valide.");
-    return;
+  if (end) {
+    if (!dateRegex.test(end) || isNaN(new Date(end).getTime())) {
+      alert("La date de fin doit être au format AAAA-MM-JJ (ex: 2026-09-03) et être une date valide.");
+      return;
+    }
   }
   
-  if (new Date(start) > new Date(end)) {
-    alert("La date de début doit être antérieure ou égale à la date de fin.");
-    return;
+  if (start && end) {
+    if (new Date(start) > new Date(end)) {
+      alert("La date de début doit être antérieure ou égale à la date de fin.");
+      return;
+    }
   }
   
   // Build distributions array
@@ -1679,7 +1698,9 @@ function buildActivityDetailHtml(act) {
 
   const clientTypeBadge = act.client_type === "interne"
     ? `<span class="badge badge-info">Interne</span>`
-    : `<span class="badge badge-warning">Externe</span>`;
+    : act.client_type === "externe"
+      ? `<span class="badge badge-warning">Externe</span>`
+      : "";
 
   const eventTypeLabel = act.event_type === "autre"
     ? (act.event_type_other || "Autre")
@@ -1687,7 +1708,7 @@ function buildActivityDetailHtml(act) {
 
   const manager = act.activity_manager || {};
   const managerName = [manager.first_name, manager.last_name].filter(Boolean).join(" ") || "-";
-  const managerTypeLabel = manager.type === "etudiant" ? "Étudiant" : manager.type === "externe" ? "Externe" : "Employé";
+  const managerTypeLabel = manager.type === "etudiant" ? "Étudiant" : manager.type === "externe" ? "Externe" : manager.type === "employe" ? "Employé" : "-";
 
   const tagsOrDash = (arr) => (arr && arr.length)
     ? `<div class="detail-tags">${arr.map(v => `<span class="detail-tag">${v}</span>`).join("")}</div>`
@@ -3253,6 +3274,34 @@ function maskDateInput(input) {
     }
     if (value.length > 6) {
       formatted += "-" + value.substring(6, 8); // -DD
+    }
+    
+    input.value = formatted;
+  });
+}
+
+function maskPhoneInput(input) {
+  if (!input) return;
+  input.addEventListener("input", (e) => {
+    // Let the user delete normally with backspace or delete key
+    if (e.inputType === "deleteContentBackward" || e.inputType === "deleteContentForward") {
+      return;
+    }
+    
+    let value = input.value.replace(/\D/g, ""); // Keep only digits
+    if (value.length > 10) {
+      value = value.substring(0, 10);
+    }
+    
+    let formatted = "";
+    if (value.length > 0) {
+      formatted += value.substring(0, 3); // XXX
+    }
+    if (value.length > 3) {
+      formatted += "-" + value.substring(3, 6); // -XXX
+    }
+    if (value.length > 6) {
+      formatted += "-" + value.substring(6, 10); // -XXXX
     }
     
     input.value = formatted;
