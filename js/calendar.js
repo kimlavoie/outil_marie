@@ -142,10 +142,22 @@ function attachEventClickHandlers() {
     el.addEventListener("click", (e) => {
       e.stopPropagation();
       const id = el.getAttribute("data-id");
+      const calendarReturn = { refDate: new Date(eventCalendarState.refDate), viewMode: eventCalendarState.viewMode };
       closeCalendarModal();
-      openActivityDetailModal(id);
+      openActivityDetailModal(id, calendarReturn);
     });
   });
+}
+
+// Reopens the calendar modal on a previously saved {refDate, viewMode} snapshot
+// (used by the "back to calendar" button in the activity detail modal)
+function reopenCalendarModal(calendarReturn) {
+  eventCalendarState.refDate = new Date(calendarReturn.refDate);
+  eventCalendarState.viewMode = calendarReturn.viewMode;
+  document.querySelectorAll(".event-calendar-view-btn").forEach(b => b.classList.toggle("active", b.getAttribute("data-view") === eventCalendarState.viewMode));
+  renderEventCalendar();
+  document.getElementById("calendar-modal").classList.add("active");
+  document.getElementById("modal-backdrop").classList.add("active");
 }
 
 function renderEventCalendar() {

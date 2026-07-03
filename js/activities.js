@@ -10,7 +10,8 @@ let activitiesState = {
   sortOrder: "asc",
   page: 1,
   pageSize: 10,
-  detailModalActivityId: null
+  detailModalActivityId: null,
+  detailModalCalendarReturn: null // set to a saved eventCalendarState snapshot when the detail modal was opened from the calendar
 };
 
 function renderActivities() {
@@ -890,6 +891,12 @@ function initActivityDetailModal() {
     closeActivityDetailModal();
     if (id) openActivityDrawer(id);
   });
+
+  document.getElementById("activity-detail-back-to-calendar-btn").addEventListener("click", () => {
+    const calendarReturn = activitiesState.detailModalCalendarReturn;
+    closeActivityDetailModal();
+    if (calendarReturn) reopenCalendarModal(calendarReturn);
+  });
 }
 
 // Human friendly date/time formatting, e.g. "3 juillet 2026 à 14 h 00"
@@ -904,14 +911,18 @@ function formatDetailDateTime(dateStr, timeStr) {
   return text;
 }
 
-function openActivityDetailModal(id) {
+// `calendarReturn` is an optional eventCalendarState snapshot ({refDate, viewMode}) to
+// return to when the detail modal was opened by clicking an event in the calendar
+function openActivityDetailModal(id, calendarReturn) {
   const act = appState.activities.find(a => a.id === id);
   if (!act) return;
 
   activitiesState.detailModalActivityId = id;
+  activitiesState.detailModalCalendarReturn = calendarReturn || null;
 
   document.getElementById("activity-detail-title").textContent = act.name.trim() !== "" ? act.name : "Activité vierge";
   document.getElementById("activity-detail-content").innerHTML = buildActivityDetailHtml(act);
+  document.getElementById("activity-detail-back-to-calendar-btn").style.display = calendarReturn ? "" : "none";
 
   document.getElementById("activity-detail-modal").classList.add("active");
   document.getElementById("modal-backdrop").classList.add("active");
@@ -921,6 +932,7 @@ function closeActivityDetailModal() {
   document.getElementById("activity-detail-modal").classList.remove("active");
   document.getElementById("modal-backdrop").classList.remove("active");
   activitiesState.detailModalActivityId = null;
+  activitiesState.detailModalCalendarReturn = null;
 }
 
 function buildActivityDetailHtml(act) {
