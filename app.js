@@ -132,10 +132,24 @@ document.addEventListener("DOMContentLoaded", () => {
   initReconciliationHandlers();
   initBackupHandlers();
   initCustomDatepickers();
+
+  // Populate dropdowns once so restoreUiState() has real <option>s to select
+  // from, then restore search/filter/sort/pagination state before the
+  // sort-header classes and first render are set up.
+  populateDropdowns();
+  restoreUiState();
   initActivitiesSort();
-  
+
   // Render initial views
   renderAll();
+
+  // Restore the view the user was on before leaving/reloading the app
+  const lastView = localStorage.getItem("outil_marie_last_view");
+  const validViews = ["dashboard", "activities", "validation", "account-report", "settings", "backup"];
+  if (lastView && validViews.includes(lastView) && lastView !== "dashboard") {
+    switchToView(lastView);
+  }
+
   updateStickyToolbarOffsets();
 
   window.addEventListener("resize", updateStickyToolbarOffsets);
@@ -233,6 +247,84 @@ function saveDatabase() {
   localStorage.setItem("outil_marie_db", JSON.stringify(appState));
 }
 
+// Persist search/filter/sort/pagination state per view, so reloading the
+// page or coming back later drops the user exactly where they left off.
+const UI_STATE_KEY = "outil_marie_ui_state";
+
+function saveUiState() {
+  const uiState = {
+    activities: {
+      search: document.getElementById("activity-search")?.value || "",
+      filterSalle: document.getElementById("filter-salle")?.value || "",
+      filterClientType: document.getElementById("filter-client-type")?.value || "",
+      sortKey: currentSortKey,
+      sortOrder: currentSortOrder,
+      page: activitiesPage,
+      pageSize: activitiesPageSize
+    },
+    reconciliation: {
+      filter: currentReconFilter,
+      page: reconciliationPage,
+      pageSize: reconciliationPageSize
+    },
+    accountReport: {
+      filterAccount: document.getElementById("filter-report-account")?.value || "",
+      sortKey: accountReportSortKey,
+      sortOrder: accountReportSortOrder,
+      pageSize: accountReportPageSize,
+      pages: accountReportPages
+    }
+  };
+  localStorage.setItem(UI_STATE_KEY, JSON.stringify(uiState));
+}
+
+// Restores the UI state saved above. Must run after the DOM is ready and
+// before the views first render, so the restored values are picked up by
+// renderActivities/renderReconciliationTable/renderAccountReport on the
+// initial render pass.
+function restoreUiState() {
+  const raw = localStorage.getItem(UI_STATE_KEY);
+  if (!raw) return;
+
+  let uiState;
+  try {
+    uiState = JSON.parse(raw);
+  } catch (e) {
+    console.error("Error parsing saved UI state, ignoring", e);
+    return;
+  }
+
+  const act = uiState.activities || {};
+  const searchEl = document.getElementById("activity-search");
+  const salleEl = document.getElementById("filter-salle");
+  const clientTypeEl = document.getElementById("filter-client-type");
+  if (searchEl && act.search !== undefined) searchEl.value = act.search;
+  if (salleEl && act.filterSalle !== undefined) salleEl.value = act.filterSalle;
+  if (clientTypeEl && act.filterClientType !== undefined) clientTypeEl.value = act.filterClientType;
+  if (act.sortKey) currentSortKey = act.sortKey;
+  if (act.sortOrder) currentSortOrder = act.sortOrder;
+  if (act.page) activitiesPage = act.page;
+  if (act.pageSize) activitiesPageSize = act.pageSize;
+
+  const recon = uiState.reconciliation || {};
+  if (recon.filter) {
+    currentReconFilter = recon.filter;
+    document.querySelectorAll(".reconcile-tab").forEach(t => {
+      t.classList.toggle("active", t.getAttribute("data-recon-filter") === recon.filter);
+    });
+  }
+  if (recon.page) reconciliationPage = recon.page;
+  if (recon.pageSize) reconciliationPageSize = recon.pageSize;
+
+  const report = uiState.accountReport || {};
+  const reportAccountEl = document.getElementById("filter-report-account");
+  if (reportAccountEl && report.filterAccount !== undefined) reportAccountEl.value = report.filterAccount;
+  if (report.sortKey) accountReportSortKey = report.sortKey;
+  if (report.sortOrder) accountReportSortOrder = report.sortOrder;
+  if (report.pageSize) accountReportPageSize = report.pageSize;
+  if (report.pages) accountReportPages = report.pages;
+}
+
 // Theme management
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
@@ -255,39 +347,47 @@ function applyTheme(theme) {
 }
 
 // Navigation switcher
-function initNavigation() {
+function switchToView(view) {
   const navItems = document.querySelectorAll(".nav-item");
   const sections = document.querySelectorAll(".view-section");
   const viewTitle = document.getElementById("view-title");
-  
+  const targetSection = document.getElementById(`view-${view}`);
+  if (!targetSection) return;
+
+  // Update active nav item
+  navItems.forEach(i => i.classList.toggle("active", i.getAttribute("data-view") === view));
+
+  // Switch active section
+  sections.forEach(s => s.classList.remove("active"));
+  targetSection.classList.add("active");
+
+  // Set top bar title
+  const labels = {
+    dashboard: "Tableau de bord",
+    activities: "Journal des Activités",
+    validation: "Rapprochement Comptable",
+    "account-report": "Grand Livre local",
+    settings: "Configuration",
+    backup: "Sauvegarde & Exportations"
+  };
+  viewTitle.textContent = labels[view] || "Application";
+
+  // Remember the last visited view so it can be restored on reload
+  localStorage.setItem("outil_marie_last_view", view);
+
+  // Render the entered view
+  renderView(view);
+}
+
+function initNavigation() {
+  const navItems = document.querySelectorAll(".nav-item");
+
   navItems.forEach(item => {
     item.addEventListener("click", () => {
-      const view = item.getAttribute("data-view");
-      
-      // Update active nav item
-      navItems.forEach(i => i.classList.remove("active"));
-      item.classList.add("active");
-      
-      // Switch active section
-      sections.forEach(s => s.classList.remove("active"));
-      document.getElementById(`view-${view}`).classList.add("active");
-      
-      // Set top bar title
-      const labels = {
-        dashboard: "Tableau de bord",
-        activities: "Journal des Activités",
-        validation: "Rapprochement Comptable",
-        "account-report": "Grand Livre local",
-        settings: "Configuration",
-        backup: "Sauvegarde & Exportations"
-      };
-      viewTitle.textContent = labels[view] || "Application";
-      
-      // Render the entered view
-      renderView(view);
+      switchToView(item.getAttribute("data-view"));
     });
   });
-  
+
   // Theme toggle button
   document.getElementById("theme-toggle").addEventListener("click", () => {
     const currentTheme = appState.settings.theme === "light" ? "dark" : "light";
@@ -363,10 +463,12 @@ function populateDropdowns() {
 
   // Filter Salle dropdown (single-select filter, unaffected by multi-room support)
   if (filterSalleSelect) {
+    const previousSalleValue = filterSalleSelect.value;
     filterSalleSelect.innerHTML = '<option value="">Toutes les salles</option>';
     appState.settings.rooms.forEach(r => {
       filterSalleSelect.innerHTML += `<option value="${r.name}">${r.name} (Int: ${r.price_internal}$, Ext: ${r.price_external}$)</option>`;
     });
+    filterSalleSelect.value = previousSalleValue;
   }
 
   // Form Salle pill group (multi-select)
@@ -421,10 +523,12 @@ function populateDropdowns() {
   // Account report dropdown filter
   const reportAccountSelect = document.getElementById("filter-report-account");
   if (reportAccountSelect) {
+    const previousReportValue = reportAccountSelect.value;
     reportAccountSelect.innerHTML = '<option value="">Tous les comptes</option>';
     appState.settings.accounts.forEach(acc => {
       reportAccountSelect.innerHTML += `<option value="${acc.code}">${acc.code} (${acc.description})</option>`;
     });
+    reportAccountSelect.value = previousReportValue;
   }
 }
 
@@ -774,6 +878,7 @@ function renderPaginationBar(container, { page, pageSize, totalItems, onPageChan
 }
 
 function renderActivities() {
+  saveUiState();
   const tbody = document.getElementById("activities-table-body");
   const searchQuery = document.getElementById("activity-search").value.toLowerCase();
   const filterSalle = document.getElementById("filter-salle").value;
@@ -954,6 +1059,11 @@ function renderActivities() {
           <button class="btn-icon edit-act-btn" data-id="${act.id}" title="Modifier" style="margin-right: 4px;">
             <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
           </button>
+          ${isFilled ? `
+          <button class="btn-icon duplicate-act-btn" data-id="${act.id}" title="Dupliquer" style="margin-right: 4px;">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          </button>
+          ` : ''}
           <button class="btn-icon delete-act-list-btn" data-id="${act.id}" title="Supprimer" style="color: var(--danger);">
             <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
           </button>
@@ -961,7 +1071,7 @@ function renderActivities() {
       </tr>
     `;
   });
-  
+
   // Attach row click listeners to open the read-only activity detail view
   document.querySelectorAll(".activity-row").forEach(row => {
     row.addEventListener("click", () => {
@@ -974,6 +1084,14 @@ function renderActivities() {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       openActivityDrawer(btn.getAttribute("data-id"));
+    });
+  });
+
+  // Attach duplicate buttons event listeners
+  document.querySelectorAll(".duplicate-act-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openActivityDrawer(null, btn.getAttribute("data-id"));
     });
   });
 
@@ -1104,64 +1222,110 @@ function initFormHandlers() {
   });
 }
 
+// Fills the activity form fields (everything except the id/internal-id keys)
+// from an existing activity object. Used by both Edit Mode and Duplicate Mode.
+function fillActivityFormFields(act) {
+  document.getElementById("form-activity-name").value = act.name;
+  document.getElementById("form-activity-attendees").value = act.attendees_count || "";
+  document.getElementById("form-activity-responsable").value = act.responsable;
+  document.getElementById("form-activity-client-type").value = act.client_type;
+  document.getElementById("form-activity-install-date").value = act.install_date || "";
+  document.getElementById("form-activity-install-time").value = act.install_time || "";
+  document.getElementById("form-activity-dismantle-date").value = act.dismantle_date || "";
+  document.getElementById("form-activity-dismantle-time").value = act.dismantle_time || "";
+  document.getElementById("form-activity-start").value = act.date_start;
+  document.getElementById("form-activity-start-time").value = act.start_time || "";
+  document.getElementById("form-activity-end").value = act.date_end;
+  document.getElementById("form-activity-end-time").value = act.end_time || "";
+  document.getElementById("form-activity-description").value = act.description || "";
+  document.getElementById("form-activity-manager-firstname").value = act.activity_manager?.first_name || "";
+  document.getElementById("form-activity-manager-lastname").value = act.activity_manager?.last_name || "";
+  document.getElementById("form-activity-manager-type").value = act.activity_manager?.type || "employe";
+  document.getElementById("form-activity-manager-phone").value = act.activity_manager?.phone || "";
+  document.getElementById("form-activity-manager-email").value = act.activity_manager?.email || "";
+  setPillGroupActive("form-activity-salle-group", act.rooms || []);
+  setPillGroupActive("form-activity-services-group", act.technical_services || []);
+  setPillGroupActive("form-activity-consumption-group", act.consumption || []);
+  setPillGroupActive("form-activity-host-services-group", act.host_services || []);
+  document.getElementById("form-activity-consumption-special").value = act.consumption_special_products || "";
+  document.getElementById("form-activity-consumption-special-group").style.display = (act.consumption || []).includes("Commande spéciale de produit") ? "flex" : "none";
+  document.getElementById("form-activity-remi").value = act.remi_hours;
+  document.getElementById("form-activity-dept").value = act.department;
+  document.getElementById("form-activity-event-type").value = act.event_type || "";
+  document.getElementById("form-activity-event-type-other").value = act.event_type_other || "";
+  document.getElementById("form-activity-event-type-other-group").style.display = act.event_type === "autre" ? "flex" : "none";
+
+  // Load distributions
+  (act.distributions || []).forEach(d => {
+    addDistributionRow(d.account_code, d.amount, d.reference);
+  });
+}
+
+// Generates the next available activity id (XXYY-ZZZ) for the selected fiscal year
+function generateNextActivityId() {
+  const prefix = appState.selected_year.split("-").map(y => y.substring(2)).join("");
+
+  let maxSeq = 0;
+  const regex = new RegExp(`^${prefix}-(\\d{3})$`);
+  appState.activities.forEach(act => {
+    const match = act.id.match(regex);
+    if (match) {
+      const seq = parseInt(match[1]);
+      if (seq > maxSeq) {
+        maxSeq = seq;
+      }
+    }
+  });
+  const nextSeq = String(maxSeq + 1).padStart(3, '0');
+  return `${prefix}-${nextSeq}`;
+}
+
 // Drawer CRUD Operations
-function openActivityDrawer(id = null) {
+function openActivityDrawer(id = null, duplicateFromId = null) {
   const drawer = document.getElementById("activity-drawer");
   const backdrop = document.getElementById("drawer-backdrop");
   const form = document.getElementById("activity-form");
   const deleteBtn = document.getElementById("activity-drawer-delete");
   const titleEl = document.getElementById("activity-drawer-title");
-  
+
   if (id) {
     // Edit Mode (Always reset and load the active activity)
     form.reset();
     document.getElementById("form-distribution-list").innerHTML = "";
     document.getElementById("form-distribution-total-val").textContent = "0,00 $";
-    
+
     titleEl.textContent = `Modifier l'activité ${id}`;
     const act = appState.activities.find(a => a.id === id);
     if (act) {
       document.getElementById("form-activity-internal-id").value = act.id;
       document.getElementById("form-activity-id").value = act.id;
       document.getElementById("form-activity-id").disabled = true; // Cannot edit active key
-      document.getElementById("form-activity-name").value = act.name;
-      document.getElementById("form-activity-attendees").value = act.attendees_count || "";
-      document.getElementById("form-activity-responsable").value = act.responsable;
-      document.getElementById("form-activity-client-type").value = act.client_type;
-      document.getElementById("form-activity-install-date").value = act.install_date || "";
-      document.getElementById("form-activity-install-time").value = act.install_time || "";
-      document.getElementById("form-activity-dismantle-date").value = act.dismantle_date || "";
-      document.getElementById("form-activity-dismantle-time").value = act.dismantle_time || "";
-      document.getElementById("form-activity-start").value = act.date_start;
-      document.getElementById("form-activity-start-time").value = act.start_time || "";
-      document.getElementById("form-activity-end").value = act.date_end;
-      document.getElementById("form-activity-end-time").value = act.end_time || "";
-      document.getElementById("form-activity-description").value = act.description || "";
-      document.getElementById("form-activity-manager-firstname").value = act.activity_manager?.first_name || "";
-      document.getElementById("form-activity-manager-lastname").value = act.activity_manager?.last_name || "";
-      document.getElementById("form-activity-manager-type").value = act.activity_manager?.type || "employe";
-      document.getElementById("form-activity-manager-phone").value = act.activity_manager?.phone || "";
-      document.getElementById("form-activity-manager-email").value = act.activity_manager?.email || "";
-      setPillGroupActive("form-activity-salle-group", act.rooms || []);
-      setPillGroupActive("form-activity-services-group", act.technical_services || []);
-      setPillGroupActive("form-activity-consumption-group", act.consumption || []);
-      setPillGroupActive("form-activity-host-services-group", act.host_services || []);
-      document.getElementById("form-activity-consumption-special").value = act.consumption_special_products || "";
-      document.getElementById("form-activity-consumption-special-group").style.display = (act.consumption || []).includes("Commande spéciale de produit") ? "flex" : "none";
-      document.getElementById("form-activity-remi").value = act.remi_hours;
-      document.getElementById("form-activity-dept").value = act.department;
-      document.getElementById("form-activity-event-type").value = act.event_type || "";
-      document.getElementById("form-activity-event-type-other").value = act.event_type_other || "";
-      document.getElementById("form-activity-event-type-other-group").style.display = act.event_type === "autre" ? "flex" : "none";
-
-      // Load distributions
-      act.distributions.forEach(d => {
-        addDistributionRow(d.account_code, d.amount, d.reference);
-      });
+      fillActivityFormFields(act);
 
       // Show delete button
       deleteBtn.style.display = "inline-flex";
     }
+  } else if (duplicateFromId) {
+    // Duplicate Mode (always builds a fresh form, ignoring any pending draft)
+    titleEl.textContent = "Dupliquer l'activité";
+    form.reset();
+    document.getElementById("form-distribution-list").innerHTML = "";
+    document.getElementById("form-distribution-total-val").textContent = "0,00 $";
+
+    document.getElementById("form-activity-internal-id").value = "";
+    const generatedId = generateNextActivityId();
+    document.getElementById("form-activity-id").value = generatedId;
+    document.getElementById("form-activity-id").disabled = true; // Auto-generated, no manual edits
+
+    const sourceAct = appState.activities.find(a => a.id === duplicateFromId);
+    if (sourceAct) {
+      fillActivityFormFields(sourceAct);
+    } else {
+      addDistributionRow("", 0);
+    }
+
+    isDraftDirty = false;
+    deleteBtn.style.display = "none";
   } else {
     // New Mode
     titleEl.textContent = "Ajouter une activité";
@@ -1181,40 +1345,26 @@ function openActivityDrawer(id = null) {
       document.getElementById("form-activity-internal-id").value = "";
 
       // Auto-generate ID: XXYY-ZZZ based on selected fiscal year
-      const prefix = appState.selected_year.split("-").map(y => y.substring(2)).join("");
-      
-      let maxSeq = 0;
-      const regex = new RegExp(`^${prefix}-(\\d{3})$`);
-      appState.activities.forEach(act => {
-        const match = act.id.match(regex);
-        if (match) {
-          const seq = parseInt(match[1]);
-          if (seq > maxSeq) {
-            maxSeq = seq;
-          }
-        }
-      });
-      const nextSeq = String(maxSeq + 1).padStart(3, '0');
-      const generatedId = `${prefix}-${nextSeq}`;
-      
+      const generatedId = generateNextActivityId();
+
       document.getElementById("form-activity-id").value = generatedId;
       document.getElementById("form-activity-id").disabled = true; // Auto-generated, no manual edits
-      
-      // Defaults for dates
-      document.getElementById("form-activity-start").value = new Date().toISOString().split('T')[0];
-      document.getElementById("form-activity-end").value = new Date().toISOString().split('T')[0];
-      
+
+      // Dates vides par défaut
+      document.getElementById("form-activity-start").value = "";
+      document.getElementById("form-activity-end").value = "";
+
       // Add one blank distribution row
       addDistributionRow("", 0);
-      
+
       // Reset draft flag
       isDraftDirty = false;
     }
-    
+
     // Hide delete button
     deleteBtn.style.display = "none";
   }
-  
+
   updateFormDatesHelper();
   
   drawer.classList.add("active");
@@ -1977,6 +2127,7 @@ function renderReconciliation() {
 }
 
 function renderReconciliationTable() {
+  saveUiState();
   const tbody = document.getElementById("reconciliation-table-body");
   tbody.innerHTML = "";
   
@@ -2734,6 +2885,7 @@ function exportToExcel() {
    ========================================================================== */
 
 function renderAccountReport() {
+  saveUiState();
   const container = document.getElementById("account-report-container");
   const filterAccount = document.getElementById("filter-report-account").value;
   
