@@ -1193,7 +1193,8 @@ function submitActivityForm(e) {
   const internalId = document.getElementById("form-activity-internal-id").value;
   const rawId = document.getElementById("form-activity-id").value.trim();
   const name = document.getElementById("form-activity-name").value.trim();
-  const attendeesCount = parseInt(document.getElementById("form-activity-attendees").value) || 0;
+  const attendeesInput = document.getElementById("form-activity-attendees").value.trim();
+  const attendeesCount = parseInt(attendeesInput) || 0;
   const responsable = document.getElementById("form-activity-responsable").value.trim();
   const clientType = document.getElementById("form-activity-client-type").value;
   const installDate = document.getElementById("form-activity-install-date").value;
@@ -1215,23 +1216,14 @@ function submitActivityForm(e) {
   const consumption = Array.from(document.querySelectorAll("#form-activity-consumption-group .pill-toggle.active")).map(b => b.dataset.value);
   const consumptionSpecialProducts = document.getElementById("form-activity-consumption-special").value.trim();
   const hostServices = Array.from(document.querySelectorAll("#form-activity-host-services-group .pill-toggle.active")).map(b => b.dataset.value);
-  const remi = parseFloat(document.getElementById("form-activity-remi").value) || 0;
+  const remiInput = document.getElementById("form-activity-remi").value.trim();
+  const remi = parseFloat(remiInput) || 0;
   const dept = document.getElementById("form-activity-dept").value;
   const eventType = document.getElementById("form-activity-event-type").value;
   const eventTypeOther = document.getElementById("form-activity-event-type-other").value.trim();
 
-  if (!rawId || !name || !start || !end) {
+  if (!rawId || !name) {
     alert("Veuillez remplir tous les champs obligatoires (*).");
-    return;
-  }
-
-  if (rooms.length === 0) {
-    alert("Veuillez sélectionner au moins une salle.");
-    return;
-  }
-
-  if (!eventType) {
-    alert("Veuillez sélectionner le type d'événement.");
     return;
   }
 
@@ -1450,7 +1442,7 @@ function buildActivityDetailHtml(act) {
 
   const manager = act.activity_manager || {};
   const managerName = [manager.first_name, manager.last_name].filter(Boolean).join(" ") || "-";
-  const managerTypeLabel = manager.type === "etudiant" ? "Étudiant" : "Employé";
+  const managerTypeLabel = manager.type === "etudiant" ? "Étudiant" : manager.type === "externe" ? "Externe" : "Employé";
 
   const tagsOrDash = (arr) => (arr && arr.length)
     ? `<div class="detail-tags">${arr.map(v => `<span class="detail-tag">${v}</span>`).join("")}</div>`
