@@ -31,6 +31,7 @@ function initSettingsHandlers() {
   // Rooms CRUD modal launch
   document.getElementById("add-room-btn").addEventListener("click", () => openRoomModal());
   document.getElementById("room-modal-submit").addEventListener("click", submitRoomForm);
+  document.getElementById("form-add-room-tarif-btn").addEventListener("click", () => addRoomTarifRow());
 
   // Departments CRUD modal launch
   document.getElementById("add-dept-btn").addEventListener("click", () => openDeptModal());
@@ -176,12 +177,15 @@ function renderRoomsList() {
   container.innerHTML = "";
 
   appState.settings.rooms.forEach(r => {
+    const tarifsDesc = (r.tarifs && r.tarifs.length)
+      ? r.tarifs.map(t => `${t.description}: ${t.amount}$/jour`).join(" · ")
+      : "Aucun tarif défini";
     container.innerHTML += `
       <div class="settings-list-item">
         <div class="settings-list-item-info">
           <span class="room-color-swatch" style="background-color: ${getRoomColor(r.name)};" title="Couleur de la salle"></span>
           <span class="settings-list-item-code">${r.name}</span>
-          <span class="settings-list-item-desc">Tarif Interne: ${r.price_internal}$/jour | Tarif Externe: ${r.price_external ? `${r.price_external}$/jour` : 'N/A'}</span>
+          <span class="settings-list-item-desc">${tarifsDesc}</span>
         </div>
         <div class="flex gap-2">
           <button class="btn-icon edit-room-btn" data-name="${r.name}" title="Modifier">
@@ -208,6 +212,7 @@ function openRoomModal(name = null) {
   const form = document.getElementById("room-form");
   const title = document.getElementById("room-modal-title");
   form.reset();
+  document.getElementById("form-room-tarifs-list").innerHTML = "";
 
   if (name) {
     title.textContent = "Modifier la salle";
@@ -216,15 +221,38 @@ function openRoomModal(name = null) {
       document.getElementById("form-room-original-name").value = r.name;
       document.getElementById("form-room-name").value = r.name;
       document.getElementById("form-room-color").value = getRoomColor(r.name);
-      document.getElementById("form-room-price-int").value = r.price_internal;
-      document.getElementById("form-room-price-ext").value = r.price_external || "";
+      (r.tarifs || []).forEach(t => addRoomTarifRow(t.description, t.amount));
     }
   } else {
     title.textContent = "Ajouter une salle";
     document.getElementById("form-room-original-name").value = "";
     document.getElementById("form-room-color").value = FALLBACK_ROOM_COLORS[appState.settings.rooms.length % FALLBACK_ROOM_COLORS.length];
+    addRoomTarifRow();
   }
   openSettingsModal("room");
+}
+
+// Adds one dynamic tarif row (description + montant/jour) to the room modal, mirrors addDistributionRow
+function addRoomTarifRow(description = "", amount = "") {
+  const container = document.getElementById("form-room-tarifs-list");
+  const rowId = generateUid("room-tarif-row");
+
+  const rowHtml = `
+    <div id="${rowId}" class="distribution-row room-tarif-row">
+      <input type="text" class="form-input room-tarif-desc-input" value="${description ? description.replace(/"/g, '&quot;') : ''}" placeholder="Description (ex: Interne)" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" class="form-input room-tarif-amount-input" min="0" step="0.01" value="${amount !== "" ? amount : ''}" placeholder="Montant $/jour" style="padding: 8px 12px; font-size: 0.85rem;">
+      <button type="button" class="btn-icon delete-room-tarif-row-btn" data-row-id="${rowId}">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  `;
+
+  container.insertAdjacentHTML("beforeend", rowHtml);
+
+  const newRow = document.getElementById(rowId);
+  newRow.querySelector(".delete-room-tarif-row-btn").addEventListener("click", () => {
+    newRow.remove();
+  });
 }
 
 function submitRoomForm(e) {
@@ -232,15 +260,39 @@ function submitRoomForm(e) {
   const originalName = document.getElementById("form-room-original-name").value;
   const newName = document.getElementById("form-room-name").value.trim().toUpperCase();
   const color = document.getElementById("form-room-color").value;
-  const priceInt = parseFloat(document.getElementById("form-room-price-int").value) || 0;
-  const priceExt = parseFloat(document.getElementById("form-room-price-ext").value) || 0;
 
   if (!newName) {
     alert("Le nom de la salle est obligatoire.");
     return;
   }
 
-  const payload = { name: newName, price_internal: priceInt, price_external: priceExt, color };
+  // Build tarifs array, preserving existing ids where the room is being edited
+  const originalRoom = originalName ? appState.settings.rooms.find(r => r.name === originalName) : null;
+  const tarifs = [];
+  let tarifErrorMsg = "";
+
+  document.querySelectorAll("#form-room-tarifs-list .distribution-row").forEach((row, idx) => {
+    const desc = row.querySelector(".room-tarif-desc-input").value.trim();
+    const amtStr = row.querySelector(".room-tarif-amount-input").value.trim();
+    const amt = parseFloat(amtStr);
+
+    if (!desc && !amtStr) return; // skip fully empty rows
+    if (!desc) {
+      tarifErrorMsg = "Veuillez saisir une description pour chaque tarif.";
+    } else if (!amtStr || isNaN(amt) || amt < 0) {
+      tarifErrorMsg = "Veuillez saisir un montant valide pour chaque tarif.";
+    } else {
+      const existing = originalRoom && originalRoom.tarifs ? originalRoom.tarifs[idx] : null;
+      tarifs.push({ id: existing ? existing.id : generateUid("tarif"), description: desc, amount: amt });
+    }
+  });
+
+  if (tarifErrorMsg) {
+    alert(tarifErrorMsg);
+    return;
+  }
+
+  const payload = { name: newName, color, tarifs };
 
   if (originalName) {
     const idx = appState.settings.rooms.findIndex(r => r.name === originalName);
@@ -249,7 +301,9 @@ function submitRoomForm(e) {
 
       // Update existing activities room name reference!
       appState.activities.forEach(act => {
-        act.rooms = (act.rooms || []).map(r => r === originalName ? newName : r);
+        (act.rooms || []).forEach(r => {
+          if (r.name === originalName) r.name = newName;
+        });
       });
     }
   } else {

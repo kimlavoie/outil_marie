@@ -6,11 +6,11 @@
 // Embedded default configurations (Seed Data)
 const DEFAULT_CONFIG = {
   rooms: [
-    { name: "POLY", price_internal: 175.0, price_external: 0.0, color: "#4f46e5" },
-    { name: "SALON", price_internal: 50.0, price_external: 100.0, color: "#059669" },
-    { name: "SFB-SALON-HALL", price_internal: 200.0, price_external: 0.0, color: "#d97706" },
-    { name: "SFB-POLY", price_internal: 375.0, price_external: 0.0, color: "#db2777" },
-    { name: "HALL SFB", price_internal: 0.0, price_external: 0.0, color: "#0891b2" }
+    { name: "POLY", color: "#4f46e5", tarifs: [{ id: "tarif-poly-int", description: "Interne", amount: 175.0 }] },
+    { name: "SALON", color: "#059669", tarifs: [{ id: "tarif-salon-int", description: "Interne", amount: 50.0 }, { id: "tarif-salon-ext", description: "Externe", amount: 100.0 }] },
+    { name: "SFB-SALON-HALL", color: "#d97706", tarifs: [{ id: "tarif-sfbsh-int", description: "Interne", amount: 200.0 }] },
+    { name: "SFB-POLY", color: "#db2777", tarifs: [{ id: "tarif-sfbp-int", description: "Interne", amount: 375.0 }] },
+    { name: "HALL SFB", color: "#0891b2", tarifs: [{ id: "tarif-hallsfb-int", description: "Interne", amount: 0.0 }] }
   ],
   departments: [
     "ACEECJ",
@@ -171,6 +171,7 @@ function loadDatabase() {
         appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
       }
 
+      migrateRoomsConfig();
       migrateActivities();
     } catch (e) {
       console.error("Error parsing local database, using defaults", e);
@@ -179,6 +180,20 @@ function loadDatabase() {
   } else {
     seedDatabase();
   }
+}
+
+// Migrate legacy room config (price_internal/price_external) to a list of named tarifs per room
+function migrateRoomsConfig() {
+  (appState.settings.rooms || []).forEach(room => {
+    if (room.tarifs) return; // already migrated
+    const tarifs = [{ id: generateUid("tarif"), description: "Interne", amount: room.price_internal || 0 }];
+    if (room.price_external > 0) {
+      tarifs.push({ id: generateUid("tarif"), description: "Externe", amount: room.price_external });
+    }
+    room.tarifs = tarifs;
+    delete room.price_internal;
+    delete room.price_external;
+  });
 }
 
 // Migrate legacy activity records to the current data shape (room_name -> rooms, new fields)
@@ -196,6 +211,40 @@ function migrateActivities() {
     if (act.dismantle_time === undefined) act.dismantle_time = "";
     if (act.start_time === undefined) act.start_time = "";
     if (act.end_time === undefined) act.end_time = "";
+
+    // Legacy: rooms used to be a flat array of room name strings, with a single
+    // shared install/dismantle/start/end schedule for the whole activity. Each
+    // room now carries its own schedule and a snapshotted tariff.
+    if (act.rooms.length > 0 && typeof act.rooms[0] === "string") {
+      act.rooms = act.rooms.map(name => {
+        const roomConfig = (appState.settings.rooms || []).find(r => r.name === name);
+        const wantedTariffDesc = act.client_type === "interne" ? "Interne" : "Externe";
+        const matchedTariff = roomConfig && roomConfig.tarifs
+          ? (roomConfig.tarifs.find(t => t.description === wantedTariffDesc) || roomConfig.tarifs[0])
+          : null;
+        return {
+          name,
+          tariff_id: matchedTariff ? matchedTariff.id : "",
+          tariff_description: matchedTariff ? matchedTariff.description : "",
+          tariff_amount: matchedTariff ? matchedTariff.amount : 0,
+          install_date: act.install_date || "",
+          install_time: act.install_time || "",
+          dismantle_date: act.dismantle_date || "",
+          dismantle_time: act.dismantle_time || "",
+          date_start: act.date_start || "",
+          start_time: act.start_time || "",
+          date_end: act.date_end || "",
+          end_time: act.end_time || ""
+        };
+      });
+    }
+    delete act.install_date;
+    delete act.install_time;
+    delete act.dismantle_date;
+    delete act.dismantle_time;
+    delete act.start_time;
+    delete act.end_time;
+
     if (act.description === undefined) act.description = "";
     if (!act.activity_manager) {
       act.activity_manager = { first_name: "", last_name: "", type: "employe", phone: "", email: "" };

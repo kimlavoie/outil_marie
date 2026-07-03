@@ -36,7 +36,7 @@ function renderActivities() {
       );
 
     // Salle filter
-    const matchesSalle = !filterSalle || (act.rooms || []).includes(filterSalle);
+    const matchesSalle = !filterSalle || (act.rooms || []).some(r => r.name === filterSalle);
 
     // Client type filter
     const matchesClientType = !filterClientType || act.client_type === filterClientType;
@@ -77,8 +77,8 @@ function renderActivities() {
         valB = b.date_start || "";
         break;
       case "room_name":
-        valA = (a.rooms || []).join(", ").toLowerCase();
-        valB = (b.rooms || []).join(", ").toLowerCase();
+        valA = (a.rooms || []).map(r => r.name).join(", ").toLowerCase();
+        valB = (b.rooms || []).map(r => r.name).join(", ").toLowerCase();
         break;
       case "reference":
         valA = getActivityReferences(a).toLowerCase();
@@ -89,13 +89,8 @@ function renderActivities() {
         valB = b.distributions.reduce((sum, d) => sum + d.amount, 0);
         break;
       case "sansFrais":
-        const daysA = calculateDaysCount(a.date_start, a.date_end);
-        const priceA = getRoomsInternalPrice(a);
-        valA = a.client_type === "interne" ? (daysA * priceA) : 0;
-
-        const daysB = calculateDaysCount(b.date_start, b.date_end);
-        const priceB = getRoomsInternalPrice(b);
-        valB = b.client_type === "interne" ? (daysB * priceB) : 0;
+        valA = a.client_type === "interne" ? getRoomsTariffTotal(a) : 0;
+        valB = b.client_type === "interne" ? getRoomsTariffTotal(b) : 0;
         break;
     }
 
@@ -164,8 +159,7 @@ function renderActivities() {
     // Sans Frais estimated cost if internal client
     let sansFraisText = "-";
     if (act.client_type === "interne" && isFilled) {
-      const price = getRoomsInternalPrice(act);
-      sansFraisText = formatCurrency(daysCount * price);
+      sansFraisText = formatCurrency(getRoomsTariffTotal(act));
     }
 
     // Reconciliation badge if ledger file has been uploaded
@@ -198,7 +192,7 @@ function renderActivities() {
         </td>
         <td>${isFilled && act.responsable ? act.responsable : '-'}</td>
         <td>${datesText}</td>
-        <td>${isFilled ? `${(act.rooms || []).join(", ")} (${act.client_type})` : '-'}</td>
+        <td>${isFilled ? `${(act.rooms || []).map(r => r.name).join(", ")} (${act.client_type})` : '-'}</td>
         <td class="font-mono">${isFilled && activityReferences ? activityReferences : '-'}</td>
         <td class="bold">${isFilled ? formatCurrency(totalRev) : '-'}</td>
         <td style="color: var(--text-muted);">${sansFraisText}</td>
@@ -308,17 +302,18 @@ function initFormHandlers() {
     }
   });
 
-  // Dates helper updates
-  document.getElementById("form-activity-start").addEventListener("input", updateFormDatesHelper);
-  document.getElementById("form-activity-start").addEventListener("change", updateFormDatesHelper);
-  document.getElementById("form-activity-end").addEventListener("input", updateFormDatesHelper);
-  document.getElementById("form-activity-end").addEventListener("change", updateFormDatesHelper);
+  // Dates helper updates: recompute whenever any room's start/end date changes
+  const roomsScheduleContainer = document.getElementById("form-activity-rooms-schedule");
+  roomsScheduleContainer.addEventListener("input", updateFormDatesHelper);
+  roomsScheduleContainer.addEventListener("change", updateFormDatesHelper);
 
   // Phone number mask
   maskPhoneInput(document.getElementById("form-activity-manager-phone"));
 
-  // Pill toggle groups (salles, services techniques, consommation, hôtes.ses)
-  initPillToggle("form-activity-salle-group");
+  // Salle(s) pill toggle group: adds/removes a schedule card per room, in addition to the usual pill active state
+  initRoomsScheduleGroup();
+
+  // Pill toggle groups (services techniques, consommation, hôtes.ses)
   initPillToggle("form-activity-services-group");
   initPillToggle("form-activity-consumption-group");
   initPillToggle("form-activity-host-services-group");
@@ -379,21 +374,16 @@ function fillActivityFormFields(act) {
   document.getElementById("form-activity-attendees").value = act.attendees_count || "";
   document.getElementById("form-activity-responsable").value = act.responsable;
   document.getElementById("form-activity-client-type").value = act.client_type;
-  document.getElementById("form-activity-install-date").value = act.install_date || "";
-  document.getElementById("form-activity-install-time").value = act.install_time || "";
-  document.getElementById("form-activity-dismantle-date").value = act.dismantle_date || "";
-  document.getElementById("form-activity-dismantle-time").value = act.dismantle_time || "";
-  document.getElementById("form-activity-start").value = act.date_start;
-  document.getElementById("form-activity-start-time").value = act.start_time || "";
-  document.getElementById("form-activity-end").value = act.date_end;
-  document.getElementById("form-activity-end-time").value = act.end_time || "";
   document.getElementById("form-activity-description").value = act.description || "";
   document.getElementById("form-activity-manager-firstname").value = act.activity_manager?.first_name || "";
   document.getElementById("form-activity-manager-lastname").value = act.activity_manager?.last_name || "";
   document.getElementById("form-activity-manager-type").value = act.activity_manager?.type || "employe";
   document.getElementById("form-activity-manager-phone").value = act.activity_manager?.phone || "";
   document.getElementById("form-activity-manager-email").value = act.activity_manager?.email || "";
-  setPillGroupActive("form-activity-salle-group", act.rooms || []);
+  setPillGroupActive("form-activity-salle-group", (act.rooms || []).map(r => r.name));
+  document.getElementById("form-activity-rooms-schedule").innerHTML = "";
+  (act.rooms || []).forEach(r => addRoomScheduleCard(r.name, r));
+  updateFormDatesHelper();
   setPillGroupActive("form-activity-services-group", act.technical_services || []);
   setPillGroupActive("form-activity-consumption-group", act.consumption || []);
   setPillGroupActive("form-activity-host-services-group", act.host_services || []);
@@ -409,6 +399,190 @@ function fillActivityFormFields(act) {
   (act.distributions || []).forEach(d => {
     addDistributionRow(d.account_code, d.amount, d.reference);
   });
+}
+
+/* ==========================================================================
+   PER-ROOM SCHEDULE & TARIF (activity form "Salle(s), horaire et tarif")
+   ========================================================================== */
+
+// Wires the salle pill-toggle group: clicking a pill adds/removes that room's
+// schedule card, in addition to the pill's own active state.
+function initRoomsScheduleGroup() {
+  const container = document.getElementById("form-activity-salle-group");
+  if (!container) return;
+
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest(".pill-toggle");
+    if (!btn || !container.contains(btn)) return;
+
+    btn.classList.toggle("active");
+    const roomName = btn.dataset.value;
+
+    if (btn.classList.contains("active")) {
+      addRoomScheduleCard(roomName);
+    } else {
+      removeRoomScheduleCard(roomName);
+    }
+    updateFormDatesHelper();
+
+    const internalId = document.getElementById("form-activity-internal-id").value;
+    if (!internalId) {
+      activitiesState.isDraftDirty = true;
+    }
+  });
+}
+
+// Builds one datepicker + time input pair (mirrors the markup previously used for the
+// top-level install/dismantle/start/end fields, now scoped per room).
+function buildRoomDateTimeFieldHtml(dateId, timeId, label) {
+  return `
+    <div class="form-group">
+      <label for="${dateId}">${label}</label>
+      <div class="datetime-input-row">
+        <div class="datepicker-wrapper">
+          <input type="text" id="${dateId}" class="form-input" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
+          <button type="button" class="datepicker-trigger-btn" data-target="${dateId}" title="Sélectionner depuis le calendrier">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
+          </button>
+          <div class="calendar-popover" id="cal-popover-${dateId}"></div>
+        </div>
+        <input type="time" id="${timeId}" class="form-input">
+        <button type="button" class="view-calendar-btn" data-target="${dateId}" title="Consulter le calendrier à cette date">
+          <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+        </button>
+      </div>
+      <div class="field-error-msg" id="${dateId}-fy-error"></div>
+    </div>
+  `;
+}
+
+// Adds a schedule card for `roomName` to #form-activity-rooms-schedule. `roomData`
+// (an act.rooms[] entry) pre-fills the fields when editing/duplicating an activity.
+function addRoomScheduleCard(roomName, roomData = null) {
+  const container = document.getElementById("form-activity-rooms-schedule");
+  if (!container || container.querySelector(`[data-room-name="${CSS.escape(roomName)}"]`)) return;
+
+  const uid = generateUid("room-card");
+  const roomConfig = appState.settings.rooms.find(r => r.name === roomName);
+  const tarifs = (roomConfig && roomConfig.tarifs) || [];
+  const isCustomTariff = !!(roomData && !roomData.tariff_id && (roomData.tariff_description || roomData.tariff_amount));
+
+  const tarifOptionsHtml = tarifs.map(t =>
+    `<option value="${t.id}" ${roomData && roomData.tariff_id === t.id ? 'selected' : ''}>${t.description} (${t.amount}$/jour)</option>`
+  ).join("");
+
+  container.insertAdjacentHTML("beforeend", `
+    <div class="room-schedule-card" id="${uid}" data-room-name="${roomName}">
+      <div class="room-schedule-card-header"><span>${roomName}</span></div>
+
+      <div class="form-group">
+        <label for="${uid}-tariff-select">Tarif</label>
+        <select id="${uid}-tariff-select" class="select-input room-tariff-select" style="padding: 10px 14px;">
+          <option value="">Sélectionner...</option>
+          ${tarifOptionsHtml}
+          <option value="__custom__" ${isCustomTariff ? 'selected' : ''}>Montant personnalisé...</option>
+        </select>
+      </div>
+      <div class="form-group-row room-tariff-custom-group" style="display: ${isCustomTariff ? 'flex' : 'none'};">
+        <div class="form-group">
+          <label for="${uid}-tariff-custom-desc">Description du tarif</label>
+          <input type="text" id="${uid}-tariff-custom-desc" class="form-input room-tariff-custom-desc" placeholder="Ex: Rabais ponctuel" value="${isCustomTariff && roomData.tariff_description ? roomData.tariff_description.replace(/"/g, '&quot;') : ''}">
+        </div>
+        <div class="form-group">
+          <label for="${uid}-tariff-custom-amount">Montant ($ par jour)</label>
+          <input type="number" id="${uid}-tariff-custom-amount" class="form-input room-tariff-custom-amount" min="0" step="0.01" value="${isCustomTariff ? roomData.tariff_amount : ''}">
+        </div>
+      </div>
+
+      <div class="form-group-row">
+        ${buildRoomDateTimeFieldHtml(`${uid}-install-date`, `${uid}-install-time`, "Installation")}
+        ${buildRoomDateTimeFieldHtml(`${uid}-dismantle-date`, `${uid}-dismantle-time`, "Démontage")}
+      </div>
+      <div class="form-group-row">
+        ${buildRoomDateTimeFieldHtml(`${uid}-start-date`, `${uid}-start-time`, "Début de l'événement")}
+        ${buildRoomDateTimeFieldHtml(`${uid}-end-date`, `${uid}-end-time`, "Fin de l'événement")}
+      </div>
+    </div>
+  `);
+
+  const card = document.getElementById(uid);
+
+  if (roomData) {
+    card.querySelector(`#${uid}-install-date`).value = roomData.install_date || "";
+    card.querySelector(`#${uid}-install-time`).value = roomData.install_time || "";
+    card.querySelector(`#${uid}-dismantle-date`).value = roomData.dismantle_date || "";
+    card.querySelector(`#${uid}-dismantle-time`).value = roomData.dismantle_time || "";
+    card.querySelector(`#${uid}-start-date`).value = roomData.date_start || "";
+    card.querySelector(`#${uid}-start-time`).value = roomData.start_time || "";
+    card.querySelector(`#${uid}-end-date`).value = roomData.date_end || "";
+    card.querySelector(`#${uid}-end-time`).value = roomData.end_time || "";
+  }
+
+  // Wire the tarif select to reveal/hide the custom amount fields
+  const tariffSelect = card.querySelector(".room-tariff-select");
+  const customGroup = card.querySelector(".room-tariff-custom-group");
+  tariffSelect.addEventListener("change", () => {
+    customGroup.style.display = tariffSelect.value === "__custom__" ? "flex" : "none";
+  });
+
+  // Wire the datepickers for this card's 4 date fields
+  card.querySelectorAll(".datepicker-wrapper").forEach(initDatepickerWrapper);
+}
+
+function removeRoomScheduleCard(roomName) {
+  const container = document.getElementById("form-activity-rooms-schedule");
+  const card = container?.querySelector(`[data-room-name="${CSS.escape(roomName)}"]`);
+  if (card) card.remove();
+}
+
+// Reads all currently visible room schedule cards into an act.rooms[]-shaped array
+function collectRoomsFromForm() {
+  const cards = document.querySelectorAll("#form-activity-rooms-schedule .room-schedule-card");
+  return Array.from(cards).map(card => {
+    const roomName = card.dataset.roomName;
+    const tariffSelect = card.querySelector(".room-tariff-select");
+    let tariffId = "", tariffDescription = "", tariffAmount = 0;
+
+    if (tariffSelect.value === "__custom__") {
+      tariffDescription = card.querySelector(".room-tariff-custom-desc").value.trim();
+      tariffAmount = parseFloat(card.querySelector(".room-tariff-custom-amount").value) || 0;
+    } else if (tariffSelect.value) {
+      const roomConfig = appState.settings.rooms.find(r => r.name === roomName);
+      const tarif = roomConfig?.tarifs?.find(t => t.id === tariffSelect.value);
+      if (tarif) {
+        tariffId = tarif.id;
+        tariffDescription = tarif.description;
+        tariffAmount = tarif.amount;
+      }
+    }
+
+    const uid = card.id;
+    return {
+      name: roomName,
+      tariff_id: tariffId,
+      tariff_description: tariffDescription,
+      tariff_amount: tariffAmount,
+      install_date: card.querySelector(`#${uid}-install-date`).value,
+      install_time: card.querySelector(`#${uid}-install-time`).value,
+      dismantle_date: card.querySelector(`#${uid}-dismantle-date`).value,
+      dismantle_time: card.querySelector(`#${uid}-dismantle-time`).value,
+      date_start: card.querySelector(`#${uid}-start-date`).value,
+      start_time: card.querySelector(`#${uid}-start-time`).value,
+      date_end: card.querySelector(`#${uid}-end-date`).value,
+      end_time: card.querySelector(`#${uid}-end-time`).value
+    };
+  });
+}
+
+// Aggregate {start, end} across all room cards' own start/end dates (min/max), used for
+// the activity's top-level date_start/date_end (fiscal year, filtering, calendar, sorting).
+function getAggregateEventDates(rooms) {
+  const starts = rooms.map(r => r.date_start).filter(Boolean);
+  const ends = rooms.map(r => r.date_end).filter(Boolean);
+  return {
+    date_start: starts.length ? starts.reduce((min, d) => d < min ? d : min) : "",
+    date_end: ends.length ? ends.reduce((max, d) => d > max ? d : max) : ""
+  };
 }
 
 // Generates the next available activity id (XXYY-ZZZ) for the selected fiscal year
@@ -486,6 +660,7 @@ function openActivityDrawer(id = null, duplicateFromId = null) {
       document.getElementById("form-distribution-list").innerHTML = "";
       document.getElementById("form-distribution-total-val").textContent = "0,00 $";
       setPillGroupActive("form-activity-salle-group", []);
+      document.getElementById("form-activity-rooms-schedule").innerHTML = "";
       setPillGroupActive("form-activity-services-group", []);
       setPillGroupActive("form-activity-consumption-group", []);
       setPillGroupActive("form-activity-host-services-group", []);
@@ -499,10 +674,6 @@ function openActivityDrawer(id = null, duplicateFromId = null) {
 
       document.getElementById("form-activity-id").value = generatedId;
       document.getElementById("form-activity-id").disabled = true; // Auto-generated, no manual edits
-
-      // Dates vides par défaut
-      document.getElementById("form-activity-start").value = "";
-      document.getElementById("form-activity-end").value = "";
 
       // Add one blank distribution row
       addDistributionRow("", 0);
@@ -593,21 +764,14 @@ function submitActivityForm(e) {
   const attendeesCount = parseInt(attendeesInput) || 0;
   const responsable = document.getElementById("form-activity-responsable").value.trim();
   const clientType = document.getElementById("form-activity-client-type").value;
-  const installDate = document.getElementById("form-activity-install-date").value;
-  const installTime = document.getElementById("form-activity-install-time").value;
-  const dismantleDate = document.getElementById("form-activity-dismantle-date").value;
-  const dismantleTime = document.getElementById("form-activity-dismantle-time").value;
-  const start = document.getElementById("form-activity-start").value;
-  const startTime = document.getElementById("form-activity-start-time").value;
-  const end = document.getElementById("form-activity-end").value;
-  const endTime = document.getElementById("form-activity-end-time").value;
   const description = document.getElementById("form-activity-description").value.trim();
   const managerFirstName = document.getElementById("form-activity-manager-firstname").value.trim();
   const managerLastName = document.getElementById("form-activity-manager-lastname").value.trim();
   const managerType = document.getElementById("form-activity-manager-type").value;
   const managerPhone = document.getElementById("form-activity-manager-phone").value.trim();
   const managerEmail = document.getElementById("form-activity-manager-email").value.trim();
-  const rooms = Array.from(document.querySelectorAll("#form-activity-salle-group .pill-toggle.active")).map(b => b.dataset.value);
+  const rooms = collectRoomsFromForm();
+  const { date_start: start, date_end: end } = getAggregateEventDates(rooms);
   const technicalServices = Array.from(document.querySelectorAll("#form-activity-services-group .pill-toggle.active")).map(b => b.dataset.value);
   const consumption = Array.from(document.querySelectorAll("#form-activity-consumption-group .pill-toggle.active")).map(b => b.dataset.value);
   const consumptionSpecialProducts = document.getElementById("form-activity-consumption-special").value.trim();
@@ -633,46 +797,36 @@ function submitActivityForm(e) {
     return;
   }
 
-  // Date format YYYY-MM-DD validation
+  // Date format YYYY-MM-DD validation, for every room's install/dismantle/start/end dates
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (start) {
-    if (!dateRegex.test(start) || isNaN(new Date(start).getTime())) {
-      alert("La date de début doit être au format AAAA-MM-JJ (ex: 2026-09-01) et être une date valide.");
-      return;
-    }
-  }
-  if (end) {
-    if (!dateRegex.test(end) || isNaN(new Date(end).getTime())) {
-      alert("La date de fin doit être au format AAAA-MM-JJ (ex: 2026-09-03) et être une date valide.");
-      return;
-    }
-  }
-
-  if (start && end) {
-    if (new Date(start) > new Date(end)) {
-      alert("La date de début doit être antérieure ou égale à la date de fin.");
-      return;
-    }
-  }
-
-  // Restrict all activity dates to the active fiscal year
   const fyRange = getFiscalYearRange(appState.selected_year);
-  if (fyRange) {
-    const minDate = parseLocalDateStr(fyRange.start);
-    const maxDate = parseLocalDateStr(fyRange.end);
+  const minDate = fyRange ? parseLocalDateStr(fyRange.start) : null;
+  const maxDate = fyRange ? parseLocalDateStr(fyRange.end) : null;
+
+  for (const room of rooms) {
     const datesToCheck = [
-      { value: installDate, label: "La date d'installation" },
-      { value: dismantleDate, label: "La date de démontage" },
-      { value: start, label: "La date de début" },
-      { value: end, label: "La date de fin" }
+      { value: room.install_date, label: `La date d'installation (salle ${room.name})` },
+      { value: room.dismantle_date, label: `La date de démontage (salle ${room.name})` },
+      { value: room.date_start, label: `La date de début (salle ${room.name})` },
+      { value: room.date_end, label: `La date de fin (salle ${room.name})` }
     ];
     for (const { value, label } of datesToCheck) {
-      if (!value || !dateRegex.test(value)) continue;
-      const d = parseLocalDateStr(value);
-      if (!isNaN(d.getTime()) && (d < minDate || d > maxDate)) {
-        alert(`${label} doit être comprise dans l'année financière active (${appState.selected_year}).`);
+      if (!value) continue;
+      if (!dateRegex.test(value) || isNaN(parseLocalDateStr(value).getTime())) {
+        alert(`${label} doit être au format AAAA-MM-JJ (ex: 2026-09-01) et être une date valide.`);
         return;
       }
+      if (minDate && maxDate) {
+        const d = parseLocalDateStr(value);
+        if (d < minDate || d > maxDate) {
+          alert(`${label} doit être comprise dans l'année financière active (${appState.selected_year}).`);
+          return;
+        }
+      }
+    }
+    if (room.date_start && room.date_end && parseLocalDateStr(room.date_start) > parseLocalDateStr(room.date_end)) {
+      alert(`La date de début doit être antérieure ou égale à la date de fin (salle ${room.name}).`);
+      return;
     }
   }
 
@@ -709,12 +863,6 @@ function submitActivityForm(e) {
     attendees_count: attendeesCount,
     date_start: start,
     date_end: end,
-    start_time: startTime,
-    end_time: endTime,
-    install_date: installDate,
-    install_time: installTime,
-    dismantle_date: dismantleDate,
-    dismantle_time: dismantleTime,
     description,
     activity_manager: {
       first_name: managerFirstName,
@@ -816,13 +964,12 @@ function initActivitiesSort() {
    ========================================================================== */
 
 function updateFormDatesHelper() {
-  const startVal = document.getElementById("form-activity-start").value;
-  const endVal = document.getElementById("form-activity-end").value;
   const helperEl = document.getElementById("form-activity-dates-helper");
   const listEl = document.getElementById("form-activity-days-list");
 
   if (!helperEl || !listEl) return;
 
+  const { date_start: startVal, date_end: endVal } = getAggregateEventDates(collectRoomsFromForm());
   const daysText = getDaysOfWeekInRange(startVal, endVal);
   if (daysText) {
     listEl.textContent = daysText;
@@ -939,7 +1086,7 @@ function buildActivityDetailHtml(act) {
   const isFilled = act.name.trim() !== "";
   const totalRev = act.distributions.reduce((sum, d) => sum + d.amount, 0);
   const days = calculateDaysCount(act.date_start, act.date_end);
-  const sansFrais = act.client_type === "interne" ? days * getRoomsInternalPrice(act) : 0;
+  const sansFrais = act.client_type === "interne" ? getRoomsTariffTotal(act) : 0;
 
   // Reconciliation badge, mirrors the list view logic
   let statusBadge = "";
@@ -1017,32 +1164,36 @@ function buildActivityDetailHtml(act) {
       </div>
     </div>
 
-    <div class="detail-section-title">Dates et horaires</div>
-    <div class="detail-grid">
-      <div>
-        <div class="detail-row-label">Installation</div>
-        <div class="detail-row-value">${formatDetailDateTime(act.install_date, act.install_time)}</div>
-      </div>
-      <div>
-        <div class="detail-row-label">Démontage</div>
-        <div class="detail-row-value">${formatDetailDateTime(act.dismantle_date, act.dismantle_time)}</div>
-      </div>
-      <div>
-        <div class="detail-row-label">Début de l'événement</div>
-        <div class="detail-row-value">${formatDetailDateTime(act.date_start, act.start_time)}</div>
-      </div>
-      <div>
-        <div class="detail-row-label">Fin de l'événement</div>
-        <div class="detail-row-value">${formatDetailDateTime(act.date_end, act.end_time)}</div>
-      </div>
-    </div>
+    <div class="detail-section-title">Salle(s), horaire et tarif</div>
+    ${(act.rooms && act.rooms.length) ? `
+      <table class="detail-dist-table">
+        <thead>
+          <tr>
+            <th>Salle</th>
+            <th>Tarif</th>
+            <th>Installation</th>
+            <th>Démontage</th>
+            <th>Début</th>
+            <th>Fin</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${act.rooms.map(r => `
+            <tr>
+              <td class="bold">${r.name}</td>
+              <td>${r.tariff_description ? `${r.tariff_description} (${formatCurrency(r.tariff_amount || 0)}/jour)` : '-'}</td>
+              <td>${formatDetailDateTime(r.install_date, r.install_time)}</td>
+              <td>${formatDetailDateTime(r.dismantle_date, r.dismantle_time)}</td>
+              <td>${formatDetailDateTime(r.date_start, r.start_time)}</td>
+              <td>${formatDetailDateTime(r.date_end, r.end_time)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    ` : `<div class="detail-row-value">Aucune salle réservée.</div>`}
 
     <div class="detail-section-title">Lieu et type d'événement</div>
     <div class="detail-grid">
-      <div>
-        <div class="detail-row-label">Salle(s)</div>
-        ${tagsOrDash(act.rooms)}
-      </div>
       <div>
         <div class="detail-row-label">Type d'événement</div>
         <div class="detail-row-value">${eventTypeLabel}</div>

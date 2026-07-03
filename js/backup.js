@@ -285,16 +285,15 @@ function exportToExcel() {
 
       row.push(isFilled ? act.client_type : ""); // Client interne ou externe
       row.push(isFilled ? (act.category || "") : ""); // CATÉGORIE (champ retiré du formulaire, conservé vide pour ne pas décaler les colonnes)
-      row.push(isFilled ? (act.rooms || []).join(", ") : ""); // SALLE
+      row.push(isFilled ? (act.rooms || []).map(r => r.name).join(", ") : ""); // SALLE
       row.push(isFilled ? act.remi_hours : 0); // TEMPS RÉMI
       row.push(isFilled ? act.department : ""); // DÉPARTEMENT
 
-      // PRIX SALLE SANS FRAIS (formule)
-      // Calculated as Nbre jours * Price Internal if client is internal.
-      // In excel we can write a formula that checks client type:
-      // =IF(G2="interne", F2 * [price_internal], 0)
-      const priceInternal = getRoomsInternalPrice(act);
-      row.push({ t: 'n', f: `IF(G${excelRow}="interne", F${excelRow}*${priceInternal}, 0)` });
+      // PRIX SALLE SANS FRAIS
+      // Chaque salle a maintenant son propre tarif et sa propre période, donc ce
+      // n'est plus un simple produit "jours × tarif fixe" exprimable en formule
+      // Excel uniforme : on calcule directement la valeur en JS.
+      row.push(isFilled && act.client_type === "interne" ? getRoomsTariffTotal(act) : 0);
 
       row.push(isFilled ? getActivityReferences(act) : ""); // NUMÉRO DE FACTURE... (regroupé par compte)
 
@@ -360,10 +359,12 @@ function exportToExcel() {
 
     XLSX.utils.book_append_sheet(wb, ws, "ACTIVITÉS");
 
-    // Sheet 2: Configuration Salles
-    const roomsData = [["SALLE", "PRIX INTERNE", "PRIX EXTERNE"]];
+    // Sheet 2: Configuration Salles (une ligne par tarif défini)
+    const roomsData = [["SALLE", "TARIF", "MONTANT ($/JOUR)"]];
     appState.settings.rooms.forEach(r => {
-      roomsData.push([r.name, r.price_internal, r.price_external]);
+      (r.tarifs && r.tarifs.length ? r.tarifs : [{ description: "", amount: "" }]).forEach(t => {
+        roomsData.push([r.name, t.description, t.amount]);
+      });
     });
     const wsRooms = XLSX.utils.aoa_to_sheet(roomsData);
     XLSX.utils.book_append_sheet(wb, wsRooms, "SALLES");

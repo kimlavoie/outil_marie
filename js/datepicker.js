@@ -41,48 +41,58 @@ function clearDateFieldErrors() {
 }
 
 function initCustomDatepickers() {
-  const wrappers = document.querySelectorAll(".datepicker-wrapper");
+  document.querySelectorAll(".datepicker-wrapper").forEach(initDatepickerWrapper);
 
-  wrappers.forEach(wrapper => {
-    const input = wrapper.querySelector(".form-input");
-    const btn = wrapper.querySelector(".datepicker-trigger-btn");
-    const popover = wrapper.querySelector(".calendar-popover");
-
-    // Auto-mask date formatting on keyboard input
-    maskDateInput(input);
-
-    // Real-time validation against the active fiscal year
-    input.addEventListener("input", () => validateDateFieldFiscalYear(input));
-    input.addEventListener("change", () => validateDateFieldFiscalYear(input));
-    input.addEventListener("blur", () => validateDateFieldFiscalYear(input));
-
-    let currentDate = new Date(); // Tracks the displayed month
-
-    // Close when clicking outside
-    document.addEventListener("click", (e) => {
-      if (!wrapper.contains(e.target)) {
+  // Single delegated "click outside" listener for every datepicker wrapper
+  // (including ones added dynamically later), instead of one per wrapper.
+  document.addEventListener("click", (e) => {
+    document.querySelectorAll(".calendar-popover.active").forEach(popover => {
+      const wrapper = popover.closest(".datepicker-wrapper");
+      if (wrapper && !wrapper.contains(e.target)) {
         popover.classList.remove("active");
       }
     });
+  });
+}
 
-    btn.addEventListener("click", () => {
-      // Toggle active
-      const wasActive = popover.classList.contains("active");
-      document.querySelectorAll(".calendar-popover").forEach(p => p.classList.remove("active"));
+// Wires a single .datepicker-wrapper element (mask, fiscal-year validation, popover
+// trigger). Safe to call individually for wrappers created dynamically after page load
+// (e.g. per-room schedule cards), so listeners aren't re-attached to existing wrappers.
+function initDatepickerWrapper(wrapper) {
+  if (wrapper.dataset.datepickerInit) return;
+  wrapper.dataset.datepickerInit = "true";
 
-      if (!wasActive) {
-        // Set display month based on input value if valid
-        const val = input.value;
-        const parsed = parseLocalDateStr(val);
-        if (val && !isNaN(parsed.getTime())) {
-          currentDate = parsed;
-        } else {
-          currentDate = new Date();
-        }
-        renderCalendar(popover, input, currentDate);
-        popover.classList.add("active");
+  const input = wrapper.querySelector(".form-input");
+  const btn = wrapper.querySelector(".datepicker-trigger-btn");
+  const popover = wrapper.querySelector(".calendar-popover");
+
+  // Auto-mask date formatting on keyboard input
+  maskDateInput(input);
+
+  // Real-time validation against the active fiscal year
+  input.addEventListener("input", () => validateDateFieldFiscalYear(input));
+  input.addEventListener("change", () => validateDateFieldFiscalYear(input));
+  input.addEventListener("blur", () => validateDateFieldFiscalYear(input));
+
+  let currentDate = new Date(); // Tracks the displayed month
+
+  btn.addEventListener("click", () => {
+    // Toggle active
+    const wasActive = popover.classList.contains("active");
+    document.querySelectorAll(".calendar-popover").forEach(p => p.classList.remove("active"));
+
+    if (!wasActive) {
+      // Set display month based on input value if valid
+      const val = input.value;
+      const parsed = parseLocalDateStr(val);
+      if (val && !isNaN(parsed.getTime())) {
+        currentDate = parsed;
+      } else {
+        currentDate = new Date();
       }
-    });
+      renderCalendar(popover, input, currentDate);
+      popover.classList.add("active");
+    }
   });
 }
 

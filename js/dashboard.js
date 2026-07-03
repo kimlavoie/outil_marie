@@ -33,9 +33,7 @@ function renderDashboard() {
 
     // Internal free valuation: client is internal, and no actual charge (revenue is zero)
     if (act.client_type === "interne" && activityRevenue === 0) {
-      const days = calculateDaysCount(act.date_start, act.date_end);
-      const price = getRoomsInternalPrice(act);
-      totalInternalFree += days * price;
+      totalInternalFree += getRoomsTariffTotal(act);
     }
   });
 
@@ -126,7 +124,7 @@ function renderDashboardCharts() {
       return;
     }
 
-    const rName = (act.rooms && act.rooms.length) ? act.rooms.join(", ") : "Inconnue";
+    const rName = (act.rooms && act.rooms.length) ? act.rooms.map(r => r.name).join(", ") : "Inconnue";
     const sumDist = act.distributions.reduce((sum, dist) => sum + dist.amount, 0);
     roomSums[rName] = (roomSums[rName] || 0) + sumDist;
   });

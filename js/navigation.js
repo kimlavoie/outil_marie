@@ -132,7 +132,7 @@ function populateDropdowns() {
     const previousSalleValue = filterSalleSelect.value;
     filterSalleSelect.innerHTML = '<option value="">Toutes les salles</option>';
     appState.settings.rooms.forEach(r => {
-      filterSalleSelect.innerHTML += `<option value="${r.name}">${r.name} (Int: ${r.price_internal}$, Ext: ${r.price_external}$)</option>`;
+      filterSalleSelect.innerHTML += `<option value="${r.name}">${r.name}</option>`;
     });
     filterSalleSelect.value = previousSalleValue;
   }

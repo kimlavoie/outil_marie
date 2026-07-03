@@ -85,14 +85,16 @@ function openCalendarAtDate(dateStr) {
   }
 }
 
-// Wires the "view in calendar" buttons placed next to date fields in the activity form
+// Wires the "view in calendar" buttons placed next to date fields in the activity form.
+// Delegated on the document so buttons added later (e.g. per-room schedule cards) work
+// without needing to be individually re-wired.
 function initViewCalendarButtons() {
-  document.querySelectorAll(".view-calendar-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const targetId = btn.getAttribute("data-target");
-      const input = document.getElementById(targetId);
-      openCalendarAtDate(input ? input.value.trim() : "");
-    });
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".view-calendar-btn");
+    if (!btn) return;
+    const targetId = btn.getAttribute("data-target");
+    const input = document.getElementById(targetId);
+    openCalendarAtDate(input ? input.value.trim() : "");
   });
 }
 
@@ -274,8 +276,8 @@ function renderDayView() {
   }
 
   grid.innerHTML = dayActivities.map(act => {
-    const color = getRoomColor((act.rooms || [])[0] || "");
-    const roomsLabel = (act.rooms || []).join(", ") || "-";
+    const color = getRoomColor((act.rooms || [])[0]?.name || "");
+    const roomsLabel = (act.rooms || []).map(r => r.name).join(", ") || "-";
     const timeLabel = act.start_time || act.end_time
       ? `${act.start_time || '?'} - ${act.end_time || '?'}`
       : "";
@@ -302,8 +304,8 @@ function buildDayCellHtml(dateStr, dayNum, isToday, tall = false) {
 
   let eventsHtml = "";
   dayActivities.slice(0, maxVisible).forEach(act => {
-    const color = getRoomColor((act.rooms || [])[0] || "");
-    const roomsLabel = (act.rooms || []).join(", ");
+    const color = getRoomColor((act.rooms || [])[0]?.name || "");
+    const roomsLabel = (act.rooms || []).map(r => r.name).join(", ");
     eventsHtml += `<div class="event-calendar-event" data-id="${act.id}" style="background-color: ${color};" title="${act.name}${roomsLabel ? ` (${roomsLabel})` : ''}">${act.name}</div>`;
   });
 

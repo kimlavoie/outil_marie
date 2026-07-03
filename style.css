@@ -895,6 +895,29 @@ label {
   animation: slideDown 0.25s ease;
 }
 
+/* Room tarif rows (settings) only have a description + amount field, unlike distribution rows */
+.distribution-row.room-tarif-row {
+  grid-template-columns: 2fr 1fr auto;
+}
+
+/* Per-room schedule card in the activity form (installation/démontage/début/fin + tarif) */
+.room-schedule-card {
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-top: 12px;
+  background-color: var(--bg-main);
+  animation: slideDown 0.25s ease;
+}
+
+.room-schedule-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
 /* Fix CSS grid select blow-up bug by forcing min-width: 0 */
 .distribution-row select,
 .distribution-row input {

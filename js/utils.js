@@ -8,6 +8,11 @@ function formatCurrency(val) {
   return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(val);
 }
 
+// Short unique id for dynamically created rows/cards (tarifs, salles réservées, ventilations)
+function generateUid(prefix) {
+  return `${prefix}-${Date.now()}${Math.random().toString(36).substr(2, 5)}`;
+}
+
 // Helper: Calculate days between dates (inclusive)
 function calculateDaysCount(startStr, endStr) {
   if (!startStr || !endStr) return 1;
@@ -25,11 +30,11 @@ function getActivityReferences(act) {
   return [...new Set(refs)].join(", ");
 }
 
-// Sum of price_internal across all rooms booked for an activity
-function getRoomsInternalPrice(act) {
-  return (act.rooms || []).reduce((sum, name) => {
-    const room = appState.settings.rooms.find(r => r.name === name);
-    return sum + (room ? room.price_internal : 0);
+// Sum of tarif_amount × jours (période propre à chaque salle) across all rooms booked for an activity
+function getRoomsTariffTotal(act) {
+  return (act.rooms || []).reduce((sum, r) => {
+    const days = calculateDaysCount(r.date_start, r.date_end);
+    return sum + (r.tariff_amount || 0) * days;
   }, 0);
 }
 
