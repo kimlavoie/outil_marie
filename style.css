@@ -357,6 +357,8 @@ body {
   overflow-y: auto;
   overflow-x: auto;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .view-section {
@@ -368,6 +370,8 @@ body {
 
 .view-section.active {
   display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
 @keyframes fadeIn {
@@ -471,10 +475,14 @@ body {
   flex-direction: column;
 }
 
-/* Note: .table-card intentionally has no `overflow: hidden` — an overflow
-   value other than visible on an ancestor breaks position: sticky for the
-   toolbar/column headers below. Corner rounding is instead applied directly
-   to the first/last children (see .table-toolbar / .table-responsive). */
+/* Cards that wrap a scrollable table (.table-responsive) fill the remaining
+   height of their view instead of growing with their content, so the table
+   body scrolls internally while the toolbar/column headers stay in place. */
+.table-card:has(.table-responsive) {
+  flex: 1;
+  min-height: 0;
+}
+
 .table-toolbar {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-color);
@@ -629,6 +637,10 @@ body {
 
 .table-responsive {
   width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
 }
 
 .table-responsive:last-child {
@@ -701,7 +713,7 @@ th {
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--border-color);
   position: sticky;
-  top: var(--table-toolbar-height, 0px);
+  top: 0;
   z-index: 2;
 }
 
@@ -980,7 +992,10 @@ label {
 .reconciliation-grid {
   display: grid;
   grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
   gap: 24px;
+  flex: 1;
+  min-height: 0;
 }
 
 .reconcile-tabs {

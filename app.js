@@ -160,10 +160,6 @@ document.addEventListener("DOMContentLoaded", () => {
     switchToView(lastView);
   }
 
-  updateStickyToolbarOffsets();
-
-  window.addEventListener("resize", updateStickyToolbarOffsets);
-  window.addEventListener("load", updateStickyToolbarOffsets);
 });
 
 // Load DB from LocalStorage
@@ -446,20 +442,7 @@ function renderView(view) {
   } else if (view === "backup") {
     renderBackupView();
   }
-  updateStickyToolbarOffsets();
   checkBackupReminder();
-}
-
-// Measures each .table-toolbar and exposes its height as a CSS variable on its
-// parent .table-card, so sticky column headers below it can offset by that height
-// instead of overlapping the sticky search/filter bar.
-function updateStickyToolbarOffsets() {
-  document.querySelectorAll(".table-card").forEach(card => {
-    const toolbar = card.querySelector(".table-toolbar");
-    if (toolbar) {
-      card.style.setProperty("--table-toolbar-height", `${toolbar.offsetHeight}px`);
-    }
-  });
 }
 
 function renderAll() {
