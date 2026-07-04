@@ -36,12 +36,19 @@ function initSettingsHandlers() {
   // Departments CRUD modal launch
   document.getElementById("add-dept-btn").addEventListener("click", () => openDeptModal());
   document.getElementById("dept-modal-submit").addEventListener("click", submitDeptForm);
+
+  // Salaries CRUD modal handlers
+  document.getElementById("salary-modal-close").addEventListener("click", () => closeSettingsModal("salary"));
+  document.getElementById("salary-modal-cancel").addEventListener("click", () => closeSettingsModal("salary"));
+  document.getElementById("add-salary-btn").addEventListener("click", () => openSalaryModal());
+  document.getElementById("salary-modal-submit").addEventListener("click", submitSalaryForm);
 }
 
 function renderSettings() {
   renderAccountsList();
   renderRoomsList();
   renderDepartmentsList();
+  renderSalariesList();
 }
 
 function closeSettingsModal(type) {
@@ -424,6 +431,124 @@ function deleteDept(name) {
     appState.settings.departments = appState.settings.departments.filter(d => d !== name);
     saveDatabase();
     populateDropdowns();
+    renderSettings();
+  }
+}
+
+// Salaries settings
+function renderSalariesList() {
+  const container = document.getElementById("settings-salaries-list");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const salaries = appState.settings.salaries || [];
+  salaries.forEach(sal => {
+    container.innerHTML += `
+      <div class="settings-list-item">
+        <div class="settings-list-item-info">
+          <span class="settings-list-item-code" style="font-family: inherit;">${sal.job}</span>
+          <span class="settings-list-item-desc">${parseFloat(sal.rate).toFixed(2)} $ / heure</span>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-icon edit-salary-btn" data-id="${sal.id}" title="Modifier">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </button>
+          <button class="btn-icon delete-salary-btn" data-id="${sal.id}" title="Supprimer" style="color: var(--danger);">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  // Attach listeners
+  document.querySelectorAll(".edit-salary-btn").forEach(btn => {
+    btn.addEventListener("click", () => openSalaryModal(btn.getAttribute("data-id")));
+  });
+  document.querySelectorAll(".delete-salary-btn").forEach(btn => {
+    btn.addEventListener("click", () => deleteSalary(btn.getAttribute("data-id")));
+  });
+}
+
+function openSalaryModal(id = null) {
+  const form = document.getElementById("salary-form");
+  const title = document.getElementById("salary-modal-title");
+  form.reset();
+
+  if (id) {
+    title.textContent = "Modifier l'emploi";
+    const salaries = appState.settings.salaries || [];
+    const sal = salaries.find(s => s.id === id);
+    if (sal) {
+      document.getElementById("form-salary-original-id").value = sal.id;
+      document.getElementById("form-salary-job").value = sal.job;
+      document.getElementById("form-salary-rate").value = sal.rate;
+    }
+  } else {
+    title.textContent = "Ajouter un emploi";
+    document.getElementById("form-salary-original-id").value = "";
+  }
+  openSettingsModal("salary");
+}
+
+function submitSalaryForm(e) {
+  e.preventDefault();
+  const originalId = document.getElementById("form-salary-original-id").value;
+  const job = document.getElementById("form-salary-job").value.trim();
+  const rateStr = document.getElementById("form-salary-rate").value.trim();
+  const rate = parseFloat(rateStr);
+
+  if (!job) {
+    alert("Le nom de l'emploi est obligatoire.");
+    return;
+  }
+
+  if (isNaN(rate) || rate < 0) {
+    alert("Veuillez saisir un taux horaire valide (supérieur ou égal à 0).");
+    return;
+  }
+
+  const salaries = appState.settings.salaries || [];
+
+  // Check duplicate job name
+  const duplicate = salaries.some(s =>
+    s.job.toUpperCase() === job.toUpperCase() && s.id !== originalId
+  );
+  if (duplicate) {
+    alert("Cet emploi existe déjà.");
+    return;
+  }
+
+  if (originalId) {
+    // Edit Mode
+    const idx = salaries.findIndex(s => s.id === originalId);
+    if (idx !== -1) {
+      salaries[idx] = { id: originalId, job, rate };
+    }
+  } else {
+    // New Mode
+    const newId = generateUid("salary");
+    salaries.push({ id: newId, job, rate });
+  }
+
+  // Sort salaries by job name
+  salaries.sort((a, b) => a.job.localeCompare(b.job));
+
+  appState.settings.salaries = salaries;
+
+  saveDatabase();
+  closeSettingsModal("salary");
+  renderSettings();
+}
+
+function deleteSalary(id) {
+  const salaries = appState.settings.salaries || [];
+  const sal = salaries.find(s => s.id === id);
+  const jobName = sal ? sal.job : "";
+
+  if (confirm(`Voulez-vous vraiment supprimer l'emploi "${jobName}" ?`)) {
+    appState.settings.salaries = salaries.filter(s => s.id !== id);
+    saveDatabase();
     renderSettings();
   }
 }

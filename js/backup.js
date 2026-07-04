@@ -2,12 +2,225 @@
  * backup.js - Backup/restore (JSON) and Excel export controllers
  */
 
+// --- Automatic file backup (File System Access API) ---
+// Keeps the localStorage database as the single source of truth; this only
+// mirrors a JSON snapshot to a file the user picked, on every saveDatabase().
+// The FileSystemFileHandle itself is persisted in a tiny IndexedDB store (not
+// used for app data) so the connection survives page reloads.
+const AUTO_BACKUP_DB_NAME = "outil_marie_autobackup";
+const AUTO_BACKUP_STORE = "handles";
+const AUTO_BACKUP_KEY = "backup_file";
+
+let autoBackupHandle = null;
+let autoBackupLastWrite = null;
+let autoBackupWriteTimer = null;
+
+function openAutoBackupDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(AUTO_BACKUP_DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(AUTO_BACKUP_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbGetAutoBackupHandle() {
+  const db = await openAutoBackupDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(AUTO_BACKUP_STORE, "readonly");
+    const req = tx.objectStore(AUTO_BACKUP_STORE).get(AUTO_BACKUP_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbSetAutoBackupHandle(handle) {
+  const db = await openAutoBackupDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(AUTO_BACKUP_STORE, "readwrite");
+    tx.objectStore(AUTO_BACKUP_STORE).put(handle, AUTO_BACKUP_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function idbClearAutoBackupHandle() {
+  const db = await openAutoBackupDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(AUTO_BACKUP_STORE, "readwrite");
+    tx.objectStore(AUTO_BACKUP_STORE).delete(AUTO_BACKUP_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// Builds the status widget with DOM APIs (not innerHTML) since the file name
+// comes from the user's filesystem and shouldn't be interpolated as markup.
+function renderAutoBackupStatus(status, filename) {
+  updateAutoBackupBanner(status, filename);
+
+  const container = document.getElementById("auto-backup-status");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (status === "unsupported") {
+    const span = document.createElement("span");
+    span.style.color = "var(--text-secondary)";
+    span.textContent = "Non disponible sur ce navigateur (Chrome ou Edge requis).";
+    container.appendChild(span);
+    return;
+  }
+
+  if (status === "disconnected") {
+    const btn = document.createElement("button");
+    btn.id = "auto-backup-connect-btn";
+    btn.className = "btn btn-primary btn-secondary";
+    btn.textContent = "Choisir un fichier de sauvegarde automatique";
+    container.appendChild(btn);
+    return;
+  }
+
+  const badge = document.createElement("span");
+  badge.className = status === "connected" ? "badge badge-success" : "badge badge-warning";
+  badge.textContent = status === "connected" ? "Actif" : "Permission requise";
+  container.appendChild(badge);
+
+  const info = document.createElement("span");
+  let infoText = `Fichier : ${filename}`;
+  if (status === "connected" && autoBackupLastWrite) {
+    infoText += ` — dernière écriture : ${autoBackupLastWrite.toLocaleTimeString("fr-CA")}`;
+  }
+  info.textContent = infoText;
+  container.appendChild(info);
+
+  if (status === "needs-permission") {
+    const reconnectBtn = document.createElement("button");
+    reconnectBtn.id = "auto-backup-reconnect-btn";
+    reconnectBtn.className = "btn btn-secondary";
+    reconnectBtn.textContent = "Reconnecter";
+    container.appendChild(reconnectBtn);
+  }
+
+  const disconnectBtn = document.createElement("button");
+  disconnectBtn.id = "auto-backup-disconnect-btn";
+  disconnectBtn.className = "btn btn-secondary btn-danger";
+  disconnectBtn.textContent = "Désactiver";
+  container.appendChild(disconnectBtn);
+}
+
+// Shows/hides the app-wide banner (visible on every view, not just the
+// Sauvegarde & Export screen) so a lapsed permission doesn't go unnoticed.
+function updateAutoBackupBanner(status, filename) {
+  const banner = document.getElementById("auto-backup-reminder-banner");
+  if (!banner) return;
+
+  if (status === "needs-permission") {
+    document.getElementById("auto-backup-reminder-filename").textContent = filename || "";
+    banner.style.display = "flex";
+  } else {
+    banner.style.display = "none";
+  }
+}
+
+async function initAutoBackup() {
+  if (!window.showSaveFilePicker) {
+    renderAutoBackupStatus("unsupported");
+    return;
+  }
+  try {
+    const stored = await idbGetAutoBackupHandle();
+    if (!stored) {
+      renderAutoBackupStatus("disconnected");
+      return;
+    }
+    autoBackupHandle = stored;
+    const perm = await stored.queryPermission({ mode: "readwrite" });
+    renderAutoBackupStatus(perm === "granted" ? "connected" : "needs-permission", stored.name);
+  } catch (e) {
+    console.error("Erreur d'initialisation de la sauvegarde automatique", e);
+    renderAutoBackupStatus("disconnected");
+  }
+}
+
+async function connectAutoBackupFile() {
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: "compta_marie_autosave.json",
+      types: [{ description: "Sauvegarde JSON", accept: { "application/json": [".json"] } }]
+    });
+    const perm = await handle.requestPermission({ mode: "readwrite" });
+    if (perm !== "granted") {
+      alert("Permission refusée : impossible d'activer la sauvegarde automatique.");
+      return;
+    }
+    await idbSetAutoBackupHandle(handle);
+    autoBackupHandle = handle;
+    renderAutoBackupStatus("connected", handle.name);
+    await writeAutoBackupNow();
+  } catch (e) {
+    if (e.name !== "AbortError") {
+      console.error(e);
+      alert("Erreur lors de la sélection du fichier : " + e.message);
+    }
+  }
+}
+
+async function reconnectAutoBackupPermission() {
+  if (!autoBackupHandle) return;
+  try {
+    const perm = await autoBackupHandle.requestPermission({ mode: "readwrite" });
+    if (perm === "granted") {
+      renderAutoBackupStatus("connected", autoBackupHandle.name);
+      await writeAutoBackupNow();
+    } else {
+      alert("Permission refusée.");
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Erreur lors de la reconnexion : " + e.message);
+  }
+}
+
+async function disconnectAutoBackup() {
+  if (!confirm("Désactiver la sauvegarde automatique vers ce fichier ?")) return;
+  await idbClearAutoBackupHandle();
+  autoBackupHandle = null;
+  autoBackupLastWrite = null;
+  renderAutoBackupStatus("disconnected");
+}
+
+// Debounced so a burst of saveDatabase() calls (e.g. migrations) only
+// triggers a single disk write.
+function scheduleAutoBackupWrite() {
+  if (!autoBackupHandle) return;
+  clearTimeout(autoBackupWriteTimer);
+  autoBackupWriteTimer = setTimeout(writeAutoBackupNow, 1500);
+}
+
+async function writeAutoBackupNow() {
+  if (!autoBackupHandle) return;
+  try {
+    const perm = await autoBackupHandle.queryPermission({ mode: "readwrite" });
+    if (perm !== "granted") {
+      renderAutoBackupStatus("needs-permission", autoBackupHandle.name);
+      return;
+    }
+    const writable = await autoBackupHandle.createWritable();
+    await writable.write(JSON.stringify(appState, null, 2));
+    await writable.close();
+    autoBackupLastWrite = new Date();
+    renderAutoBackupStatus("connected", autoBackupHandle.name);
+  } catch (e) {
+    console.error("Échec de l'écriture de la sauvegarde automatique", e);
+  }
+}
+
 function initBackupHandlers() {
   // Export JSON Backup
-  document.getElementById("backup-export-json").addEventListener("click", () => {
+  document.getElementById("backup-export-json").addEventListener("click", async () => {
     // Update last backup date to today before export
     appState.settings.last_backup_date = new Date().toISOString().split('T')[0];
-    saveDatabase();
+    await saveDatabase();
 
     // Refresh banner and backup view
     checkBackupReminder();
@@ -39,9 +252,9 @@ function initBackupHandlers() {
   });
 
   // Reset database button
-  document.getElementById("backup-reset-db").addEventListener("click", () => {
+  document.getElementById("backup-reset-db").addEventListener("click", async () => {
     if (confirm("ATTENTION : Cette action va supprimer définitivement toutes vos activités enregistrées. Les comptes, tarifs de salles et départements seront réinitialisés à leurs valeurs d'origine. Voulez-vous continuer ?")) {
-      seedDatabase();
+      await seedDatabase();
       applyTheme("dark");
       renderAll();
       checkBackupReminder();
@@ -72,12 +285,31 @@ function initBackupHandlers() {
       switchToView("backup");
     });
   }
+
+  // Automatic file backup controls (event delegation: buttons are re-rendered)
+  const autoBackupContainer = document.getElementById("auto-backup-status");
+  if (autoBackupContainer) {
+    autoBackupContainer.addEventListener("click", (e) => {
+      if (e.target.id === "auto-backup-connect-btn") connectAutoBackupFile();
+      else if (e.target.id === "auto-backup-reconnect-btn") reconnectAutoBackupPermission();
+      else if (e.target.id === "auto-backup-disconnect-btn") disconnectAutoBackup();
+    });
+  }
+  initAutoBackup();
+
+  // Global banner "Reconnecter" button (visible on every view)
+  const autoBackupBannerBtn = document.getElementById("auto-backup-reminder-btn");
+  if (autoBackupBannerBtn) {
+    autoBackupBannerBtn.addEventListener("click", () => {
+      reconnectAutoBackupPermission();
+    });
+  }
 }
 
 function handleJsonBackupFile(file) {
   const reader = new FileReader();
 
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     try {
       const parsed = JSON.parse(e.target.result);
       if (parsed.settings && parsed.activities) {
@@ -86,6 +318,7 @@ function handleJsonBackupFile(file) {
 
           // Sanitize settings on restoration
           if (!appState.settings) appState.settings = {};
+          if (!appState.settings.salaries) appState.settings.salaries = [];
           if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
           appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
           if (isNaN(appState.settings.backup_reminder_days)) {
@@ -96,7 +329,7 @@ function handleJsonBackupFile(file) {
           if (appState.settings && appState.settings.accounts) {
             appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
           }
-          saveDatabase();
+          await saveDatabase();
           applyTheme(appState.settings.theme || "dark");
           renderAll();
           checkBackupReminder();

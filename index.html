@@ -120,6 +120,15 @@
         <button id="backup-banner-action-btn" class="btn-warning-outline">Sauvegarder maintenant</button>
       </div>
 
+      <!-- Global Auto-Backup Reconnection Alert Banner -->
+      <div id="auto-backup-reminder-banner" class="backup-alert-banner" style="display: none;">
+        <span class="backup-alert-message">
+          <svg viewBox="0 0 24 24" class="alert-icon" style="fill: var(--warning-text); margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          <span>La sauvegarde automatique vers <strong id="auto-backup-reminder-filename"></strong> a besoin d'être reconnectée.</span>
+        </span>
+        <button id="auto-backup-reminder-btn" class="btn-warning-outline">Reconnecter</button>
+      </div>
+
       <!-- View Containers -->
       <div class="view-container">
         
@@ -327,6 +336,7 @@
               <button class="settings-tab-btn active" data-settings-panel="accounts">Comptes GL</button>
               <button class="settings-tab-btn" data-settings-panel="rooms">Salles & Tarifs</button>
               <button class="settings-tab-btn" data-settings-panel="departments">Départements</button>
+              <button class="settings-tab-btn" data-settings-panel="salaries">Salaires</button>
             </aside>
             
             <!-- Settings Panel Content -->
@@ -367,6 +377,19 @@
                   </button>
                 </div>
                 <div id="settings-depts-list" class="settings-list">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+
+              <!-- 4.4 Salaries settings panel -->
+              <div id="panel-salaries" class="settings-panel">
+                <div class="settings-panel-header">
+                  <h3 class="settings-panel-title">Gestion des Salaires / Emplois</h3>
+                  <button id="add-salary-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
+                    + Ajouter un emploi
+                  </button>
+                </div>
+                <div id="settings-salaries-list" class="settings-list">
                   <!-- Dynamically populated -->
                 </div>
               </div>
@@ -439,6 +462,16 @@
                 <label for="backup-reminder-days-input" style="font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); cursor: pointer;">Rappeler après :</label>
                 <input type="number" id="backup-reminder-days-input" class="form-input" min="1" max="365" style="width: 80px; padding: 6px 10px; text-align: center;" value="7">
                 <span style="font-size: 0.9rem; color: var(--text-secondary);">jours</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px;">
+            <div class="stat-card" style="gap: 16px;">
+              <h3 class="chart-title">Sauvegarde automatique (fichier local)</h3>
+              <p style="font-size: 0.9rem; color: var(--text-secondary);">Choisissez un fichier sur votre ordinateur : l'application y réécrira automatiquement une copie à jour des données à chaque modification. Fonctionne sur Chrome et Edge uniquement.</p>
+              <div id="auto-backup-status" style="font-size: 0.9rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <!-- Populated dynamically via JS -->
               </div>
             </div>
           </div>
@@ -735,6 +768,33 @@
     <div class="modal-footer">
       <button id="dept-modal-cancel" class="btn btn-secondary">Annuler</button>
       <button id="dept-modal-submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- Salary Add/Edit Modal -->
+  <div id="salary-modal" class="modal">
+    <div class="modal-header">
+      <h3 id="salary-modal-title" class="modal-title">Ajouter un emploi</h3>
+      <button id="salary-modal-close" class="btn-icon">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="modal-content">
+      <form id="salary-form">
+        <input type="hidden" id="form-salary-original-id">
+        <div class="form-group">
+          <label for="form-salary-job">Nom de l'emploi / fonction</label>
+          <input type="text" id="form-salary-job" class="form-input" required placeholder="Ex: Technicien de scène">
+        </div>
+        <div class="form-group">
+          <label for="form-salary-rate">Taux horaire ($ / heure)</label>
+          <input type="number" id="form-salary-rate" class="form-input" min="0" step="0.01" required placeholder="Ex: 25.00">
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button id="salary-modal-cancel" class="btn btn-secondary">Annuler</button>
+      <button id="salary-modal-submit" class="btn btn-primary">Enregistrer</button>
     </div>
   </div>
 

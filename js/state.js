@@ -54,6 +54,14 @@ const DEFAULT_CONFIG = {
     { code: "892-9020-05-889", description: "INTERNE (PROJO CINÉ-CLUB)" },
     { code: "892-9020-06-889", description: "INTERNE (PROJO SFB)" },
     { code: "892-9020-07-889", description: "INTERNE (PROJO POLY)" }
+  ],
+  salaries: [
+    { id: "salary-dt", job: "Directeur technique", rate: 74 },
+    { id: "salary-tc", job: "Technicien contractuel", rate: 57 },
+    { id: "salary-aet", job: "Appariteur étudiant technicien", rate: 37 },
+    { id: "salary-hote", job: "Hôte", rate: 27 },
+    { id: "salary-as", job: "Agent de sécurité", rate: 50 },
+    { id: "salary-sauveteur", job: "Sauveteur", rate: 42 }
   ]
 };
 
@@ -77,7 +85,8 @@ let appState = {
     departments: [...DEFAULT_CONFIG.departments],
     accounts: [...DEFAULT_CONFIG.accounts],
     last_backup_date: "",
-    backup_reminder_days: 7
+    backup_reminder_days: 7,
+    salaries: [...DEFAULT_CONFIG.salaries]
   },
   activities: [],
   selected_year: "",
@@ -145,21 +154,82 @@ function parseLocalDateStr(dateStr) {
   return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
 }
 
-// Load DB from LocalStorage
-function loadDatabase() {
-  const localData = localStorage.getItem("outil_marie_db");
-  if (localData) {
-    try {
-      const parsed = JSON.parse(localData);
-      appState.settings = parsed.settings || appState.settings;
-      appState.activities = parsed.activities || [];
-      appState.selected_year = parsed.selected_year || getDefaultFiscalYear();
-      appState.selected_quarters = parsed.selected_quarters || [1, 2, 3, 4];
+// --- IndexedDB Configuration for App State ---
+const APP_DB_NAME = "outil_marie_app";
+const APP_STORE_NAME = "app_state_store";
+const APP_STATE_KEY = "app_state";
+
+function openAppDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(APP_DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(APP_STORE_NAME)) {
+        db.createObjectStore(APP_STORE_NAME);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function getAppStateFromDb() {
+  return openAppDb().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(APP_STORE_NAME, "readonly");
+      const store = tx.objectStore(APP_STORE_NAME);
+      const req = store.get(APP_STATE_KEY);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+function saveAppStateToDb(state) {
+  return openAppDb().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(APP_STORE_NAME, "readwrite");
+      const store = tx.objectStore(APP_STORE_NAME);
+      const req = store.put(state, APP_STATE_KEY);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+// Load DB from IndexedDB (with transparent migration from localStorage)
+async function loadDatabase() {
+  try {
+    let dbData = await getAppStateFromDb();
+
+    if (!dbData) {
+      // IndexedDB is empty, check localStorage
+      const localData = localStorage.getItem("outil_marie_db");
+      if (localData) {
+        try {
+          dbData = JSON.parse(localData);
+          console.log("Migrating data from localStorage to IndexedDB...");
+          await saveAppStateToDb(dbData);
+          localStorage.setItem("outil_marie_db_migrated_backup", localData);
+          localStorage.removeItem("outil_marie_db");
+          console.log("Migration successful, backup created in localStorage under 'outil_marie_db_migrated_backup'");
+        } catch (e) {
+          console.error("Error parsing legacy localStorage database", e);
+        }
+      }
+    }
+
+    if (dbData) {
+      appState.settings = dbData.settings || appState.settings;
+      appState.activities = dbData.activities || [];
+      appState.selected_year = dbData.selected_year || getDefaultFiscalYear();
+      appState.selected_quarters = dbData.selected_quarters || [1, 2, 3, 4];
 
       // Safety check: ensure accounts, rooms, departments exist
       if (!appState.settings.accounts) appState.settings.accounts = [...DEFAULT_CONFIG.accounts];
       if (!appState.settings.rooms) appState.settings.rooms = [...DEFAULT_CONFIG.rooms];
       if (!appState.settings.departments) appState.settings.departments = [...DEFAULT_CONFIG.departments];
+      if (!appState.settings.salaries || appState.settings.salaries.length === 0) appState.settings.salaries = [...DEFAULT_CONFIG.salaries];
       if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
       appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
       if (isNaN(appState.settings.backup_reminder_days)) {
@@ -173,12 +243,12 @@ function loadDatabase() {
 
       migrateRoomsConfig();
       migrateActivities();
-    } catch (e) {
-      console.error("Error parsing local database, using defaults", e);
-      seedDatabase();
+    } else {
+      await seedDatabase();
     }
-  } else {
-    seedDatabase();
+  } catch (e) {
+    console.error("Error loading database from IndexedDB, using defaults", e);
+    await seedDatabase();
   }
 }
 
@@ -271,26 +341,32 @@ function migrateActivities() {
 }
 
 // Seed Initial Database with empty activities list
-function seedDatabase() {
+async function seedDatabase() {
   appState.settings = {
     theme: "dark",
     rooms: [...DEFAULT_CONFIG.rooms],
     departments: [...DEFAULT_CONFIG.departments],
     accounts: [...DEFAULT_CONFIG.accounts].sort((a, b) => a.code.localeCompare(b.code)),
     last_backup_date: "",
-    backup_reminder_days: 7
+    backup_reminder_days: 7,
+    salaries: [...DEFAULT_CONFIG.salaries]
   };
 
   appState.activities = [];
   appState.selected_year = getDefaultFiscalYear();
   appState.selected_quarters = [1, 2, 3, 4];
-  saveDatabase();
+  await saveDatabase();
 }
 
-// Save state to LocalStorage
-function saveDatabase() {
-  localStorage.setItem("outil_marie_db", JSON.stringify(appState));
+// Save state to IndexedDB
+async function saveDatabase() {
+  try {
+    await saveAppStateToDb(appState);
+  } catch (e) {
+    console.error("Error saving database to IndexedDB", e);
+  }
   checkBackupReminder();
+  if (typeof scheduleAutoBackupWrite === "function") scheduleAutoBackupWrite();
 }
 
 // Persist search/filter/sort/pagination state per view, so reloading the

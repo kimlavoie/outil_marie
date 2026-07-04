@@ -3,8 +3,8 @@
  * function once the DOM is ready.
  */
 
-document.addEventListener("DOMContentLoaded", () => {
-  loadDatabase();
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadDatabase();
   applyTheme(appState.settings.theme || "dark");
   initPeriodSelector();
   initNavigation();
