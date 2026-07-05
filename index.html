@@ -100,6 +100,18 @@
           </div>
         </div>
         <div class="top-bar-actions">
+          <div class="quick-access-dropdown" style="position: relative;">
+            <button id="quick-access-toggle-btn" class="btn btn-secondary" title="Accès rapide">
+              <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor; margin-right: 6px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              Accès rapide
+              <span id="quick-access-count-badge" class="badge badge-info" style="display: none; margin-left: 6px;">0</span>
+            </button>
+            <div id="quick-access-dropdown-panel" class="calendar-popover" style="width: 320px; left: auto; right: 0;">
+              <div id="quick-access-list-global" style="display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+          </div>
           <button id="quick-export-excel" class="btn btn-secondary">
             <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor; margin-right: 6px;">
               <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>

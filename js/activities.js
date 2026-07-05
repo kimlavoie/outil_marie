@@ -246,6 +246,11 @@ function renderActivities() {
         <td style="color: var(--text-muted);">${sansFraisText}</td>
         <td>${stateCellHtml}</td>
         <td class="text-right" style="white-space: nowrap;">
+          ${isFilled ? `
+          <button class="btn-icon favorite-act-btn" data-id="${act.id}" title="${isFavoriteActivity(act.id) ? 'Retirer des accès rapides' : 'Ajouter aux accès rapides'}" style="margin-right: 4px; color: ${isFavoriteActivity(act.id) ? 'var(--warning-text, #f59e0b)' : 'inherit'};">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;">${isFavoriteActivity(act.id) ? '<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' : '<path d="M12 15.39l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.09l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.39zM12 2L9.19 8.62 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24l-7.19-.62L12 2z"/>'}</svg>
+          </button>
+          ` : ''}
           <button class="btn-icon edit-act-btn" data-id="${act.id}" title="Modifier" style="margin-right: 4px;">
             <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
           </button>
@@ -271,6 +276,16 @@ function renderActivities() {
   document.querySelectorAll(".activity-row").forEach(row => {
     row.addEventListener("click", () => {
       openActivityDrawer(row.getAttribute("data-id"));
+    });
+  });
+
+  // Attach favorite (accès rapide) toggle buttons event listeners
+  document.querySelectorAll(".favorite-act-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleFavoriteActivity(btn.getAttribute("data-id"));
+      renderActivities();
+      renderQuickAccessAll();
     });
   });
 
@@ -308,6 +323,7 @@ function renderActivities() {
       const id = btn.getAttribute("data-id");
       if (confirm(`Voulez-vous vraiment supprimer l'activité ${id} ?`)) {
         appState.activities = appState.activities.filter(a => a.id !== id);
+        appState.favorites = (appState.favorites || []).filter(f => f !== id);
         saveDatabase();
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();
@@ -1396,6 +1412,11 @@ function openActivityDrawer(id, calendarReturn = null) {
   const act = appState.activities.find(a => a.id === id);
   if (!act) return;
 
+  if (act.name.trim() !== "") {
+    recordActivityView(act.id);
+    renderQuickAccessAll();
+  }
+
   form.reset();
   document.getElementById("form-distribution-list").innerHTML = "";
   document.getElementById("form-distribution-total-val").textContent = "0,00 $";
@@ -1643,6 +1664,7 @@ function deleteActivity() {
   if (confirm(`Êtes-vous sûr de vouloir supprimer l'activité ${id} ?`)) {
     // Delete the activity entirely from the database
     appState.activities = appState.activities.filter(a => a.id !== id);
+    appState.favorites = (appState.favorites || []).filter(f => f !== id);
 
     saveDatabase();
     closeActivityDrawer();

@@ -317,6 +317,7 @@ function handleJsonBackupFile(file) {
           appState = parsed;
 
           // Sanitize settings on restoration
+          if (!appState.favorites) appState.favorites = [];
           if (!appState.settings) appState.settings = {};
           if (!appState.settings.rooms) appState.settings.rooms = [];
           if (!appState.settings.salaries) appState.settings.salaries = [];

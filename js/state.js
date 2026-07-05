@@ -102,9 +102,47 @@ let appState = {
     salaries: [...DEFAULT_CONFIG.salaries]
   },
   activities: [],
+  favorites: [], // ids of activities pinned (by the user) to the "Accès rapide" list
   selected_year: "",
   selected_quarters: [1, 2, 3, 4]
 };
+
+// Quick access (favorites) helpers
+function isFavoriteActivity(id) {
+  return (appState.favorites || []).includes(id);
+}
+
+function toggleFavoriteActivity(id) {
+  if (!appState.favorites) appState.favorites = [];
+  if (appState.favorites.includes(id)) {
+    appState.favorites = appState.favorites.filter(f => f !== id);
+  } else {
+    appState.favorites.push(id);
+  }
+  saveDatabase();
+}
+
+// Recently-viewed activities (ephemeral browsing history for the "Accès rapide" list — kept in
+// localStorage rather than appState since it's per-device UI history, not app data to back up).
+const RECENT_ACTIVITIES_KEY = "outil_marie_recent_activities";
+const RECENT_ACTIVITIES_MAX = 5;
+
+function getRecentlyViewedActivityIds() {
+  try {
+    const raw = localStorage.getItem(RECENT_ACTIVITIES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// Moves `id` to the front of the recently-viewed list (de-duplicating), capped at
+// RECENT_ACTIVITIES_MAX entries. Call whenever an activity record is opened.
+function recordActivityView(id) {
+  const ids = getRecentlyViewedActivityIds().filter(existingId => existingId !== id);
+  ids.unshift(id);
+  localStorage.setItem(RECENT_ACTIVITIES_KEY, JSON.stringify(ids.slice(0, RECENT_ACTIVITIES_MAX)));
+}
 
 // Period Helpers
 function getFiscalYear(dateStr) {
@@ -235,6 +273,7 @@ async function loadDatabase() {
     if (dbData) {
       appState.settings = dbData.settings || appState.settings;
       appState.activities = dbData.activities || [];
+      appState.favorites = dbData.favorites || [];
       appState.selected_year = dbData.selected_year || getDefaultFiscalYear();
       appState.selected_quarters = dbData.selected_quarters || [1, 2, 3, 4];
 
@@ -257,6 +296,9 @@ async function loadDatabase() {
       migrateRoomsConfig();
       migrateSalariesConfig();
       migrateActivities();
+
+      // Drop favorites pointing at activities that no longer exist (deleted since last save)
+      appState.favorites = (appState.favorites || []).filter(id => appState.activities.some(a => a.id === id));
     } else {
       await seedDatabase();
     }
@@ -463,6 +505,7 @@ async function seedDatabase() {
   };
 
   appState.activities = [];
+  appState.favorites = [];
   appState.selected_year = getDefaultFiscalYear();
   appState.selected_quarters = [1, 2, 3, 4];
   await saveDatabase();
