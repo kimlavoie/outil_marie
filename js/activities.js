@@ -250,6 +250,11 @@ function renderActivities() {
             <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
           </button>
           ${isFilled ? `
+          <button class="btn-icon open-act-tab-btn" data-id="${act.id}" title="Ouvrir dans un nouvel onglet" style="margin-right: 4px;">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7zM5 5h5V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-5h-2v5H5V5z"/></svg>
+          </button>
+          ` : ''}
+          ${isFilled ? `
           <button class="btn-icon duplicate-act-btn" data-id="${act.id}" title="Dupliquer" style="margin-right: 4px;">
             <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
           </button>
@@ -274,6 +279,17 @@ function renderActivities() {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       openActivityDrawer(btn.getAttribute("data-id"));
+    });
+  });
+
+  // Attach "open in new tab" buttons event listeners
+  document.querySelectorAll(".open-act-tab-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      const url = new URL(window.location.href);
+      url.search = `?activity=${encodeURIComponent(id)}`;
+      window.open(url.toString(), "_blank");
     });
   });
 
@@ -373,6 +389,9 @@ function initFormHandlers() {
   // Phone number masks
   maskPhoneInput(document.getElementById("form-activity-manager-phone"));
   maskPhoneInput(document.getElementById("form-activity-client-phone"));
+
+  // Estimation / Soumission mode toggle
+  initActivityModeToggle();
 
   // Salle(s) pill toggle group: adds/removes a schedule card per room, in addition to the usual pill active state
   initRoomsScheduleGroup();
@@ -494,6 +513,7 @@ function createActivity(name) {
     event_type_other: "",
     distributions: [],
     state: "brouillon",
+    mode: "estimation",
     client: { first_name: "", last_name: "", phone: "", email: "" },
     staff: [],
     fees: [],
@@ -532,6 +552,40 @@ function duplicateActivityAndOpen(sourceId) {
 /* ==========================================================================
    ACTIVITY RECORD: STATE BAR & TABS
    ========================================================================== */
+
+/* ==========================================================================
+   ACTIVITY RECORD: ESTIMATION / SOUMISSION MODE TOGGLE
+   ========================================================================== */
+
+// Applies the mode to the form: toggles the active pill and hides/shows the
+// ".estimation-hide" sections (client identification, billing, manager,
+// event type, submission/contract file links) that estimation mode skips.
+// `locked` disables switching back to estimation once the activity has moved
+// past Brouillon (a submitted/approved activity always needs its full data).
+function applyActivityFormMode(mode, locked) {
+  const toggle = document.getElementById("activity-mode-toggle");
+  const panel = document.getElementById("activity-tab-panel-submission");
+  toggle.querySelectorAll(".pill-toggle").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.mode === mode);
+    btn.disabled = locked;
+  });
+  toggle.classList.toggle("locked", locked);
+  panel.classList.toggle("mode-estimation", mode === "estimation");
+  document.getElementById("activity-mode-locked-hint").style.display = locked ? "block" : "none";
+}
+
+function getActivityFormMode() {
+  const activeBtn = document.querySelector("#activity-mode-toggle .pill-toggle.active");
+  return activeBtn ? activeBtn.dataset.mode : "estimation";
+}
+
+function initActivityModeToggle() {
+  document.getElementById("activity-mode-toggle").addEventListener("click", (e) => {
+    const btn = e.target.closest(".pill-toggle");
+    if (!btn || btn.disabled) return;
+    applyActivityFormMode(btn.dataset.mode, false);
+  });
+}
 
 function switchActivityTab(tabName) {
   document.querySelectorAll(".activity-tab-btn").forEach(btn => {
@@ -694,6 +748,7 @@ function renderFileLinkStatus(kind, act) {
       btn.addEventListener("click", () => {
         commitActivityPatch(act.id, (a) => {
           a.state = "soumise";
+          a.mode = "soumission";
           a.submission.sent_at = new Date().toISOString().split("T")[0];
         });
         const updated = appState.activities.find(a => a.id === act.id);
@@ -915,6 +970,7 @@ function renderBillingStateStatus(act) {
 // Fills the activity form fields (everything except the id/internal-id keys)
 // from an existing activity object. Used by both Edit Mode and Duplicate Mode.
 function fillActivityFormFields(act) {
+  applyActivityFormMode(act.mode || "estimation", act.state !== "brouillon");
   document.getElementById("form-activity-name").value = act.name;
   document.getElementById("form-activity-attendees").value = act.attendees_count || "";
   document.getElementById("form-activity-client-firstname").value = act.client?.first_name || "";
@@ -1535,6 +1591,7 @@ function submitActivityForm(e) {
   // completed_at) are merged in untouched rather than overwritten.
   const payload = {
     id: rawId,
+    mode: getActivityFormMode(),
     responsable,
     name,
     attendees_count: attendeesCount,

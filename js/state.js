@@ -436,6 +436,9 @@ function migrateActivities() {
     // Activity lifecycle fields (state, client identification, planning tasks, submission/contract
     // file links, staff/fees for the cost calculation, billing dates)
     if (act.state === undefined) act.state = "brouillon";
+    // Legacy activities predate the Estimation/Soumission mode toggle and already carry full
+    // submission data, so they default to "soumission" rather than the lighter estimation mode.
+    if (act.mode === undefined) act.mode = "soumission";
     if (!act.client) act.client = { first_name: "", last_name: "", phone: "", email: "" };
     if (!act.staff) act.staff = [];
     if (!act.fees) act.fees = [];

@@ -320,6 +320,17 @@ body {
   box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
 }
 
+/* Activity form mode toggle (Estimation / Soumission) — hides everything not needed
+   for the estimate calculation while "estimation" is active */
+#activity-mode-toggle.locked .pill-toggle {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.mode-estimation .estimation-hide {
+  display: none !important;
+}
+
 /* Date + time side-by-side row inside form groups */
 .datetime-input-row {
   display: flex;
@@ -782,21 +793,29 @@ tr:hover td {
 
 .drawer {
   position: fixed;
-  top: 0;
-  right: -720px;
-  width: 720px;
-  max-width: 90vw;
-  height: 100%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -48%) scale(0.97);
+  width: 1200px;
+  max-width: 95vw;
+  height: 92vh;
+  max-height: 92vh;
   background-color: var(--bg-card);
+  border-radius: 12px;
   z-index: 100;
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
-  transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition-smooth);
+  overflow: hidden;
 }
 
 .drawer.active {
-  right: 0;
+  opacity: 1;
+  pointer-events: all;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .drawer-header {
@@ -805,6 +824,7 @@ tr:hover td {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-radius: 12px 12px 0 0;
 }
 
 .drawer-title {
@@ -825,6 +845,7 @@ tr:hover td {
   justify-content: flex-end;
   gap: 16px;
   background-color: var(--bg-main);
+  border-radius: 0 0 12px 12px;
 }
 
 /* Activity lifecycle: state bar, tabs, progress bar */

@@ -524,6 +524,18 @@
 
         <!-- ============ TAB: Soumission et contrat ============ -->
         <div id="activity-tab-panel-submission" class="activity-tab-panel active">
+          <!-- Mode: Estimation (calcul allégé) vs Soumission (formulaire complet) -->
+          <div class="form-group">
+            <label for="activity-mode-toggle">Mode</label>
+            <div id="activity-mode-toggle" class="pill-toggle-group">
+              <button type="button" class="pill-toggle" data-mode="estimation">Estimation</button>
+              <button type="button" class="pill-toggle" data-mode="soumission">Soumission</button>
+            </div>
+            <div id="activity-mode-locked-hint" style="margin-top: 6px; font-size: 0.78rem; color: var(--text-muted); display: none;">
+              Le mode est verrouillé sur « Soumission » une fois l'activité soumise ou approuvée.
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="form-activity-id">Numéro d'activité (Généré automatiquement, ex: 2627-001)</label>
             <input type="text" id="form-activity-id" class="form-input" placeholder="Généré automatiquement" disabled>
@@ -534,94 +546,100 @@
             <input type="text" id="form-activity-name" class="form-input" required placeholder="Ex: Réunion SCOUTS">
           </div>
 
-          <div class="form-group">
+          <div class="form-group estimation-hide">
             <label for="form-activity-attendees">Nombre de personnes attendues</label>
             <input type="number" id="form-activity-attendees" class="form-input" min="0" placeholder="Ex: 50">
           </div>
 
           <!-- Identification du client -->
-          <div class="form-section-title">Identification du client</div>
-          <div class="form-group-row">
-            <div class="form-group">
-              <label for="form-activity-client-firstname">Prénom du responsable</label>
-              <input type="text" id="form-activity-client-firstname" class="form-input" placeholder="Prénom">
+          <div class="estimation-hide">
+            <div class="form-section-title">Identification du client</div>
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="form-activity-client-firstname">Prénom du responsable</label>
+                <input type="text" id="form-activity-client-firstname" class="form-input" placeholder="Prénom">
+              </div>
+              <div class="form-group">
+                <label for="form-activity-client-lastname">Nom du responsable</label>
+                <input type="text" id="form-activity-client-lastname" class="form-input" placeholder="Nom">
+              </div>
             </div>
-            <div class="form-group">
-              <label for="form-activity-client-lastname">Nom du responsable</label>
-              <input type="text" id="form-activity-client-lastname" class="form-input" placeholder="Nom">
-            </div>
-          </div>
-          <div class="form-group-row">
-            <div class="form-group">
-              <label for="form-activity-client-phone">Téléphone</label>
-              <input type="tel" id="form-activity-client-phone" class="form-input" placeholder="Ex: 514-555-1234">
-            </div>
-            <div class="form-group">
-              <label for="form-activity-client-email">Courriel</label>
-              <input type="email" id="form-activity-client-email" class="form-input" placeholder="nom@exemple.com">
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="form-activity-client-phone">Téléphone</label>
+                <input type="tel" id="form-activity-client-phone" class="form-input" placeholder="Ex: 514-555-1234">
+              </div>
+              <div class="form-group">
+                <label for="form-activity-client-email">Courriel</label>
+                <input type="email" id="form-activity-client-email" class="form-input" placeholder="nom@exemple.com">
+              </div>
             </div>
           </div>
 
           <!-- Facturation -->
-          <div class="form-section-title">Facturation</div>
-          <div class="form-group-row">
-            <div class="form-group">
-              <label for="form-activity-responsable">Responsable Facturation</label>
-              <input type="text" id="form-activity-responsable" class="form-input" placeholder="Ex: M. Dupont">
+          <div class="estimation-hide">
+            <div class="form-section-title">Facturation</div>
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="form-activity-responsable">Responsable Facturation</label>
+                <input type="text" id="form-activity-responsable" class="form-input" placeholder="Ex: M. Dupont">
+              </div>
+              <div class="form-group">
+                <label for="form-activity-client-type">Client interne ou externe</label>
+                <select id="form-activity-client-type" class="select-input" style="padding: 10px 14px;">
+                  <option value="">Sélectionner...</option>
+                  <option value="interne">Interne</option>
+                  <option value="externe">Externe</option>
+                </select>
+              </div>
             </div>
+
             <div class="form-group">
-              <label for="form-activity-client-type">Client interne ou externe</label>
-              <select id="form-activity-client-type" class="select-input" style="padding: 10px 14px;">
-                <option value="">Sélectionner...</option>
-                <option value="interne">Interne</option>
-                <option value="externe">Externe</option>
+              <label for="form-activity-dept">Département</label>
+              <select id="form-activity-dept" class="select-input" style="padding: 10px 14px;">
+                <!-- Populated dynamically -->
               </select>
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="form-activity-dept">Département</label>
-            <select id="form-activity-dept" class="select-input" style="padding: 10px 14px;">
-              <!-- Populated dynamically -->
-            </select>
-          </div>
-
           <!-- Description -->
-          <div class="form-group">
+          <div class="form-group estimation-hide">
             <label for="form-activity-description">Description de l'activité</label>
             <textarea id="form-activity-description" class="form-input" rows="3" placeholder="Décrivez l'activité..."></textarea>
           </div>
 
           <!-- Responsable de l'activité -->
-          <div class="form-section-title">Responsable de l'activité</div>
-          <div class="form-group-row">
-            <div class="form-group">
-              <label for="form-activity-manager-firstname">Prénom</label>
-              <input type="text" id="form-activity-manager-firstname" class="form-input" placeholder="Prénom">
+          <div class="estimation-hide">
+            <div class="form-section-title">Responsable de l'activité</div>
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="form-activity-manager-firstname">Prénom</label>
+                <input type="text" id="form-activity-manager-firstname" class="form-input" placeholder="Prénom">
+              </div>
+              <div class="form-group">
+                <label for="form-activity-manager-lastname">Nom</label>
+                <input type="text" id="form-activity-manager-lastname" class="form-input" placeholder="Nom">
+              </div>
+            </div>
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="form-activity-manager-type">Fonction</label>
+                <select id="form-activity-manager-type" class="select-input" style="padding: 10px 14px;">
+                  <option value="">Sélectionner...</option>
+                  <option value="employe">Employé</option>
+                  <option value="etudiant">Étudiant</option>
+                  <option value="externe">Externe</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="form-activity-manager-phone">Numéro de téléphone</label>
+                <input type="tel" id="form-activity-manager-phone" class="form-input" placeholder="Ex: 514-555-1234">
+              </div>
             </div>
             <div class="form-group">
-              <label for="form-activity-manager-lastname">Nom</label>
-              <input type="text" id="form-activity-manager-lastname" class="form-input" placeholder="Nom">
+              <label for="form-activity-manager-email">Courriel</label>
+              <input type="email" id="form-activity-manager-email" class="form-input" placeholder="nom@exemple.com">
             </div>
-          </div>
-          <div class="form-group-row">
-            <div class="form-group">
-              <label for="form-activity-manager-type">Fonction</label>
-              <select id="form-activity-manager-type" class="select-input" style="padding: 10px 14px;">
-                <option value="">Sélectionner...</option>
-                <option value="employe">Employé</option>
-                <option value="etudiant">Étudiant</option>
-                <option value="externe">Externe</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="form-activity-manager-phone">Numéro de téléphone</label>
-              <input type="tel" id="form-activity-manager-phone" class="form-input" placeholder="Ex: 514-555-1234">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="form-activity-manager-email">Courriel</label>
-            <input type="email" id="form-activity-manager-email" class="form-input" placeholder="nom@exemple.com">
           </div>
 
           <!-- Salle(s), horaire et tarif -->
@@ -672,15 +690,17 @@
           </div>
 
           <!-- Type d'événement -->
-          <div class="form-group">
-            <label for="form-activity-event-type">Type d'événement</label>
-            <select id="form-activity-event-type" class="select-input" style="padding: 10px 14px;">
-              <!-- Populated dynamically -->
-            </select>
-          </div>
-          <div class="form-group" id="form-activity-event-type-other-group" style="display: none;">
-            <label for="form-activity-event-type-other">Précisez le type d'événement</label>
-            <input type="text" id="form-activity-event-type-other" class="form-input" placeholder="Précisez...">
+          <div class="estimation-hide">
+            <div class="form-group">
+              <label for="form-activity-event-type">Type d'événement</label>
+              <select id="form-activity-event-type" class="select-input" style="padding: 10px 14px;">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group" id="form-activity-event-type-other-group" style="display: none;">
+              <label for="form-activity-event-type-other">Précisez le type d'événement</label>
+              <input type="text" id="form-activity-event-type-other" class="form-input" placeholder="Précisez...">
+            </div>
           </div>
 
           <div class="form-group">
@@ -717,7 +737,7 @@
           </div>
 
           <!-- Soumission -->
-          <div class="distribution-section">
+          <div class="distribution-section estimation-hide">
             <div class="distribution-header">
               <label>Soumission</label>
             </div>
@@ -725,7 +745,7 @@
           </div>
 
           <!-- Contrat -->
-          <div class="distribution-section">
+          <div class="distribution-section estimation-hide">
             <div class="distribution-header">
               <label>Contrat</label>
             </div>
