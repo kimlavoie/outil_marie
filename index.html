@@ -118,6 +118,9 @@
             </svg>
             Exporter au format Excel
           </button>
+          <button id="add-estimation-btn-quick" class="btn btn-secondary" title="Créer une estimation, non enregistrée tant qu'elle n'est pas sauvegardée">
+            Estimation
+          </button>
           <button id="add-activity-btn-quick" class="btn btn-primary" title="Raccourci : Alt + N (ou Alt + A)">
             + Nouvelle Activité
           </button>
@@ -828,7 +831,7 @@
   <!-- New Activity (name-only) Modal -->
   <div id="new-activity-modal" class="modal">
     <div class="modal-header">
-      <h3 class="modal-title">Nouvelle activité</h3>
+      <h3 class="modal-title" id="new-activity-modal-title">Nouvelle activité</h3>
       <button id="new-activity-modal-close" class="btn-icon">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>

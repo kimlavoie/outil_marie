@@ -8,8 +8,17 @@ let activitiesState = {
   sortKey: "id",
   sortOrder: "asc",
   page: 1,
-  pageSize: 10
+  pageSize: 10,
+  // Id of an activity currently open in the drawer that hasn't been saved yet (created via the
+  // "Estimation" quick button). Discarded (removed from appState.activities, not just closed) if
+  // the drawer is closed/cancelled without clicking "Enregistrer".
+  draftActivityId: null
 };
+
+// Which flow the "Nom de l'activité" modal is currently serving: "soumission" creates and saves
+// the activity immediately in soumission mode; "estimation" only builds it in memory (estimation
+// mode) until the user actually saves the drawer form.
+let newActivityModalIntent = "soumission";
 
 // Activity lifecycle states, in order
 const ACTIVITY_STATES = [
@@ -340,12 +349,14 @@ function initFormHandlers() {
 
   // Open drawers buttons: creating an activity only asks for a name (see initNewActivityModal);
   // the full tabbed record opens immediately afterwards.
-  document.getElementById("add-activity-btn-quick").addEventListener("click", () => openNewActivityModal());
+  document.getElementById("add-activity-btn-quick").addEventListener("click", () => openNewActivityModal("soumission"));
+  document.getElementById("add-estimation-btn-quick").addEventListener("click", () => openNewActivityModal("estimation"));
 
-  // Close buttons
-  document.getElementById("activity-drawer-close").addEventListener("click", closeActivityDrawer);
-  document.getElementById("activity-drawer-cancel").addEventListener("click", closeActivityDrawer);
-  backdrop.addEventListener("click", closeActivityDrawer);
+  // Close buttons: discard the activity if it was only an in-memory draft (Estimation flow)
+  // that was never actually saved via "Enregistrer".
+  document.getElementById("activity-drawer-close").addEventListener("click", cancelActivityDrawer);
+  document.getElementById("activity-drawer-cancel").addEventListener("click", cancelActivityDrawer);
+  backdrop.addEventListener("click", cancelActivityDrawer);
 
   // Activity record tabs (Soumission et contrat / Planification / Facturation)
   document.querySelectorAll(".activity-tab-btn").forEach(btn => {
@@ -355,7 +366,7 @@ function initFormHandlers() {
   // Back to calendar button (only visible when opened from the calendar view)
   document.getElementById("activity-drawer-back-to-calendar-btn").addEventListener("click", () => {
     const calendarReturn = activitiesState.calendarReturn;
-    closeActivityDrawer();
+    cancelActivityDrawer();
     if (calendarReturn) reopenCalendarModal(calendarReturn);
   });
 
@@ -455,7 +466,7 @@ function initFormHandlers() {
 
     // Escape to close drawers and modals
     if (e.key === "Escape") {
-      closeActivityDrawer();
+      cancelActivityDrawer();
       closeNewActivityModal();
       if (typeof closeSettingsModal === "function") {
         closeSettingsModal("account");
@@ -477,9 +488,11 @@ function initNewActivityModal() {
   document.getElementById("new-activity-modal-submit").addEventListener("click", submitNewActivityForm);
 }
 
-function openNewActivityModal() {
+function openNewActivityModal(intent = "soumission") {
+  newActivityModalIntent = intent;
   const form = document.getElementById("new-activity-form");
   form.reset();
+  document.getElementById("new-activity-modal-title").textContent = intent === "estimation" ? "Nouvelle estimation" : "Nouvelle activité";
   document.getElementById("new-activity-modal").classList.add("active");
   document.getElementById("modal-backdrop").classList.add("active");
   setTimeout(() => document.getElementById("form-new-activity-name").focus(), 150);
@@ -497,18 +510,17 @@ function submitNewActivityForm(e) {
     alert("Veuillez saisir le nom de l'activité.");
     return;
   }
-  const id = createActivity(name);
+  const id = newActivityModalIntent === "estimation" ? createDraftActivity(name) : createActivity(name, "soumission");
   closeNewActivityModal();
   renderActivities();
   openActivityDrawer(id);
 }
 
-// Builds a brand-new activity record (all lifecycle/submission/planning/billing fields at their
-// defaults), saves it immediately, and returns its id. Mirrors the defaults migrateActivities()
-// backfills onto legacy records, so both paths keep producing the same shape.
-function createActivity(name) {
-  const id = generateNextActivityId();
-  appState.activities.push({
+// Shared field defaults for a brand-new activity record (all lifecycle/submission/planning/
+// billing fields at their defaults). Mirrors the defaults migrateActivities() backfills onto
+// legacy records, so both paths keep producing the same shape.
+function buildNewActivityRecord(id, name, mode) {
+  return {
     id,
     responsable: "",
     name,
@@ -529,7 +541,7 @@ function createActivity(name) {
     event_type_other: "",
     distributions: [],
     state: "brouillon",
-    mode: "estimation",
+    mode,
     client: { first_name: "", last_name: "", phone: "", email: "" },
     staff: [],
     fees: [],
@@ -538,8 +550,27 @@ function createActivity(name) {
     planning_tasks: [],
     billed_at: "",
     completed_at: ""
-  });
+  };
+}
+
+// Builds a brand-new activity record, saves it immediately, and returns its id. Used by the
+// "Nouvelle Activité" quick button (mode "soumission").
+function createActivity(name, mode = "soumission") {
+  const id = generateNextActivityId();
+  appState.activities.push(buildNewActivityRecord(id, name, mode));
   saveDatabase();
+  return id;
+}
+
+// Builds a brand-new activity record in "estimation" mode but only holds it in memory (not
+// persisted to the database) so the "Estimation" quick button can open it in the drawer without
+// registering it in the system until the user clicks "Enregistrer". See cancelActivityDrawer(),
+// which discards it if the drawer is closed without saving, and submitActivityForm(), which
+// clears the draft flag once it's actually saved.
+function createDraftActivity(name) {
+  const id = generateNextActivityId();
+  appState.activities.push(buildNewActivityRecord(id, name, "estimation"));
+  activitiesState.draftActivityId = id;
   return id;
 }
 
@@ -1455,6 +1486,17 @@ function closeActivityDrawer() {
   document.getElementById("drawer-backdrop").classList.remove("active");
 }
 
+// Closes the drawer and, if it was showing an unsaved draft (Estimation flow), discards it
+// entirely rather than leaving a phantom in-memory activity around.
+function cancelActivityDrawer() {
+  if (activitiesState.draftActivityId) {
+    appState.activities = appState.activities.filter(a => a.id !== activitiesState.draftActivityId);
+    activitiesState.draftActivityId = null;
+    renderActivities();
+  }
+  closeActivityDrawer();
+}
+
 function addDistributionRow(accountCode = "", amount = 0, reference = "") {
   const container = document.getElementById("form-distribution-list");
   const rowId = "dist-row-" + Date.now() + Math.random().toString(36).substr(2, 5);
@@ -1646,6 +1688,9 @@ function submitActivityForm(e) {
   if (idx === -1) return;
   appState.activities[idx] = { ...appState.activities[idx], ...payload };
 
+  // Now genuinely saved: no longer a pending Estimation draft that should be discarded on close.
+  if (activitiesState.draftActivityId === internalId) activitiesState.draftActivityId = null;
+
   saveDatabase();
   closeActivityDrawer();
 
@@ -1665,6 +1710,7 @@ function deleteActivity() {
     // Delete the activity entirely from the database
     appState.activities = appState.activities.filter(a => a.id !== id);
     appState.favorites = (appState.favorites || []).filter(f => f !== id);
+    if (activitiesState.draftActivityId === id) activitiesState.draftActivityId = null;
 
     saveDatabase();
     closeActivityDrawer();
