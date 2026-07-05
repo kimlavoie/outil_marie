@@ -1,7 +1,14 @@
 /**
- * settings.js - Settings view controller: CRUD for GL accounts, rooms, and
- * departments
+ * settings.js - Settings view controller: CRUD for GL accounts, rooms
+ * (pricing grids, linked rooms/staff/fees/tasks), departments, and salaries
+ * (versioned rate history)
  */
+
+// In-memory working copy of the room modal's pricing grid versions while the modal is open.
+// A 2D grid (parameters x client types) is awkward to serialize purely from the DOM on every
+// keystroke, so we keep a plain JS model here and only re-render the grid section when its
+// shape changes (a parameter/client type is added or removed, or the active version changes).
+let roomModalState = { grids: [], activeGridIndex: 0 };
 
 function initSettingsHandlers() {
   // Settings panels switcher
@@ -31,7 +38,28 @@ function initSettingsHandlers() {
   // Rooms CRUD modal launch
   document.getElementById("add-room-btn").addEventListener("click", () => openRoomModal());
   document.getElementById("room-modal-submit").addEventListener("click", submitRoomForm);
-  document.getElementById("form-add-room-tarif-btn").addEventListener("click", () => addRoomTarifRow());
+
+  // Pricing grid editor buttons
+  document.getElementById("room-grid-add-version-btn").addEventListener("click", addRoomGridVersion);
+  document.getElementById("room-grid-delete-version-btn").addEventListener("click", deleteRoomGridVersion);
+  document.getElementById("room-grid-add-param-btn").addEventListener("click", addRoomGridParameter);
+  document.getElementById("room-grid-add-clienttype-btn").addEventListener("click", addRoomGridClientType);
+  document.getElementById("room-grid-effective-date").addEventListener("input", (e) => {
+    roomModalState.grids[roomModalState.activeGridIndex].effective_date = e.target.value.trim();
+    renderRoomGridVersionTabs();
+  });
+
+  // Salles liées: delegated toggle listener (survives the pills being rebuilt on every open)
+  document.getElementById("room-linked-rooms-group").addEventListener("click", (e) => {
+    const btn = e.target.closest(".pill-toggle");
+    if (!btn) return;
+    btn.classList.toggle("active");
+  });
+
+  // Personnel/frais/tâches liés
+  document.getElementById("room-add-linked-staff-btn").addEventListener("click", () => addLinkedStaffRow());
+  document.getElementById("room-add-linked-fee-btn").addEventListener("click", () => addLinkedFeeRow());
+  document.getElementById("room-add-linked-task-btn").addEventListener("click", () => addLinkedTaskRow());
 
   // Departments CRUD modal launch
   document.getElementById("add-dept-btn").addEventListener("click", () => openDeptModal());
@@ -42,6 +70,7 @@ function initSettingsHandlers() {
   document.getElementById("salary-modal-cancel").addEventListener("click", () => closeSettingsModal("salary"));
   document.getElementById("add-salary-btn").addEventListener("click", () => openSalaryModal());
   document.getElementById("salary-modal-submit").addEventListener("click", submitSalaryForm);
+  document.getElementById("form-add-salary-rate-btn").addEventListener("click", () => addSalaryRateRow());
 }
 
 function renderSettings() {
@@ -59,6 +88,15 @@ function closeSettingsModal(type) {
 function openSettingsModal(type) {
   document.getElementById(`${type}-modal`).classList.add("active");
   document.getElementById("modal-backdrop").classList.add("active");
+}
+
+// Fills a <select> with every configured GL account, keeping `selectedCode` selected if given
+function buildGlAccountOptionsHtml(selectedCode = "") {
+  let html = '<option value="">Aucun</option>';
+  appState.settings.accounts.forEach(acc => {
+    html += `<option value="${acc.code}" ${acc.code === selectedCode ? "selected" : ""}>${acc.code} (${acc.description})</option>`;
+  });
+  return html;
 }
 
 // Accounts settings
@@ -178,21 +216,27 @@ function deleteAccount(code) {
   }
 }
 
-// Rooms settings
+/* ==========================================================================
+   ROOMS SETTINGS (pricing grid, linked rooms/staff/fees/tasks)
+   ========================================================================== */
+
 function renderRoomsList() {
   const container = document.getElementById("settings-rooms-list");
   container.innerHTML = "";
 
   appState.settings.rooms.forEach(r => {
-    const tarifsDesc = (r.tarifs && r.tarifs.length)
-      ? r.tarifs.map(t => `${t.description}: ${t.amount}$/jour`).join(" · ")
+    const tarifs = getFlattenedRoomTarifs(r, "");
+    const tarifsDesc = tarifs.length
+      ? tarifs.map(t => `${t.description}: ${formatCurrency(t.amount)}/jour`).join(" · ")
       : "Aucun tarif défini";
+    const versionCount = (r.pricing_grids || []).length;
+    const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
     container.innerHTML += `
       <div class="settings-list-item">
         <div class="settings-list-item-info">
           <span class="room-color-swatch" style="background-color: ${getRoomColor(r.name)};" title="Couleur de la salle"></span>
           <span class="settings-list-item-code">${r.name}</span>
-          <span class="settings-list-item-desc">${tarifsDesc}</span>
+          <span class="settings-list-item-desc">${tarifsDesc}${versionNote}</span>
         </div>
         <div class="flex gap-2">
           <button class="btn-icon edit-room-btn" data-name="${r.name}" title="Modifier">
@@ -219,46 +263,290 @@ function openRoomModal(name = null) {
   const form = document.getElementById("room-form");
   const title = document.getElementById("room-modal-title");
   form.reset();
-  document.getElementById("form-room-tarifs-list").innerHTML = "";
 
-  if (name) {
+  const room = name ? appState.settings.rooms.find(r => r.name === name) : null;
+
+  if (room) {
     title.textContent = "Modifier la salle";
-    const r = appState.settings.rooms.find(room => room.name === name);
-    if (r) {
-      document.getElementById("form-room-original-name").value = r.name;
-      document.getElementById("form-room-name").value = r.name;
-      document.getElementById("form-room-color").value = getRoomColor(r.name);
-      (r.tarifs || []).forEach(t => addRoomTarifRow(t.description, t.amount));
-    }
+    document.getElementById("form-room-original-name").value = room.name;
+    document.getElementById("form-room-name").value = room.name;
+    document.getElementById("form-room-color").value = getRoomColor(room.name);
+    roomModalState.grids = JSON.parse(JSON.stringify(room.pricing_grids || []));
   } else {
     title.textContent = "Ajouter une salle";
     document.getElementById("form-room-original-name").value = "";
     document.getElementById("form-room-color").value = FALLBACK_ROOM_COLORS[appState.settings.rooms.length % FALLBACK_ROOM_COLORS.length];
-    addRoomTarifRow();
+    roomModalState.grids = [];
   }
+
+  if (roomModalState.grids.length === 0) {
+    roomModalState.grids.push({ id: generateUid("grid"), effective_date: "", parameters: [], client_types: [], cells: [] });
+  }
+  roomModalState.activeGridIndex = roomModalState.grids.length - 1;
+  renderRoomGridEditor();
+
+  // Salles liées: build one pill per other room
+  const linkedRoomsContainer = document.getElementById("room-linked-rooms-group");
+  const otherRooms = appState.settings.rooms.filter(r => !room || r.name !== room.name);
+  linkedRoomsContainer.innerHTML = otherRooms.map(r =>
+    `<button type="button" class="pill-toggle" data-value="${r.name}">${r.name}</button>`
+  ).join("");
+  setPillGroupActive("room-linked-rooms-group", (room && room.linked_rooms) || []);
+
+  // Personnel lié
+  document.getElementById("room-linked-staff-list").innerHTML = "";
+  ((room && room.linked_staff) || []).forEach(s => addLinkedStaffRow(s.salary_id, s.count));
+
+  // Frais liés
+  document.getElementById("room-linked-fees-list").innerHTML = "";
+  ((room && room.linked_fees) || []).forEach(f => addLinkedFeeRow(f.description, f.amount, f.gl_account_code));
+
+  // Tâches liées
+  document.getElementById("room-linked-tasks-list").innerHTML = "";
+  ((room && room.linked_tasks) || []).forEach(t => addLinkedTaskRow(t.description));
+
   openSettingsModal("room");
 }
 
-// Adds one dynamic tarif row (description + montant/jour) to the room modal, mirrors addDistributionRow
-function addRoomTarifRow(description = "", amount = "") {
-  const container = document.getElementById("form-room-tarifs-list");
-  const rowId = generateUid("room-tarif-row");
+/* --- Pricing grid editor --- */
+
+function renderRoomGridEditor() {
+  renderRoomGridVersionTabs();
+  document.getElementById("room-grid-effective-date").value = roomModalState.grids[roomModalState.activeGridIndex].effective_date || "";
+  renderRoomGridParamsList();
+  renderRoomGridClientTypesList();
+  renderRoomGridCellsTable();
+}
+
+function renderRoomGridVersionTabs() {
+  const container = document.getElementById("room-grid-version-tabs");
+  container.innerHTML = roomModalState.grids.map((g, i) => `
+    <button type="button" class="pill-toggle grid-version-tab ${i === roomModalState.activeGridIndex ? "active" : ""}" data-index="${i}">
+      ${g.effective_date ? g.effective_date : "Depuis toujours"}
+    </button>
+  `).join("");
+  container.querySelectorAll(".grid-version-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      roomModalState.activeGridIndex = parseInt(btn.getAttribute("data-index"), 10);
+      renderRoomGridEditor();
+    });
+  });
+}
+
+function addRoomGridVersion() {
+  const clone = JSON.parse(JSON.stringify(roomModalState.grids[roomModalState.activeGridIndex]));
+  clone.id = generateUid("grid");
+  clone.effective_date = "";
+  roomModalState.grids.push(clone);
+  roomModalState.activeGridIndex = roomModalState.grids.length - 1;
+  renderRoomGridEditor();
+}
+
+function deleteRoomGridVersion() {
+  if (roomModalState.grids.length <= 1) {
+    alert("Une salle doit conserver au moins une version de grille tarifaire.");
+    return;
+  }
+  if (!confirm("Supprimer cette version de la grille tarifaire ?")) return;
+  roomModalState.grids.splice(roomModalState.activeGridIndex, 1);
+  roomModalState.activeGridIndex = Math.max(0, roomModalState.activeGridIndex - 1);
+  renderRoomGridEditor();
+}
+
+function renderRoomGridParamsList() {
+  const grid = roomModalState.grids[roomModalState.activeGridIndex];
+  const container = document.getElementById("room-grid-params-list");
+  container.innerHTML = grid.parameters.map((p, i) => `
+    <div class="distribution-row room-tarif-row" data-param-id="${p.id}" style="grid-template-columns: 1fr 1fr auto;">
+      <input type="text" class="form-input room-grid-param-name-input" value="${(p.name || "").replace(/"/g, "&quot;")}" placeholder="Ex: Journée" style="padding: 8px 12px; font-size: 0.85rem;">
+      <select class="select-input room-grid-param-gl-select" style="padding: 8px 12px; font-size: 0.85rem;" title="Compte GL pour la facturation (optionnel)">
+        ${buildGlAccountOptionsHtml(p.gl_account_code || "")}
+      </select>
+      <button type="button" class="btn-icon delete-room-grid-param-btn" data-index="${i}">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  `).join("");
+
+  container.querySelectorAll(".room-grid-param-name-input").forEach((input, i) => {
+    input.addEventListener("input", () => {
+      grid.parameters[i].name = input.value;
+      renderRoomGridCellsTable();
+    });
+  });
+  container.querySelectorAll(".room-grid-param-gl-select").forEach((select, i) => {
+    select.addEventListener("change", () => {
+      grid.parameters[i].gl_account_code = select.value;
+    });
+  });
+  container.querySelectorAll(".delete-room-grid-param-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.getAttribute("data-index"), 10);
+      const removedId = grid.parameters[idx].id;
+      grid.parameters.splice(idx, 1);
+      grid.cells = grid.cells.filter(c => c.parameter_id !== removedId);
+      renderRoomGridParamsList();
+      renderRoomGridCellsTable();
+    });
+  });
+}
+
+function addRoomGridParameter() {
+  const grid = roomModalState.grids[roomModalState.activeGridIndex];
+  grid.parameters.push({ id: generateUid("param"), name: "" });
+  renderRoomGridParamsList();
+  renderRoomGridCellsTable();
+}
+
+function renderRoomGridClientTypesList() {
+  const grid = roomModalState.grids[roomModalState.activeGridIndex];
+  const container = document.getElementById("room-grid-clienttypes-list");
+  container.innerHTML = grid.client_types.map((ct, i) => `
+    <div class="distribution-row room-tarif-row" data-ct-id="${ct.id}" style="grid-template-columns: 1fr auto;">
+      <input type="text" class="form-input room-grid-ct-name-input" value="${(ct.name || "").replace(/"/g, "&quot;")}" placeholder="Ex: Interne" style="padding: 8px 12px; font-size: 0.85rem;">
+      <button type="button" class="btn-icon delete-room-grid-ct-btn" data-index="${i}">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  `).join("");
+
+  container.querySelectorAll(".room-grid-ct-name-input").forEach((input, i) => {
+    input.addEventListener("input", () => {
+      grid.client_types[i].name = input.value;
+      renderRoomGridCellsTable();
+    });
+  });
+  container.querySelectorAll(".delete-room-grid-ct-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.getAttribute("data-index"), 10);
+      const removedId = grid.client_types[idx].id;
+      grid.client_types.splice(idx, 1);
+      grid.cells = grid.cells.filter(c => c.client_type_id !== removedId);
+      renderRoomGridClientTypesList();
+      renderRoomGridCellsTable();
+    });
+  });
+}
+
+function addRoomGridClientType() {
+  const grid = roomModalState.grids[roomModalState.activeGridIndex];
+  grid.client_types.push({ id: generateUid("ct"), name: "" });
+  renderRoomGridClientTypesList();
+  renderRoomGridCellsTable();
+}
+
+function renderRoomGridCellsTable() {
+  const grid = roomModalState.grids[roomModalState.activeGridIndex];
+  const wrapper = document.getElementById("room-grid-cells-table-wrapper");
+
+  if (grid.parameters.length === 0 || grid.client_types.length === 0) {
+    wrapper.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 12px 0;">Ajoutez au moins un paramètre et un type de client pour saisir les tarifs.</div>`;
+    return;
+  }
+
+  const headerCells = grid.client_types.map(ct => `<th>${ct.name || "(sans nom)"}</th>`).join("");
+  const bodyRows = grid.parameters.map(p => {
+    const cells = grid.client_types.map(ct => {
+      const cell = grid.cells.find(c => c.parameter_id === p.id && c.client_type_id === ct.id);
+      const amount = cell ? cell.amount : "";
+      return `<td><input type="number" min="0" step="0.01" class="form-input room-grid-cell-input" data-param-id="${p.id}" data-ct-id="${ct.id}" value="${amount}" style="padding: 6px 10px; font-size: 0.85rem; width: 100px;"></td>`;
+    }).join("");
+    return `<tr><td class="bold" style="white-space: nowrap; padding-right: 12px;">${p.name || "(sans nom)"}</td>${cells}</tr>`;
+  }).join("");
+
+  wrapper.innerHTML = `
+    <table class="detail-dist-table">
+      <thead><tr><th></th>${headerCells}</tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+  `;
+
+  wrapper.querySelectorAll(".room-grid-cell-input").forEach(input => {
+    input.addEventListener("input", () => {
+      const paramId = input.getAttribute("data-param-id");
+      const ctId = input.getAttribute("data-ct-id");
+      const amount = parseFloat(input.value) || 0;
+      let cell = grid.cells.find(c => c.parameter_id === paramId && c.client_type_id === ctId);
+      if (!cell) {
+        cell = { parameter_id: paramId, client_type_id: ctId, amount };
+        grid.cells.push(cell);
+      } else {
+        cell.amount = amount;
+      }
+    });
+  });
+}
+
+/* --- Salles liées: personnel --- */
+
+function addLinkedStaffRow(salaryId = "", count = 1) {
+  const container = document.getElementById("room-linked-staff-list");
+  const rowId = generateUid("linked-staff-row");
+
+  const salaryOptionsHtml = (appState.settings.salaries || []).map(s =>
+    `<option value="${s.id}" ${s.id === salaryId ? "selected" : ""}>${s.job}</option>`
+  ).join("");
 
   const rowHtml = `
-    <div id="${rowId}" class="distribution-row room-tarif-row">
-      <input type="text" class="form-input room-tarif-desc-input" value="${description ? description.replace(/"/g, '&quot;') : ''}" placeholder="Description (ex: Interne)" style="padding: 8px 12px; font-size: 0.85rem;">
-      <input type="number" class="form-input room-tarif-amount-input" min="0" step="0.01" value="${amount !== "" ? amount : ''}" placeholder="Montant $/jour" style="padding: 8px 12px; font-size: 0.85rem;">
-      <button type="button" class="btn-icon delete-room-tarif-row-btn" data-row-id="${rowId}">
+    <div id="${rowId}" class="distribution-row">
+      <select class="select-input linked-staff-select" style="padding: 8px 12px; font-size: 0.85rem;">
+        <option value="">Choisir un emploi...</option>
+        ${salaryOptionsHtml}
+      </select>
+      <input type="number" class="form-input linked-staff-count-input" min="1" step="1" value="${count || 1}" placeholder="Quantité" style="padding: 8px 12px; font-size: 0.85rem;">
+      <div></div>
+      <button type="button" class="btn-icon delete-linked-staff-row-btn" data-row-id="${rowId}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
     </div>
   `;
-
   container.insertAdjacentHTML("beforeend", rowHtml);
+  document.getElementById(rowId).querySelector(".delete-linked-staff-row-btn").addEventListener("click", () => {
+    document.getElementById(rowId).remove();
+  });
+}
 
-  const newRow = document.getElementById(rowId);
-  newRow.querySelector(".delete-room-tarif-row-btn").addEventListener("click", () => {
-    newRow.remove();
+/* --- Salles liées: frais --- */
+
+function addLinkedFeeRow(description = "", amount = "", glAccountCode = "") {
+  const container = document.getElementById("room-linked-fees-list");
+  const rowId = generateUid("linked-fee-row");
+
+  const rowHtml = `
+    <div id="${rowId}" class="distribution-row">
+      <input type="text" class="form-input linked-fee-desc-input" value="${description ? description.replace(/"/g, "&quot;") : ""}" placeholder="Ex: Montage et démontage" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" class="form-input linked-fee-amount-input" min="0" step="0.01" value="${amount !== "" ? amount : ""}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
+      <select class="select-input linked-fee-gl-select" style="padding: 8px 12px; font-size: 0.85rem;">
+        ${buildGlAccountOptionsHtml(glAccountCode)}
+      </select>
+      <button type="button" class="btn-icon delete-linked-fee-row-btn" data-row-id="${rowId}">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  `;
+  container.insertAdjacentHTML("beforeend", rowHtml);
+  document.getElementById(rowId).querySelector(".delete-linked-fee-row-btn").addEventListener("click", () => {
+    document.getElementById(rowId).remove();
+  });
+}
+
+/* --- Salles liées: tâches gestionnaire --- */
+
+function addLinkedTaskRow(description = "") {
+  const container = document.getElementById("room-linked-tasks-list");
+  const rowId = generateUid("linked-task-row");
+
+  const rowHtml = `
+    <div id="${rowId}" class="distribution-row room-tarif-row" style="grid-template-columns: 1fr auto;">
+      <input type="text" class="form-input linked-task-desc-input" value="${description ? description.replace(/"/g, "&quot;") : ""}" placeholder="Ex: Envoyer un courriel au responsable de la salle" style="padding: 8px 12px; font-size: 0.85rem;">
+      <button type="button" class="btn-icon delete-linked-task-row-btn" data-row-id="${rowId}">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  `;
+  container.insertAdjacentHTML("beforeend", rowHtml);
+  document.getElementById(rowId).querySelector(".delete-linked-task-row-btn").addEventListener("click", () => {
+    document.getElementById(rowId).remove();
   });
 }
 
@@ -273,33 +561,82 @@ function submitRoomForm(e) {
     return;
   }
 
-  // Build tarifs array, preserving existing ids where the room is being edited
-  const originalRoom = originalName ? appState.settings.rooms.find(r => r.name === originalName) : null;
-  const tarifs = [];
-  let tarifErrorMsg = "";
-
-  document.querySelectorAll("#form-room-tarifs-list .distribution-row").forEach((row, idx) => {
-    const desc = row.querySelector(".room-tarif-desc-input").value.trim();
-    const amtStr = row.querySelector(".room-tarif-amount-input").value.trim();
-    const amt = parseFloat(amtStr);
-
-    if (!desc && !amtStr) return; // skip fully empty rows
-    if (!desc) {
-      tarifErrorMsg = "Veuillez saisir une description pour chaque tarif.";
-    } else if (!amtStr || isNaN(amt) || amt < 0) {
-      tarifErrorMsg = "Veuillez saisir un montant valide pour chaque tarif.";
-    } else {
-      const existing = originalRoom && originalRoom.tarifs ? originalRoom.tarifs[idx] : null;
-      tarifs.push({ id: existing ? existing.id : generateUid("tarif"), description: desc, amount: amt });
+  // Validate every pricing grid version has at least one named parameter and client type
+  let gridErrorMsg = "";
+  roomModalState.grids.forEach(g => {
+    if (g.parameters.length === 0 || g.client_types.length === 0) {
+      gridErrorMsg = "Chaque version de la grille tarifaire doit avoir au moins un paramètre et un type de client.";
+    } else if (g.parameters.some(p => !p.name.trim()) || g.client_types.some(ct => !ct.name.trim())) {
+      gridErrorMsg = "Veuillez nommer chaque paramètre et chaque type de client de la grille tarifaire.";
     }
   });
-
-  if (tarifErrorMsg) {
-    alert(tarifErrorMsg);
+  if (gridErrorMsg) {
+    alert(gridErrorMsg);
     return;
   }
 
-  const payload = { name: newName, color, tarifs };
+  // Salles liées
+  const linkedRooms = Array.from(document.querySelectorAll("#room-linked-rooms-group .pill-toggle.active")).map(b => b.dataset.value);
+
+  // Personnel lié
+  const linkedStaff = [];
+  let staffErrorMsg = "";
+  document.querySelectorAll("#room-linked-staff-list .distribution-row").forEach(row => {
+    const salaryId = row.querySelector(".linked-staff-select").value;
+    const countStr = row.querySelector(".linked-staff-count-input").value.trim();
+    const count = parseInt(countStr, 10);
+    if (!salaryId && !countStr) return;
+    if (!salaryId) {
+      staffErrorMsg = "Veuillez sélectionner un emploi pour chaque ligne de personnel lié.";
+    } else if (!countStr || isNaN(count) || count < 1) {
+      staffErrorMsg = "Veuillez saisir une quantité valide (au moins 1) pour chaque personnel lié.";
+    } else {
+      linkedStaff.push({ id: generateUid("linked-staff"), salary_id: salaryId, count });
+    }
+  });
+  if (staffErrorMsg) {
+    alert(staffErrorMsg);
+    return;
+  }
+
+  // Frais liés
+  const linkedFees = [];
+  let feeErrorMsg = "";
+  document.querySelectorAll("#room-linked-fees-list .distribution-row").forEach(row => {
+    const desc = row.querySelector(".linked-fee-desc-input").value.trim();
+    const amtStr = row.querySelector(".linked-fee-amount-input").value.trim();
+    const amt = parseFloat(amtStr);
+    const glCode = row.querySelector(".linked-fee-gl-select").value;
+    if (!desc && !amtStr) return;
+    if (!desc) {
+      feeErrorMsg = "Veuillez saisir une description pour chaque frais lié.";
+    } else if (!amtStr || isNaN(amt) || amt < 0) {
+      feeErrorMsg = "Veuillez saisir un montant valide pour chaque frais lié.";
+    } else {
+      linkedFees.push({ id: generateUid("linked-fee"), description: desc, amount: amt, gl_account_code: glCode });
+    }
+  });
+  if (feeErrorMsg) {
+    alert(feeErrorMsg);
+    return;
+  }
+
+  // Tâches gestionnaire liées
+  const linkedTasks = [];
+  document.querySelectorAll("#room-linked-tasks-list .distribution-row").forEach(row => {
+    const desc = row.querySelector(".linked-task-desc-input").value.trim();
+    if (desc) linkedTasks.push({ id: generateUid("linked-task"), description: desc });
+  });
+
+  const payload = {
+    name: newName,
+    color,
+    pricing_grids: roomModalState.grids,
+    linked_rooms: linkedRooms,
+    linked_staff: linkedStaff,
+    linked_fees: linkedFees,
+    linked_tasks: linkedTasks
+  };
 
   if (originalName) {
     const idx = appState.settings.rooms.findIndex(r => r.name === originalName);
@@ -311,6 +648,10 @@ function submitRoomForm(e) {
         (act.rooms || []).forEach(r => {
           if (r.name === originalName) r.name = newName;
         });
+      });
+      // Update other rooms' linked_rooms references
+      appState.settings.rooms.forEach(r => {
+        r.linked_rooms = (r.linked_rooms || []).map(n => n === originalName ? newName : n);
       });
     }
   } else {
@@ -330,6 +671,9 @@ function submitRoomForm(e) {
 function deleteRoom(name) {
   if (confirm(`Voulez-vous vraiment supprimer la salle ${name} ?`)) {
     appState.settings.rooms = appState.settings.rooms.filter(r => r.name !== name);
+    appState.settings.rooms.forEach(r => {
+      r.linked_rooms = (r.linked_rooms || []).filter(n => n !== name);
+    });
     saveDatabase();
     populateDropdowns();
     renderSettings();
@@ -435,7 +779,10 @@ function deleteDept(name) {
   }
 }
 
-// Salaries settings
+/* ==========================================================================
+   SALARIES SETTINGS (versioned rate history)
+   ========================================================================== */
+
 function renderSalariesList() {
   const container = document.getElementById("settings-salaries-list");
   if (!container) return;
@@ -443,11 +790,14 @@ function renderSalariesList() {
 
   const salaries = appState.settings.salaries || [];
   salaries.forEach(sal => {
+    const currentRate = getActiveSalaryRate(sal, "");
+    const versionCount = (sal.rate_versions || []).length;
+    const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
     container.innerHTML += `
       <div class="settings-list-item">
         <div class="settings-list-item-info">
           <span class="settings-list-item-code" style="font-family: inherit;">${sal.job}</span>
-          <span class="settings-list-item-desc">${parseFloat(sal.rate).toFixed(2)} $ / heure</span>
+          <span class="settings-list-item-desc">${parseFloat(currentRate).toFixed(2)} $ / heure${versionNote}</span>
         </div>
         <div class="flex gap-2">
           <button class="btn-icon edit-salary-btn" data-id="${sal.id}" title="Modifier">
@@ -474,6 +824,8 @@ function openSalaryModal(id = null) {
   const form = document.getElementById("salary-form");
   const title = document.getElementById("salary-modal-title");
   form.reset();
+  document.getElementById("form-salary-rates-list").innerHTML = "";
+  document.getElementById("form-salary-gl-account").innerHTML = buildGlAccountOptionsHtml();
 
   if (id) {
     title.textContent = "Modifier l'emploi";
@@ -482,29 +834,69 @@ function openSalaryModal(id = null) {
     if (sal) {
       document.getElementById("form-salary-original-id").value = sal.id;
       document.getElementById("form-salary-job").value = sal.job;
-      document.getElementById("form-salary-rate").value = sal.rate;
+      document.getElementById("form-salary-gl-account").innerHTML = buildGlAccountOptionsHtml(sal.gl_account_code || "");
+      (sal.rate_versions || []).forEach(v => addSalaryRateRow(v.effective_date, v.rate));
     }
   } else {
     title.textContent = "Ajouter un emploi";
     document.getElementById("form-salary-original-id").value = "";
+    addSalaryRateRow("", "");
   }
   openSettingsModal("salary");
+}
+
+function addSalaryRateRow(effectiveDate = "", rate = "") {
+  const container = document.getElementById("form-salary-rates-list");
+  const rowId = generateUid("salary-rate-row");
+
+  const rowHtml = `
+    <div id="${rowId}" class="distribution-row room-tarif-row">
+      <input type="text" class="form-input salary-rate-date-input" value="${effectiveDate || ""}" placeholder="AAAA-MM-JJ (vide = depuis toujours)" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" class="form-input salary-rate-amount-input" min="0" step="0.01" value="${rate !== "" ? rate : ""}" placeholder="Taux $/heure" style="padding: 8px 12px; font-size: 0.85rem;">
+      <button type="button" class="btn-icon delete-salary-rate-row-btn" data-row-id="${rowId}">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  `;
+  container.insertAdjacentHTML("beforeend", rowHtml);
+  document.getElementById(rowId).querySelector(".delete-salary-rate-row-btn").addEventListener("click", () => {
+    document.getElementById(rowId).remove();
+  });
 }
 
 function submitSalaryForm(e) {
   e.preventDefault();
   const originalId = document.getElementById("form-salary-original-id").value;
   const job = document.getElementById("form-salary-job").value.trim();
-  const rateStr = document.getElementById("form-salary-rate").value.trim();
-  const rate = parseFloat(rateStr);
+  const glAccountCode = document.getElementById("form-salary-gl-account").value;
 
   if (!job) {
     alert("Le nom de l'emploi est obligatoire.");
     return;
   }
 
-  if (isNaN(rate) || rate < 0) {
-    alert("Veuillez saisir un taux horaire valide (supérieur ou égal à 0).");
+  const rateVersions = [];
+  let rateErrorMsg = "";
+  document.querySelectorAll("#form-salary-rates-list .distribution-row").forEach(row => {
+    const dateStr = row.querySelector(".salary-rate-date-input").value.trim();
+    const rateStr = row.querySelector(".salary-rate-amount-input").value.trim();
+    const rate = parseFloat(rateStr);
+    if (!dateStr && !rateStr) return;
+    if (!rateStr || isNaN(rate) || rate < 0) {
+      rateErrorMsg = "Veuillez saisir un taux horaire valide (supérieur ou égal à 0) pour chaque version.";
+    } else if (dateStr && !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      rateErrorMsg = "La date d'entrée en vigueur doit être au format AAAA-MM-JJ, ou vide.";
+    } else {
+      rateVersions.push({ id: generateUid("rv"), effective_date: dateStr, rate });
+    }
+  });
+
+  if (rateErrorMsg) {
+    alert(rateErrorMsg);
+    return;
+  }
+  if (rateVersions.length === 0) {
+    alert("Veuillez saisir au moins un taux horaire.");
     return;
   }
 
@@ -523,12 +915,12 @@ function submitSalaryForm(e) {
     // Edit Mode
     const idx = salaries.findIndex(s => s.id === originalId);
     if (idx !== -1) {
-      salaries[idx] = { id: originalId, job, rate };
+      salaries[idx] = { id: originalId, job, gl_account_code: glAccountCode, rate_versions: rateVersions };
     }
   } else {
     // New Mode
     const newId = generateUid("salary");
-    salaries.push({ id: newId, job, rate });
+    salaries.push({ id: newId, job, gl_account_code: glAccountCode, rate_versions: rateVersions });
   }
 
   // Sort salaries by job name

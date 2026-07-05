@@ -380,15 +380,15 @@ function renderReconciliationTable() {
       const matchIdx = parseInt(btn.getAttribute("data-idx"));
       const r = filtered[matchIdx];
 
-      // Auto-prepopulate activity form
-      openActivityDrawer();
+      // Create a new activity pre-filled from this unlogged GL transaction and open its record
+      const id = createActivity(`Ajustement GL - Réf ${r.reference}`);
+      renderActivities();
+      openActivityDrawer(id);
 
-      // Assign pre-filled fields
-      document.getElementById("form-activity-name").value = `Ajustement GL - Réf ${r.reference}`;
-
-      // Clear blank default distribution row and write this one
+      // Clear the blank default distribution row and write this one, on the Facturation tab
       document.getElementById("form-distribution-list").innerHTML = "";
       addDistributionRow(r.account_code, r.amount_gl, r.reference);
+      switchActivityTab("billing");
     });
   });
 

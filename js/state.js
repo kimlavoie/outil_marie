@@ -4,13 +4,26 @@
  */
 
 // Embedded default configurations (Seed Data)
+// Builds a single-parameter pricing grid (one row "Tarif" x one column per client type) from
+// a flat list of {description, amount} pairs — used only to seed DEFAULT_CONFIG in the same
+// shape the old flat `tarifs[]` used to produce, now expressed as a versioned pricing grid.
+function buildSeedPricingGrid(gridId, paramId, tarifPairs) {
+  return {
+    id: gridId,
+    effective_date: "", // "" means "in effect since the beginning"
+    parameters: [{ id: paramId, name: "Tarif" }],
+    client_types: tarifPairs.map((t, i) => ({ id: `${gridId}-ct${i}`, name: t.description })),
+    cells: tarifPairs.map((t, i) => ({ parameter_id: paramId, client_type_id: `${gridId}-ct${i}`, amount: t.amount }))
+  };
+}
+
 const DEFAULT_CONFIG = {
   rooms: [
-    { name: "POLY", color: "#4f46e5", tarifs: [{ id: "tarif-poly-int", description: "Interne", amount: 175.0 }] },
-    { name: "SALON", color: "#059669", tarifs: [{ id: "tarif-salon-int", description: "Interne", amount: 50.0 }, { id: "tarif-salon-ext", description: "Externe", amount: 100.0 }] },
-    { name: "SFB-SALON-HALL", color: "#d97706", tarifs: [{ id: "tarif-sfbsh-int", description: "Interne", amount: 200.0 }] },
-    { name: "SFB-POLY", color: "#db2777", tarifs: [{ id: "tarif-sfbp-int", description: "Interne", amount: 375.0 }] },
-    { name: "HALL SFB", color: "#0891b2", tarifs: [{ id: "tarif-hallsfb-int", description: "Interne", amount: 0.0 }] }
+    { name: "POLY", color: "#4f46e5", pricing_grids: [buildSeedPricingGrid("grid-poly", "param-poly", [{ description: "Interne", amount: 175.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "SALON", color: "#059669", pricing_grids: [buildSeedPricingGrid("grid-salon", "param-salon", [{ description: "Interne", amount: 50.0 }, { description: "Externe", amount: 100.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "SFB-SALON-HALL", color: "#d97706", pricing_grids: [buildSeedPricingGrid("grid-sfbsh", "param-sfbsh", [{ description: "Interne", amount: 200.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "SFB-POLY", color: "#db2777", pricing_grids: [buildSeedPricingGrid("grid-sfbp", "param-sfbp", [{ description: "Interne", amount: 375.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "HALL SFB", color: "#0891b2", pricing_grids: [buildSeedPricingGrid("grid-hallsfb", "param-hallsfb", [{ description: "Interne", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] }
   ],
   departments: [
     "ACEECJ",
@@ -56,12 +69,12 @@ const DEFAULT_CONFIG = {
     { code: "892-9020-07-889", description: "INTERNE (PROJO POLY)" }
   ],
   salaries: [
-    { id: "salary-dt", job: "Directeur technique", rate: 74 },
-    { id: "salary-tc", job: "Technicien contractuel", rate: 57 },
-    { id: "salary-aet", job: "Appariteur étudiant technicien", rate: 37 },
-    { id: "salary-hote", job: "Hôte", rate: 27 },
-    { id: "salary-as", job: "Agent de sécurité", rate: 50 },
-    { id: "salary-sauveteur", job: "Sauveteur", rate: 42 }
+    { id: "salary-dt", job: "Directeur technique", rate_versions: [{ id: "rv-dt", effective_date: "", rate: 74 }] },
+    { id: "salary-tc", job: "Technicien contractuel", rate_versions: [{ id: "rv-tc", effective_date: "", rate: 57 }] },
+    { id: "salary-aet", job: "Appariteur étudiant technicien", rate_versions: [{ id: "rv-aet", effective_date: "", rate: 37 }] },
+    { id: "salary-hote", job: "Hôte", rate_versions: [{ id: "rv-hote", effective_date: "", rate: 27 }] },
+    { id: "salary-as", job: "Agent de sécurité", rate_versions: [{ id: "rv-as", effective_date: "", rate: 50 }] },
+    { id: "salary-sauveteur", job: "Sauveteur", rate_versions: [{ id: "rv-sauveteur", effective_date: "", rate: 42 }] }
   ]
 };
 
@@ -242,6 +255,7 @@ async function loadDatabase() {
       }
 
       migrateRoomsConfig();
+      migrateSalariesConfig();
       migrateActivities();
     } else {
       await seedDatabase();
@@ -252,18 +266,94 @@ async function loadDatabase() {
   }
 }
 
-// Migrate legacy room config (price_internal/price_external) to a list of named tarifs per room
+// Migrate legacy room config (price_internal/price_external) to a list of named tarifs per room,
+// then migrate that flat tarifs[] list to a versioned pricing grid (paramètre x type de client),
+// and ensure the linked_* configuration arrays exist.
 function migrateRoomsConfig() {
   (appState.settings.rooms || []).forEach(room => {
-    if (room.tarifs) return; // already migrated
-    const tarifs = [{ id: generateUid("tarif"), description: "Interne", amount: room.price_internal || 0 }];
-    if (room.price_external > 0) {
-      tarifs.push({ id: generateUid("tarif"), description: "Externe", amount: room.price_external });
+    if (!room.tarifs && !room.pricing_grids) {
+      const tarifs = [{ id: generateUid("tarif"), description: "Interne", amount: room.price_internal || 0 }];
+      if (room.price_external > 0) {
+        tarifs.push({ id: generateUid("tarif"), description: "Externe", amount: room.price_external });
+      }
+      room.tarifs = tarifs;
+      delete room.price_internal;
+      delete room.price_external;
     }
-    room.tarifs = tarifs;
-    delete room.price_internal;
-    delete room.price_external;
+
+    if (!room.pricing_grids) {
+      const paramId = generateUid("param");
+      const tarifs = room.tarifs || [];
+      room.pricing_grids = [{
+        id: generateUid("grid"),
+        effective_date: "",
+        parameters: [{ id: paramId, name: "Tarif" }],
+        client_types: tarifs.map(t => ({ id: t.id, name: t.description })),
+        cells: tarifs.map(t => ({ parameter_id: paramId, client_type_id: t.id, amount: t.amount }))
+      }];
+    }
+    delete room.tarifs;
+
+    if (!room.linked_rooms) room.linked_rooms = [];
+    if (!room.linked_staff) room.linked_staff = [];
+    if (!room.linked_fees) room.linked_fees = [];
+    if (!room.linked_tasks) room.linked_tasks = [];
   });
+}
+
+// Migrate legacy flat salary rate to a versioned rate history per job
+function migrateSalariesConfig() {
+  (appState.settings.salaries || []).forEach(sal => {
+    if (sal.rate_versions) return; // already migrated
+    sal.rate_versions = [{ id: generateUid("rv"), effective_date: "", rate: sal.rate || 0 }];
+    delete sal.rate;
+  });
+}
+
+// Returns the pricing grid version in effect for `dateStr` (the most recent grid whose
+// effective_date is empty or <= dateStr). Falls back to the earliest grid if dateStr is empty
+// or precedes every version.
+function getActivePricingGrid(room, dateStr) {
+  const grids = (room && room.pricing_grids) || [];
+  if (grids.length === 0) return null;
+  const sorted = [...grids].sort((a, b) => (a.effective_date || "").localeCompare(b.effective_date || ""));
+  if (!dateStr) return sorted[0];
+  let applicable = sorted[0];
+  sorted.forEach(g => {
+    if (!g.effective_date || g.effective_date <= dateStr) applicable = g;
+  });
+  return applicable;
+}
+
+// Returns the salary rate in effect for `dateStr` (same resolution rule as getActivePricingGrid)
+function getActiveSalaryRate(salary, dateStr) {
+  const versions = (salary && salary.rate_versions) || [];
+  if (versions.length === 0) return 0;
+  const sorted = [...versions].sort((a, b) => (a.effective_date || "").localeCompare(b.effective_date || ""));
+  if (!dateStr) return sorted[0].rate;
+  let applicable = sorted[0];
+  sorted.forEach(v => {
+    if (!v.effective_date || v.effective_date <= dateStr) applicable = v;
+  });
+  return applicable.rate;
+}
+
+// Compat shim: flattens a room's active pricing grid (cross product of parameters x client_types)
+// into the old {id, description, amount} tarifs[] shape, so activities.js's room-tariff selector
+// keeps working unchanged until Phase 3 makes it grid-aware (parameter + client type selects).
+// `id` encodes "parameterId::clientTypeId" so the amount can be looked back up.
+function getFlattenedRoomTarifs(room, dateStr) {
+  const grid = getActivePricingGrid(room, dateStr);
+  if (!grid) return [];
+  const tarifs = [];
+  grid.parameters.forEach(param => {
+    grid.client_types.forEach(ct => {
+      const cell = grid.cells.find(c => c.parameter_id === param.id && c.client_type_id === ct.id);
+      const desc = grid.parameters.length > 1 ? `${param.name} - ${ct.name}` : ct.name;
+      tarifs.push({ id: `${param.id}::${ct.id}`, description: desc, amount: cell ? cell.amount : 0, gl_account_code: param.gl_account_code || "" });
+    });
+  });
+  return tarifs;
 }
 
 // Migrate legacy activity records to the current data shape (room_name -> rooms, new fields)
@@ -289,8 +379,9 @@ function migrateActivities() {
       act.rooms = act.rooms.map(name => {
         const roomConfig = (appState.settings.rooms || []).find(r => r.name === name);
         const wantedTariffDesc = act.client_type === "interne" ? "Interne" : "Externe";
-        const matchedTariff = roomConfig && roomConfig.tarifs
-          ? (roomConfig.tarifs.find(t => t.description === wantedTariffDesc) || roomConfig.tarifs[0])
+        const flatTarifs = roomConfig ? getFlattenedRoomTarifs(roomConfig, act.date_start) : [];
+        const matchedTariff = flatTarifs.length
+          ? (flatTarifs.find(t => t.description === wantedTariffDesc) || flatTarifs[0])
           : null;
         return {
           name,
@@ -315,6 +406,10 @@ function migrateActivities() {
     delete act.start_time;
     delete act.end_time;
 
+    (act.rooms || []).forEach(r => {
+      if (r.tariff_gl_account_code === undefined) r.tariff_gl_account_code = "";
+    });
+
     if (act.description === undefined) act.description = "";
     if (!act.activity_manager) {
       act.activity_manager = { first_name: "", last_name: "", type: "employe", phone: "", email: "" };
@@ -337,6 +432,18 @@ function migrateActivities() {
     (act.distributions || []).forEach(d => {
       if (d.reference === undefined) d.reference = "";
     });
+
+    // Activity lifecycle fields (state, client identification, planning tasks, submission/contract
+    // file links, staff/fees for the cost calculation, billing dates)
+    if (act.state === undefined) act.state = "brouillon";
+    if (!act.client) act.client = { first_name: "", last_name: "", phone: "", email: "" };
+    if (!act.staff) act.staff = [];
+    if (!act.fees) act.fees = [];
+    if (!act.submission) act.submission = { file_link_id: "", generated_at: "", sent_at: "" };
+    if (!act.contract) act.contract = { file_link_id: "", approved_at: "" };
+    if (!act.planning_tasks) act.planning_tasks = [];
+    if (act.billed_at === undefined) act.billed_at = "";
+    if (act.completed_at === undefined) act.completed_at = "";
   });
 }
 

@@ -318,6 +318,7 @@ function handleJsonBackupFile(file) {
 
           // Sanitize settings on restoration
           if (!appState.settings) appState.settings = {};
+          if (!appState.settings.rooms) appState.settings.rooms = [];
           if (!appState.settings.salaries) appState.settings.salaries = [];
           if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
           appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
@@ -329,6 +330,13 @@ function handleJsonBackupFile(file) {
           if (appState.settings && appState.settings.accounts) {
             appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
           }
+
+          // Restored files may predate the pricing-grid/rate-versioning/activity migrations —
+          // run the same migrations loadDatabase() applies on normal startup.
+          migrateRoomsConfig();
+          migrateSalariesConfig();
+          migrateActivities();
+
           await saveDatabase();
           applyTheme(appState.settings.theme || "dark");
           renderAll();
@@ -592,11 +600,13 @@ function exportToExcel() {
 
     XLSX.utils.book_append_sheet(wb, ws, "ACTIVITÉS");
 
-    // Sheet 2: Configuration Salles (une ligne par tarif défini)
-    const roomsData = [["SALLE", "TARIF", "MONTANT ($/JOUR)"]];
+    // Sheet 2: Configuration Salles (une ligne par cellule de la grille tarifaire active)
+    const roomsData = [["SALLE", "GRILLE (ENTRÉE EN VIGUEUR)", "TARIF", "MONTANT ($/JOUR)"]];
     appState.settings.rooms.forEach(r => {
-      (r.tarifs && r.tarifs.length ? r.tarifs : [{ description: "", amount: "" }]).forEach(t => {
-        roomsData.push([r.name, t.description, t.amount]);
+      const grid = getActivePricingGrid(r, "");
+      const tarifs = grid ? getFlattenedRoomTarifs(r, "") : [];
+      (tarifs.length ? tarifs : [{ description: "", amount: "" }]).forEach(t => {
+        roomsData.push([r.name, grid ? (grid.effective_date || "Depuis toujours") : "", t.description, t.amount]);
       });
     });
     const wsRooms = XLSX.utils.aoa_to_sheet(roomsData);

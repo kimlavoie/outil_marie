@@ -128,11 +128,6 @@ function initPillToggle(containerId) {
     if (!btn || !container.contains(btn)) return;
 
     btn.classList.toggle("active");
-
-    const internalId = document.getElementById("form-activity-internal-id").value;
-    if (!internalId) {
-      activitiesState.isDraftDirty = true;
-    }
   });
 }
 

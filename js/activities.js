@@ -5,14 +5,54 @@
 
 // Activities view UI state, grouped so the module's moving parts live in one place
 let activitiesState = {
-  isDraftDirty: false,
   sortKey: "id",
   sortOrder: "asc",
   page: 1,
-  pageSize: 10,
-  detailModalActivityId: null,
-  detailModalCalendarReturn: null // set to a saved eventCalendarState snapshot when the detail modal was opened from the calendar
+  pageSize: 10
 };
+
+// Activity lifecycle states, in order
+const ACTIVITY_STATES = [
+  { value: "brouillon", label: "Brouillon" },
+  { value: "soumise", label: "Soumise au client" },
+  { value: "approuvee", label: "Approuvée" },
+  { value: "planifiee", label: "Planifiée" },
+  { value: "facturee", label: "Facturée" },
+  { value: "terminee", label: "Terminée" }
+];
+
+function getActivityStateLabel(state) {
+  return (ACTIVITY_STATES.find(s => s.value === state) || ACTIVITY_STATES[0]).label;
+}
+
+function getActivityStateBadgeClass(state) {
+  switch (state) {
+    case "terminee": return "badge-success";
+    case "facturee":
+    case "planifiee": return "badge-info";
+    case "approuvee": return "badge-warning";
+    case "soumise": return "badge-warning";
+    default: return "badge-danger";
+  }
+}
+
+// {done, total, percent} of an activity's planning tasks
+function getPlanningProgress(act) {
+  const tasks = act.planning_tasks || [];
+  const done = tasks.filter(t => t.done).length;
+  const total = tasks.length;
+  const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+  return { done, total, percent };
+}
+
+// Small progress-bar HTML snippet reused in the activities list and the Planification tab
+function buildProgressBarHtml(percent) {
+  return `
+    <div class="progress-bar" title="${percent}%">
+      <div class="progress-bar-fill ${percent >= 100 ? "complete" : ""}" style="width: ${percent}%;"></div>
+    </div>
+  `;
+}
 
 function renderActivities() {
   saveUiState();
@@ -103,7 +143,7 @@ function renderActivities() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucune activité trouvée. Cliquez sur "+ Nouvelle Activité" pour en créer une.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucune activité trouvée. Cliquez sur "+ Nouvelle Activité" pour en créer une.</td></tr>`;
     renderPaginationBar(document.getElementById("activities-pagination"), { page: activitiesState.page, pageSize: activitiesState.pageSize, totalItems: 0, onPageChange: () => {}, onPageSizeChange: () => {} });
     return;
   }
@@ -183,6 +223,14 @@ function renderActivities() {
       }
     }
 
+    const progress = getPlanningProgress(act);
+    const stateCellHtml = isFilled ? `
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span class="badge ${getActivityStateBadgeClass(act.state)}">${getActivityStateLabel(act.state)}</span>
+        ${progress.total > 0 ? `${buildProgressBarHtml(progress.percent)}<span style="font-size: 0.7rem; color: var(--text-muted);">${progress.done}/${progress.total} tâches</span>` : ''}
+      </div>
+    ` : '-';
+
     tbody.innerHTML += `
       <tr class="activity-row ${isFilled ? '' : 'row-empty'}" data-id="${act.id}" style="cursor: pointer; ${isFilled ? '' : 'opacity: 0.5; font-style: italic;'}">
         <td class="font-mono bold">${act.id}</td>
@@ -196,6 +244,7 @@ function renderActivities() {
         <td class="font-mono">${isFilled && activityReferences ? activityReferences : '-'}</td>
         <td class="bold">${isFilled ? formatCurrency(totalRev) : '-'}</td>
         <td style="color: var(--text-muted);">${sansFraisText}</td>
+        <td>${stateCellHtml}</td>
         <td class="text-right" style="white-space: nowrap;">
           <button class="btn-icon edit-act-btn" data-id="${act.id}" title="Modifier" style="margin-right: 4px;">
             <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -213,10 +262,10 @@ function renderActivities() {
     `;
   });
 
-  // Attach row click listeners to open the read-only activity detail view
+  // Attach row click listeners to open the activity record (tabbed lifecycle view)
   document.querySelectorAll(".activity-row").forEach(row => {
     row.addEventListener("click", () => {
-      openActivityDetailModal(row.getAttribute("data-id"));
+      openActivityDrawer(row.getAttribute("data-id"));
     });
   });
 
@@ -232,7 +281,7 @@ function renderActivities() {
   document.querySelectorAll(".duplicate-act-btn").forEach(btn => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      openActivityDrawer(null, btn.getAttribute("data-id"));
+      duplicateActivityAndOpen(btn.getAttribute("data-id"));
     });
   });
 
@@ -257,13 +306,26 @@ function initFormHandlers() {
   const drawer = document.getElementById("activity-drawer");
   const backdrop = document.getElementById("drawer-backdrop");
 
-  // Open drawers buttons
-  document.getElementById("add-activity-btn-quick").addEventListener("click", () => openActivityDrawer());
+  // Open drawers buttons: creating an activity only asks for a name (see initNewActivityModal);
+  // the full tabbed record opens immediately afterwards.
+  document.getElementById("add-activity-btn-quick").addEventListener("click", () => openNewActivityModal());
 
   // Close buttons
   document.getElementById("activity-drawer-close").addEventListener("click", closeActivityDrawer);
   document.getElementById("activity-drawer-cancel").addEventListener("click", closeActivityDrawer);
   backdrop.addEventListener("click", closeActivityDrawer);
+
+  // Activity record tabs (Soumission et contrat / Planification / Facturation)
+  document.querySelectorAll(".activity-tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => switchActivityTab(btn.getAttribute("data-activity-tab")));
+  });
+
+  // Back to calendar button (only visible when opened from the calendar view)
+  document.getElementById("activity-drawer-back-to-calendar-btn").addEventListener("click", () => {
+    const calendarReturn = activitiesState.calendarReturn;
+    closeActivityDrawer();
+    if (calendarReturn) reopenCalendarModal(calendarReturn);
+  });
 
   // Inputs search
   const resetActivitiesPageAndRender = () => { activitiesState.page = 1; renderActivities(); };
@@ -274,11 +336,6 @@ function initFormHandlers() {
   // Account distributions buttons
   document.getElementById("form-add-distribution-btn").addEventListener("click", () => {
     addDistributionRow("", 0);
-    // Mark as dirty if adding a row in New Mode
-    const internalId = document.getElementById("form-activity-internal-id").value;
-    if (!internalId) {
-      activitiesState.isDraftDirty = true;
-    }
   });
 
   // Submit Form
@@ -287,28 +344,35 @@ function initFormHandlers() {
   // Delete Button
   document.getElementById("activity-drawer-delete").addEventListener("click", deleteActivity);
 
-  // Mark form as dirty when inputs are typed or changed
-  const actForm = document.getElementById("activity-form");
-  actForm.addEventListener("input", () => {
-    const internalId = document.getElementById("form-activity-internal-id").value;
-    if (!internalId) {
-      activitiesState.isDraftDirty = true;
-    }
-  });
-  actForm.addEventListener("change", () => {
-    const internalId = document.getElementById("form-activity-internal-id").value;
-    if (!internalId) {
-      activitiesState.isDraftDirty = true;
-    }
-  });
-
   // Dates helper updates: recompute whenever any room's start/end date changes
   const roomsScheduleContainer = document.getElementById("form-activity-rooms-schedule");
-  roomsScheduleContainer.addEventListener("input", updateFormDatesHelper);
-  roomsScheduleContainer.addEventListener("change", updateFormDatesHelper);
+  roomsScheduleContainer.addEventListener("input", () => { updateFormDatesHelper(); updateSubmissionFinancialSummary(); });
+  roomsScheduleContainer.addEventListener("change", () => { updateFormDatesHelper(); updateSubmissionFinancialSummary(); });
 
-  // Phone number mask
+  // Personnel requis / Autres frais buttons
+  document.getElementById("form-add-staff-btn").addEventListener("click", () => addStaffRow());
+  document.getElementById("form-add-fee-btn").addEventListener("click", () => addFeeRow());
+
+  // Planification tab buttons
+  document.getElementById("generate-planning-tasks-btn").addEventListener("click", () => {
+    const id = document.getElementById("form-activity-internal-id").value;
+    const act = appState.activities.find(a => a.id === id);
+    if (act) generatePlanningTasks(act);
+  });
+  document.getElementById("add-planning-task-btn").addEventListener("click", () => {
+    addPlanningTaskRow({ id: generateUid("task"), description: "", done: false, auto_generated: false });
+  });
+
+  // Facturation tab button
+  document.getElementById("generate-billing-lines-btn").addEventListener("click", () => {
+    const id = document.getElementById("form-activity-internal-id").value;
+    const act = appState.activities.find(a => a.id === id);
+    if (act) generateBillingLines(act);
+  });
+
+  // Phone number masks
   maskPhoneInput(document.getElementById("form-activity-manager-phone"));
+  maskPhoneInput(document.getElementById("form-activity-client-phone"));
 
   // Salle(s) pill toggle group: adds/removes a schedule card per room, in addition to the usual pill active state
   initRoomsScheduleGroup();
@@ -348,23 +412,504 @@ function initFormHandlers() {
       }
     }
 
-    // Alt + N or Alt + A to open the new activity drawer
+    // Alt + N or Alt + A to open the new activity modal
     if (e.altKey && (e.key.toLowerCase() === 'n' || e.key.toLowerCase() === 'a')) {
       e.preventDefault();
-      openActivityDrawer();
+      openNewActivityModal();
     }
 
     // Escape to close drawers and modals
     if (e.key === "Escape") {
       closeActivityDrawer();
-      closeActivityDetailModal();
+      closeNewActivityModal();
       if (typeof closeSettingsModal === "function") {
         closeSettingsModal("account");
         closeSettingsModal("room");
         closeSettingsModal("dept");
+        closeSettingsModal("salary");
       }
     }
   });
+}
+
+/* ==========================================================================
+   NEW ACTIVITY MODAL (name-only creation)
+   ========================================================================== */
+
+function initNewActivityModal() {
+  document.getElementById("new-activity-modal-close").addEventListener("click", closeNewActivityModal);
+  document.getElementById("new-activity-modal-cancel").addEventListener("click", closeNewActivityModal);
+  document.getElementById("new-activity-modal-submit").addEventListener("click", submitNewActivityForm);
+}
+
+function openNewActivityModal() {
+  const form = document.getElementById("new-activity-form");
+  form.reset();
+  document.getElementById("new-activity-modal").classList.add("active");
+  document.getElementById("modal-backdrop").classList.add("active");
+  setTimeout(() => document.getElementById("form-new-activity-name").focus(), 150);
+}
+
+function closeNewActivityModal() {
+  document.getElementById("new-activity-modal").classList.remove("active");
+  document.getElementById("modal-backdrop").classList.remove("active");
+}
+
+function submitNewActivityForm(e) {
+  e.preventDefault();
+  const name = document.getElementById("form-new-activity-name").value.trim();
+  if (!name) {
+    alert("Veuillez saisir le nom de l'activité.");
+    return;
+  }
+  const id = createActivity(name);
+  closeNewActivityModal();
+  renderActivities();
+  openActivityDrawer(id);
+}
+
+// Builds a brand-new activity record (all lifecycle/submission/planning/billing fields at their
+// defaults), saves it immediately, and returns its id. Mirrors the defaults migrateActivities()
+// backfills onto legacy records, so both paths keep producing the same shape.
+function createActivity(name) {
+  const id = generateNextActivityId();
+  appState.activities.push({
+    id,
+    responsable: "",
+    name,
+    attendees_count: 0,
+    date_start: "",
+    date_end: "",
+    description: "",
+    activity_manager: { first_name: "", last_name: "", type: "employe", phone: "", email: "" },
+    client_type: "",
+    rooms: [],
+    technical_services: [],
+    consumption: [],
+    consumption_special_products: "",
+    host_services: [],
+    remi_hours: 0,
+    department: "",
+    event_type: "",
+    event_type_other: "",
+    distributions: [],
+    state: "brouillon",
+    client: { first_name: "", last_name: "", phone: "", email: "" },
+    staff: [],
+    fees: [],
+    submission: { file_link_id: "", generated_at: "", sent_at: "" },
+    contract: { file_link_id: "", approved_at: "" },
+    planning_tasks: [],
+    billed_at: "",
+    completed_at: ""
+  });
+  saveDatabase();
+  return id;
+}
+
+// Duplicates an existing activity's submission data (rooms, client, services, etc.) under a
+// fresh id, resetting the lifecycle fields (state, planning, submission/contract links, billing
+// dates) since a duplicate always restarts its own cycle from Brouillon.
+function duplicateActivityAndOpen(sourceId) {
+  const source = appState.activities.find(a => a.id === sourceId);
+  if (!source) return;
+
+  const clone = JSON.parse(JSON.stringify(source));
+  clone.id = generateNextActivityId();
+  clone.state = "brouillon";
+  clone.planning_tasks = [];
+  clone.submission = { file_link_id: "", generated_at: "", sent_at: "" };
+  clone.contract = { file_link_id: "", approved_at: "" };
+  clone.billed_at = "";
+  clone.completed_at = "";
+
+  appState.activities.push(clone);
+  saveDatabase();
+  renderActivities();
+  openActivityDrawer(clone.id);
+}
+
+/* ==========================================================================
+   ACTIVITY RECORD: STATE BAR & TABS
+   ========================================================================== */
+
+function switchActivityTab(tabName) {
+  document.querySelectorAll(".activity-tab-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-activity-tab") === tabName);
+  });
+  document.querySelectorAll(".activity-tab-panel").forEach(panel => {
+    panel.classList.toggle("active", panel.id === `activity-tab-panel-${tabName}`);
+  });
+}
+
+// Renders the state badge + planning progress atop the activity record. Transition buttons
+// (Marquer comme Soumise/Approuvée/Facturée/Terminée) are added by the Soumission/Facturation
+// tabs once their gating logic exists.
+function renderActivityStateBar(act) {
+  const bar = document.getElementById("activity-state-bar");
+  const progress = getPlanningProgress(act);
+  bar.innerHTML = `
+    <span class="badge ${getActivityStateBadgeClass(act.state)}">${getActivityStateLabel(act.state)}</span>
+    ${progress.total > 0 ? `
+      <div style="display: flex; align-items: center; gap: 8px; flex-grow: 1; max-width: 320px;">
+        ${buildProgressBarHtml(progress.percent)}
+        <span style="font-size: 0.78rem; color: var(--text-muted); white-space: nowrap;">${progress.done}/${progress.total} tâches</span>
+      </div>
+    ` : ''}
+  `;
+}
+
+// Applies `patchFn` to the activity `id`, persists it, and refreshes the state bar / list —
+// for lifecycle mutations (file links, state transitions) that happen outside the main
+// "Enregistrer" form submit, so they take effect immediately.
+function commitActivityPatch(id, patchFn) {
+  const idx = appState.activities.findIndex(a => a.id === id);
+  if (idx === -1) return;
+  patchFn(appState.activities[idx]);
+  saveDatabase();
+  renderActivityStateBar(appState.activities[idx]);
+  renderActivities();
+}
+
+/* ==========================================================================
+   SUBMISSION/CONTRACT FILE LINKS (File System Access API — Chrome/Edge only)
+   ========================================================================== */
+
+const FILE_LINKS_DB_NAME = "outil_marie_file_links";
+const FILE_LINKS_STORE_NAME = "links";
+
+function openFileLinksDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(FILE_LINKS_DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(FILE_LINKS_STORE_NAME)) {
+        db.createObjectStore(FILE_LINKS_STORE_NAME);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbSetFileLink(id, record) {
+  const db = await openFileLinksDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_LINKS_STORE_NAME, "readwrite");
+    tx.objectStore(FILE_LINKS_STORE_NAME).put(record, id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function idbGetFileLink(id) {
+  const db = await openFileLinksDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_LINKS_STORE_NAME, "readonly");
+    const req = tx.objectStore(FILE_LINKS_STORE_NAME).get(id);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// Lets the user pick an existing file on disk and links it (via the File System Access API) to
+// the given activity's submission/contract. Excel *generation* is deferred until the submission/
+// contract templates are provided — this only stores a reference to a file the user produced
+// manually, so they can reopen it and mark the activity Soumise/Approuvée.
+async function pickAndLinkFile(activityId, kind) {
+  if (!window.showOpenFilePicker) {
+    alert("Le lien de fichier nécessite un navigateur compatible avec l'API File System Access (Chrome ou Edge).");
+    return;
+  }
+  let handle;
+  try {
+    [handle] = await window.showOpenFilePicker();
+  } catch (e) {
+    return; // user cancelled the picker
+  }
+
+  const linkId = generateUid("filelink");
+  await idbSetFileLink(linkId, { handle, name: handle.name });
+
+  commitActivityPatch(activityId, (act) => {
+    act[kind].file_link_id = linkId;
+    if (kind === "submission") act.submission.generated_at = new Date().toISOString().split("T")[0];
+  });
+  renderFileLinkStatus(kind, appState.activities.find(a => a.id === activityId));
+}
+
+async function openLinkedFile(linkId) {
+  const record = await idbGetFileLink(linkId);
+  if (!record) {
+    alert("Fichier introuvable (peut-être lié depuis un autre appareil).");
+    return;
+  }
+  try {
+    let perm = await record.handle.queryPermission({ mode: "read" });
+    if (perm !== "granted") perm = await record.handle.requestPermission({ mode: "read" });
+    if (perm !== "granted") {
+      alert("Permission refusée pour ouvrir ce fichier.");
+      return;
+    }
+    const file = await record.handle.getFile();
+    const url = URL.createObjectURL(file);
+    window.open(url, "_blank");
+  } catch (e) {
+    alert("Impossible d'ouvrir le fichier : " + e.message);
+  }
+}
+
+// Renders the "Lier un fichier / Ouvrir / Changer" status row plus the relevant state
+// transition button (Marquer comme Soumise au client / Marquer comme Approuvée).
+function renderFileLinkStatus(kind, act) {
+  const container = document.getElementById(kind === "submission" ? "submission-file-status" : "contract-file-status");
+  if (!container) return;
+
+  const linkId = act[kind].file_link_id;
+  const linkedLabel = linkId ? `<span class="badge badge-success">Fichier lié</span>` : `<span style="color: var(--text-muted);">Aucun fichier lié</span>`;
+
+  let transitionBtnHtml = "";
+  if (kind === "submission") {
+    const canSubmit = !!linkId && act.state === "brouillon";
+    transitionBtnHtml = `<button type="button" id="mark-submitted-btn" class="btn btn-primary" ${canSubmit ? "" : "disabled"}>Marquer comme Soumise au client</button>`;
+  } else {
+    const canApprove = !!linkId && act.state === "soumise";
+    transitionBtnHtml = `<button type="button" id="mark-approved-btn" class="btn btn-primary" ${canApprove ? "" : "disabled"}>Marquer comme Approuvée</button>`;
+  }
+
+  container.innerHTML = `
+    ${linkedLabel}
+    <button type="button" class="btn btn-secondary" id="${kind}-link-file-btn" style="padding: 6px 12px; font-size: 0.85rem;">${linkId ? "Changer le fichier lié" : "Lier un fichier"}</button>
+    ${linkId ? `<button type="button" class="btn btn-secondary" id="${kind}-open-file-btn" style="padding: 6px 12px; font-size: 0.85rem;">Ouvrir</button>` : ""}
+    ${transitionBtnHtml}
+  `;
+
+  container.querySelector(`#${kind}-link-file-btn`).addEventListener("click", () => pickAndLinkFile(act.id, kind));
+  const openBtn = container.querySelector(`#${kind}-open-file-btn`);
+  if (openBtn) openBtn.addEventListener("click", () => openLinkedFile(linkId));
+
+  if (kind === "submission") {
+    const btn = container.querySelector("#mark-submitted-btn");
+    if (btn && !btn.disabled) {
+      btn.addEventListener("click", () => {
+        commitActivityPatch(act.id, (a) => {
+          a.state = "soumise";
+          a.submission.sent_at = new Date().toISOString().split("T")[0];
+        });
+        const updated = appState.activities.find(a => a.id === act.id);
+        renderFileLinkStatus("submission", updated);
+        renderFileLinkStatus("contract", updated);
+      });
+    }
+  } else {
+    const btn = container.querySelector("#mark-approved-btn");
+    if (btn && !btn.disabled) {
+      btn.addEventListener("click", () => {
+        commitActivityPatch(act.id, (a) => {
+          a.state = "approuvee";
+          a.contract.approved_at = new Date().toISOString().split("T")[0];
+        });
+        const updated = appState.activities.find(a => a.id === act.id);
+        renderFileLinkStatus("submission", updated);
+        renderFileLinkStatus("contract", updated);
+      });
+    }
+  }
+}
+
+/* ==========================================================================
+   PLANIFICATION TAB (task checklist, auto-generation, progress)
+   ========================================================================== */
+
+function renderPlanningTab(act) {
+  document.getElementById("planning-tasks-list").innerHTML = "";
+  (act.planning_tasks || []).forEach(t => addPlanningTaskRow(t));
+  updatePlanningProgressDisplay(act);
+  document.getElementById("generate-planning-tasks-btn").disabled = (act.planning_tasks || []).length > 0;
+}
+
+function addPlanningTaskRow(task) {
+  const container = document.getElementById("planning-tasks-list");
+  const rowId = generateUid("task-row");
+  const doneStyle = task.done ? "text-decoration: line-through; color: var(--text-muted);" : "";
+
+  container.insertAdjacentHTML("beforeend", `
+    <div id="${rowId}" class="distribution-row" data-task-id="${task.id}" data-auto-generated="${task.auto_generated ? "1" : ""}" style="grid-template-columns: auto 1fr auto; align-items: center;">
+      <input type="checkbox" class="task-done-checkbox" ${task.done ? "checked" : ""} style="width: 18px; height: 18px; cursor: pointer;">
+      <input type="text" class="form-input task-desc-input" value="${(task.description || "").replace(/"/g, "&quot;")}" placeholder="Description de la tâche" style="padding: 8px 12px; font-size: 0.85rem; ${doneStyle}">
+      <button type="button" class="btn-icon delete-task-row-btn" data-row-id="${rowId}">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  `);
+
+  const row = document.getElementById(rowId);
+  const descInput = row.querySelector(".task-desc-input");
+  const checkbox = row.querySelector(".task-done-checkbox");
+
+  row.querySelector(".delete-task-row-btn").addEventListener("click", () => {
+    row.remove();
+    persistPlanningTasks();
+  });
+  checkbox.addEventListener("change", () => {
+    descInput.style.textDecoration = checkbox.checked ? "line-through" : "none";
+    descInput.style.color = checkbox.checked ? "var(--text-muted)" : "";
+    persistPlanningTasks();
+  });
+  descInput.addEventListener("input", persistPlanningTasks);
+}
+
+function collectPlanningTasksFromForm() {
+  return Array.from(document.querySelectorAll("#planning-tasks-list .distribution-row")).map(row => ({
+    id: row.dataset.taskId || generateUid("task"),
+    description: row.querySelector(".task-desc-input").value.trim(),
+    done: row.querySelector(".task-done-checkbox").checked,
+    auto_generated: row.dataset.autoGenerated === "1"
+  })).filter(t => t.description);
+}
+
+function updatePlanningProgressDisplay(act) {
+  const progress = getPlanningProgress(act);
+  document.getElementById("planning-progress-bar-container").innerHTML = buildProgressBarHtml(progress.percent);
+  document.getElementById("planning-progress-label").textContent = progress.total > 0
+    ? `${progress.done}/${progress.total} tâches (${progress.percent}%)`
+    : "Aucune tâche";
+}
+
+// Persists the current task list immediately (planning is a live checklist, not gated behind
+// the main "Enregistrer" button) and auto-advances the state to Planifiée once every task is
+// done — but never downgrades a state that has already moved past Planifiée.
+function persistPlanningTasks() {
+  const id = document.getElementById("form-activity-internal-id").value;
+  if (!id) return;
+  const tasks = collectPlanningTasksFromForm();
+
+  commitActivityPatch(id, (act) => {
+    act.planning_tasks = tasks;
+    const progress = getPlanningProgress(act);
+    if (progress.total > 0 && progress.done === progress.total && (act.state === "soumise" || act.state === "approuvee")) {
+      act.state = "planifiee";
+    }
+  });
+
+  const updated = appState.activities.find(a => a.id === id);
+  updatePlanningProgressDisplay(updated);
+  document.getElementById("generate-planning-tasks-btn").disabled = (updated.planning_tasks || []).length > 0;
+}
+
+// Derives the planning checklist from the Soumission tab's data: one room-reservation task per
+// room (naming any linked rooms that come along with it), a personnel-reservation task per room
+// that has staff attached, and one task per linked "tâche du gestionnaire" on that room's config.
+function generatePlanningTasks(act) {
+  if ((act.planning_tasks || []).length > 0) return;
+
+  const tasks = [];
+  (act.rooms || []).forEach(r => {
+    const roomConfig = appState.settings.rooms.find(rc => rc.name === r.name);
+    const linkedNames = roomConfig ? (roomConfig.linked_rooms || []) : [];
+    const reserveDesc = linkedNames.length
+      ? `Réserver la salle ${r.name} (et salles liées : ${linkedNames.join(", ")}) dans le logiciel officiel`
+      : `Réserver la salle ${r.name} dans le logiciel officiel`;
+    tasks.push({ id: generateUid("task"), description: reserveDesc, done: false, auto_generated: true });
+
+    const hasStaffForRoom = (act.staff || []).some(s => s.source_room === r.name);
+    if (hasStaffForRoom) {
+      tasks.push({ id: generateUid("task"), description: `Réserver le personnel pour ${r.name}`, done: false, auto_generated: true });
+    }
+
+    (roomConfig ? roomConfig.linked_tasks || [] : []).forEach(lt => {
+      tasks.push({ id: generateUid("task"), description: lt.description, done: false, auto_generated: true });
+    });
+  });
+
+  commitActivityPatch(act.id, (a) => { a.planning_tasks = tasks; });
+  renderPlanningTab(appState.activities.find(a => a.id === act.id));
+}
+
+/* ==========================================================================
+   FACTURATION TAB (GL distribution auto-population, Facturée/Terminée)
+   ========================================================================== */
+
+// Builds distribution rows (account_code/amount/reference) from whichever room parameters,
+// personnel jobs, and autres frais already carry a configured GL account — items without one
+// are left out so the user adds/maps them manually, consistent with the existing distribution
+// row validation (an amount without a selected account blocks saving).
+function generateBillingLines(act) {
+  if ((act.distributions || []).length > 0 &&
+      !confirm("Des lignes de facturation existent déjà. Les remplacer par les lignes générées automatiquement ?")) {
+    return;
+  }
+
+  document.getElementById("form-distribution-list").innerHTML = "";
+
+  const rooms = collectRoomsFromForm();
+  const eventDateStart = getAggregateEventDates(rooms).date_start;
+
+  rooms.forEach(r => {
+    if (r.tariff_gl_account_code && r.tariff_amount > 0) {
+      const days = calculateDaysCount(r.date_start, r.date_end);
+      addDistributionRow(r.tariff_gl_account_code, r.tariff_amount * days, "");
+    }
+  });
+
+  document.querySelectorAll("#form-staff-list .distribution-row").forEach(row => {
+    const salaryId = row.querySelector(".staff-salary-select").value;
+    const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+    if (!salary || !salary.gl_account_code) return;
+    const count = parseInt(row.querySelector(".staff-count-input").value, 10) || 0;
+    const hours = parseFloat(row.querySelector(".staff-hours-input").value) || 0;
+    const amount = getActiveSalaryRate(salary, eventDateStart) * hours * count;
+    if (amount > 0) addDistributionRow(salary.gl_account_code, amount, "");
+  });
+
+  document.querySelectorAll("#form-fees-list .distribution-row").forEach(row => {
+    const glCode = row.querySelector(".fee-gl-select").value;
+    const amount = parseFloat(row.querySelector(".fee-amount-input").value) || 0;
+    if (glCode && amount > 0) addDistributionRow(glCode, amount, "");
+  });
+
+  if (document.querySelectorAll("#form-distribution-list .distribution-row").length === 0) {
+    addDistributionRow("", 0);
+  }
+  updateDistributionTotal();
+}
+
+// Renders the Facturée/Terminée billing dates and gated transition buttons
+function renderBillingStateStatus(act) {
+  const container = document.getElementById("billing-state-status");
+  if (!container) return;
+
+  const canBill = act.state === "planifiee";
+  const canComplete = act.state === "facturee";
+
+  container.innerHTML = `
+    ${act.billed_at ? `<span style="color: var(--text-muted);">Facturée le ${act.billed_at}</span>` : ""}
+    ${act.completed_at ? `<span style="color: var(--text-muted);">Terminée le ${act.completed_at}</span>` : ""}
+    <button type="button" id="mark-billed-btn" class="btn btn-primary" ${canBill ? "" : "disabled"}>Marquer comme Facturée</button>
+    <button type="button" id="mark-completed-btn" class="btn btn-primary" ${canComplete ? "" : "disabled"}>Marquer comme Terminée</button>
+  `;
+
+  const billBtn = container.querySelector("#mark-billed-btn");
+  if (!billBtn.disabled) {
+    billBtn.addEventListener("click", () => {
+      commitActivityPatch(act.id, (a) => {
+        a.state = "facturee";
+        a.billed_at = new Date().toISOString().split("T")[0];
+      });
+      renderBillingStateStatus(appState.activities.find(a => a.id === act.id));
+    });
+  }
+
+  const completeBtn = container.querySelector("#mark-completed-btn");
+  if (!completeBtn.disabled) {
+    completeBtn.addEventListener("click", () => {
+      commitActivityPatch(act.id, (a) => {
+        a.state = "terminee";
+        a.completed_at = new Date().toISOString().split("T")[0];
+      });
+      renderBillingStateStatus(appState.activities.find(a => a.id === act.id));
+    });
+  }
 }
 
 // Fills the activity form fields (everything except the id/internal-id keys)
@@ -372,6 +917,10 @@ function initFormHandlers() {
 function fillActivityFormFields(act) {
   document.getElementById("form-activity-name").value = act.name;
   document.getElementById("form-activity-attendees").value = act.attendees_count || "";
+  document.getElementById("form-activity-client-firstname").value = act.client?.first_name || "";
+  document.getElementById("form-activity-client-lastname").value = act.client?.last_name || "";
+  document.getElementById("form-activity-client-phone").value = act.client?.phone || "";
+  document.getElementById("form-activity-client-email").value = act.client?.email || "";
   document.getElementById("form-activity-responsable").value = act.responsable;
   document.getElementById("form-activity-client-type").value = act.client_type;
   document.getElementById("form-activity-description").value = act.description || "";
@@ -399,6 +948,18 @@ function fillActivityFormFields(act) {
   (act.distributions || []).forEach(d => {
     addDistributionRow(d.account_code, d.amount, d.reference);
   });
+
+  // Load personnel requis / autres frais, exactly as saved (does not re-run auto-add logic)
+  document.getElementById("form-staff-list").innerHTML = "";
+  (act.staff || []).forEach(s => addStaffRow(s.salary_id, s.count, s.hours, s.source_room, s.auto_generated));
+  document.getElementById("form-fees-list").innerHTML = "";
+  (act.fees || []).forEach(f => addFeeRow(f.description, f.amount, f.gl_account_code, f.source_room, f.auto_generated));
+
+  renderFileLinkStatus("submission", act);
+  renderFileLinkStatus("contract", act);
+  updateSubmissionFinancialSummary();
+  renderPlanningTab(act);
+  renderBillingStateStatus(act);
 }
 
 /* ==========================================================================
@@ -420,15 +981,12 @@ function initRoomsScheduleGroup() {
 
     if (btn.classList.contains("active")) {
       addRoomScheduleCard(roomName);
+      autoAddLinkedStaffAndFees(roomName);
     } else {
       removeRoomScheduleCard(roomName);
     }
     updateFormDatesHelper();
-
-    const internalId = document.getElementById("form-activity-internal-id").value;
-    if (!internalId) {
-      activitiesState.isDraftDirty = true;
-    }
+    updateSubmissionFinancialSummary();
   });
 }
 
@@ -464,7 +1022,7 @@ function addRoomScheduleCard(roomName, roomData = null) {
 
   const uid = generateUid("room-card");
   const roomConfig = appState.settings.rooms.find(r => r.name === roomName);
-  const tarifs = (roomConfig && roomConfig.tarifs) || [];
+  const tarifs = roomConfig ? getFlattenedRoomTarifs(roomConfig, roomData ? roomData.date_start : "") : [];
   const isCustomTariff = !!(roomData && !roomData.tariff_id && (roomData.tariff_description || roomData.tariff_amount));
 
   const tarifOptionsHtml = tarifs.map(t =>
@@ -541,18 +1099,20 @@ function collectRoomsFromForm() {
   return Array.from(cards).map(card => {
     const roomName = card.dataset.roomName;
     const tariffSelect = card.querySelector(".room-tariff-select");
-    let tariffId = "", tariffDescription = "", tariffAmount = 0;
+    let tariffId = "", tariffDescription = "", tariffAmount = 0, tariffGlAccountCode = "";
 
     if (tariffSelect.value === "__custom__") {
       tariffDescription = card.querySelector(".room-tariff-custom-desc").value.trim();
       tariffAmount = parseFloat(card.querySelector(".room-tariff-custom-amount").value) || 0;
     } else if (tariffSelect.value) {
       const roomConfig = appState.settings.rooms.find(r => r.name === roomName);
-      const tarif = roomConfig?.tarifs?.find(t => t.id === tariffSelect.value);
+      const cardStartDate = card.querySelector(`#${card.id}-start-date`)?.value || "";
+      const tarif = roomConfig ? getFlattenedRoomTarifs(roomConfig, cardStartDate).find(t => t.id === tariffSelect.value) : null;
       if (tarif) {
         tariffId = tarif.id;
         tariffDescription = tarif.description;
         tariffAmount = tarif.amount;
+        tariffGlAccountCode = tarif.gl_account_code || "";
       }
     }
 
@@ -562,6 +1122,7 @@ function collectRoomsFromForm() {
       tariff_id: tariffId,
       tariff_description: tariffDescription,
       tariff_amount: tariffAmount,
+      tariff_gl_account_code: tariffGlAccountCode,
       install_date: card.querySelector(`#${uid}-install-date`).value,
       install_time: card.querySelector(`#${uid}-install-time`).value,
       dismantle_date: card.querySelector(`#${uid}-dismantle-date`).value,
@@ -585,6 +1146,167 @@ function getAggregateEventDates(rooms) {
   };
 }
 
+/* ==========================================================================
+   PERSONNEL REQUIS & AUTRES FRAIS (activity form, Soumission et contrat tab)
+   ========================================================================== */
+
+// Adds one personnel row. `sourceRoom`/`autoGenerated` are carried as data attributes so the
+// row can be told apart from arbitrary manually-added personnel when collecting the form.
+function addStaffRow(salaryId = "", count = 1, hours = 0, sourceRoom = "", autoGenerated = false) {
+  const container = document.getElementById("form-staff-list");
+  const rowId = generateUid("staff-row");
+
+  const salaryOptionsHtml = (appState.settings.salaries || []).map(s =>
+    `<option value="${s.id}" ${s.id === salaryId ? "selected" : ""}>${s.job}</option>`
+  ).join("");
+
+  container.insertAdjacentHTML("beforeend", `
+    <div id="${rowId}" class="distribution-row" data-source-room="${sourceRoom}" data-auto-generated="${autoGenerated ? "1" : ""}" style="grid-template-columns: 1.6fr 0.7fr 0.7fr 1fr auto;">
+      <select class="select-input staff-salary-select" style="padding: 8px 12px; font-size: 0.85rem;">
+        <option value="">Choisir un emploi...</option>
+        ${salaryOptionsHtml}
+      </select>
+      <input type="number" class="form-input staff-count-input" min="1" step="1" value="${count || 1}" placeholder="Qté" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" class="form-input staff-hours-input" min="0" step="0.25" value="${hours || 0}" placeholder="Heures" style="padding: 8px 12px; font-size: 0.85rem;">
+      <span class="staff-subtotal-display" style="font-size: 0.85rem; color: var(--text-secondary); align-self: center;">0,00 $</span>
+      <button type="button" class="btn-icon delete-staff-row-btn" data-row-id="${rowId}">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  `);
+
+  const row = document.getElementById(rowId);
+  row.querySelector(".delete-staff-row-btn").addEventListener("click", () => {
+    row.remove();
+    updateSubmissionFinancialSummary();
+  });
+  row.querySelectorAll("select, input").forEach(el => {
+    el.addEventListener("input", updateSubmissionFinancialSummary);
+    el.addEventListener("change", updateSubmissionFinancialSummary);
+  });
+  updateStaffRowSubtotal(row);
+}
+
+function updateStaffRowSubtotal(row) {
+  const salaryId = row.querySelector(".staff-salary-select").value;
+  const count = parseInt(row.querySelector(".staff-count-input").value, 10) || 0;
+  const hours = parseFloat(row.querySelector(".staff-hours-input").value) || 0;
+  const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+  const dateStr = getAggregateEventDates(collectRoomsFromForm()).date_start;
+  const rate = salary ? getActiveSalaryRate(salary, dateStr) : 0;
+  row.querySelector(".staff-subtotal-display").textContent = formatCurrency(rate * hours * count);
+}
+
+// Adds one "autre frais" row (description + montant + compte GL optionnel)
+function addFeeRow(description = "", amount = "", glAccountCode = "", sourceRoom = "", autoGenerated = false) {
+  const container = document.getElementById("form-fees-list");
+  const rowId = generateUid("fee-row");
+
+  container.insertAdjacentHTML("beforeend", `
+    <div id="${rowId}" class="distribution-row" data-source-room="${sourceRoom}" data-auto-generated="${autoGenerated ? "1" : ""}">
+      <input type="text" class="form-input fee-desc-input" value="${description ? description.replace(/"/g, "&quot;") : ""}" placeholder="Ex: Montage et démontage" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" class="form-input fee-amount-input" min="0" step="0.01" value="${amount !== "" ? amount : ""}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
+      <select class="select-input fee-gl-select" style="padding: 8px 12px; font-size: 0.85rem;">
+        ${buildGlAccountOptionsHtml(glAccountCode)}
+      </select>
+      <button type="button" class="btn-icon delete-fee-row-btn" data-row-id="${rowId}">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  `);
+
+  const row = document.getElementById(rowId);
+  row.querySelector(".delete-fee-row-btn").addEventListener("click", () => {
+    row.remove();
+    updateSubmissionFinancialSummary();
+  });
+  row.querySelectorAll("input, select").forEach(el => el.addEventListener("input", updateSubmissionFinancialSummary));
+}
+
+// When a room is added to the activity, auto-add its linked staff/fees (skipping any already
+// present for that room, so toggling the room pill off/on doesn't stack duplicates).
+function autoAddLinkedStaffAndFees(roomName) {
+  const room = appState.settings.rooms.find(r => r.name === roomName);
+  if (!room) return;
+
+  (room.linked_staff || []).forEach(s => {
+    const exists = Array.from(document.querySelectorAll("#form-staff-list .distribution-row")).some(row =>
+      row.dataset.sourceRoom === roomName && row.querySelector(".staff-salary-select").value === s.salary_id
+    );
+    if (!exists) addStaffRow(s.salary_id, s.count, 0, roomName, true);
+  });
+
+  (room.linked_fees || []).forEach(f => {
+    const exists = Array.from(document.querySelectorAll("#form-fees-list .distribution-row")).some(row =>
+      row.dataset.sourceRoom === roomName && row.querySelector(".fee-desc-input").value === f.description
+    );
+    if (!exists) addFeeRow(f.description, f.amount, f.gl_account_code, roomName, true);
+  });
+}
+
+function collectStaffFromForm() {
+  return Array.from(document.querySelectorAll("#form-staff-list .distribution-row")).map(row => ({
+    id: row.dataset.id || generateUid("staff"),
+    salary_id: row.querySelector(".staff-salary-select").value,
+    count: parseInt(row.querySelector(".staff-count-input").value, 10) || 0,
+    hours: parseFloat(row.querySelector(".staff-hours-input").value) || 0,
+    auto_generated: row.dataset.autoGenerated === "1",
+    source_room: row.dataset.sourceRoom || ""
+  })).filter(s => s.salary_id);
+}
+
+function collectFeesFromForm() {
+  return Array.from(document.querySelectorAll("#form-fees-list .distribution-row")).map(row => ({
+    id: row.dataset.id || generateUid("fee"),
+    description: row.querySelector(".fee-desc-input").value.trim(),
+    amount: parseFloat(row.querySelector(".fee-amount-input").value) || 0,
+    gl_account_code: row.querySelector(".fee-gl-select").value,
+    auto_generated: row.dataset.autoGenerated === "1",
+    source_room: row.dataset.sourceRoom || ""
+  })).filter(f => f.description);
+}
+
+// Recomputes and displays the room/personnel/frais subtotal, TPS (5%), TVQ (9.975%), and total
+function updateSubmissionFinancialSummary() {
+  const container = document.getElementById("submission-financial-summary");
+  if (!container) return;
+
+  const rooms = collectRoomsFromForm();
+  const roomsTotal = getRoomsTariffTotal({ rooms });
+  const eventDateStart = getAggregateEventDates(rooms).date_start;
+
+  let staffTotal = 0;
+  document.querySelectorAll("#form-staff-list .distribution-row").forEach(row => {
+    updateStaffRowSubtotal(row);
+    const salaryId = row.querySelector(".staff-salary-select").value;
+    const count = parseInt(row.querySelector(".staff-count-input").value, 10) || 0;
+    const hours = parseFloat(row.querySelector(".staff-hours-input").value) || 0;
+    const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+    const rate = salary ? getActiveSalaryRate(salary, eventDateStart) : 0;
+    staffTotal += rate * hours * count;
+  });
+
+  let feesTotal = 0;
+  document.querySelectorAll("#form-fees-list .distribution-row").forEach(row => {
+    feesTotal += parseFloat(row.querySelector(".fee-amount-input").value) || 0;
+  });
+
+  const subtotal = roomsTotal + staffTotal + feesTotal;
+  const tps = subtotal * 0.05;
+  const tvq = subtotal * 0.09975;
+  const total = subtotal + tps + tvq;
+
+  container.innerHTML = `
+    <div class="financial-summary-row"><span>Location des salles</span><span>${formatCurrency(roomsTotal)}</span></div>
+    <div class="financial-summary-row"><span>Personnel</span><span>${formatCurrency(staffTotal)}</span></div>
+    <div class="financial-summary-row"><span>Autres frais</span><span>${formatCurrency(feesTotal)}</span></div>
+    <div class="financial-summary-row"><span>Sous-total</span><span>${formatCurrency(subtotal)}</span></div>
+    <div class="financial-summary-row"><span>TPS (5%)</span><span>${formatCurrency(tps)}</span></div>
+    <div class="financial-summary-row"><span>TVQ (9,975%)</span><span>${formatCurrency(tvq)}</span></div>
+    <div class="financial-summary-row total"><span>Total</span><span>${formatCurrency(total)}</span></div>
+  `;
+}
+
 // Generates the next available activity id (XXYY-ZZZ) for the selected fiscal year
 function generateNextActivityId() {
   const prefix = appState.selected_year.split("-").map(y => y.substring(2)).join("");
@@ -604,88 +1326,36 @@ function generateNextActivityId() {
   return `${prefix}-${nextSeq}`;
 }
 
-// Drawer CRUD Operations
-function openActivityDrawer(id = null, duplicateFromId = null) {
+// Opens the full tabbed activity record for an existing activity (always edit mode — activities
+// are created via the name-only modal/createActivity() before this is ever called).
+// `calendarReturn` is an optional eventCalendarState snapshot ({refDate, viewMode}) to return to
+// when the record was opened by clicking an event in the calendar.
+function openActivityDrawer(id, calendarReturn = null) {
   const drawer = document.getElementById("activity-drawer");
   const backdrop = document.getElementById("drawer-backdrop");
   const form = document.getElementById("activity-form");
   const deleteBtn = document.getElementById("activity-drawer-delete");
   const titleEl = document.getElementById("activity-drawer-title");
 
-  if (id) {
-    // Edit Mode (Always reset and load the active activity)
-    form.reset();
-    document.getElementById("form-distribution-list").innerHTML = "";
-    document.getElementById("form-distribution-total-val").textContent = "0,00 $";
+  const act = appState.activities.find(a => a.id === id);
+  if (!act) return;
 
-    titleEl.textContent = `Modifier l'activité ${id}`;
-    const act = appState.activities.find(a => a.id === id);
-    if (act) {
-      document.getElementById("form-activity-internal-id").value = act.id;
-      document.getElementById("form-activity-id").value = act.id;
-      document.getElementById("form-activity-id").disabled = true; // Cannot edit active key
-      fillActivityFormFields(act);
+  form.reset();
+  document.getElementById("form-distribution-list").innerHTML = "";
+  document.getElementById("form-distribution-total-val").textContent = "0,00 $";
 
-      // Show delete button
-      deleteBtn.style.display = "inline-flex";
-    }
-  } else if (duplicateFromId) {
-    // Duplicate Mode (always builds a fresh form, ignoring any pending draft)
-    titleEl.textContent = "Dupliquer l'activité";
-    form.reset();
-    document.getElementById("form-distribution-list").innerHTML = "";
-    document.getElementById("form-distribution-total-val").textContent = "0,00 $";
+  titleEl.textContent = act.name.trim() !== "" ? act.name : `Activité ${act.id}`;
+  document.getElementById("form-activity-internal-id").value = act.id;
+  document.getElementById("form-activity-id").value = act.id;
+  document.getElementById("form-activity-id").disabled = true; // Cannot edit active key
+  fillActivityFormFields(act);
+  renderActivityStateBar(act);
+  deleteBtn.style.display = "inline-flex";
 
-    document.getElementById("form-activity-internal-id").value = "";
-    const generatedId = generateNextActivityId();
-    document.getElementById("form-activity-id").value = generatedId;
-    document.getElementById("form-activity-id").disabled = true; // Auto-generated, no manual edits
+  activitiesState.calendarReturn = calendarReturn;
+  document.getElementById("activity-drawer-back-to-calendar-btn").style.display = calendarReturn ? "inline-flex" : "none";
 
-    const sourceAct = appState.activities.find(a => a.id === duplicateFromId);
-    if (sourceAct) {
-      fillActivityFormFields(sourceAct);
-    } else {
-      addDistributionRow("", 0);
-    }
-
-    activitiesState.isDraftDirty = false;
-    deleteBtn.style.display = "none";
-  } else {
-    // New Mode
-    titleEl.textContent = "Ajouter une activité";
-
-    // Only reset and build a fresh form if there is no active draft
-    if (!activitiesState.isDraftDirty) {
-      form.reset();
-      document.getElementById("form-distribution-list").innerHTML = "";
-      document.getElementById("form-distribution-total-val").textContent = "0,00 $";
-      setPillGroupActive("form-activity-salle-group", []);
-      document.getElementById("form-activity-rooms-schedule").innerHTML = "";
-      setPillGroupActive("form-activity-services-group", []);
-      setPillGroupActive("form-activity-consumption-group", []);
-      setPillGroupActive("form-activity-host-services-group", []);
-      document.getElementById("form-activity-consumption-special-group").style.display = "none";
-      document.getElementById("form-activity-event-type-other-group").style.display = "none";
-
-      document.getElementById("form-activity-internal-id").value = "";
-
-      // Auto-generate ID: XXYY-ZZZ based on selected fiscal year
-      const generatedId = generateNextActivityId();
-
-      document.getElementById("form-activity-id").value = generatedId;
-      document.getElementById("form-activity-id").disabled = true; // Auto-generated, no manual edits
-
-      // Add one blank distribution row
-      addDistributionRow("", 0);
-
-      // Reset draft flag
-      activitiesState.isDraftDirty = false;
-    }
-
-    // Hide delete button
-    deleteBtn.style.display = "none";
-  }
-
+  switchActivityTab("submission");
   updateFormDatesHelper();
   clearDateFieldErrors();
 
@@ -696,6 +1366,11 @@ function openActivityDrawer(id = null, duplicateFromId = null) {
   setTimeout(() => {
     document.getElementById("form-activity-name").focus();
   }, 150);
+}
+
+// Kept for calendar.js, which opens the activity record from a calendar event click
+function openActivityDetailModal(id, calendarReturn) {
+  openActivityDrawer(id, calendarReturn);
 }
 
 function closeActivityDrawer() {
@@ -733,11 +1408,6 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "") {
   newRow.querySelector(".delete-dist-row-btn").addEventListener("click", () => {
     newRow.remove();
     updateDistributionTotal();
-    // Mark as dirty if removing a row in New Mode
-    const internalId = document.getElementById("form-activity-internal-id").value;
-    if (!internalId) {
-      activitiesState.isDraftDirty = true;
-    }
   });
 
   newRow.querySelector(".dist-amount-input").addEventListener("input", updateDistributionTotal);
@@ -762,6 +1432,10 @@ function submitActivityForm(e) {
   const name = document.getElementById("form-activity-name").value.trim();
   const attendeesInput = document.getElementById("form-activity-attendees").value.trim();
   const attendeesCount = parseInt(attendeesInput) || 0;
+  const clientFirstName = document.getElementById("form-activity-client-firstname").value.trim();
+  const clientLastName = document.getElementById("form-activity-client-lastname").value.trim();
+  const clientPhone = document.getElementById("form-activity-client-phone").value.trim();
+  const clientEmail = document.getElementById("form-activity-client-email").value.trim();
   const responsable = document.getElementById("form-activity-responsable").value.trim();
   const clientType = document.getElementById("form-activity-client-type").value;
   const description = document.getElementById("form-activity-description").value.trim();
@@ -856,11 +1530,15 @@ function submitActivityForm(e) {
     return;
   }
 
+  // Only the Soumission-et-contrat and Facturation tabs' fields are collected here — lifecycle
+  // fields owned by the other tabs (state, planning_tasks, submission, contract, billed_at,
+  // completed_at) are merged in untouched rather than overwritten.
   const payload = {
     id: rawId,
     responsable,
     name,
     attendees_count: attendeesCount,
+    client: { first_name: clientFirstName, last_name: clientLastName, phone: clientPhone, email: clientEmail },
     date_start: start,
     date_end: end,
     description,
@@ -873,6 +1551,8 @@ function submitActivityForm(e) {
     },
     client_type: clientType,
     rooms,
+    staff: collectStaffFromForm(),
+    fees: collectFeesFromForm(),
     technical_services: technicalServices,
     consumption,
     consumption_special_products: consumption.includes("Commande spéciale de produit") ? consumptionSpecialProducts : "",
@@ -884,25 +1564,12 @@ function submitActivityForm(e) {
     distributions
   };
 
-  if (internalId) {
-    // Edit existing activity
-    const idx = appState.activities.findIndex(a => a.id === internalId);
-    if (idx !== -1) {
-      appState.activities[idx] = payload;
-    }
-  } else {
-    // Add new custom activity (Check if code already exists)
-    const exists = appState.activities.some(a => a.id === rawId);
-    if (exists) {
-      alert("Ce numéro d'activité existe déjà. Veuillez en choisir un autre.");
-      return;
-    }
-    appState.activities.push(payload);
-  }
+  const idx = appState.activities.findIndex(a => a.id === internalId);
+  if (idx === -1) return;
+  appState.activities[idx] = { ...appState.activities[idx], ...payload };
 
   saveDatabase();
   closeActivityDrawer();
-  activitiesState.isDraftDirty = false; // Reset draft flag upon successful submit
 
   // Re-run validation if ledger has been loaded to update statuses immediately!
   if (reconciliationState.ledgerTransactions.length > 0) {
@@ -1021,258 +1688,3 @@ function getDaysOfWeekInRange(startDateStr, endDateStr) {
   return dayStrings.join(", ");
 }
 
-/* ==========================================================================
-   ACTIVITY DETAIL VIEW (Read-only summary modal)
-   ========================================================================== */
-
-function initActivityDetailModal() {
-  const modal = document.getElementById("activity-detail-modal");
-  const backdrop = document.getElementById("modal-backdrop");
-
-  document.getElementById("activity-detail-modal-close").addEventListener("click", closeActivityDetailModal);
-  document.getElementById("activity-detail-close-btn").addEventListener("click", closeActivityDetailModal);
-  backdrop.addEventListener("click", closeActivityDetailModal);
-
-  document.getElementById("activity-detail-edit-btn").addEventListener("click", () => {
-    const id = activitiesState.detailModalActivityId;
-    closeActivityDetailModal();
-    if (id) openActivityDrawer(id);
-  });
-
-  document.getElementById("activity-detail-back-to-calendar-btn").addEventListener("click", () => {
-    const calendarReturn = activitiesState.detailModalCalendarReturn;
-    closeActivityDetailModal();
-    if (calendarReturn) reopenCalendarModal(calendarReturn);
-  });
-}
-
-// Human friendly date/time formatting, e.g. "3 juillet 2026 à 14 h 00"
-function formatDetailDateTime(dateStr, timeStr) {
-  if (!dateStr) return "-";
-  const date = parseLocalDateStr(dateStr);
-  if (isNaN(date.getTime())) return "-";
-  let text = date.toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' });
-  if (timeStr) {
-    text += ` à ${timeStr.replace(":", " h ")}`;
-  }
-  return text;
-}
-
-// `calendarReturn` is an optional eventCalendarState snapshot ({refDate, viewMode}) to
-// return to when the detail modal was opened by clicking an event in the calendar
-function openActivityDetailModal(id, calendarReturn) {
-  const act = appState.activities.find(a => a.id === id);
-  if (!act) return;
-
-  activitiesState.detailModalActivityId = id;
-  activitiesState.detailModalCalendarReturn = calendarReturn || null;
-
-  document.getElementById("activity-detail-title").textContent = act.name.trim() !== "" ? act.name : "Activité vierge";
-  document.getElementById("activity-detail-content").innerHTML = buildActivityDetailHtml(act);
-  document.getElementById("activity-detail-back-to-calendar-btn").style.display = calendarReturn ? "" : "none";
-
-  document.getElementById("activity-detail-modal").classList.add("active");
-  document.getElementById("modal-backdrop").classList.add("active");
-}
-
-function closeActivityDetailModal() {
-  document.getElementById("activity-detail-modal").classList.remove("active");
-  document.getElementById("modal-backdrop").classList.remove("active");
-  activitiesState.detailModalActivityId = null;
-  activitiesState.detailModalCalendarReturn = null;
-}
-
-function buildActivityDetailHtml(act) {
-  const isFilled = act.name.trim() !== "";
-  const totalRev = act.distributions.reduce((sum, d) => sum + d.amount, 0);
-  const days = calculateDaysCount(act.date_start, act.date_end);
-  const sansFrais = act.client_type === "interne" ? getRoomsTariffTotal(act) : 0;
-
-  // Reconciliation badge, mirrors the list view logic
-  let statusBadge = "";
-  const activityReferences = getActivityReferences(act);
-  if (reconciliationState.ledgerTransactions.length > 0 && isFilled && activityReferences) {
-    const related = reconciliationState.results.filter(r => r.activityId === act.id);
-    if (related.length > 0) {
-      const hasDiff = related.some(r => r.status === "diff");
-      const hasUnlogged = related.some(r => r.status === "unlogged");
-      const allValid = related.every(r => r.status === "valid");
-      if (allValid) statusBadge = `<span class="badge badge-success">Rapproché</span>`;
-      else if (hasDiff) statusBadge = `<span class="badge badge-danger">Écart montant</span>`;
-      else if (hasUnlogged) statusBadge = `<span class="badge badge-warning">Non dans GL</span>`;
-    }
-  }
-
-  const clientTypeBadge = act.client_type === "interne"
-    ? `<span class="badge badge-info">Interne</span>`
-    : act.client_type === "externe"
-      ? `<span class="badge badge-warning">Externe</span>`
-      : "";
-
-  const eventTypeLabel = act.event_type === "autre"
-    ? (act.event_type_other || "Autre")
-    : (EVENT_TYPES.find(t => t.value === act.event_type)?.label || "-");
-
-  const manager = act.activity_manager || {};
-  const managerName = [manager.first_name, manager.last_name].filter(Boolean).join(" ") || "-";
-  const managerTypeLabel = manager.type === "etudiant" ? "Étudiant" : manager.type === "externe" ? "Externe" : manager.type === "employe" ? "Employé" : "-";
-
-  const tagsOrDash = (arr) => (arr && arr.length)
-    ? `<div class="detail-tags">${arr.map(v => `<span class="detail-tag">${v}</span>`).join("")}</div>`
-    : `<span class="detail-row-value">-</span>`;
-
-  const distRows = (act.distributions || []).map(d => {
-    const accDesc = appState.settings.accounts.find(a => a.code === d.account_code)?.description || '';
-    return `
-      <tr>
-        <td class="font-mono">${d.account_code}</td>
-        <td>${accDesc}</td>
-        <td>${d.reference || '-'}</td>
-        <td class="text-right bold">${formatCurrency(d.amount)}</td>
-      </tr>
-    `;
-  }).join("");
-
-  return `
-    <div class="detail-hero">
-      <div>
-        <div class="detail-hero-name">${isFilled ? act.name : 'Activité vierge'}</div>
-        <div class="detail-hero-id font-mono">${act.id}</div>
-      </div>
-      <div class="detail-hero-badges">
-        ${clientTypeBadge}
-        ${statusBadge}
-      </div>
-    </div>
-
-    <div class="detail-stats-grid">
-      <div class="detail-stat-box">
-        <div class="detail-stat-box-val">${formatCurrency(totalRev)}</div>
-        <div class="detail-stat-box-lbl">Revenu saisi</div>
-      </div>
-      <div class="detail-stat-box">
-        <div class="detail-stat-box-val">${act.client_type === "interne" ? formatCurrency(sansFrais) : '-'}</div>
-        <div class="detail-stat-box-lbl">Sans frais</div>
-      </div>
-      <div class="detail-stat-box">
-        <div class="detail-stat-box-val">${days}</div>
-        <div class="detail-stat-box-lbl">Jour(s)</div>
-      </div>
-      <div class="detail-stat-box">
-        <div class="detail-stat-box-val">${act.attendees_count || 0}</div>
-        <div class="detail-stat-box-lbl">Personnes attendues</div>
-      </div>
-    </div>
-
-    <div class="detail-section-title">Salle(s), horaire et tarif</div>
-    ${(act.rooms && act.rooms.length) ? `
-      <table class="detail-dist-table">
-        <thead>
-          <tr>
-            <th>Salle</th>
-            <th>Tarif</th>
-            <th>Installation</th>
-            <th>Démontage</th>
-            <th>Début</th>
-            <th>Fin</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${act.rooms.map(r => `
-            <tr>
-              <td class="bold">${r.name}</td>
-              <td>${r.tariff_description ? `${r.tariff_description} (${formatCurrency(r.tariff_amount || 0)}/jour)` : '-'}</td>
-              <td>${formatDetailDateTime(r.install_date, r.install_time)}</td>
-              <td>${formatDetailDateTime(r.dismantle_date, r.dismantle_time)}</td>
-              <td>${formatDetailDateTime(r.date_start, r.start_time)}</td>
-              <td>${formatDetailDateTime(r.date_end, r.end_time)}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    ` : `<div class="detail-row-value">Aucune salle réservée.</div>`}
-
-    <div class="detail-section-title">Lieu et type d'événement</div>
-    <div class="detail-grid">
-      <div>
-        <div class="detail-row-label">Type d'événement</div>
-        <div class="detail-row-value">${eventTypeLabel}</div>
-      </div>
-      <div>
-        <div class="detail-row-label">Responsable facturation</div>
-        <div class="detail-row-value">${act.responsable || '-'}</div>
-      </div>
-      <div>
-        <div class="detail-row-label">Département</div>
-        <div class="detail-row-value">${act.department || '-'}</div>
-      </div>
-      ${act.description ? `
-      <div class="detail-full-row">
-        <div class="detail-row-label">Description</div>
-        <div class="detail-row-value">${act.description}</div>
-      </div>` : ""}
-    </div>
-
-    <div class="detail-section-title">Responsable de l'activité</div>
-    <div class="detail-grid">
-      <div>
-        <div class="detail-row-label">Nom</div>
-        <div class="detail-row-value">${managerName}</div>
-      </div>
-      <div>
-        <div class="detail-row-label">Statut</div>
-        <div class="detail-row-value">${managerTypeLabel}</div>
-      </div>
-      <div>
-        <div class="detail-row-label">Téléphone</div>
-        <div class="detail-row-value">${manager.phone || '-'}</div>
-      </div>
-      <div>
-        <div class="detail-row-label">Courriel</div>
-        <div class="detail-row-value">${manager.email || '-'}</div>
-      </div>
-    </div>
-
-    <div class="detail-section-title">Services et options</div>
-    <div class="detail-grid">
-      <div>
-        <div class="detail-row-label">Services techniques</div>
-        ${tagsOrDash(act.technical_services)}
-      </div>
-      <div>
-        <div class="detail-row-label">Service d'hôtes.ses</div>
-        ${tagsOrDash(act.host_services)}
-      </div>
-      <div class="detail-full-row">
-        <div class="detail-row-label">Consommation</div>
-        ${tagsOrDash(act.consumption)}
-        ${act.consumption_special_products ? `<div class="detail-row-value" style="margin-top: 6px;">Produits : ${act.consumption_special_products}</div>` : ""}
-      </div>
-      <div>
-        <div class="detail-row-label">Temps Rémi</div>
-        <div class="detail-row-value">${act.remi_hours || 0} h</div>
-      </div>
-    </div>
-
-    <div class="detail-section-title">Ventilation par compte de revenus</div>
-    ${distRows ? `
-      <table class="detail-dist-table">
-        <thead>
-          <tr>
-            <th>Compte</th>
-            <th>Description</th>
-            <th>RI / Facture</th>
-            <th class="text-right">Montant</th>
-          </tr>
-        </thead>
-        <tbody>${distRows}</tbody>
-        <tfoot>
-          <tr>
-            <td colspan="3">Total</td>
-            <td class="text-right">${formatCurrency(totalRev)}</td>
-          </tr>
-        </tfoot>
-      </table>
-    ` : `<div class="detail-row-value">Aucune ventilation saisie.</div>`}
-  `;
-}

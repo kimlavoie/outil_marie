@@ -226,6 +226,7 @@
                     <th data-sort="reference">RI / Facture</th>
                     <th data-sort="totalRev">Revenu Saisi</th>
                     <th data-sort="sansFrais">Sans Frais</th>
+                    <th style="width: 160px;">État / Planification</th>
                     <th class="text-right" style="width: 100px;">Actions</th>
                   </tr>
                 </thead>
@@ -498,183 +499,319 @@
   <!-- Drawer Container Backdrop -->
   <div id="drawer-backdrop" class="drawer-backdrop"></div>
 
-  <!-- 1. Activity Add/Edit Drawer -->
+  <!-- 1. Activity Record Drawer (3-tab lifecycle view: Soumission et contrat / Planification / Facturation) -->
   <div id="activity-drawer" class="drawer">
     <div class="drawer-header">
-      <h2 id="activity-drawer-title" class="drawer-title">Ajouter une activité</h2>
+      <h2 id="activity-drawer-title" class="drawer-title">Activité</h2>
       <button id="activity-drawer-close" class="btn-icon">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
-    
+
+    <div id="activity-state-bar" class="activity-state-bar">
+      <!-- Populated dynamically: state badge, planning progress, transition buttons -->
+    </div>
+
+    <div class="activity-tabs">
+      <button type="button" class="activity-tab-btn active" data-activity-tab="submission">Soumission et contrat</button>
+      <button type="button" class="activity-tab-btn" data-activity-tab="planning">Planification</button>
+      <button type="button" class="activity-tab-btn" data-activity-tab="billing">Facturation</button>
+    </div>
+
     <div class="drawer-content">
       <form id="activity-form">
         <input type="hidden" id="form-activity-internal-id">
-        
-        <div class="form-group">
-          <label for="form-activity-id">Numéro d'activité (Généré automatiquement, ex: 2627-001)</label>
-          <input type="text" id="form-activity-id" class="form-input" placeholder="Généré automatiquement" disabled>
-        </div>
-        
-        <div class="form-group">
-          <label for="form-activity-name">Nom de l'activité *</label>
-          <input type="text" id="form-activity-name" class="form-input" required placeholder="Ex: Réunion SCOUTS">
-        </div>
 
-        <div class="form-group">
-          <label for="form-activity-attendees">Nombre de personnes attendues</label>
-          <input type="number" id="form-activity-attendees" class="form-input" min="0" placeholder="Ex: 50">
-        </div>
-
-        <!-- Facturation -->
-        <div class="form-section-title">Facturation</div>
-        <div class="form-group-row">
+        <!-- ============ TAB: Soumission et contrat ============ -->
+        <div id="activity-tab-panel-submission" class="activity-tab-panel active">
           <div class="form-group">
-            <label for="form-activity-responsable">Responsable Facturation</label>
-            <input type="text" id="form-activity-responsable" class="form-input" placeholder="Ex: M. Dupont">
+            <label for="form-activity-id">Numéro d'activité (Généré automatiquement, ex: 2627-001)</label>
+            <input type="text" id="form-activity-id" class="form-input" placeholder="Généré automatiquement" disabled>
           </div>
+
           <div class="form-group">
-            <label for="form-activity-client-type">Client interne ou externe</label>
-            <select id="form-activity-client-type" class="select-input" style="padding: 10px 14px;">
-              <option value="">Sélectionner...</option>
-              <option value="interne">Interne</option>
-              <option value="externe">Externe</option>
+            <label for="form-activity-name">Nom de l'activité *</label>
+            <input type="text" id="form-activity-name" class="form-input" required placeholder="Ex: Réunion SCOUTS">
+          </div>
+
+          <div class="form-group">
+            <label for="form-activity-attendees">Nombre de personnes attendues</label>
+            <input type="number" id="form-activity-attendees" class="form-input" min="0" placeholder="Ex: 50">
+          </div>
+
+          <!-- Identification du client -->
+          <div class="form-section-title">Identification du client</div>
+          <div class="form-group-row">
+            <div class="form-group">
+              <label for="form-activity-client-firstname">Prénom du responsable</label>
+              <input type="text" id="form-activity-client-firstname" class="form-input" placeholder="Prénom">
+            </div>
+            <div class="form-group">
+              <label for="form-activity-client-lastname">Nom du responsable</label>
+              <input type="text" id="form-activity-client-lastname" class="form-input" placeholder="Nom">
+            </div>
+          </div>
+          <div class="form-group-row">
+            <div class="form-group">
+              <label for="form-activity-client-phone">Téléphone</label>
+              <input type="tel" id="form-activity-client-phone" class="form-input" placeholder="Ex: 514-555-1234">
+            </div>
+            <div class="form-group">
+              <label for="form-activity-client-email">Courriel</label>
+              <input type="email" id="form-activity-client-email" class="form-input" placeholder="nom@exemple.com">
+            </div>
+          </div>
+
+          <!-- Facturation -->
+          <div class="form-section-title">Facturation</div>
+          <div class="form-group-row">
+            <div class="form-group">
+              <label for="form-activity-responsable">Responsable Facturation</label>
+              <input type="text" id="form-activity-responsable" class="form-input" placeholder="Ex: M. Dupont">
+            </div>
+            <div class="form-group">
+              <label for="form-activity-client-type">Client interne ou externe</label>
+              <select id="form-activity-client-type" class="select-input" style="padding: 10px 14px;">
+                <option value="">Sélectionner...</option>
+                <option value="interne">Interne</option>
+                <option value="externe">Externe</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="form-activity-dept">Département</label>
+            <select id="form-activity-dept" class="select-input" style="padding: 10px 14px;">
+              <!-- Populated dynamically -->
             </select>
           </div>
-        </div>
 
-        <div class="form-group">
-          <label for="form-activity-dept">Département</label>
-          <select id="form-activity-dept" class="select-input" style="padding: 10px 14px;">
-            <!-- Populated dynamically -->
-          </select>
-        </div>
-
-        <!-- Description -->
-        <div class="form-group">
-          <label for="form-activity-description">Description de l'activité</label>
-          <textarea id="form-activity-description" class="form-input" rows="3" placeholder="Décrivez l'activité..."></textarea>
-        </div>
-
-        <!-- Responsable de l'activité -->
-        <div class="form-section-title">Responsable de l'activité</div>
-        <div class="form-group-row">
+          <!-- Description -->
           <div class="form-group">
-            <label for="form-activity-manager-firstname">Prénom</label>
-            <input type="text" id="form-activity-manager-firstname" class="form-input" placeholder="Prénom">
+            <label for="form-activity-description">Description de l'activité</label>
+            <textarea id="form-activity-description" class="form-input" rows="3" placeholder="Décrivez l'activité..."></textarea>
+          </div>
+
+          <!-- Responsable de l'activité -->
+          <div class="form-section-title">Responsable de l'activité</div>
+          <div class="form-group-row">
+            <div class="form-group">
+              <label for="form-activity-manager-firstname">Prénom</label>
+              <input type="text" id="form-activity-manager-firstname" class="form-input" placeholder="Prénom">
+            </div>
+            <div class="form-group">
+              <label for="form-activity-manager-lastname">Nom</label>
+              <input type="text" id="form-activity-manager-lastname" class="form-input" placeholder="Nom">
+            </div>
+          </div>
+          <div class="form-group-row">
+            <div class="form-group">
+              <label for="form-activity-manager-type">Fonction</label>
+              <select id="form-activity-manager-type" class="select-input" style="padding: 10px 14px;">
+                <option value="">Sélectionner...</option>
+                <option value="employe">Employé</option>
+                <option value="etudiant">Étudiant</option>
+                <option value="externe">Externe</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="form-activity-manager-phone">Numéro de téléphone</label>
+              <input type="tel" id="form-activity-manager-phone" class="form-input" placeholder="Ex: 514-555-1234">
+            </div>
           </div>
           <div class="form-group">
-            <label for="form-activity-manager-lastname">Nom</label>
-            <input type="text" id="form-activity-manager-lastname" class="form-input" placeholder="Nom">
+            <label for="form-activity-manager-email">Courriel</label>
+            <input type="email" id="form-activity-manager-email" class="form-input" placeholder="nom@exemple.com">
           </div>
-        </div>
-        <div class="form-group-row">
+
+          <!-- Salle(s), horaire et tarif -->
+          <div class="form-section-title">Salle(s), horaire et tarif</div>
           <div class="form-group">
-            <label for="form-activity-manager-type">Fonction</label>
-            <select id="form-activity-manager-type" class="select-input" style="padding: 10px 14px;">
-              <option value="">Sélectionner...</option>
-              <option value="employe">Employé</option>
-              <option value="etudiant">Étudiant</option>
-              <option value="externe">Externe</option>
+            <label for="form-activity-salle-group">Salle(s)</label>
+            <div id="form-activity-salle-group" class="pill-toggle-group">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <div id="form-activity-rooms-schedule">
+            <!-- One schedule card per selected room, populated dynamically -->
+          </div>
+
+          <!-- Help text for days of the week (based on the overall span across all rooms) -->
+          <div id="form-activity-dates-helper" style="margin-top: -8px; margin-bottom: 12px; font-size: 0.78rem; color: var(--text-secondary); display: none; align-items: center; gap: 6px;">
+            <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: var(--primary);"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm3.3 14.3L11 12.5V7h1.5v4.7l3.7 2.2-.7 1.4z"/></svg>
+            <span><strong>Jours de la semaine :</strong> <span id="form-activity-days-list" style="color: var(--text-primary);"></span></span>
+          </div>
+
+          <!-- Services techniques -->
+          <div class="form-group">
+            <label for="form-activity-services-group">Services techniques</label>
+            <div id="form-activity-services-group" class="pill-toggle-group">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Consommation -->
+          <div class="form-group">
+            <label for="form-activity-consumption-group">Consommation</label>
+            <div id="form-activity-consumption-group" class="pill-toggle-group">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+          <div class="form-group" id="form-activity-consumption-special-group" style="display: none;">
+            <label for="form-activity-consumption-special">Précisez les produits (commande spéciale)</label>
+            <input type="text" id="form-activity-consumption-special" class="form-input" placeholder="Précisez les produits...">
+          </div>
+
+          <!-- Service d'hôtes.ses -->
+          <div class="form-group">
+            <label for="form-activity-host-services-group">Service d'hôtes.ses</label>
+            <div id="form-activity-host-services-group" class="pill-toggle-group">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Type d'événement -->
+          <div class="form-group">
+            <label for="form-activity-event-type">Type d'événement</label>
+            <select id="form-activity-event-type" class="select-input" style="padding: 10px 14px;">
+              <!-- Populated dynamically -->
             </select>
           </div>
+          <div class="form-group" id="form-activity-event-type-other-group" style="display: none;">
+            <label for="form-activity-event-type-other">Précisez le type d'événement</label>
+            <input type="text" id="form-activity-event-type-other" class="form-input" placeholder="Précisez...">
+          </div>
+
           <div class="form-group">
-            <label for="form-activity-manager-phone">Numéro de téléphone</label>
-            <input type="tel" id="form-activity-manager-phone" class="form-input" placeholder="Ex: 514-555-1234">
+            <label for="form-activity-remi">Temps Rémi (heures)</label>
+            <input type="number" id="form-activity-remi" class="form-input" step="0.25" min="0" value="0">
           </div>
-        </div>
-        <div class="form-group">
-          <label for="form-activity-manager-email">Courriel</label>
-          <input type="email" id="form-activity-manager-email" class="form-input" placeholder="nom@exemple.com">
-        </div>
 
-        <!-- Salle(s), horaire et tarif -->
-        <div class="form-section-title">Salle(s), horaire et tarif</div>
-        <div class="form-group">
-          <label for="form-activity-salle-group">Salle(s)</label>
-          <div id="form-activity-salle-group" class="pill-toggle-group">
-            <!-- Populated dynamically -->
+          <!-- Personnel requis -->
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Personnel requis</label>
+              <button type="button" id="form-add-staff-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
+            </div>
+            <div id="form-staff-list" class="distribution-list"></div>
           </div>
-        </div>
 
-        <div id="form-activity-rooms-schedule">
-          <!-- One schedule card per selected room, populated dynamically -->
-        </div>
-
-        <!-- Help text for days of the week (based on the overall span across all rooms) -->
-        <div id="form-activity-dates-helper" style="margin-top: -8px; margin-bottom: 12px; font-size: 0.78rem; color: var(--text-secondary); display: none; align-items: center; gap: 6px;">
-          <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: var(--primary);"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm3.3 14.3L11 12.5V7h1.5v4.7l3.7 2.2-.7 1.4z"/></svg>
-          <span><strong>Jours de la semaine :</strong> <span id="form-activity-days-list" style="color: var(--text-primary);"></span></span>
-        </div>
-
-        <!-- Services techniques -->
-        <div class="form-group">
-          <label for="form-activity-services-group">Services techniques</label>
-          <div id="form-activity-services-group" class="pill-toggle-group">
-            <!-- Populated dynamically -->
+          <!-- Autres frais -->
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Autres frais</label>
+              <button type="button" id="form-add-fee-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
+            </div>
+            <div id="form-fees-list" class="distribution-list"></div>
           </div>
-        </div>
 
-        <!-- Consommation -->
-        <div class="form-group">
-          <label for="form-activity-consumption-group">Consommation</label>
-          <div id="form-activity-consumption-group" class="pill-toggle-group">
-            <!-- Populated dynamically -->
+          <!-- Récapitulatif financier (taxes québécoises) -->
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Récapitulatif financier</label>
+            </div>
+            <div id="submission-financial-summary" class="financial-summary">
+              <!-- Populated dynamically -->
+            </div>
           </div>
-        </div>
-        <div class="form-group" id="form-activity-consumption-special-group" style="display: none;">
-          <label for="form-activity-consumption-special">Précisez les produits (commande spéciale)</label>
-          <input type="text" id="form-activity-consumption-special" class="form-input" placeholder="Précisez les produits...">
-        </div>
 
-        <!-- Service d'hôtes.ses -->
-        <div class="form-group">
-          <label for="form-activity-host-services-group">Service d'hôtes.ses</label>
-          <div id="form-activity-host-services-group" class="pill-toggle-group">
-            <!-- Populated dynamically -->
+          <!-- Soumission -->
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Soumission</label>
+            </div>
+            <div id="submission-file-status" class="file-link-status"></div>
+          </div>
+
+          <!-- Contrat -->
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Contrat</label>
+            </div>
+            <div id="contract-file-status" class="file-link-status"></div>
           </div>
         </div>
 
-        <!-- Type d'événement -->
-        <div class="form-group">
-          <label for="form-activity-event-type">Type d'événement</label>
-          <select id="form-activity-event-type" class="select-input" style="padding: 10px 14px;">
-            <!-- Populated dynamically -->
-          </select>
-        </div>
-        <div class="form-group" id="form-activity-event-type-other-group" style="display: none;">
-          <label for="form-activity-event-type-other">Précisez le type d'événement</label>
-          <input type="text" id="form-activity-event-type-other" class="form-input" placeholder="Précisez...">
-        </div>
-
-        <div class="form-group">
-          <label for="form-activity-remi">Temps Rémi (heures)</label>
-          <input type="number" id="form-activity-remi" class="form-input" step="0.25" min="0" value="0">
-        </div>
-
-        <!-- Accounts Dynamic Distribution Interface -->
-        <div class="distribution-section">
-          <div class="distribution-header">
-            <label>Ventilation par compte de revenus (avec Numéro Facture, RI ou Encaissement par compte)</label>
-            <button type="button" id="form-add-distribution-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
-              + Ajouter
-            </button>
+        <!-- ============ TAB: Planification ============ -->
+        <div id="activity-tab-panel-planning" class="activity-tab-panel">
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <div id="planning-progress-wrapper" style="flex-grow: 1; display: flex; align-items: center; gap: 10px;">
+              <div id="planning-progress-bar-container" style="flex-grow: 1;"></div>
+              <span id="planning-progress-label" style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap;"></span>
+            </div>
           </div>
-          <div id="form-distribution-list" class="distribution-list">
+          <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <button type="button" id="generate-planning-tasks-btn" class="btn btn-secondary">Générer les tâches automatiquement</button>
+            <button type="button" id="add-planning-task-btn" class="btn btn-secondary">+ Ajouter une tâche</button>
+          </div>
+          <div id="planning-tasks-list" class="distribution-list">
             <!-- Dynamic rows -->
           </div>
-          <div class="distribution-total">
-            <span>Total saisi</span>
-            <span id="form-distribution-total-val">0,00 $</span>
+        </div>
+
+        <!-- ============ TAB: Facturation ============ -->
+        <div id="activity-tab-panel-billing" class="activity-tab-panel">
+          <!-- Accounts Dynamic Distribution Interface -->
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Ventilation par compte de revenus (avec Numéro Facture, RI ou Encaissement par compte)</label>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="generate-billing-lines-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Générer les lignes de facturation</button>
+                <button type="button" id="form-add-distribution-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
+                  + Ajouter
+                </button>
+              </div>
+            </div>
+            <div id="form-distribution-list" class="distribution-list">
+              <!-- Dynamic rows -->
+            </div>
+            <div class="distribution-total">
+              <span>Total saisi</span>
+              <span id="form-distribution-total-val">0,00 $</span>
+            </div>
+          </div>
+
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>État de la facturation</label>
+            </div>
+            <div id="billing-state-status" class="file-link-status"></div>
           </div>
         </div>
       </form>
     </div>
-    
+
     <div class="drawer-footer">
+      <button id="activity-drawer-back-to-calendar-btn" class="btn btn-secondary" style="margin-right: auto; display: none;">
+        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        Retour au calendrier
+      </button>
       <button id="activity-drawer-delete" class="btn btn-danger" style="margin-right: auto; display: none;">Supprimer</button>
-      <button id="activity-drawer-cancel" class="btn btn-secondary">Annuler</button>
+      <button id="activity-drawer-cancel" class="btn btn-secondary">Fermer</button>
       <button id="activity-drawer-submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- New Activity (name-only) Modal -->
+  <div id="new-activity-modal" class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Nouvelle activité</h3>
+      <button id="new-activity-modal-close" class="btn-icon">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="modal-content">
+      <form id="new-activity-form">
+        <div class="form-group">
+          <label for="form-new-activity-name">Nom de l'activité *</label>
+          <input type="text" id="form-new-activity-name" class="form-input" required placeholder="Ex: Réunion SCOUTS">
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button id="new-activity-modal-cancel" class="btn btn-secondary">Annuler</button>
+      <button id="new-activity-modal-submit" class="btn btn-primary">Créer</button>
     </div>
   </div>
 
@@ -709,7 +846,7 @@
   </div>
 
   <!-- 3. Room Add/Edit Modal -->
-  <div id="room-modal" class="modal">
+  <div id="room-modal" class="modal" style="width: 760px; max-width: 95vw;">
     <div class="modal-header">
       <h3 id="room-modal-title" class="modal-title">Ajouter une salle</h3>
       <button id="room-modal-close" class="btn-icon">
@@ -729,16 +866,73 @@
             <input type="color" id="form-room-color" class="form-input" value="#4f46e5" style="width: 56px; padding: 4px; cursor: pointer;">
           </div>
         </div>
+
+        <!-- Grille tarifaire versionnée -->
         <div class="distribution-section">
           <div class="distribution-header">
-            <label>Tarifs (description et montant par jour)</label>
-            <button type="button" id="form-add-room-tarif-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
-              + Ajouter un tarif
-            </button>
+            <label>Grille tarifaire (paramètre × type de client)</label>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="room-grid-add-version-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Nouvelle version</button>
+              <button type="button" id="room-grid-delete-version-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; color: var(--danger);">Supprimer la version</button>
+            </div>
           </div>
-          <div id="form-room-tarifs-list" class="distribution-list">
-            <!-- Dynamic rows -->
+          <div id="room-grid-version-tabs" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;"></div>
+          <div class="form-group" style="max-width: 260px;">
+            <label for="room-grid-effective-date">Date d'entrée en vigueur de cette version</label>
+            <input type="text" id="room-grid-effective-date" class="form-input" placeholder="AAAA-MM-JJ (vide = depuis toujours)">
           </div>
+          <div class="form-group-row">
+            <div class="form-group">
+              <div class="distribution-header" style="margin-bottom: 8px;">
+                <label style="font-size: 0.8rem;">Paramètres (lignes)</label>
+                <button type="button" id="room-grid-add-param-btn" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;">+ Paramètre</button>
+              </div>
+              <div id="room-grid-params-list" class="distribution-list"></div>
+            </div>
+            <div class="form-group">
+              <div class="distribution-header" style="margin-bottom: 8px;">
+                <label style="font-size: 0.8rem;">Types de client (colonnes)</label>
+                <button type="button" id="room-grid-add-clienttype-btn" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;">+ Type de client</button>
+              </div>
+              <div id="room-grid-clienttypes-list" class="distribution-list"></div>
+            </div>
+          </div>
+          <div id="room-grid-cells-table-wrapper" style="overflow-x: auto;"></div>
+        </div>
+
+        <!-- Salles liées -->
+        <div class="distribution-section">
+          <div class="distribution-header">
+            <label>Salles liées (réservées automatiquement avec cette salle)</label>
+          </div>
+          <div id="room-linked-rooms-group" class="pill-toggle-group"></div>
+        </div>
+
+        <!-- Personnel lié -->
+        <div class="distribution-section">
+          <div class="distribution-header">
+            <label>Personnel lié (ajouté automatiquement à la réservation)</label>
+            <button type="button" id="room-add-linked-staff-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
+          </div>
+          <div id="room-linked-staff-list" class="distribution-list"></div>
+        </div>
+
+        <!-- Frais liés -->
+        <div class="distribution-section">
+          <div class="distribution-header">
+            <label>Frais liés (ajoutés automatiquement à la réservation)</label>
+            <button type="button" id="room-add-linked-fee-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
+          </div>
+          <div id="room-linked-fees-list" class="distribution-list"></div>
+        </div>
+
+        <!-- Tâches du gestionnaire liées -->
+        <div class="distribution-section">
+          <div class="distribution-header">
+            <label>Tâches du gestionnaire liées (générées automatiquement en planification)</label>
+            <button type="button" id="room-add-linked-task-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
+          </div>
+          <div id="room-linked-tasks-list" class="distribution-list"></div>
         </div>
       </form>
     </div>
@@ -787,8 +981,21 @@
           <input type="text" id="form-salary-job" class="form-input" required placeholder="Ex: Technicien de scène">
         </div>
         <div class="form-group">
-          <label for="form-salary-rate">Taux horaire ($ / heure)</label>
-          <input type="number" id="form-salary-rate" class="form-input" min="0" step="0.01" required placeholder="Ex: 25.00">
+          <label for="form-salary-gl-account">Compte GL associé (optionnel, pour la facturation)</label>
+          <select id="form-salary-gl-account" class="select-input">
+            <option value="">Aucun</option>
+          </select>
+        </div>
+        <div class="distribution-section">
+          <div class="distribution-header">
+            <label>Historique des taux horaires (date d'entrée en vigueur et montant)</label>
+            <button type="button" id="form-add-salary-rate-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
+              + Ajouter une version
+            </button>
+          </div>
+          <div id="form-salary-rates-list" class="distribution-list">
+            <!-- Dynamic rows -->
+          </div>
         </div>
       </form>
     </div>
@@ -831,29 +1038,6 @@
     </div>
     <div class="modal-footer">
       <button id="recon-detail-modal-close-btn" class="btn btn-secondary">Fermer</button>
-    </div>
-  </div>
-
-  <!-- 6. Activity Read-Only Detail Modal -->
-  <div id="activity-detail-modal" class="modal" style="width: 720px; max-width: 95vw;">
-    <div class="modal-header">
-      <h3 id="activity-detail-title" class="modal-title">Détails de l'activité</h3>
-      <button id="activity-detail-modal-close" class="btn-icon">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="modal-content">
-      <div id="activity-detail-content">
-        <!-- Populated dynamically -->
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button id="activity-detail-back-to-calendar-btn" class="btn btn-secondary" style="display: none; margin-right: auto;">
-        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        Retour au calendrier
-      </button>
-      <button id="activity-detail-edit-btn" class="btn btn-primary btn-secondary">Modifier</button>
-      <button id="activity-detail-close-btn" class="btn btn-secondary">Fermer</button>
     </div>
   </div>
 

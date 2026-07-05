@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initPeriodSelector();
   initNavigation();
   initFormHandlers();
-  initActivityDetailModal();
+  initNewActivityModal();
   initSettingsHandlers();
   initReconciliationHandlers();
   initBackupHandlers();

@@ -827,6 +827,73 @@ tr:hover td {
   background-color: var(--bg-main);
 }
 
+/* Activity lifecycle: state bar, tabs, progress bar */
+.activity-state-bar {
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-main);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.activity-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+}
+
+.activity-tab-btn {
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.activity-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.activity-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.activity-tab-panel {
+  display: none;
+}
+
+.activity-tab-panel.active {
+  display: block;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--border-color);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: var(--primary);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.progress-bar-fill.complete {
+  background-color: var(--success);
+}
+
 /* Forms Grid */
 .form-group {
   margin-bottom: 20px;
@@ -966,6 +1033,35 @@ label {
   padding-top: 16px;
   border-top: 1px solid var(--border-color);
   font-size: 1.05rem;
+}
+
+.financial-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.financial-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.financial-summary-row.total {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.file-link-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
 }
 
 /* Drag & Drop Import File Area */
