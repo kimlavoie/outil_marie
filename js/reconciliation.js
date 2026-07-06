@@ -9,10 +9,52 @@ let reconciliationState = {
   results: [],
   filter: "all",
   page: 1,
-  pageSize: 10
+  pageSize: 10,
+  // Manually-reviewed lines, keyed by "account_code||reference" (see getReconDecisionsFromDb),
+  // so decisions survive from one GL import to the next.
+  decisions: {}
 };
 
+// Loads previously-saved reconciliation decisions from IndexedDB into reconciliationState.decisions.
+// Called once on startup; safe to call again (e.g. after a decision changes) to stay in sync.
+async function loadReconDecisions() {
+  try {
+    const list = await getReconDecisionsFromDb();
+    reconciliationState.decisions = {};
+    list.forEach(d => {
+      reconciliationState.decisions[d.key] = d;
+    });
+  } catch (e) {
+    console.error("Error loading reconciliation decisions", e);
+  }
+}
+
+// Marks (or clears, when status is "") a reconciliation line as manually validated/ignored.
+async function setReconDecision(key, status, note = "") {
+  if (!key) return;
+  if (!status) {
+    delete reconciliationState.decisions[key];
+    try {
+      await deleteReconDecisionFromDb(key);
+    } catch (e) {
+      console.error("Error deleting reconciliation decision", e);
+    }
+  } else {
+    const decision = { key, status, note, timestamp: new Date().toISOString() };
+    reconciliationState.decisions[key] = decision;
+    try {
+      await saveReconDecisionToDb(decision);
+    } catch (e) {
+      console.error("Error saving reconciliation decision", e);
+    }
+  }
+  reconcileLedger();
+  renderReconciliationTable();
+}
+
 function initReconciliationHandlers() {
+  loadReconDecisions();
+
   const dropZone = document.getElementById("drop-zone");
   const fileInput = document.getElementById("ledger-file-input");
 
@@ -65,6 +107,84 @@ function initReconciliationHandlers() {
   document.getElementById("recon-detail-modal-close").addEventListener("click", closeReconDetailModal);
   document.getElementById("recon-detail-modal-close-btn").addEventListener("click", closeReconDetailModal);
   document.getElementById("modal-backdrop").addEventListener("click", closeReconDetailModal);
+
+  // Export the reconciliation table to Excel
+  document.getElementById("export-reconciliation-btn").addEventListener("click", exportReconciliationToExcel);
+}
+
+// Status label used both on-screen (badgeHtml) and in the Excel export
+const RECON_STATUS_LABELS = {
+  valid: "Conforme",
+  diff: "Écart de montant",
+  unlogged: "Manquant dans le GL",
+  unentered: "Manquant dans l'App"
+};
+
+// Exports the current reconciliation results (all statuses, ignoring the active tab filter) to
+// an Excel workbook: one row per line with its account, activité, montants, écart and statut.
+function exportReconciliationToExcel() {
+  if (reconciliationState.results.length === 0) {
+    showToast("Aucun rapprochement à exporter. Importez d'abord un fichier du Grand Livre.", "warning");
+    return;
+  }
+
+  try {
+    const header = [
+      "Compte",
+      "Description du compte",
+      "Activité",
+      "Référence",
+      "Montant saisi",
+      "Montant GL",
+      "Écart",
+      "Statut",
+      "Décision manuelle"
+    ];
+    const reviewLabels = { validated: "Validé manuellement", ignored: "Ignoré" };
+    const rows = reconciliationState.results.map(r => {
+      const accountDesc = appState.settings.accounts.find(a => a.code === r.account_code)?.description || "Inconnu";
+      const activityLabel = r.activityId ? `${r.activityId} : ${r.activityName}` : r.activityName;
+      const diff = r.status === "unlogged" ? r.amount_saisi : r.status === "unentered" ? -r.amount_gl : r.diff || 0;
+      return [
+        r.account_code,
+        accountDesc,
+        activityLabel,
+        r.reference || "",
+        r.amount_saisi,
+        r.amount_gl,
+        diff,
+        RECON_STATUS_LABELS[r.status] || r.status,
+        reviewLabels[r.reviewStatus] || ""
+      ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    ws["!cols"] = [
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 35 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 20 },
+      { wch: 20 }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "RAPPROCHEMENT");
+
+    const qStr = appState.selected_quarters
+      .sort()
+      .map(q => `T${q}`)
+      .join("-");
+    const filename = `rapprochement_${appState.selected_year}_${qStr || "aucun"}_${new Date().toISOString().split("T")[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    showToast("Export du rapprochement terminé.", "success");
+  } catch (err) {
+    console.error(err);
+    showToast("Erreur lors de l'export du rapprochement : " + err.message, "error");
+  }
 }
 
 // Read ledger spreadsheet via SheetJS
@@ -98,7 +218,7 @@ function handleLedgerFile(file) {
       });
 
       if (reconciliationState.ledgerTransactions.length === 0) {
-        alert("Aucune transaction valide n'a été trouvée dans le fichier. Veuillez vérifier la structure du fichier Excel.");
+        showToast("Aucune transaction valide n'a été trouvée dans le fichier. Veuillez vérifier la structure du fichier Excel.", "warning");
         return;
       }
 
@@ -112,7 +232,7 @@ function handleLedgerFile(file) {
       renderReconciliation();
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de la lecture du fichier : " + err.message);
+      showToast("Erreur lors de la lecture du fichier : " + err.message, "error");
     }
   };
 
@@ -192,7 +312,7 @@ function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear
     }
 
     // Check reconciliation for each distribution (reference is now defined per account)
-    act.distributions.forEach(dist => {
+    act.distributions.forEach((dist, distIndex) => {
       const distRef = cleanRef(dist.reference);
 
       if (!distRef) {
@@ -200,6 +320,8 @@ function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear
         results.push({
           activityId: act.id,
           activityName: act.name,
+          distIndex,
+          activity_date: act.date_start,
           account_code: dist.account_code,
           reference: "",
           amount_saisi: dist.amount,
@@ -223,6 +345,8 @@ function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear
         results.push({
           activityId: act.id,
           activityName: act.name,
+          distIndex,
+          activity_date: act.date_start,
           account_code: dist.account_code,
           reference: distRef,
           amount_saisi: dist.amount,
@@ -236,6 +360,8 @@ function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear
         results.push({
           activityId: act.id,
           activityName: act.name,
+          distIndex,
+          activity_date: act.date_start,
           account_code: dist.account_code,
           reference: distRef,
           amount_saisi: dist.amount,
@@ -253,10 +379,13 @@ function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear
       const group = ledgerGroups[key];
       // Revenue is credit (negative in GL), multiply by -1
       const amountGl = group.montant_somme * -1;
+      const txDates = group.txs.map(t => String(t["Date versée"] || "").trim()).filter(Boolean);
 
       results.push({
         activityId: "",
         activityName: "(Non saisi dans l'application)",
+        ledger_date: txDates.length ? txDates.sort()[0] : "",
+        ledger_description: group.txs.map(t => String(t["Description"] || t["Nom"] || "").trim()).find(Boolean) || "",
         account_code: group.account_code,
         reference: group.reference,
         amount_saisi: 0,
@@ -268,7 +397,113 @@ function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear
     }
   });
 
+  attachFuzzyMatchSuggestions(results);
+
   return results;
+}
+
+// Fuzzy-matching thresholds for suggesting reconciliation candidates when no exact
+// account+référence match is found (see attachFuzzyMatchSuggestions below)
+const FUZZY_AMOUNT_TOLERANCE = 0.05;
+const FUZZY_DATE_TOLERANCE_DAYS = 5;
+const FUZZY_TEXT_MIN_SCORE = 0.3;
+
+// Absolute day difference between two "YYYY-MM-DD" strings (Infinity if either is missing/invalid)
+function daysBetweenDateStrs(dateStrA, dateStrB) {
+  if (!dateStrA || !dateStrB) return Infinity;
+  const a = parseLocalDateStr(dateStrA);
+  const b = parseLocalDateStr(dateStrB);
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return Infinity;
+  return Math.abs((a.getTime() - b.getTime()) / 86400000);
+}
+
+// Common French connector words, excluded from tokenization so two unrelated descriptions
+// sharing only "de"/"la"/"et" don't register as textually similar.
+const FUZZY_TEXT_STOPWORDS = new Set([
+  "de",
+  "des",
+  "du",
+  "le",
+  "la",
+  "les",
+  "l",
+  "un",
+  "une",
+  "et",
+  "en",
+  "sur",
+  "au",
+  "aux",
+  "pour",
+  "avec",
+  "sans",
+  "dans"
+]);
+
+// Splits text into lowercased, accent-stripped word tokens for similarity comparison
+function tokenizeForMatch(text) {
+  return (text || "")
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(t => t && !FUZZY_TEXT_STOPWORDS.has(t));
+}
+
+// Dice coefficient (2 * |A∩B| / (|A|+|B|)) between the token sets of two strings, 0..1
+function textSimilarity(a, b) {
+  const tokensA = new Set(tokenizeForMatch(a));
+  const tokensB = new Set(tokenizeForMatch(b));
+  if (tokensA.size === 0 || tokensB.size === 0) return 0;
+  let common = 0;
+  tokensA.forEach(t => {
+    if (tokensB.has(t)) common++;
+  });
+  return (2 * common) / (tokensA.size + tokensB.size);
+}
+
+// For every "unlogged" (saisi dans l'app, absent du GL) result, looks for "unentered" (présent
+// dans le GL, absent de l'app) candidates on the same compte that could be the same transaction
+// under a different référence — either because the amount and date are close, or because the
+// activité name and GL description read alike (typo, date decalée). Attaches up to 3 ranked
+// suggestions as result.suggestions; each unentered candidate keeps a back-reference to any
+// unlogged result that suggested it, for symmetry in the UI.
+function attachFuzzyMatchSuggestions(results) {
+  const unlogged = results.filter(r => r.status === "unlogged");
+  const unentered = results.filter(r => r.status === "unentered");
+  if (unlogged.length === 0 || unentered.length === 0) return;
+
+  unlogged.forEach(u => {
+    const candidates = unentered
+      .filter(e => e.account_code === u.account_code)
+      .map(e => {
+        const amountClose = Math.abs((u.amount_saisi || 0) - (e.amount_gl || 0)) <= FUZZY_AMOUNT_TOLERANCE;
+        const dateClose = daysBetweenDateStrs(u.activity_date, e.ledger_date) <= FUZZY_DATE_TOLERANCE_DAYS;
+        const textScore = textSimilarity(u.activityName, e.ledger_description);
+        if (!((amountClose && dateClose) || textScore >= FUZZY_TEXT_MIN_SCORE)) return null;
+        // Simple combined score: amount+date match counts as much as a strong text match
+        const score = (amountClose && dateClose ? 0.6 : 0) + textScore * 0.4;
+        return { entry: e, score, amountClose, dateClose, textScore };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+    if (candidates.length === 0) return;
+    u.suggestions = candidates.map(c => ({
+      reference: c.entry.reference,
+      amount_gl: c.entry.amount_gl,
+      ledger_date: c.entry.ledger_date,
+      ledger_description: c.entry.ledger_description,
+      score: c.score
+    }));
+    candidates.forEach(c => {
+      if (!c.entry.suggestedFor) c.entry.suggestedFor = [];
+      c.entry.suggestedFor.push(u.activityName);
+    });
+  });
 }
 
 function reconcileLedger() {
@@ -278,6 +513,14 @@ function reconcileLedger() {
     appState.selected_year,
     appState.selected_quarters
   );
+
+  // Attach any previously-saved manual decision (validated/ignored) to each result, keyed the
+  // same way as the ledger grouping ("account_code||reference"), so it persists across imports.
+  reconciliationState.results.forEach(r => {
+    r.reviewKey = r.reference ? `${r.account_code}||${r.reference}` : "";
+    const decision = r.reviewKey ? reconciliationState.decisions[r.reviewKey] : null;
+    r.reviewStatus = decision ? decision.status : "";
+  });
 }
 
 function renderReconciliation() {
@@ -381,23 +624,90 @@ function renderReconciliationTable() {
       `;
     }
 
+    // Manual review controls: only meaningful for non-conforme lines that carry a stable
+    // reviewKey (rows without a référence can't be tracked across imports).
+    let reviewHtml = "";
+    if (r.status !== "valid" && r.reviewKey) {
+      if (r.reviewStatus === "validated") {
+        reviewHtml = `
+          <div class="recon-review-note text-success" style="font-size: 0.75rem; margin-top: 6px;">
+            ✓ Validé manuellement
+            <button class="btn-icon recon-clear-review-btn" data-review-key="${r.reviewKey}" title="Annuler la validation" style="width: 18px; height: 18px;">&times;</button>
+          </div>
+        `;
+      } else if (r.reviewStatus === "ignored") {
+        reviewHtml = `
+          <div class="recon-review-note text-muted" style="font-size: 0.75rem; margin-top: 6px;">
+            Ignoré
+            <button class="btn-icon recon-clear-review-btn" data-review-key="${r.reviewKey}" title="Annuler" style="width: 18px; height: 18px;">&times;</button>
+          </div>
+        `;
+      } else {
+        reviewHtml = `
+          <div style="display: flex; gap: 4px; margin-top: 6px; justify-content: flex-end;">
+            <button class="btn btn-secondary recon-validate-btn" data-review-key="${r.reviewKey}" style="padding: 4px 8px; font-size: 0.72rem;" title="Marquer cet écart comme vérifié manuellement">
+              Valider
+            </button>
+            <button class="btn btn-secondary recon-ignore-btn" data-review-key="${r.reviewKey}" style="padding: 4px 8px; font-size: 0.72rem;" title="Ignorer cet écart">
+              Ignorer
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Fuzzy-match suggestions (only when no exact match was found): "unlogged" lines get an
+    // actionable button to fix the reference; "unentered" lines just show which activités they
+    // resemble (the fix always happens from the "unlogged" side).
+    let suggestionsHtml = "";
+    if (r.status === "unlogged" && r.suggestions && r.suggestions.length > 0) {
+      suggestionsHtml = `
+        <div style="margin-top: 6px; font-size: 0.75rem; color: var(--text-secondary);">
+          <div style="font-style: italic; margin-bottom: 2px;">Suggestions de rapprochement :</div>
+          ${r.suggestions
+            .map(
+              s => `
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+              <span class="font-mono">${s.reference}</span> — ${formatCurrency(s.amount_gl)} (${s.ledger_date || "date inconnue"})
+              <button class="btn-icon recon-accept-suggestion-btn" data-idx="${idx}" data-suggestion-ref="${s.reference}" title="Corriger la référence de cette activité">
+                <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: var(--success);"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </button>
+            </div>
+          `
+            )
+            .join("")}
+        </div>
+      `;
+    } else if (r.status === "unentered" && r.suggestedFor && r.suggestedFor.length > 0) {
+      suggestionsHtml = `
+        <div style="margin-top: 6px; font-size: 0.75rem; font-style: italic; color: var(--text-secondary);">
+          Ressemble à : ${r.suggestedFor.join(", ")}
+        </div>
+      `;
+    }
+
     const accountDesc = appState.settings.accounts.find(a => a.code === r.account_code)?.description || "Inconnu";
+    const rowMuted = r.reviewStatus ? ' style="opacity: 0.65;"' : "";
 
     tbody.innerHTML += `
-      <tr>
+      <tr${rowMuted}>
         <td>
           <div class="bold font-mono">${r.account_code}</div>
           <div style="font-size: 0.8rem; color: var(--text-secondary);">${accountDesc}</div>
           <div style="font-size: 0.78rem; font-style: italic; color: var(--text-muted); margin-top: 4px;">
             ${r.activityId ? `${r.activityId} : ${r.activityName}` : r.activityName}
           </div>
+          ${suggestionsHtml}
         </td>
         <td class="font-mono">${r.reference || "-"}</td>
         <td class="bold">${r.amount_saisi > 0 ? formatCurrency(r.amount_saisi) : "-"}</td>
         <td class="bold">${r.amount_gl > 0 ? formatCurrency(r.amount_gl) : "-"}</td>
         <td>${diffText}</td>
         <td>${badgeHtml}</td>
-        <td class="text-right">${actionBtn}</td>
+        <td class="text-right">
+          ${actionBtn}
+          ${reviewHtml}
+        </td>
       </tr>
     `;
   });
@@ -428,6 +738,39 @@ function renderReconciliationTable() {
       openReconDetailModal(r);
     });
   });
+
+  // Attach manual review controls (validate / ignore / cancel)
+  document.querySelectorAll(".recon-validate-btn").forEach(btn => {
+    btn.addEventListener("click", () => setReconDecision(btn.getAttribute("data-review-key"), "validated"));
+  });
+  document.querySelectorAll(".recon-ignore-btn").forEach(btn => {
+    btn.addEventListener("click", () => setReconDecision(btn.getAttribute("data-review-key"), "ignored"));
+  });
+  document.querySelectorAll(".recon-clear-review-btn").forEach(btn => {
+    btn.addEventListener("click", () => setReconDecision(btn.getAttribute("data-review-key"), ""));
+  });
+
+  // Attach "accepter la suggestion" buttons: patches the activity's distribution reference to
+  // match the suggested GL référence, so the next reconciliation pass matches it exactly.
+  document.querySelectorAll(".recon-accept-suggestion-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const matchIdx = parseInt(btn.getAttribute("data-idx"));
+      const r = filtered[matchIdx];
+      applyReconSuggestion(r, btn.getAttribute("data-suggestion-ref"));
+    });
+  });
+}
+
+// Fixes the référence of the activity distribution behind an "unlogged" result to match the
+// accepted fuzzy-match suggestion, then re-runs reconciliation so it (hopefully) becomes conforme.
+function applyReconSuggestion(result, newReference) {
+  const act = appState.activities.find(a => a.id === result.activityId);
+  if (!act || !act.distributions[result.distIndex]) return;
+  act.distributions[result.distIndex].reference = newReference;
+  saveDatabase();
+  reconcileLedger();
+  renderReconciliation();
+  showToast(`Référence mise à jour pour « ${act.name} ».`, "success");
 }
 
 function openReconDetailModal(reconRecord) {

@@ -150,7 +150,7 @@ async function connectAutoBackupFile() {
     });
     const perm = await handle.requestPermission({ mode: "readwrite" });
     if (perm !== "granted") {
-      alert("Permission refusée : impossible d'activer la sauvegarde automatique.");
+      showToast("Permission refusée : impossible d'activer la sauvegarde automatique.", "error");
       return;
     }
     await idbSetAutoBackupHandle(handle);
@@ -160,7 +160,7 @@ async function connectAutoBackupFile() {
   } catch (e) {
     if (e.name !== "AbortError") {
       console.error(e);
-      alert("Erreur lors de la sélection du fichier : " + e.message);
+      showToast("Erreur lors de la sélection du fichier : " + e.message, "error");
     }
   }
 }
@@ -173,11 +173,11 @@ async function reconnectAutoBackupPermission() {
       renderAutoBackupStatus("connected", autoBackupHandle.name);
       await writeAutoBackupNow();
     } else {
-      alert("Permission refusée.");
+      showToast("Permission refusée.", "error");
     }
   } catch (e) {
     console.error(e);
-    alert("Erreur lors de la reconnexion : " + e.message);
+    showToast("Erreur lors de la reconnexion : " + e.message, "error");
   }
 }
 
@@ -244,6 +244,7 @@ function initBackupHandlers() {
     const timestamp = new Date().toISOString().split("T")[0];
     dlAnchorElem.setAttribute("download", `compta_marie_sauvegarde_${timestamp}.json`);
     dlAnchorElem.click();
+    showToast("Sauvegarde réussie.", "success");
   });
 
   // Backup file selection drag & drop
@@ -273,7 +274,7 @@ function initBackupHandlers() {
       applyTheme("dark");
       renderAll();
       checkBackupReminder();
-      alert("La base de données a été réinitialisée avec succès !");
+      showToast("La base de données a été réinitialisée avec succès !", "success");
     }
   });
 
@@ -365,13 +366,13 @@ function handleJsonBackupFile(file) {
           applyTheme(appState.settings.theme || "dark");
           renderAll();
           checkBackupReminder();
-          alert("Base de données restaurée avec succès !");
+          showToast("Base de données restaurée avec succès !", "success");
         }
       } else {
-        alert("Fichier de sauvegarde invalide (champs requis manquants).");
+        showToast("Fichier de sauvegarde invalide (champs requis manquants).", "error");
       }
     } catch (err) {
-      alert("Erreur lors de la lecture du fichier JSON : " + err.message);
+      showToast("Erreur lors de la lecture du fichier JSON : " + err.message, "error");
     }
   };
 
@@ -642,8 +643,9 @@ function exportToExcel() {
       .join("-");
     const filename = `compta_marie_rapport_${appState.selected_year}_${qStr || "aucun"}_${new Date().toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(wb, filename);
+    showToast("Export Excel terminé.", "success");
   } catch (err) {
     console.error(err);
-    alert("Erreur lors de l'export Excel : " + err.message);
+    showToast("Erreur lors de l'export Excel : " + err.message, "error");
   }
 }

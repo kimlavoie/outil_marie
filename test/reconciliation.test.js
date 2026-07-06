@@ -3,9 +3,10 @@ const assert = require("node:assert/strict");
 
 // reconciliation.js's matchDistributionsToLedger() calls getFiscalYear/getQuarterNumber as
 // globals (they're plain <script> globals in the browser); wire them up before requiring it.
-const { getFiscalYear, getQuarterNumber } = require("../js/state.js");
+const { getFiscalYear, getQuarterNumber, parseLocalDateStr } = require("../js/state.js");
 global.getFiscalYear = getFiscalYear;
 global.getQuarterNumber = getQuarterNumber;
+global.parseLocalDateStr = parseLocalDateStr;
 const { matchDistributionsToLedger } = require("../js/reconciliation.js");
 
 const YEAR = "2025-2026";
@@ -87,4 +88,59 @@ test("ignores deleted activities in reconciliation matching", () => {
   // It should be treated as unentered in the ledger, because the app activity is ignored/deleted
   assert.equal(results.length, 1);
   assert.equal(results[0].status, "unentered");
+});
+
+test("suggests a fuzzy match when the amount and date are close but the référence differs (typo)", () => {
+  const activities = [
+    activity({
+      name: "Location de salle",
+      date_start: "2025-08-15",
+      distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }]
+    })
+  ];
+  // Same compte, close amount (+0.03) and date (2 days later), but a completely different référence
+  const ledger = [{ "Date versée": "2025-08-17", "Poste budgétaire": "892-1", "No référence": "RI999", "Montant courant": -100.03 }];
+
+  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  const unlogged = results.find(r => r.status === "unlogged");
+  const unentered = results.find(r => r.status === "unentered");
+  assert.ok(unlogged.suggestions && unlogged.suggestions.length === 1);
+  assert.equal(unlogged.suggestions[0].reference, "RI999");
+  assert.ok(unentered.suggestedFor.includes("Location de salle"));
+});
+
+test("suggests a fuzzy match based on text similarity when amount/date are not close", () => {
+  const activities = [
+    activity({
+      name: "Conférence sur le climat",
+      date_start: "2025-08-01",
+      distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }]
+    })
+  ];
+  // Far in amount and date, but the GL description shares words with the activity name
+  const ledger = [
+    { "Date versée": "2025-11-20", "Poste budgétaire": "892-1", "No référence": "RI999", "Montant courant": -40, Description: "conference climat" }
+  ];
+
+  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  const unlogged = results.find(r => r.status === "unlogged");
+  assert.ok(unlogged.suggestions && unlogged.suggestions.length === 1);
+  assert.equal(unlogged.suggestions[0].reference, "RI999");
+});
+
+test("does not suggest a match when neither amount/date nor text are close", () => {
+  const activities = [
+    activity({
+      name: "Spectacle de danse",
+      date_start: "2025-08-01",
+      distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }]
+    })
+  ];
+  const ledger = [
+    { "Date versée": "2025-12-25", "Poste budgétaire": "892-1", "No référence": "RI999", "Montant courant": -40, Description: "vente de billets" }
+  ];
+
+  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  const unlogged = results.find(r => r.status === "unlogged");
+  assert.equal(unlogged.suggestions, undefined);
 });

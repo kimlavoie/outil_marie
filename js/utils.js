@@ -408,6 +408,45 @@ function maskPhoneInput(input) {
   });
 }
 
+/* ==========================================================================
+   TOASTS (non-blocking notifications, replaces alert() for info/success/error)
+   ========================================================================== */
+
+const TOAST_ICONS = {
+  success: '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>',
+  error: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>',
+  warning: '<path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>',
+  info: '<path d="M11 7h2v2h-2V7zm0 4h2v6h-2v-6zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>'
+};
+
+// Shows a temporary, non-blocking notification in the top-right corner (replaces alert() for
+// informational messages). `type` is "info" | "success" | "error" | "warning".
+function showToast(message, type = "info", duration = 4000) {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    <svg class="toast-icon" viewBox="0 0 24 24">${TOAST_ICONS[type] || TOAST_ICONS.info}</svg>
+    <div class="toast-message"></div>
+    <button type="button" class="toast-close" aria-label="Fermer">&times;</button>
+  `;
+  toast.querySelector(".toast-message").textContent = message;
+
+  const dismiss = () => {
+    toast.classList.add("toast-leaving");
+    toast.classList.remove("toast-visible");
+    setTimeout(() => toast.remove(), 250);
+  };
+
+  toast.querySelector(".toast-close").addEventListener("click", dismiss);
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("toast-visible"));
+
+  if (duration > 0) setTimeout(dismiss, duration);
+}
+
 // Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
 if (typeof module !== "undefined") {
   module.exports = {

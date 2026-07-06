@@ -63,6 +63,7 @@ function openCalendarModal() {
 function closeCalendarModal() {
   document.getElementById("calendar-modal").classList.remove("active");
   document.getElementById("modal-backdrop").classList.remove("active");
+  hideEventHoverPreview();
 }
 
 function navigateEventCalendar(direction) {
@@ -191,7 +192,62 @@ function attachEventClickHandlers() {
       closeCalendarModal();
       openActivityDetailModal(id, calendarReturn);
     });
+    el.addEventListener("mouseenter", () => showEventHoverPreview(el, el.getAttribute("data-id")));
+    el.addEventListener("mouseleave", hideEventHoverPreview);
   });
+}
+
+// Shows a small popover with an activité's key details next to the hovered calendar event
+// (salle(s), horaire, responsable, département) — a lighter alternative to opening its record.
+function showEventHoverPreview(el, id) {
+  const act = appState.activities.find(a => a.id === id);
+  if (!act) return;
+  const popover = document.getElementById("event-calendar-hover-preview");
+  if (!popover) return;
+
+  const roomsLabel = (act.reservations || []).map(getReservationRoomLabel).filter(Boolean).join(", ") || "-";
+  const dateLabel = act.date_start ? (act.date_end && act.date_end !== act.date_start ? `${act.date_start} → ${act.date_end}` : act.date_start) : "-";
+
+  popover.innerHTML = `
+    <div class="event-calendar-hover-preview-title">${act.name || "(Sans nom)"}</div>
+    <div class="event-calendar-hover-preview-row">Salle(s) : ${roomsLabel}</div>
+    <div class="event-calendar-hover-preview-row">Dates : ${dateLabel}</div>
+    ${act.responsable ? `<div class="event-calendar-hover-preview-row">Responsable : ${act.responsable}</div>` : ""}
+    ${act.department ? `<div class="event-calendar-hover-preview-row">Département : ${act.department}</div>` : ""}
+    <div class="event-calendar-hover-preview-row">Client : ${act.client_type === "interne" ? "Interne" : "Externe"}</div>
+  `;
+
+  const rect = el.getBoundingClientRect();
+  popover.classList.add("active");
+  // Measure after making it visible so offsetWidth/Height are accurate, then clamp to the viewport
+  const popoverWidth = popover.offsetWidth;
+  const popoverHeight = popover.offsetHeight;
+  let left = rect.right + 8;
+  if (left + popoverWidth > window.innerWidth) left = rect.left - popoverWidth - 8;
+  let top = rect.top;
+  if (top + popoverHeight > window.innerHeight) top = window.innerHeight - popoverHeight - 8;
+  popover.style.left = `${Math.max(8, left)}px`;
+  popover.style.top = `${Math.max(8, top)}px`;
+}
+
+function hideEventHoverPreview() {
+  const popover = document.getElementById("event-calendar-hover-preview");
+  if (popover) popover.classList.remove("active");
+}
+
+// Creates a new (estimation-mode) draft activity and opens its record directly on the "Réservations
+// de salle" créneau pre-filled with `dateStr` — the quick-create "+" button on a calendar day cell.
+function createActivityFromCalendarDate(dateStr) {
+  const id = createDraftActivity("");
+  closeCalendarModal();
+  openActivityDrawer(id);
+
+  const dateInput = document.querySelector("#form-activity-reservations .reservation-card .slot-date-input");
+  if (dateInput) {
+    dateInput.value = dateStr;
+    dateInput.dispatchEvent(new Event("input", { bubbles: true }));
+    dateInput.dispatchEvent(new Event("change", { bubbles: true }));
+  }
 }
 
 // Reopens the calendar modal on a previously saved {refDate, viewMode} snapshot
@@ -367,6 +423,7 @@ function buildDayCellHtml(dateStr, dayNum, isToday, tall = false) {
 
   return `
     <div class="event-calendar-cell${isToday ? " today" : ""}${tall ? " tall" : ""}" data-date="${dateStr}">
+      <button type="button" class="event-calendar-quick-add-btn" data-quick-add-date="${dateStr}" title="Créer une activité à cette date">+</button>
       <div class="event-calendar-cell-daynum">${displayNum}</div>
       ${eventsHtml}
       ${moreHtml}
@@ -374,12 +431,20 @@ function buildDayCellHtml(dateStr, dayNum, isToday, tall = false) {
   `;
 }
 
-// Clicking anywhere in a day cell (but not directly on an event) opens the day view for that date
+// Clicking anywhere in a day cell (but not directly on an event or the "+" button) opens the day
+// view for that date; clicking "+" instead jumps straight to a new pre-filled activity record.
 function attachDayCellClickHandlers() {
   document.querySelectorAll("#event-calendar-grid .event-calendar-cell[data-date]").forEach(cell => {
     cell.addEventListener("click", e => {
-      if (e.target.closest(".event-calendar-event")) return;
+      if (e.target.closest(".event-calendar-event") || e.target.closest(".event-calendar-quick-add-btn")) return;
       goToDayView(cell.getAttribute("data-date"));
     });
+    const quickAddBtn = cell.querySelector(".event-calendar-quick-add-btn");
+    if (quickAddBtn) {
+      quickAddBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        createActivityFromCalendarDate(quickAddBtn.getAttribute("data-quick-add-date"));
+      });
+    }
   });
 }

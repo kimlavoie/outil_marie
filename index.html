@@ -10,6 +10,7 @@
     <script src="lib/chart.umd.js"></script>
   </head>
   <body>
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
     <div class="app-container">
       <!-- Sidebar Navigation -->
       <aside class="sidebar">
@@ -431,7 +432,8 @@
                       Non saisis (<span id="count-recon-unentered">0</span>)
                     </button>
                   </div>
-                  <div>
+                  <div style="display: flex; gap: 8px;">
+                    <button id="export-reconciliation-btn" class="btn btn-secondary">Exporter le rapprochement</button>
                     <button id="clear-ledger-btn" class="btn btn-secondary btn-danger">Effacer l'import</button>
                   </div>
                 </div>
@@ -743,7 +745,16 @@
             <span class="auto-save-text">Enregistré</span>
           </span>
         </div>
-        <button id="activity-drawer-close" class="btn-icon" aria-label="Fermer" style="margin-left: auto">
+        <button
+          id="activity-print-btn"
+          class="btn btn-secondary"
+          type="button"
+          style="margin-left: auto"
+          title="Exporter en PDF (imprimer)"
+        >
+          Exporter PDF
+        </button>
+        <button id="activity-drawer-close" class="btn-icon" aria-label="Fermer">
           <svg viewBox="0 0 24 24">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
           </svg>
@@ -895,6 +906,7 @@
             <div id="form-activity-reservations">
               <!-- One reservation card per réservation, populated dynamically -->
             </div>
+            <div id="form-activity-room-conflicts" style="display: none; margin-top: 8px; margin-bottom: 4px"></div>
             <div style="margin-top: 8px; margin-bottom: 12px">
               <button type="button" id="add-reservation-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
                 + Ajouter une réservation
@@ -1456,7 +1468,12 @@
       <div class="modal-footer">
         <button id="calendar-modal-close-btn" class="btn btn-secondary">Fermer</button>
       </div>
+      <div id="event-calendar-hover-preview" class="event-calendar-hover-preview"></div>
     </div>
+
+    <!-- Printable / PDF export sheet for a single activity (populated on demand, hidden on
+         screen, only shown by the @media print rule when window.print() is triggered) -->
+    <div id="print-activity-sheet"></div>
 
     <!-- Application Logic (order matters: each file depends on the ones before it) -->
     <script src="js/state.js"></script>

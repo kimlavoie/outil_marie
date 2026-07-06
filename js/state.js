@@ -490,7 +490,7 @@ const APP_STATE_KEY = "app_state";
 
 function openAppDb() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(APP_DB_NAME, 2);
+    const req = indexedDB.open(APP_DB_NAME, 3);
     req.onupgradeneeded = e => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(APP_STORE_NAME)) {
@@ -500,9 +500,52 @@ function openAppDb() {
         const store = db.createObjectStore("activity_versions", { keyPath: "versionId" });
         store.createIndex("activityId", "activityId", { unique: false });
       }
+      if (!db.objectStoreNames.contains("recon_decisions")) {
+        db.createObjectStore("recon_decisions", { keyPath: "key" });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
+  });
+}
+
+// Manually-reviewed reconciliation lines (validated/ignored), keyed by "account_code||reference"
+// so the decision survives across GL re-imports (a new import produces the same key for the same
+// account+référence pair). Kept in their own IndexedDB store rather than appState so they aren't
+// wiped out by a JSON backup restore of unrelated activity data.
+function getReconDecisionsFromDb() {
+  return openAppDb().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("recon_decisions", "readonly");
+      const store = tx.objectStore("recon_decisions");
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+function saveReconDecisionToDb(decision) {
+  return openAppDb().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("recon_decisions", "readwrite");
+      const store = tx.objectStore("recon_decisions");
+      const req = store.put(decision);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+function deleteReconDecisionFromDb(key) {
+  return openAppDb().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("recon_decisions", "readwrite");
+      const store = tx.objectStore("recon_decisions");
+      const req = store.delete(key);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
   });
 }
 

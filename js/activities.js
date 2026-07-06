@@ -14,8 +14,15 @@ let activitiesState = {
   // the drawer is closed/cancelled without clicking "Enregistrer".
   draftActivityId: null,
   openedActivitySnapshot: null,
-  selectedIds: new Set()
+  selectedIds: new Set(),
+  // Undo/Redo history for the currently-open activity drawer (Ctrl+Z / Ctrl+Y): each entry is a
+  // deep snapshot of the activity record taken right after a successful auto-save. Reset whenever
+  // the drawer opens/closes so history never leaks between activities.
+  undoStack: [],
+  redoStack: []
 };
+
+const ACTIVITY_UNDO_HISTORY_LIMIT = 50;
 
 // Which flow the "Nom de l'activité" modal is currently serving: "soumission" creates and saves
 // the activity immediately in soumission mode; "estimation" only builds it in memory (estimation
@@ -542,6 +549,7 @@ function initBulkActionsHandlers() {
 function initFormHandlers() {
   initBulkActionsHandlers();
   const backdrop = document.getElementById("drawer-backdrop");
+  const drawer = document.getElementById("activity-drawer");
 
   // Open drawers buttons: creating a "soumission" activity only asks for a name first (see
   // initNewActivityModal); "estimation" skips that step and opens the drawer directly on a
@@ -554,6 +562,23 @@ function initFormHandlers() {
   // that was never actually saved via "Enregistrer".
   document.getElementById("activity-drawer-close").addEventListener("click", cancelActivityDrawer);
   backdrop.addEventListener("click", cancelActivityDrawer);
+  document.getElementById("activity-print-btn").addEventListener("click", printActivitySheet);
+
+  // Undo/Redo (Ctrl+Z / Ctrl+Y, or Ctrl+Shift+Z for redo) while the activity drawer is open
+  document.addEventListener("keydown", e => {
+    if (!drawer.classList.contains("active")) return;
+    const ctrlOrCmd = e.ctrlKey || e.metaKey;
+    if (!ctrlOrCmd) return;
+
+    if (e.key === "z" || e.key === "Z") {
+      e.preventDefault();
+      if (e.shiftKey) redoActivityFormChange();
+      else undoActivityFormChange();
+    } else if (e.key === "y" || e.key === "Y") {
+      e.preventDefault();
+      redoActivityFormChange();
+    }
+  });
 
   // Activity record tabs (Soumission et contrat / Planification / Facturation / Historique)
   document.querySelectorAll(".activity-tab-btn").forEach(btn => {
@@ -615,17 +640,19 @@ function initFormHandlers() {
     });
   }
 
-  // Dates helper updates: recompute whenever any créneau's date/time changes
+  // Dates helper updates: recompute whenever any créneau's date/time changes. The actual
+  // autosave isn't triggered here — #form-activity-reservations is inside #activity-form, so
+  // these input/change events already bubble up to the listeners registered on activityForm
+  // above; calling autoSaveActivityForm() again here would double-save (and double-push an undo
+  // snapshot) for every keystroke in a reservation field.
   const reservationsContainer = document.getElementById("form-activity-reservations");
   reservationsContainer.addEventListener("input", () => {
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();
-    autoSaveActivityForm();
   });
   reservationsContainer.addEventListener("change", () => {
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();
-    autoSaveActivityForm();
   });
 
   // Note: Personnel requis / Services / Autres frais buttons are wired per reservation card in
@@ -729,7 +756,7 @@ function submitNewActivityForm(e) {
   e.preventDefault();
   const name = document.getElementById("form-new-activity-name").value.trim();
   if (!name) {
-    alert("Veuillez saisir le nom de l'activité.");
+    showToast("Veuillez saisir le nom de l'activité.", "warning");
     return;
   }
   const id = newActivityModalIntent === "estimation" ? createDraftActivity(name) : createActivity(name, "soumission");
@@ -949,7 +976,7 @@ async function idbGetFileLink(id) {
 // manually, so they can reopen it and mark the activity Soumise/Approuvée.
 async function pickAndLinkFile(activityId, kind) {
   if (!window.showOpenFilePicker) {
-    alert("Le lien de fichier nécessite un navigateur compatible avec l'API File System Access (Chrome ou Edge).");
+    showToast("Le lien de fichier nécessite un navigateur compatible avec l'API File System Access (Chrome ou Edge).", "warning");
     return;
   }
   let handle;
@@ -975,21 +1002,21 @@ async function pickAndLinkFile(activityId, kind) {
 async function openLinkedFile(linkId) {
   const record = await idbGetFileLink(linkId);
   if (!record) {
-    alert("Fichier introuvable (peut-être lié depuis un autre appareil).");
+    showToast("Fichier introuvable (peut-être lié depuis un autre appareil).", "error");
     return;
   }
   try {
     let perm = await record.handle.queryPermission({ mode: "read" });
     if (perm !== "granted") perm = await record.handle.requestPermission({ mode: "read" });
     if (perm !== "granted") {
-      alert("Permission refusée pour ouvrir ce fichier.");
+      showToast("Permission refusée pour ouvrir ce fichier.", "error");
       return;
     }
     const file = await record.handle.getFile();
     const url = URL.createObjectURL(file);
     window.open(url, "_blank");
   } catch (e) {
-    alert("Impossible d'ouvrir le fichier : " + e.message);
+    showToast("Impossible d'ouvrir le fichier : " + e.message, "error");
   }
 }
 
@@ -1280,6 +1307,7 @@ function renderBillingStateStatus(act) {
 // from an existing activity object. Used by both Edit Mode and Duplicate Mode.
 function fillActivityFormFields(act) {
   applyActivityFormMode(act.mode || "estimation", act.state !== "brouillon");
+  document.getElementById("form-activity-coba").value = act.coba || "";
   document.getElementById("form-activity-name").value = act.name;
   document.getElementById("form-activity-attendees").value = act.attendees_count || "";
   document.getElementById("form-activity-client-firstname").value = act.client?.first_name || "";
@@ -1640,13 +1668,13 @@ function wireSlotRangeGenerator(card) {
       isNaN(parseLocalDateStr(startVal).getTime()) ||
       isNaN(parseLocalDateStr(endVal).getTime())
     ) {
-      alert("Veuillez entrer une date de début et une date de fin valides (AAAA-MM-JJ).");
+      showToast("Veuillez entrer une date de début et une date de fin valides (AAAA-MM-JJ).", "warning");
       return;
     }
     const start = parseLocalDateStr(startVal);
     const end = parseLocalDateStr(endVal);
     if (start > end) {
-      alert("La date de début doit être antérieure ou égale à la date de fin.");
+      showToast("La date de début doit être antérieure ou égale à la date de fin.", "warning");
       return;
     }
     const activeWeekdays = Array.from(weekdaysGroup.querySelectorAll(".pill-toggle.active")).map(b => parseInt(b.dataset.value, 10));
@@ -1919,6 +1947,7 @@ function addReservationCard(reservationData = null) {
   installToggle.addEventListener("click", () => {
     installToggle.classList.toggle("active");
     installFields.style.display = installToggle.classList.contains("active") ? "flex" : "none";
+    updateFormDatesHelper();
     autoSaveActivityForm();
   });
   const dismantleToggle = card.querySelector(".reservation-dismantle-toggle");
@@ -1926,6 +1955,7 @@ function addReservationCard(reservationData = null) {
   dismantleToggle.addEventListener("click", () => {
     dismantleToggle.classList.toggle("active");
     dismantleFields.style.display = dismantleToggle.classList.contains("active") ? "flex" : "none";
+    updateFormDatesHelper();
     autoSaveActivityForm();
   });
 
@@ -2388,6 +2418,132 @@ function updateSubmissionFinancialSummary() {
   `;
 }
 
+// Same subtotal/TPS/TVQ/total breakdown as updateSubmissionFinancialSummary(), but computed from
+// a saved act.reservations[] instead of the live form (used for the printable PDF sheet, which
+// must reflect the persisted record even when opened outside the drawer).
+function computeActivityFinancials(act) {
+  const reservations = act.reservations || [];
+  const roomsTotal = getRoomsTariffTotal(act);
+  const eventDateStart = getAggregateEventDates(reservations).date_start;
+
+  let staffTotal = 0;
+  let servicesTotal = 0;
+  let feesTotal = 0;
+
+  reservations.forEach(r => {
+    (r.staff || []).forEach(s => {
+      const salary = (appState.settings.salaries || []).find(sal => sal.id === s.salary_id);
+      const rate = salary ? getActiveSalaryRate(salary, eventDateStart) : 0;
+      const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart) : 0;
+      staffTotal += rate * (s.hours || 0) * (s.count || 0) + overtimeRate * (s.overtime_hours || 0) * (s.count || 0);
+    });
+    (r.services || []).forEach(s => {
+      const service = (appState.settings.services || []).find(sv => sv.id === s.service_id);
+      const rate = service ? getActiveServiceRate(service, eventDateStart) : 0;
+      servicesTotal += service && service.type === "hourly" ? rate * (s.hours || 0) * (s.count || 0) : rate * (s.count || 0);
+    });
+    (r.fees || []).forEach(f => {
+      feesTotal += f.amount || 0;
+    });
+  });
+
+  const subtotal = roomsTotal + staffTotal + servicesTotal + feesTotal;
+  const tps = subtotal * 0.05;
+  const tvq = subtotal * 0.09975;
+  return { roomsTotal, staffTotal, servicesTotal, feesTotal, subtotal, tps, tvq, total: subtotal + tps + tvq };
+}
+
+// Builds the printable/PDF activity sheet's markup (client, gestionnaire, réservations, sommaire
+// financier), rendered offscreen into #print-activity-sheet and shown only via @media print.
+function buildPrintActivitySheetHtml(act) {
+  const fin = computeActivityFinancials(act);
+  const client = act.client || {};
+  const manager = act.activity_manager || {};
+  const today = new Date();
+  const generatedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`;
+
+  const roomsRows = (act.reservations || [])
+    .map(r => {
+      const days = (r.slots || []).length;
+      const slotsText =
+        (r.slots || []).map(s => `${s.date}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`).join(", ") || "-";
+      return `
+        <tr>
+          <td>${getReservationRoomLabel(r)}</td>
+          <td>${slotsText}</td>
+          <td>${r.tariff_description || "-"}</td>
+          <td>${formatCurrency(r.tariff_amount || 0)}</td>
+          <td>${days}</td>
+          <td>${formatCurrency((r.tariff_amount || 0) * days)}</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="print-sheet-header">
+      <div>
+        <h1>${act.mode === "estimation" ? "Estimation" : "Soumission / Contrat"}</h1>
+        <div class="print-sheet-subtitle">Activité ${act.id} — ${act.name || "(Sans nom)"}</div>
+      </div>
+      <div class="print-sheet-subtitle">Généré le ${generatedDate}</div>
+    </div>
+
+    <div class="print-sheet-section">
+      <h2>Informations client</h2>
+      <div class="print-sheet-grid">
+        <div><strong>Nom :</strong> ${client.first_name || ""} ${client.last_name || ""}</div>
+        <div><strong>Type de client :</strong> ${act.client_type === "interne" ? "Interne" : "Externe"}</div>
+        <div><strong>Téléphone :</strong> ${client.phone || "-"}</div>
+        <div><strong>Courriel :</strong> ${client.email || "-"}</div>
+      </div>
+    </div>
+
+    <div class="print-sheet-section">
+      <h2>Gestionnaire responsable</h2>
+      <div class="print-sheet-grid">
+        <div><strong>Nom :</strong> ${manager.first_name || ""} ${manager.last_name || ""}</div>
+        <div><strong>Téléphone :</strong> ${manager.phone || "-"}</div>
+        <div><strong>Courriel :</strong> ${manager.email || "-"}</div>
+      </div>
+    </div>
+
+    <div class="print-sheet-section">
+      <h2>Réservations de salle</h2>
+      <table class="print-sheet-table">
+        <thead>
+          <tr><th>Salle</th><th>Créneaux</th><th>Tarif</th><th>Montant / jour</th><th>Jours</th><th>Sous-total</th></tr>
+        </thead>
+        <tbody>${roomsRows || `<tr><td colspan="6">Aucune réservation.</td></tr>`}</tbody>
+      </table>
+    </div>
+
+    <div class="print-sheet-section">
+      <h2>Sommaire financier</h2>
+      <table class="print-sheet-total-table">
+        <tr><td>Location des salles</td><td>${formatCurrency(fin.roomsTotal)}</td></tr>
+        <tr><td>Personnel</td><td>${formatCurrency(fin.staffTotal)}</td></tr>
+        <tr><td>Services</td><td>${formatCurrency(fin.servicesTotal)}</td></tr>
+        <tr><td>Autres frais</td><td>${formatCurrency(fin.feesTotal)}</td></tr>
+        <tr><td>Sous-total</td><td>${formatCurrency(fin.subtotal)}</td></tr>
+        <tr><td>TPS (5%)</td><td>${formatCurrency(fin.tps)}</td></tr>
+        <tr><td>TVQ (9,975%)</td><td>${formatCurrency(fin.tvq)}</td></tr>
+        <tr class="print-sheet-grand-total"><td>Total</td><td>${formatCurrency(fin.total)}</td></tr>
+      </table>
+    </div>
+  `;
+}
+
+// Populates the hidden print sheet with the currently-open activity and triggers the browser's
+// print dialog (the user can then "Enregistrer au format PDF" to export it).
+function printActivitySheet() {
+  const id = document.getElementById("form-activity-internal-id").value;
+  const act = appState.activities.find(a => a.id === id);
+  if (!act) return;
+  document.getElementById("print-activity-sheet").innerHTML = buildPrintActivitySheetHtml(act);
+  window.print();
+}
+
 // Generates the next available activity id (XXYY-ZZZ) for the selected fiscal year
 function generateNextActivityId() {
   const prefix = appState.selected_year
@@ -2423,7 +2579,10 @@ function openActivityDrawer(id, calendarReturn = null) {
   const act = appState.activities.find(a => a.id === id);
   if (!act) return;
 
+  clearTimeout(activityUndoSnapshotTimer);
   activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(act));
+  activitiesState.undoStack = [JSON.parse(JSON.stringify(act))];
+  activitiesState.redoStack = [];
 
   if (act.name.trim() !== "") {
     recordActivityView(act.id);
@@ -2479,7 +2638,10 @@ function closeActivityDrawer() {
       }
     }
   }
+  clearTimeout(activityUndoSnapshotTimer);
   activitiesState.openedActivitySnapshot = null;
+  activitiesState.undoStack = [];
+  activitiesState.redoStack = [];
 
   document.getElementById("activity-drawer").classList.remove("active");
   document.getElementById("drawer-backdrop").classList.remove("active");
@@ -2499,7 +2661,7 @@ function cancelActivityDrawer() {
       renderActivities();
       return;
     } else {
-      alert("Le nom de l'activité ne peut pas être vide.");
+      showToast("Le nom de l'activité ne peut pas être vide.", "warning");
       nameInput.focus();
       return;
     }
@@ -2686,6 +2848,84 @@ function autoSaveActivityForm() {
 
   renderActivities();
   showAutoSaveStatus("saved");
+
+  // Any new edit invalidates whatever "future" the redo stack held, but the undo snapshot itself
+  // is debounced (see scheduleActivityUndoSnapshot): a burst of saves from one continuous edit
+  // (keystrokes, a field's "input" then its "change" on blur, etc.) collapses into a single undo
+  // step instead of one step per underlying save.
+  activitiesState.redoStack = [];
+  scheduleActivityUndoSnapshot(idx);
+}
+
+// Groups every autosave from one continuous edit into a single undo step: each call postpones
+// the actual push by ACTIVITY_UNDO_DEBOUNCE_MS, so only the last (most complete) state in a burst
+// of saves gets recorded. Reads appState.activities[idx] lazily when the timer fires, not the
+// value at schedule time, so it always captures the final state of the burst.
+let activityUndoSnapshotTimer = null;
+const ACTIVITY_UNDO_DEBOUNCE_MS = 800;
+
+function scheduleActivityUndoSnapshot(idx) {
+  clearTimeout(activityUndoSnapshotTimer);
+  activityUndoSnapshotTimer = setTimeout(() => {
+    const act = appState.activities[idx];
+    // Skip if the drawer has since closed or moved on to a different activity.
+    if (!act || document.getElementById("form-activity-internal-id").value !== act.id) return;
+    pushActivityUndoSnapshot(act);
+  }, ACTIVITY_UNDO_DEBOUNCE_MS);
+}
+
+// Records the activity's current state onto the undo stack (Ctrl+Z).
+function pushActivityUndoSnapshot(act) {
+  activitiesState.undoStack.push(JSON.parse(JSON.stringify(act)));
+  if (activitiesState.undoStack.length > ACTIVITY_UNDO_HISTORY_LIMIT) {
+    activitiesState.undoStack.shift();
+  }
+}
+
+// Replaces the open activity's record with `snapshot`, then rebuilds the whole form from it
+// (same rebuild openActivityDrawer does), without touching the undo/redo stacks themselves.
+function restoreActivitySnapshot(snapshot) {
+  const idx = appState.activities.findIndex(a => a.id === snapshot.id);
+  if (idx === -1) return;
+
+  // Cancel any pending debounced snapshot from the edit that's being undone/redone away, so it
+  // can't fire afterwards and silently push a stale state back onto the stack.
+  clearTimeout(activityUndoSnapshotTimer);
+
+  appState.activities[idx] = JSON.parse(JSON.stringify(snapshot));
+
+  document.getElementById("activity-drawer-title").textContent =
+    appState.activities[idx].name && appState.activities[idx].name.trim() !== ""
+      ? appState.activities[idx].name
+      : `Activité ${appState.activities[idx].id}`;
+  document.getElementById("form-activity-reservations").innerHTML = "";
+  document.getElementById("form-distribution-list").innerHTML = "";
+  fillActivityFormFields(appState.activities[idx]);
+  renderActivityStateBar(appState.activities[idx]);
+
+  saveDatabase();
+  if (reconciliationState.ledgerTransactions.length > 0) {
+    reconcileLedger();
+  }
+  renderActivities();
+}
+
+// Ctrl+Z: reverts to the previous auto-saved state of the activity currently open in the drawer.
+function undoActivityFormChange() {
+  if (activitiesState.undoStack.length <= 1) return;
+  activitiesState.redoStack.push(activitiesState.undoStack.pop());
+  const previous = activitiesState.undoStack[activitiesState.undoStack.length - 1];
+  restoreActivitySnapshot(previous);
+  showToast("Modification annulée.", "info", 2000);
+}
+
+// Ctrl+Y / Ctrl+Shift+Z: re-applies a change previously undone.
+function redoActivityFormChange() {
+  if (activitiesState.redoStack.length === 0) return;
+  const next = activitiesState.redoStack.pop();
+  activitiesState.undoStack.push(next);
+  restoreActivitySnapshot(next);
+  showToast("Modification rétablie.", "info", 2000);
 }
 
 function submitActivityForm(e) {
@@ -2694,7 +2934,7 @@ function submitActivityForm(e) {
   const internalId = document.getElementById("form-activity-internal-id").value;
   const name = document.getElementById("form-activity-name").value.trim();
   if (!name) {
-    alert("Le nom de l'activité ne peut pas être vide.");
+    showToast("Le nom de l'activité ne peut pas être vide.", "warning");
     return;
   }
 
@@ -2745,16 +2985,94 @@ function updateFormDatesHelper() {
   const helperEl = document.getElementById("form-activity-dates-helper");
   const listEl = document.getElementById("form-activity-days-list");
 
-  if (!helperEl || !listEl) return;
+  const reservations = collectReservationsFromForm();
 
-  const { date_start: startVal, date_end: endVal } = getAggregateEventDates(collectReservationsFromForm());
-  const daysText = getDaysOfWeekInRange(startVal, endVal);
-  if (daysText) {
-    listEl.textContent = daysText;
-    helperEl.style.display = "flex";
-  } else {
-    helperEl.style.display = "none";
+  if (helperEl && listEl) {
+    const { date_start: startVal, date_end: endVal } = getAggregateEventDates(reservations);
+    const daysText = getDaysOfWeekInRange(startVal, endVal);
+    if (daysText) {
+      listEl.textContent = daysText;
+      helperEl.style.display = "flex";
+    } else {
+      helperEl.style.display = "none";
+    }
   }
+
+  checkRoomReservationConflicts(reservations);
+}
+
+// Returns true if two "HH:MM" time ranges on the same day overlap. A missing start/end time is
+// treated as spanning the whole day (conservative: flags a conflict rather than missing one).
+function timeRangesOverlap(startA, endA, startB, endB) {
+  const a1 = startA || "00:00";
+  const a2 = endA || "23:59";
+  const b1 = startB || "00:00";
+  const b2 = endB || "23:59";
+  return a1 < b2 && b1 < a2;
+}
+
+// Flattens a reservation into a list of {date, start_time, end_time} occupied ranges: its
+// créneaux plus its montage/démontage windows (a room is unavailable during setup/teardown too).
+function getReservationOccupiedRanges(reservation) {
+  const ranges = (reservation.slots || [])
+    .filter(s => s.date)
+    .map(s => ({ date: s.date, start_time: s.start_time, end_time: s.end_time }));
+  if (reservation.install && reservation.install.enabled && reservation.install.date) {
+    ranges.push({ date: reservation.install.date, start_time: reservation.install.start_time, end_time: reservation.install.end_time });
+  }
+  if (reservation.dismantle && reservation.dismantle.enabled && reservation.dismantle.date) {
+    ranges.push({ date: reservation.dismantle.date, start_time: reservation.dismantle.start_time, end_time: reservation.dismantle.end_time });
+  }
+  return ranges;
+}
+
+// Compares the reservations currently in the activity form against every other non-deleted
+// activity's reservations, and displays a warning banner listing any room booked by both on an
+// overlapping date/time. Runs on every form change that can affect scheduling (room, créneaux,
+// montage/démontage).
+function checkRoomReservationConflicts(reservations) {
+  const bannerEl = document.getElementById("form-activity-room-conflicts");
+  if (!bannerEl) return;
+
+  const currentId = document.getElementById("form-activity-internal-id").value;
+  const conflicts = []; // {roomName, otherActivityName}
+
+  reservations.forEach(res => {
+    if (!res.room_name || res.room_name === OTHER_ROOM_VALUE) return;
+    const myRanges = getReservationOccupiedRanges(res);
+    if (myRanges.length === 0) return;
+
+    appState.activities.forEach(other => {
+      if (other.deleted || other.id === currentId) return;
+      (other.reservations || []).forEach(otherRes => {
+        if (otherRes.room_name !== res.room_name) return;
+        const otherRanges = getReservationOccupiedRanges(otherRes);
+        const overlaps = myRanges.some(mr => otherRanges.some(or => mr.date === or.date && timeRangesOverlap(mr.start_time, mr.end_time, or.start_time, or.end_time)));
+        if (overlaps && !conflicts.some(c => c.roomName === res.room_name && c.otherActivityName === other.name)) {
+          conflicts.push({ roomName: res.room_name, otherActivityName: other.name || "(sans nom)" });
+        }
+      });
+    });
+  });
+
+  if (conflicts.length === 0) {
+    bannerEl.style.display = "none";
+    bannerEl.innerHTML = "";
+    return;
+  }
+
+  bannerEl.style.display = "block";
+  bannerEl.innerHTML = `
+    <div class="room-conflict-banner">
+      <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; flex-shrink: 0;"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+      <div>
+        <strong>Conflit de réservation détecté :</strong>
+        <ul style="margin: 4px 0 0 18px; padding: 0;">
+          ${conflicts.map(c => `<li>${c.roomName} — également réservée par « ${c.otherActivityName} »</li>`).join("")}
+        </ul>
+      </div>
+    </div>
+  `;
 }
 
 function getDaysOfWeekInRange(startDateStr, endDateStr) {
@@ -3079,5 +3397,5 @@ function restoreActivityVersion(versionRecord) {
   // Close the drawer and refresh activities list to reflect the restored state
   renderActivities();
 
-  alert("Version restaurée avec succès !");
+  showToast("Version restaurée avec succès !", "success");
 }

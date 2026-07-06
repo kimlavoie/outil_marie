@@ -1,0 +1,59 @@
+================================================================================
+          PROPOSITIONS D'AMÉLIORATION - OUTIL DE GESTION DE MARIE
+================================================================================
+
+Voici une liste d'améliorations proposées pour l'application, classées par catégorie. Ces points visent à améliorer l'expérience utilisateur (UX/UI), fiabiliser le processus de rapprochement comptable et renforcer la robustesse technique de l'application hors ligne.
+
+--------------------------------------------------------------------------------
+1. AMÉLIORATIONS DE L'INTERFACE UTILISATEUR & ERGONOME (UI/UX)
+--------------------------------------------------------------------------------
+[x] Intégration de Notifications non-intrusives (Toasts)
+    - Problème : Actuellement, l'application utilise des alertes bloquantes (alert(), confirm()) pour informer l'utilisateur de certaines actions ou erreurs.
+    - Solution : Implémenter un gestionnaire de toasts CSS/JS pour afficher des messages temporaires et élégants dans le coin de l'écran (ex: "Activité enregistrée avec succès", "Export Excel terminé", "Sauvegarde réussie").
+
+[n] Transition fluide du Thème (Dark / Light Mode)
+    - Problème : Le basculement entre le mode clair et sombre est instantané et peut générer un flash visuel désagréable.
+    - Solution : Ajouter une transition globale en CSS (ex: transition: background-color 0.3s ease, color 0.3s ease;) sur les éléments clés pour rendre le changement de thème agréable à l'œil.
+
+[x] Détection des conflits de réservation de salles en temps réel
+    - Problème : Il est actuellement possible d'enregistrer deux activités réservant la même salle sur les mêmes créneaux de dates.
+    - Solution : Lors de la modification ou création d'une réservation dans le tiroir d'activité, effectuer une vérification instantanée avec les autres activités non supprimées et afficher un message d'avertissement en cas de chevauchement.
+
+[x] Amélioration de la vue Calendrier globale
+    - Problème : Le calendrier actuel est minimaliste.
+    - Solution : Mettre en place un calendrier interactif mensuel et hebdomadaire plus complet (type FullCalendar léger) permettant :
+      - De visualiser d'un coup d'œil l'occupation de toutes les salles (code couleur par salle).
+      - De cliquer sur un jour pour ouvrir directement le formulaire de création d'activité pré-rempli à cette date.
+      - D'avoir un aperçu des détails de l'activité en survolant l'événement.
+
+--------------------------------------------------------------------------------
+2. AMÉLIORATIONS DES FONCTIONNALITÉS MÉTIER & RAPPROCHEMENT
+--------------------------------------------------------------------------------
+[x] Algorithme de rapprochement par similarité (Fuzzy Matching)
+    - Problème : Le rapprochement automatique actuel nécessite une correspondance exacte sur la référence et le compte. Si une référence saisie dans le Grand Livre a une légère différence typo ou si la date est décalée, elle n'est pas rapprochée.
+    - Solution : Proposer des suggestions de rapprochement "intelligent" si aucun match exact n'est trouvé. Par exemple, suggérer des correspondances basées sur :
+      - Le même montant à ± 0.05 $ ET une date proche à ± 5 jours.
+      - La similarité textuelle entre le nom de l'activité dans l'application et la description de l'écriture dans le Grand Livre.
+
+[x] Persistence de l'historique et des décisions de rapprochement
+    - Problème : À chaque fois qu'un utilisateur importe un nouveau fichier de Grand Livre (GL), il doit réviser et valider à nouveau les écarts ou les entrées non saisies.
+    - Solution : Ajouter une table de suivi des transactions GL déjà "validées manuellement" ou "ignorées" dans IndexedDB pour que l'état de rapprochement d'un trimestre précédent soit conservé d'un import à l'autre.
+
+[x] Export Excel du tableau de rapprochement
+    - Problème : L'utilisateur peut exporter les activités ou les fiches de compte, mais pas le tableau de rapprochement avec la liste des écarts constatés.
+    - Solution : Ajouter un bouton "Exporter le rapprochement" pour générer un fichier Excel structuré contenant les lignes conformes, les écarts de montants et les lignes manquantes.
+
+--------------------------------------------------------------------------------
+3. AMÉLIORATIONS TECHNIQUES, FIABILITÉ & ARCHITECTURE
+--------------------------------------------------------------------------------
+[n] Module de sauvegarde externe (Cloud / Lecteur réseau)
+    - Problème : L'application fonctionne 100% hors ligne et stocke ses données dans IndexedDB et localStorage. Si l'utilisateur nettoie l'historique de son navigateur ou change de poste, il risque de perdre ses données s'il n'a pas fait d'export manuel.
+    - Solution : Permettre une synchronisation ou une sauvegarde automatique optionnelle vers un service distant (ex: Google Drive, Dropbox, ou un serveur de fichier WebDAV d'organisation) ou au moins un rappel visuel plus incitatif de faire une sauvegarde physique.
+
+[x] Export PDF optimisé pour les estimations et contrats
+    - Problème : Actuellement, il n'y a pas d'option propre d'impression ou d'export PDF pour transmettre une estimation ou une facture à un client externe.
+    - Solution : Intégrer une feuille de style d'impression (@media print) dédiée ou utiliser une bibliothèque JS de génération de PDF (`jsPDF`) pour permettre de télécharger une fiche d'activité dans un format PDF professionnel et épuré.
+
+[x] Système d'annulation / Rétablissement (Undo / Redo)
+    - Problème : Si l'utilisateur fait une erreur en modifiant une activité et que la sauvegarde automatique s'exécute, il est difficile de revenir en arrière.
+    - Solution : Mettre en place un historique de modifications temporaire (pile d'annulation) pendant que le tiroir de l'activité est ouvert, permettant de faire Ctrl+Z / Ctrl+Y.

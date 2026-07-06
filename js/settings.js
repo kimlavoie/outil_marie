@@ -176,12 +176,12 @@ function submitAccountForm(e) {
   const desc = document.getElementById("form-account-desc").value.trim();
 
   if (!newCode.match(/^\d{3}-\d{4}-\d{2}-\d{3}$/)) {
-    alert("Le code du compte doit respecter le format XXX-XXXX-XX-XXX (ex: 892-9020-00-849).");
+    showToast("Le code du compte doit respecter le format XXX-XXXX-XX-XXX (ex: 892-9020-00-849).", "warning");
     return;
   }
 
   if (!desc) {
-    alert("Veuillez saisir un libellé.");
+    showToast("Veuillez saisir un libellé.", "warning");
     return;
   }
 
@@ -203,7 +203,7 @@ function submitAccountForm(e) {
   } else {
     // New Mode: Check duplicate code
     if (appState.settings.accounts.some(a => a.code === newCode)) {
-      alert("Ce code de compte existe déjà.");
+      showToast("Ce code de compte existe déjà.", "warning");
       return;
     }
     appState.settings.accounts.push(payload);
@@ -365,7 +365,7 @@ function addRoomGridVersion() {
 
 function deleteRoomGridVersion() {
   if (roomModalState.grids.length <= 1) {
-    alert("Une salle doit conserver au moins une version de grille tarifaire.");
+    showToast("Une salle doit conserver au moins une version de grille tarifaire.", "warning");
     return;
   }
   if (!confirm("Supprimer cette version de la grille tarifaire ?")) return;
@@ -599,7 +599,7 @@ function submitRoomForm(e) {
   const color = document.getElementById("form-room-color").value;
 
   if (!newName) {
-    alert("Le nom de la salle est obligatoire.");
+    showToast("Le nom de la salle est obligatoire.", "warning");
     return;
   }
 
@@ -613,7 +613,7 @@ function submitRoomForm(e) {
     }
   });
   if (gridErrorMsg) {
-    alert(gridErrorMsg);
+    showToast(gridErrorMsg, "warning");
     return;
   }
 
@@ -637,7 +637,7 @@ function submitRoomForm(e) {
     }
   });
   if (staffErrorMsg) {
-    alert(staffErrorMsg);
+    showToast(staffErrorMsg, "warning");
     return;
   }
 
@@ -659,7 +659,7 @@ function submitRoomForm(e) {
     }
   });
   if (feeErrorMsg) {
-    alert(feeErrorMsg);
+    showToast(feeErrorMsg, "warning");
     return;
   }
 
@@ -698,7 +698,7 @@ function submitRoomForm(e) {
     }
   } else {
     if (appState.settings.rooms.some(r => r.name === newName)) {
-      alert("Cette salle existe déjà.");
+      showToast("Cette salle existe déjà.", "warning");
       return;
     }
     appState.settings.rooms.push(payload);
@@ -776,7 +776,7 @@ function submitDeptForm(e) {
   const name = document.getElementById("form-dept-name").value.trim();
 
   if (!name) {
-    alert("Le nom du département est obligatoire.");
+    showToast("Le nom du département est obligatoire.", "warning");
     return;
   }
 
@@ -784,7 +784,7 @@ function submitDeptForm(e) {
     d => d.toUpperCase() === name.toUpperCase() && d.toUpperCase() !== originalName.toUpperCase()
   );
   if (duplicate) {
-    alert("Ce département existe déjà.");
+    showToast("Ce département existe déjà.", "warning");
     return;
   }
 
@@ -919,7 +919,7 @@ function submitSalaryForm(e) {
   const glAccountCode = document.getElementById("form-salary-gl-account").value;
 
   if (!job) {
-    alert("Le nom de l'emploi est obligatoire.");
+    showToast("Le nom de l'emploi est obligatoire.", "warning");
     return;
   }
 
@@ -944,11 +944,11 @@ function submitSalaryForm(e) {
   });
 
   if (rateErrorMsg) {
-    alert(rateErrorMsg);
+    showToast(rateErrorMsg, "warning");
     return;
   }
   if (rateVersions.length === 0) {
-    alert("Veuillez saisir au moins un taux horaire.");
+    showToast("Veuillez saisir au moins un taux horaire.", "warning");
     return;
   }
 
@@ -957,7 +957,7 @@ function submitSalaryForm(e) {
   // Check duplicate job name
   const duplicate = salaries.some(s => s.job.toUpperCase() === job.toUpperCase() && s.id !== originalId);
   if (duplicate) {
-    alert("Cet emploi existe déjà.");
+    showToast("Cet emploi existe déjà.", "warning");
     return;
   }
 
@@ -1092,7 +1092,7 @@ function submitServiceForm(e) {
   const glAccountCode = document.getElementById("form-service-gl-account").value;
 
   if (!name) {
-    alert("Le nom du service est obligatoire.");
+    showToast("Le nom du service est obligatoire.", "warning");
     return;
   }
 
@@ -1113,11 +1113,11 @@ function submitServiceForm(e) {
   });
 
   if (rateErrorMsg) {
-    alert(rateErrorMsg);
+    showToast(rateErrorMsg, "warning");
     return;
   }
   if (rateVersions.length === 0) {
-    alert("Veuillez saisir au moins un montant.");
+    showToast("Veuillez saisir au moins un montant.", "warning");
     return;
   }
 
@@ -1125,7 +1125,7 @@ function submitServiceForm(e) {
 
   const duplicate = services.some(s => s.name.toUpperCase() === name.toUpperCase() && s.id !== originalId);
   if (duplicate) {
-    alert("Ce service existe déjà.");
+    showToast("Ce service existe déjà.", "warning");
     return;
   }
 
@@ -1221,7 +1221,7 @@ function submitGlobalTaskForm(e) {
   const description = document.getElementById("form-global-task-desc").value.trim();
 
   if (!description) {
-    alert("Veuillez saisir une description.");
+    showToast("Veuillez saisir une description.", "warning");
     return;
   }
 
