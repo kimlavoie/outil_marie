@@ -321,6 +321,7 @@ function handleJsonBackupFile(file) {
           if (!appState.settings) appState.settings = {};
           if (!appState.settings.rooms) appState.settings.rooms = [];
           if (!appState.settings.salaries) appState.settings.salaries = [];
+          if (!appState.settings.services) appState.settings.services = [];
           if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
           appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
           if (isNaN(appState.settings.backup_reminder_days)) {

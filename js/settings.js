@@ -71,6 +71,13 @@ function initSettingsHandlers() {
   document.getElementById("add-salary-btn").addEventListener("click", () => openSalaryModal());
   document.getElementById("salary-modal-submit").addEventListener("click", submitSalaryForm);
   document.getElementById("form-add-salary-rate-btn").addEventListener("click", () => addSalaryRateRow());
+
+  // Services CRUD modal handlers
+  document.getElementById("service-modal-close").addEventListener("click", () => closeSettingsModal("service"));
+  document.getElementById("service-modal-cancel").addEventListener("click", () => closeSettingsModal("service"));
+  document.getElementById("add-service-btn").addEventListener("click", () => openServiceModal());
+  document.getElementById("service-modal-submit").addEventListener("click", submitServiceForm);
+  document.getElementById("form-add-service-rate-btn").addEventListener("click", () => addServiceRateRow());
 }
 
 function renderSettings() {
@@ -78,6 +85,7 @@ function renderSettings() {
   renderRoomsList();
   renderDepartmentsList();
   renderSalariesList();
+  renderServicesList();
 }
 
 function closeSettingsModal(type) {
@@ -940,6 +948,170 @@ function deleteSalary(id) {
 
   if (confirm(`Voulez-vous vraiment supprimer l'emploi "${jobName}" ?`)) {
     appState.settings.salaries = salaries.filter(s => s.id !== id);
+    saveDatabase();
+    renderSettings();
+  }
+}
+
+/* ==========================================================================
+   SERVICES SETTINGS (fixed or hourly fees, versioned rate history)
+   ========================================================================== */
+
+function renderServicesList() {
+  const container = document.getElementById("settings-services-list");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const services = appState.settings.services || [];
+  services.forEach(svc => {
+    const currentRate = getActiveServiceRate(svc, "");
+    const versionCount = (svc.rate_versions || []).length;
+    const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
+    const unit = svc.type === "hourly" ? "$ / heure" : "$";
+    container.innerHTML += `
+      <div class="settings-list-item">
+        <div class="settings-list-item-info">
+          <span class="settings-list-item-code" style="font-family: inherit;">${svc.name}</span>
+          <span class="settings-list-item-desc">${parseFloat(currentRate).toFixed(2)} ${unit}${versionNote}</span>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-icon edit-service-btn" data-id="${svc.id}" title="Modifier">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </button>
+          <button class="btn-icon delete-service-btn" data-id="${svc.id}" title="Supprimer" style="color: var(--danger);">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  document.querySelectorAll(".edit-service-btn").forEach(btn => {
+    btn.addEventListener("click", () => openServiceModal(btn.getAttribute("data-id")));
+  });
+  document.querySelectorAll(".delete-service-btn").forEach(btn => {
+    btn.addEventListener("click", () => deleteService(btn.getAttribute("data-id")));
+  });
+}
+
+function openServiceModal(id = null) {
+  const form = document.getElementById("service-form");
+  const title = document.getElementById("service-modal-title");
+  form.reset();
+  document.getElementById("form-service-rates-list").innerHTML = "";
+  document.getElementById("form-service-gl-account").innerHTML = buildGlAccountOptionsHtml();
+
+  if (id) {
+    title.textContent = "Modifier le service";
+    const services = appState.settings.services || [];
+    const svc = services.find(s => s.id === id);
+    if (svc) {
+      document.getElementById("form-service-original-id").value = svc.id;
+      document.getElementById("form-service-name").value = svc.name;
+      document.getElementById("form-service-type").value = svc.type || "fixed";
+      document.getElementById("form-service-gl-account").innerHTML = buildGlAccountOptionsHtml(svc.gl_account_code || "");
+      (svc.rate_versions || []).forEach(v => addServiceRateRow(v.effective_date, v.rate));
+    }
+  } else {
+    title.textContent = "Ajouter un service";
+    document.getElementById("form-service-original-id").value = "";
+    addServiceRateRow("", "");
+  }
+  openSettingsModal("service");
+}
+
+function addServiceRateRow(effectiveDate = "", rate = "") {
+  const container = document.getElementById("form-service-rates-list");
+  const rowId = generateUid("service-rate-row");
+
+  const rowHtml = `
+    <div id="${rowId}" class="distribution-row room-tarif-row">
+      <input type="text" class="form-input service-rate-date-input" value="${effectiveDate || ""}" placeholder="AAAA-MM-JJ (vide = depuis toujours)" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" class="form-input service-rate-amount-input" min="0" step="0.01" value="${rate !== "" ? rate : ""}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
+      <button type="button" class="btn-icon delete-service-rate-row-btn" data-row-id="${rowId}">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  `;
+  container.insertAdjacentHTML("beforeend", rowHtml);
+  document.getElementById(rowId).querySelector(".delete-service-rate-row-btn").addEventListener("click", () => {
+    document.getElementById(rowId).remove();
+  });
+}
+
+function submitServiceForm(e) {
+  e.preventDefault();
+  const originalId = document.getElementById("form-service-original-id").value;
+  const name = document.getElementById("form-service-name").value.trim();
+  const type = document.getElementById("form-service-type").value;
+  const glAccountCode = document.getElementById("form-service-gl-account").value;
+
+  if (!name) {
+    alert("Le nom du service est obligatoire.");
+    return;
+  }
+
+  const rateVersions = [];
+  let rateErrorMsg = "";
+  document.querySelectorAll("#form-service-rates-list .distribution-row").forEach(row => {
+    const dateStr = row.querySelector(".service-rate-date-input").value.trim();
+    const rateStr = row.querySelector(".service-rate-amount-input").value.trim();
+    const rate = parseFloat(rateStr);
+    if (!dateStr && !rateStr) return;
+    if (!rateStr || isNaN(rate) || rate < 0) {
+      rateErrorMsg = "Veuillez saisir un montant valide (supérieur ou égal à 0) pour chaque version.";
+    } else if (dateStr && !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      rateErrorMsg = "La date d'entrée en vigueur doit être au format AAAA-MM-JJ, ou vide.";
+    } else {
+      rateVersions.push({ id: generateUid("rv"), effective_date: dateStr, rate });
+    }
+  });
+
+  if (rateErrorMsg) {
+    alert(rateErrorMsg);
+    return;
+  }
+  if (rateVersions.length === 0) {
+    alert("Veuillez saisir au moins un montant.");
+    return;
+  }
+
+  const services = appState.settings.services || [];
+
+  const duplicate = services.some(s =>
+    s.name.toUpperCase() === name.toUpperCase() && s.id !== originalId
+  );
+  if (duplicate) {
+    alert("Ce service existe déjà.");
+    return;
+  }
+
+  if (originalId) {
+    const idx = services.findIndex(s => s.id === originalId);
+    if (idx !== -1) {
+      services[idx] = { id: originalId, name, type, gl_account_code: glAccountCode, rate_versions: rateVersions };
+    }
+  } else {
+    const newId = generateUid("service");
+    services.push({ id: newId, name, type, gl_account_code: glAccountCode, rate_versions: rateVersions });
+  }
+
+  services.sort((a, b) => a.name.localeCompare(b.name));
+
+  appState.settings.services = services;
+
+  saveDatabase();
+  closeSettingsModal("service");
+  renderSettings();
+}
+
+function deleteService(id) {
+  const services = appState.settings.services || [];
+  const svc = services.find(s => s.id === id);
+  const serviceName = svc ? svc.name : "";
+
+  if (confirm(`Voulez-vous vraiment supprimer le service "${serviceName}" ?`)) {
+    appState.settings.services = services.filter(s => s.id !== id);
     saveDatabase();
     renderSettings();
   }

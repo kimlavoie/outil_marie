@@ -353,6 +353,7 @@
               <button class="settings-tab-btn" data-settings-panel="rooms">Salles & Tarifs</button>
               <button class="settings-tab-btn" data-settings-panel="departments">Départements</button>
               <button class="settings-tab-btn" data-settings-panel="salaries">Salaires</button>
+              <button class="settings-tab-btn" data-settings-panel="services">Services</button>
             </aside>
             
             <!-- Settings Panel Content -->
@@ -406,6 +407,19 @@
                   </button>
                 </div>
                 <div id="settings-salaries-list" class="settings-list">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+
+              <!-- 4.5 Services settings panel -->
+              <div id="panel-services" class="settings-panel">
+                <div class="settings-panel-header">
+                  <h3 class="settings-panel-title">Gestion des Services</h3>
+                  <button id="add-service-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
+                    + Ajouter un service
+                  </button>
+                </div>
+                <div id="settings-services-list" class="settings-list">
                   <!-- Dynamically populated -->
                 </div>
               </div>
@@ -732,6 +746,15 @@
             <div id="form-staff-list" class="distribution-list"></div>
           </div>
 
+          <!-- Services -->
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Services</label>
+              <button type="button" id="form-add-service-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
+            </div>
+            <div id="form-services-list" class="distribution-list"></div>
+          </div>
+
           <!-- Autres frais -->
           <div class="distribution-section">
             <div class="distribution-header">
@@ -1037,6 +1060,53 @@
     <div class="modal-footer">
       <button id="salary-modal-cancel" class="btn btn-secondary">Annuler</button>
       <button id="salary-modal-submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- Service Add/Edit Modal -->
+  <div id="service-modal" class="modal">
+    <div class="modal-header">
+      <h3 id="service-modal-title" class="modal-title">Ajouter un service</h3>
+      <button id="service-modal-close" class="btn-icon">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="modal-content">
+      <form id="service-form">
+        <input type="hidden" id="form-service-original-id">
+        <div class="form-group">
+          <label for="form-service-name">Nom du service</label>
+          <input type="text" id="form-service-name" class="form-input" required placeholder="Ex: Location d'écran">
+        </div>
+        <div class="form-group">
+          <label for="form-service-type">Type de frais</label>
+          <select id="form-service-type" class="select-input">
+            <option value="fixed">Frais fixe</option>
+            <option value="hourly">Frais horaire</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="form-service-gl-account">Compte budgétaire associé (optionnel, pour la facturation)</label>
+          <select id="form-service-gl-account" class="select-input">
+            <option value="">Aucun</option>
+          </select>
+        </div>
+        <div class="distribution-section">
+          <div class="distribution-header">
+            <label>Historique des tarifs (date d'entrée en vigueur et montant)</label>
+            <button type="button" id="form-add-service-rate-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
+              + Ajouter une version
+            </button>
+          </div>
+          <div id="form-service-rates-list" class="distribution-list">
+            <!-- Dynamic rows -->
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button id="service-modal-cancel" class="btn btn-secondary">Annuler</button>
+      <button id="service-modal-submit" class="btn btn-primary">Enregistrer</button>
     </div>
   </div>
 

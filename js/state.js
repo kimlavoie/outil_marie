@@ -75,7 +75,8 @@ const DEFAULT_CONFIG = {
     { id: "salary-hote", job: "Hôte", rate_versions: [{ id: "rv-hote", effective_date: "", rate: 27 }] },
     { id: "salary-as", job: "Agent de sécurité", rate_versions: [{ id: "rv-as", effective_date: "", rate: 50 }] },
     { id: "salary-sauveteur", job: "Sauveteur", rate_versions: [{ id: "rv-sauveteur", effective_date: "", rate: 42 }] }
-  ]
+  ],
+  services: []
 };
 
 const TECHNICAL_SERVICES = ["Microphone", "Écran projecteur", "Éclairage de scène", "Musique d'ambiance", "Fichier audio, vidéo ou présentation PowerPoint"];
@@ -99,7 +100,8 @@ let appState = {
     accounts: [...DEFAULT_CONFIG.accounts],
     last_backup_date: "",
     backup_reminder_days: 7,
-    salaries: [...DEFAULT_CONFIG.salaries]
+    salaries: [...DEFAULT_CONFIG.salaries],
+    services: [...DEFAULT_CONFIG.services]
   },
   activities: [],
   favorites: [], // ids of activities pinned (by the user) to the "Accès rapide" list
@@ -282,6 +284,7 @@ async function loadDatabase() {
       if (!appState.settings.rooms) appState.settings.rooms = [...DEFAULT_CONFIG.rooms];
       if (!appState.settings.departments) appState.settings.departments = [...DEFAULT_CONFIG.departments];
       if (!appState.settings.salaries || appState.settings.salaries.length === 0) appState.settings.salaries = [...DEFAULT_CONFIG.salaries];
+      if (!appState.settings.services) appState.settings.services = [...DEFAULT_CONFIG.services];
       if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
       appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
       if (isNaN(appState.settings.backup_reminder_days)) {
@@ -378,6 +381,12 @@ function getActiveSalaryRate(salary, dateStr) {
     if (!v.effective_date || v.effective_date <= dateStr) applicable = v;
   });
   return applicable.rate;
+}
+
+// Returns the service rate in effect for `dateStr` (services share the same versioned
+// rate_versions shape as salaries, so the resolution logic is identical)
+function getActiveServiceRate(service, dateStr) {
+  return getActiveSalaryRate(service, dateStr);
 }
 
 // Compat shim: flattens a room's active pricing grid (cross product of parameters x client_types)
@@ -484,6 +493,7 @@ function migrateActivities() {
     if (!act.client) act.client = { first_name: "", last_name: "", phone: "", email: "" };
     if (!act.staff) act.staff = [];
     if (!act.fees) act.fees = [];
+    if (!act.services) act.services = [];
     if (!act.submission) act.submission = { file_link_id: "", generated_at: "", sent_at: "" };
     if (!act.contract) act.contract = { file_link_id: "", approved_at: "" };
     if (!act.planning_tasks) act.planning_tasks = [];
