@@ -210,6 +210,17 @@ async function writeAutoBackupNow() {
     await writable.close();
     autoBackupLastWrite = new Date();
     renderAutoBackupStatus("connected", autoBackupHandle.name);
+
+    // A successful auto backup counts as a real backup for reminder purposes.
+    // Saved directly (not via saveDatabase()) to avoid re-triggering this
+    // same debounced write in a loop.
+    const today = autoBackupLastWrite.toISOString().split('T')[0];
+    if (appState.settings.last_backup_date !== today) {
+      appState.settings.last_backup_date = today;
+      await saveAppStateToDb(appState);
+      checkBackupReminder();
+      renderBackupView();
+    }
   } catch (e) {
     console.error("Échec de l'écriture de la sauvegarde automatique", e);
   }
