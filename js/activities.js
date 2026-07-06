@@ -2703,6 +2703,101 @@ async function saveActivityVersion(act) {
   }
 }
 
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+function computeActivityDiff(oldAct, newAct) {
+  const diffs = [];
+
+  // Helper to add diff
+  function addDiff(label, oldVal, newVal) {
+    const cleanOld = String(oldVal === undefined || oldVal === null ? "" : oldVal).trim();
+    const cleanNew = String(newVal === undefined || newVal === null ? "" : newVal).trim();
+    if (cleanOld !== cleanNew) {
+      diffs.push({ label, oldVal: cleanOld || "[Vide]", newVal: cleanNew || "[Vide]" });
+    }
+  }
+
+  // 1. Core text fields
+  addDiff("Nom de l'activité", oldAct.name, newAct.name);
+  addDiff("Responsable facturation", oldAct.responsable, newAct.responsable);
+  addDiff("Références COBA", oldAct.coba, newAct.coba);
+  addDiff("Département", oldAct.department, newAct.department);
+
+  // Event Type mapping
+  const getEventLabel = val => {
+    if (!val) return "";
+    const found = EVENT_TYPES.find(t => t.value === val);
+    return found ? found.label : val;
+  };
+  addDiff("Type d'événement", getEventLabel(oldAct.event_type), getEventLabel(newAct.event_type));
+  if (oldAct.event_type === "autre" || newAct.event_type === "autre") {
+    addDiff("Autre type d'événement", oldAct.event_type_other, newAct.event_type_other);
+  }
+
+  const getClientTypeLabel = val => {
+    if (val === "interne") return "Interne";
+    if (val === "externe") return "Externe";
+    return val || "";
+  };
+  addDiff("Type de client", getClientTypeLabel(oldAct.client_type), getClientTypeLabel(newAct.client_type));
+  addDiff("Date de début", oldAct.date_start, newAct.date_start);
+  addDiff("Date de fin", oldAct.date_end, newAct.date_end);
+  addDiff("Description", oldAct.description, newAct.description);
+  addDiff("Statut de l'activité", getActivityStateLabel(oldAct.state), getActivityStateLabel(newAct.state));
+
+  const getModeLabel = val => {
+    if (val === "estimation") return "Estimation";
+    if (val === "soumission") return "Soumission";
+    return val || "";
+  };
+  addDiff("Mode", getModeLabel(oldAct.mode), getModeLabel(newAct.mode));
+
+  // 2. Client contact info
+  const oldClient = oldAct.client || {};
+  const newClient = newAct.client || {};
+  addDiff("Client: Prénom", oldClient.first_name, newClient.first_name);
+  addDiff("Client: Nom", oldClient.last_name, newClient.last_name);
+  addDiff("Client: Téléphone", oldClient.phone, newClient.phone);
+  addDiff("Client: Courriel", oldClient.email, newClient.email);
+
+  // 3. Activity manager contact info
+  const oldManager = oldAct.activity_manager || {};
+  const newManager = newAct.activity_manager || {};
+  addDiff("Resp. Activité: Prénom", oldManager.first_name, newManager.first_name);
+  addDiff("Resp. Activité: Nom", oldManager.last_name, newManager.last_name);
+  addDiff("Resp. Activité: Téléphone", oldManager.phone, newManager.phone);
+  addDiff("Resp. Activité: Courriel", oldManager.email, newManager.email);
+
+  // 4. Reservations summary
+  const getReservationsSummary = act => {
+    if (!act.reservations || act.reservations.length === 0) return "Aucune salle";
+    return act.reservations
+      .map(r => {
+        const room = r.room_name;
+        const slotsCount = r.slots ? r.slots.length : 0;
+        return `${room} (${slotsCount} créneau${slotsCount > 1 ? "x" : ""})`;
+      })
+      .join(", ");
+  };
+  addDiff("Réservations de salles", getReservationsSummary(oldAct), getReservationsSummary(newAct));
+
+  // 5. Distributions summary
+  const getDistributionsSummary = act => {
+    if (!act.distributions || act.distributions.length === 0) return "Aucune ventilation";
+    return act.distributions
+      .map(d => {
+        return `${d.account_code} : ${formatCurrency(d.amount)}${d.reference ? ` (${d.reference})` : ""}`;
+      })
+      .join(" | ");
+  };
+  addDiff("Ventilations comptables", getDistributionsSummary(oldAct), getDistributionsSummary(newAct));
+
+  return diffs;
+}
+
 async function loadAndRenderActivityHistory(activityId) {
   const container = document.getElementById("activity-history-list");
   if (!container) return;
@@ -2719,43 +2814,98 @@ async function loadAndRenderActivityHistory(activityId) {
       return;
     }
 
+    // Fetch the current version of the activity
+    const currentAct = appState.activities.find(a => a.id === activityId);
+
     let html = "";
     versions.forEach((v, index) => {
       const dateStr = formatTimestampToFrench(v.timestamp);
       const stateLabel = getActivityStateLabel(v.state);
       const isCurrent = index === 0 ? " <span style='color: var(--success-text); font-weight: bold;'>(Actuelle)</span>" : "";
 
+      // Calculate diffs between this version and the current activity
+      const diffs = currentAct ? computeActivityDiff(v.activityData, currentAct) : [];
+
+      let diffsHtml = "";
+      if (diffs.length === 0) {
+        diffsHtml = `<div style="color: var(--text-muted); font-style: italic; margin-bottom: 8px;">Identique à la version actuelle</div>`;
+      } else {
+        diffs.forEach(d => {
+          diffsHtml += `
+            <div class="diff-line">
+              <span class="diff-field">${escapeHtml(d.label)} :</span>
+              <del class="diff-old">${escapeHtml(d.oldVal)}</del>
+              <span style="color: var(--text-muted);">➜</span>
+              <ins class="diff-new">${escapeHtml(d.newVal)}</ins>
+            </div>
+          `;
+        });
+      }
+
       html += `
-        <div class="history-item">
-          <div class="version-info">
-            <div class="version-title">Version du ${dateStr}${isCurrent}</div>
-            <div class="version-meta">
-              Statut : <span class="badge ${getActivityStateBadgeClass(v.state)}" style="font-size: 0.7rem; padding: 1px 6px;">${stateLabel}</span>
+        <div class="history-item" data-version-id="${v.versionId}">
+          <div class="history-item-header">
+            <div class="version-info">
+              <div class="version-title">Version du ${dateStr}${isCurrent}</div>
+              <div class="version-meta">
+                Statut : <span class="badge ${getActivityStateBadgeClass(v.state)}" style="font-size: 0.7rem; padding: 1px 6px;">${stateLabel}</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center;">
+              <span class="history-arrow-indicator">➔</span>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary restore-version-btn" data-version-id="${v.versionId}" style="padding: 4px 10px; font-size: 0.75rem;">
-            Restaurer
-          </button>
+          <div class="history-item-content">
+            <div style="font-weight: 600; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-primary);">Modifications apportées (par rapport à la version actuelle) :</div>
+            <div class="version-diff-container">
+              ${diffsHtml}
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+              <button type="button" class="btn btn-secondary restore-version-btn" style="padding: 4px 12px; font-size: 0.78rem;">
+                Restaurer cette version
+              </button>
+            </div>
+          </div>
         </div>
       `;
     });
 
     container.innerHTML = html;
 
-    // Wire up restore buttons
-    container.querySelectorAll(".restore-version-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const vId = btn.getAttribute("data-version-id");
-        const ver = versions.find(x => x.versionId === vId);
-        if (
-          ver &&
-          confirm(
-            `Êtes-vous sûr de vouloir restaurer l'activité à sa version du ${formatTimestampToFrench(ver.timestamp)} ? Les modifications actuelles seront écrasées.`
-          )
-        ) {
-          restoreActivityVersion(ver);
-        }
+    // Wire up expand toggles on header click
+    container.querySelectorAll(".history-item-header").forEach(header => {
+      header.addEventListener("click", () => {
+        const item = header.closest(".history-item");
+
+        // Collapse all others (accordion style)
+        container.querySelectorAll(".history-item").forEach(otherItem => {
+          if (otherItem !== item) {
+            otherItem.classList.remove("expanded");
+          }
+        });
+
+        item.classList.toggle("expanded");
       });
+    });
+
+    // Wire up restore buttons
+    container.querySelectorAll(".history-item").forEach(item => {
+      const vId = item.getAttribute("data-version-id");
+      const btn = item.querySelector(".restore-version-btn");
+      if (btn) {
+        btn.addEventListener("click", e => {
+          e.stopPropagation(); // prevent header toggle
+          const ver = versions.find(x => x.versionId === vId);
+          if (
+            ver &&
+            confirm(
+              `Êtes-vous sûr de vouloir restaurer l'activité à sa version du ${formatTimestampToFrench(ver.timestamp)} ? Les modifications actuelles seront écrasées.`
+            )
+          ) {
+            restoreActivityVersion(ver);
+          }
+        });
+      }
     });
   } catch (e) {
     console.error("Error loading versions", e);
