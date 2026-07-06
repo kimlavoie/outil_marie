@@ -911,6 +911,10 @@ tr:hover td {
   border-bottom-color: var(--primary);
 }
 
+.activity-tab-btn[data-activity-tab="history"] {
+  margin-left: auto;
+}
+
 .activity-tab-panel {
   display: none;
 }
