@@ -30,6 +30,7 @@ function renderAccountReport() {
 
   // Populate from activities
   appState.activities.forEach(act => {
+    if (act.deleted) return;
     if (act.name.trim() === "") return; // Skip blank activities
 
     // Period filter

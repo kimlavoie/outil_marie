@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Deep link: ?activity=<id> opens that activity's record directly
   // (used by the "ouvrir dans un nouvel onglet" action in the activities list)
   const activityId = new URLSearchParams(window.location.search).get("activity");
-  if (activityId && appState.activities.some(a => a.id === activityId)) {
+  if (activityId && appState.activities.some(a => a.id === activityId && !a.deleted)) {
     switchToView("activities");
     openActivityDrawer(activityId);
   }

@@ -131,6 +131,7 @@ function getActivitiesForDay(dateStr) {
   const matches = [];
 
   appState.activities.forEach(act => {
+    if (act.deleted) return;
     if (!act.name || act.name.trim() === "" || !act.date_start) return;
     const start = parseLocalDateStr(act.date_start);
     const end = act.date_end ? parseLocalDateStr(act.date_end) : start;

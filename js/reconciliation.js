@@ -181,6 +181,7 @@ function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear
 
   // 2. Loop through all activities in app database
   activities.forEach(act => {
+    if (act.deleted) return;
     if (act.name.trim() === "") return; // Skip blank activities
 
     // Period filter

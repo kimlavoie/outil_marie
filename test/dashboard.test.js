@@ -71,3 +71,14 @@ test("reconciliation rate is 0 when there are no results yet", () => {
   const stats = computeDashboardStats([], YEAR, ALL_QUARTERS, []);
   assert.equal(stats.reconciliationRate, 0);
 });
+
+test("ignores activities that are marked as deleted", () => {
+  const activities = [
+    { name: "Activité A", date_start: "2025-08-01", client_type: "externe", distributions: [{ amount: 100 }] },
+    { name: "Activité Supprimée", date_start: "2025-08-01", client_type: "externe", deleted: true, distributions: [{ amount: 500 }] }
+  ];
+
+  const stats = computeDashboardStats(activities, YEAR, ALL_QUARTERS, []);
+  assert.equal(stats.totalRevenue, 100);
+  assert.equal(stats.filledCount, 1);
+});

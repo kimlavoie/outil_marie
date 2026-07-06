@@ -354,6 +354,13 @@ function handleJsonBackupFile(file) {
           migrateSalariesConfig();
           migrateActivities();
 
+          try {
+            if (typeof clearAllActivityVersionsFromDb === "function") {
+              await clearAllActivityVersionsFromDb();
+            }
+          } catch (e) {
+            console.error("Error clearing versions during restore", e);
+          }
           await saveDatabase();
           applyTheme(appState.settings.theme || "dark");
           renderAll();
@@ -518,6 +525,7 @@ function exportToExcel() {
 
     // Filter activities for active period
     const activeActivities = appState.activities.filter(act => {
+      if (act.deleted) return false;
       if (act.name.trim() === "") return false;
       const actYear = getFiscalYear(act.date_start);
       const actQuarter = getQuarterNumber(act.date_start);

@@ -174,7 +174,7 @@ function renderGlobalSearchResults(query) {
   }
 
   const matchingActivities = appState.activities
-    .filter(act => act.name.trim() !== "")
+    .filter(act => !act.deleted && act.name.trim() !== "")
     .filter(
       act =>
         act.id.toLowerCase().includes(query) ||
@@ -281,7 +281,7 @@ function getUpcomingActivityIds() {
   windowEnd.setDate(windowEnd.getDate() + UPCOMING_ACTIVITY_WINDOW_DAYS);
 
   return appState.activities
-    .filter(act => act.name.trim() !== "" && act.date_start)
+    .filter(act => !act.deleted && act.name.trim() !== "" && act.date_start)
     .map(act => ({ id: act.id, date: parseLocalDateStr(act.date_start) }))
     .filter(entry => !isNaN(entry.date.getTime()) && entry.date >= today && entry.date <= windowEnd)
     .sort((a, b) => a.date - b.date)
@@ -372,7 +372,7 @@ function renderQuickAccessAll() {
   let totalCount = 0;
   const sectionsHtml = categories
     .map(cat => {
-      const items = cat.ids.map(id => appState.activities.find(a => a.id === id)).filter(act => act && !seen.has(act.id));
+      const items = cat.ids.map(id => appState.activities.find(a => a.id === id)).filter(act => act && !act.deleted && !seen.has(act.id));
       items.forEach(act => seen.add(act.id));
       totalCount += items.length;
       return buildQuickAccessSectionHtml(cat.label, items, cat.key);
@@ -539,6 +539,7 @@ function populateFiscalYears() {
 
   // Find any year from activities
   appState.activities.forEach(act => {
+    if (act.deleted) return;
     if (act.date_start) {
       const fy = getFiscalYear(act.date_start);
       if (fy) years.add(fy);

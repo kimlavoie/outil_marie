@@ -299,6 +299,15 @@
                     <option value="interne">Interne</option>
                     <option value="externe">Externe</option>
                   </select>
+                  <select id="filter-status" class="select-input" aria-label="Filtrer par état">
+                    <option value="">Tous les états</option>
+                    <option value="brouillon">Brouillon</option>
+                    <option value="soumise">Soumise au client</option>
+                    <option value="approuvee">Approuvée</option>
+                    <option value="planifiee">Planifiée</option>
+                    <option value="facturee">Facturée</option>
+                    <option value="terminee">Terminée</option>
+                  </select>
                   <button id="open-calendar-btn" class="btn btn-secondary" title="Voir le calendrier des événements">
                     <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px">
                       <path
@@ -322,7 +331,7 @@
                       <th data-sort="reference">RI / Facture</th>
                       <th data-sort="totalRev">Revenu Saisi</th>
                       <th data-sort="sansFrais">Sans Frais</th>
-                      <th style="width: 160px">État / Planification</th>
+                      <th style="width: 160px">État</th>
                       <th class="text-right" style="width: 100px">Actions</th>
                     </tr>
                   </thead>
@@ -689,15 +698,17 @@
 
     <!-- 1. Activity Record Drawer (3-tab lifecycle view: Soumission et contrat / Planification / Facturation) -->
     <div id="activity-drawer" class="drawer">
-      <div class="drawer-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-        <div style="display: flex; align-items: center; gap: 8px;">
+      <div class="drawer-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%">
+        <div style="display: flex; align-items: center; gap: 8px">
           <h2 id="activity-drawer-title" class="drawer-title">Activité</h2>
           <span id="auto-save-status" class="auto-save-status">
-            <svg class="auto-save-spinner" viewBox="0 0 24 24" style="display: none;"><path d="M12 4V2C6.48 2 2 6.48 2 12h2c0-4.41 3.59-8 8-8z"/></svg>
+            <svg class="auto-save-spinner" viewBox="0 0 24 24" style="display: none">
+              <path d="M12 4V2C6.48 2 2 6.48 2 12h2c0-4.41 3.59-8 8-8z" />
+            </svg>
             <span class="auto-save-text">Enregistré</span>
           </span>
         </div>
-        <button id="activity-drawer-close" class="btn-icon" aria-label="Fermer" style="margin-left: auto;">
+        <button id="activity-drawer-close" class="btn-icon" aria-label="Fermer" style="margin-left: auto">
           <svg viewBox="0 0 24 24">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
           </svg>
@@ -712,6 +723,7 @@
         <button type="button" class="activity-tab-btn active" data-activity-tab="submission">Soumission et contrat</button>
         <button type="button" class="activity-tab-btn" data-activity-tab="planning">Planification</button>
         <button type="button" class="activity-tab-btn" data-activity-tab="billing">Facturation</button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="history">Historique</button>
       </div>
 
       <div class="drawer-content">
@@ -976,6 +988,16 @@
               <div id="billing-state-status" class="file-link-status"></div>
             </div>
           </div>
+
+          <!-- ============ TAB: Historique ============ -->
+          <div id="activity-tab-panel-history" class="activity-tab-panel">
+            <div style="margin-bottom: 16px; font-size: 0.85rem; color: var(--text-muted)">
+              Consultez les versions enregistrées de cette activité et restaurez l'une d'elles en cas de besoin.
+            </div>
+            <div id="activity-history-list" class="history-list">
+              <!-- Dynamically populated list of versions -->
+            </div>
+          </div>
         </form>
       </div>
 
@@ -987,7 +1009,7 @@
           Retour au calendrier
         </button>
         <button id="activity-drawer-delete" class="btn btn-danger" style="margin-right: auto; display: none">Supprimer</button>
-        <button id="activity-drawer-submit" class="btn btn-primary" style="display: none;">Enregistrer</button>
+        <button id="activity-drawer-submit" class="btn btn-primary" style="display: none">Enregistrer</button>
       </div>
     </div>
 

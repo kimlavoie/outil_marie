@@ -76,3 +76,15 @@ test("ignores blank (unfilled) activities", () => {
   const results = matchDistributionsToLedger(activities, [], YEAR, ALL_QUARTERS);
   assert.equal(results.length, 0);
 });
+
+test("ignores deleted activities in reconciliation matching", () => {
+  const activities = [
+    activity({ name: "Activité Supprimée", deleted: true, distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] })
+  ];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
+
+  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  // It should be treated as unentered in the ledger, because the app activity is ignored/deleted
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "unentered");
+});

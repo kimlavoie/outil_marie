@@ -12,7 +12,8 @@ let activitiesState = {
   // Id of an activity currently open in the drawer that hasn't been saved yet (created via the
   // "Estimation" quick button). Discarded (removed from appState.activities, not just closed) if
   // the drawer is closed/cancelled without clicking "Enregistrer".
-  draftActivityId: null
+  draftActivityId: null,
+  openedActivitySnapshot: null
 };
 
 // Which flow the "Nom de l'activité" modal is currently serving: "soumission" creates and saves
@@ -74,11 +75,14 @@ function renderActivities() {
   const searchQuery = document.getElementById("activity-search").value.toLowerCase();
   const filterSalle = document.getElementById("filter-salle").value;
   const filterClientType = document.getElementById("filter-client-type").value;
+  const filterStatus = document.getElementById("filter-status")?.value || "";
 
   tbody.innerHTML = "";
 
   // Filter activities
   const filtered = appState.activities.filter(act => {
+    if (act.deleted) return false;
+
     // Search filter: ID, Name, Responsable, Reference, or any ventilated Account Code
     const matchesSearch =
       act.id.toLowerCase().includes(searchQuery) ||
@@ -94,6 +98,9 @@ function renderActivities() {
     // Client type filter
     const matchesClientType = !filterClientType || act.client_type === filterClientType;
 
+    // Status filter
+    const matchesStatus = !filterStatus || act.state === filterStatus;
+
     // Period filter
     let matchesPeriod = false;
     if (!act.date_start) {
@@ -104,7 +111,7 @@ function renderActivities() {
       matchesPeriod = fy === appState.selected_year && appState.selected_quarters.includes(q);
     }
 
-    return matchesSearch && matchesSalle && matchesClientType && matchesPeriod;
+    return matchesSearch && matchesSalle && matchesClientType && matchesStatus && matchesPeriod;
   });
 
   // Sort filtered activities
@@ -285,9 +292,6 @@ function renderActivities() {
           `
               : ""
           }
-          <button class="btn-icon edit-act-btn" data-id="${act.id}" title="Modifier" style="margin-right: 4px;">
-            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-          </button>
           ${
             isFilled
               ? `
@@ -331,14 +335,6 @@ function renderActivities() {
     });
   });
 
-  // Attach edit buttons event listeners
-  document.querySelectorAll(".edit-act-btn").forEach(btn => {
-    btn.addEventListener("click", e => {
-      e.stopPropagation();
-      openActivityDrawer(btn.getAttribute("data-id"));
-    });
-  });
-
   // Attach "open in new tab" buttons event listeners
   document.querySelectorAll(".open-act-tab-btn").forEach(btn => {
     btn.addEventListener("click", e => {
@@ -364,7 +360,10 @@ function renderActivities() {
       e.stopPropagation();
       const id = btn.getAttribute("data-id");
       if (confirm(`Voulez-vous vraiment supprimer l'activité ${id} ?`)) {
-        appState.activities = appState.activities.filter(a => a.id !== id);
+        const act = appState.activities.find(a => a.id === id);
+        if (act) {
+          act.deleted = true;
+        }
         appState.favorites = (appState.favorites || []).filter(f => f !== id);
         saveDatabase();
         if (reconciliationState.ledgerTransactions.length > 0) {
@@ -391,9 +390,18 @@ function initFormHandlers() {
   document.getElementById("activity-drawer-close").addEventListener("click", cancelActivityDrawer);
   backdrop.addEventListener("click", cancelActivityDrawer);
 
-  // Activity record tabs (Soumission et contrat / Planification / Facturation)
+  // Activity record tabs (Soumission et contrat / Planification / Facturation / Historique)
   document.querySelectorAll(".activity-tab-btn").forEach(btn => {
-    btn.addEventListener("click", () => switchActivityTab(btn.getAttribute("data-activity-tab")));
+    btn.addEventListener("click", () => {
+      const tabName = btn.getAttribute("data-activity-tab");
+      switchActivityTab(tabName);
+      if (tabName === "history") {
+        const id = document.getElementById("form-activity-internal-id").value;
+        if (id) {
+          loadAndRenderActivityHistory(id);
+        }
+      }
+    });
   });
 
   // Back to calendar button (only visible when opened from the calendar view)
@@ -414,6 +422,7 @@ function initFormHandlers() {
   document.getElementById("activity-search").addEventListener("input", debounce(resetActivitiesPageAndRender, 250));
   document.getElementById("filter-salle").addEventListener("change", resetActivitiesPageAndRender);
   document.getElementById("filter-client-type").addEventListener("change", resetActivitiesPageAndRender);
+  document.getElementById("filter-status").addEventListener("change", resetActivitiesPageAndRender);
 
   // Account distributions buttons
   document.getElementById("form-add-distribution-btn").addEventListener("click", () => {
@@ -718,6 +727,16 @@ function commitActivityPatch(id, patchFn) {
   saveDatabase();
   renderActivityStateBar(appState.activities[idx]);
   renderActivities();
+
+  // Save version on lifecycle patch and update the open snapshot to match
+  const updatedAct = appState.activities[idx];
+  saveActivityVersion(updatedAct).then(() => {
+    // If the drawer is currently open on this activity, update the initial snapshot to match this new state
+    const currentOpenId = document.getElementById("form-activity-internal-id").value;
+    if (currentOpenId === id) {
+      activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(updatedAct));
+    }
+  });
 }
 
 /* ==========================================================================
@@ -2244,6 +2263,8 @@ function openActivityDrawer(id, calendarReturn = null) {
   const act = appState.activities.find(a => a.id === id);
   if (!act) return;
 
+  activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(act));
+
   if (act.name.trim() !== "") {
     recordActivityView(act.id);
     renderQuickAccessAll();
@@ -2264,7 +2285,7 @@ function openActivityDrawer(id, calendarReturn = null) {
 
   const submitBtn = document.getElementById("activity-drawer-submit");
   if (submitBtn) {
-    submitBtn.style.display = (activitiesState.draftActivityId === id) ? "inline-flex" : "none";
+    submitBtn.style.display = activitiesState.draftActivityId === id ? "inline-flex" : "none";
   }
 
   activitiesState.calendarReturn = calendarReturn;
@@ -2289,6 +2310,18 @@ function openActivityDetailModal(id, calendarReturn) {
 }
 
 function closeActivityDrawer() {
+  const currentId = document.getElementById("form-activity-internal-id").value;
+  if (currentId) {
+    const currentAct = appState.activities.find(a => a.id === currentId);
+    const snapshot = activitiesState.openedActivitySnapshot;
+    if (currentAct && snapshot && currentAct.id === snapshot.id) {
+      if (JSON.stringify(currentAct) !== JSON.stringify(snapshot)) {
+        saveActivityVersion(currentAct);
+      }
+    }
+  }
+  activitiesState.openedActivitySnapshot = null;
+
   document.getElementById("activity-drawer").classList.remove("active");
   document.getElementById("drawer-backdrop").classList.remove("active");
 }
@@ -2520,8 +2553,11 @@ function deleteActivity() {
   if (!id) return;
 
   if (confirm(`Êtes-vous sûr de vouloir supprimer l'activité ${id} ?`)) {
-    // Delete the activity entirely from the database
-    appState.activities = appState.activities.filter(a => a.id !== id);
+    // Soft delete: instead of deleting from the array, mark as deleted
+    const act = appState.activities.find(a => a.id === id);
+    if (act) {
+      act.deleted = true;
+    }
     appState.favorites = (appState.favorites || []).filter(f => f !== id);
     if (activitiesState.draftActivityId === id) activitiesState.draftActivityId = null;
 
@@ -2624,4 +2660,137 @@ function getDaysOfWeekInRange(startDateStr, endDateStr) {
   }
 
   return dayStrings.join(", ");
+}
+
+// --- Activity Versioning Logic ---
+
+function formatTimestampToFrench(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return "";
+
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const seconds = String(d.getSeconds()).padStart(2, "0");
+
+  return `${day}/${month}/${year} à ${hours}h${minutes}:${seconds}`;
+}
+
+async function saveActivityVersion(act) {
+  if (!act || !act.id) return;
+  // Deep copy the activity object to prevent reference leaks
+  const activityData = JSON.parse(JSON.stringify(act));
+
+  const timestamp = new Date().toISOString();
+  const versionId = `${act.id}_${Date.now()}`;
+
+  const versionRecord = {
+    versionId,
+    activityId: act.id,
+    timestamp,
+    state: act.state,
+    activityData
+  };
+
+  try {
+    await addActivityVersionToDb(versionRecord);
+    await pruneActivityVersions(act.id, 20); // Maintain a limit of 20 versions
+  } catch (e) {
+    console.error("Error saving activity version", e);
+  }
+}
+
+async function loadAndRenderActivityHistory(activityId) {
+  const container = document.getElementById("activity-history-list");
+  if (!container) return;
+
+  container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 4px;">Chargement de l'historique...</div>`;
+
+  try {
+    const versions = await getActivityVersionsFromDb(activityId);
+    // Sort versions by timestamp descending (most recent first)
+    versions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    if (versions.length === 0) {
+      container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 4px;">Aucune version enregistrée pour cette activité.</div>`;
+      return;
+    }
+
+    let html = "";
+    versions.forEach((v, index) => {
+      const dateStr = formatTimestampToFrench(v.timestamp);
+      const stateLabel = getActivityStateLabel(v.state);
+      const isCurrent = index === 0 ? " <span style='color: var(--success-text); font-weight: bold;'>(Actuelle)</span>" : "";
+
+      html += `
+        <div class="history-item">
+          <div class="version-info">
+            <div class="version-title">Version du ${dateStr}${isCurrent}</div>
+            <div class="version-meta">
+              Statut : <span class="badge ${getActivityStateBadgeClass(v.state)}" style="font-size: 0.7rem; padding: 1px 6px;">${stateLabel}</span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary restore-version-btn" data-version-id="${v.versionId}" style="padding: 4px 10px; font-size: 0.75rem;">
+            Restaurer
+          </button>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+
+    // Wire up restore buttons
+    container.querySelectorAll(".restore-version-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const vId = btn.getAttribute("data-version-id");
+        const ver = versions.find(x => x.versionId === vId);
+        if (
+          ver &&
+          confirm(
+            `Êtes-vous sûr de vouloir restaurer l'activité à sa version du ${formatTimestampToFrench(ver.timestamp)} ? Les modifications actuelles seront écrasées.`
+          )
+        ) {
+          restoreActivityVersion(ver);
+        }
+      });
+    });
+  } catch (e) {
+    console.error("Error loading versions", e);
+    container.innerHTML = `<div style="color: var(--danger-text); font-size: 0.85rem; padding: 4px;">Erreur lors du chargement de l'historique : ${e.message}</div>`;
+  }
+}
+
+function restoreActivityVersion(versionRecord) {
+  const currentId = document.getElementById("form-activity-internal-id").value;
+  if (!currentId) return;
+
+  const idx = appState.activities.findIndex(a => a.id === currentId);
+  if (idx === -1) return;
+
+  // Restore the activity data
+  appState.activities[idx] = JSON.parse(JSON.stringify(versionRecord.activityData));
+
+  // Re-save DB
+  saveDatabase();
+
+  // Refresh the drawer fields and state bar
+  fillActivityFormFields(appState.activities[idx]);
+  renderActivityStateBar(appState.activities[idx]);
+
+  // Update openedActivitySnapshot to prevent saving immediately a new version upon closing
+  activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(appState.activities[idx]));
+
+  // Save a new version to the history representing the restored state
+  saveActivityVersion(appState.activities[idx]).then(() => {
+    // Reload history list
+    loadAndRenderActivityHistory(currentId);
+  });
+
+  // Close the drawer and refresh activities list to reflect the restored state
+  renderActivities();
+
+  alert("Version restaurée avec succès !");
 }

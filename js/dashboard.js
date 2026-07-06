@@ -16,6 +16,7 @@ function computeDashboardStats(activities, selectedYear, selectedQuarters, recon
   let filledCount = 0;
 
   activities.forEach(act => {
+    if (act.deleted) return;
     const isFilled = act.name.trim() !== "";
     if (!isFilled) return;
 
@@ -79,6 +80,7 @@ function renderDashboardCharts() {
   };
 
   appState.activities.forEach(act => {
+    if (act.deleted) return;
     if (act.name.trim() === "") return;
 
     // Period filter (check fiscal year only for quarters breakdown)
@@ -124,6 +126,7 @@ function renderDashboardCharts() {
   // 2. Revenue share by Room (salle)
   const roomSums = {};
   appState.activities.forEach(act => {
+    if (act.deleted) return;
     if (act.name.trim() === "") return;
 
     // Period filter
@@ -184,6 +187,7 @@ function renderDashboardCharts() {
   // 3. Revenues by Account
   const accountSums = {};
   appState.activities.forEach(act => {
+    if (act.deleted) return;
     if (act.name.trim() === "") return;
 
     // Period filter

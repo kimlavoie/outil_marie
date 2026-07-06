@@ -490,15 +490,85 @@ const APP_STATE_KEY = "app_state";
 
 function openAppDb() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(APP_DB_NAME, 1);
+    const req = indexedDB.open(APP_DB_NAME, 2);
     req.onupgradeneeded = e => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(APP_STORE_NAME)) {
         db.createObjectStore(APP_STORE_NAME);
       }
+      if (!db.objectStoreNames.contains("activity_versions")) {
+        const store = db.createObjectStore("activity_versions", { keyPath: "versionId" });
+        store.createIndex("activityId", "activityId", { unique: false });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
+  });
+}
+
+function addActivityVersionToDb(versionRecord) {
+  return openAppDb().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("activity_versions", "readwrite");
+      const store = tx.objectStore("activity_versions");
+      const req = store.put(versionRecord);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+function getActivityVersionsFromDb(activityId) {
+  return openAppDb().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("activity_versions", "readonly");
+      const store = tx.objectStore("activity_versions");
+      const index = store.index("activityId");
+      const req = index.getAll(activityId);
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+function pruneActivityVersions(activityId, maxVersions = 20) {
+  return getActivityVersionsFromDb(activityId).then(versions => {
+    if (versions.length <= maxVersions) return Promise.resolve();
+
+    // Sort oldest first to delete the oldest ones
+    versions.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    const toDelete = versions.slice(0, versions.length - maxVersions);
+
+    return openAppDb().then(db => {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction("activity_versions", "readwrite");
+        const store = tx.objectStore("activity_versions");
+
+        let count = 0;
+        toDelete.forEach(v => {
+          const req = store.delete(v.versionId);
+          req.onsuccess = () => {
+            count++;
+            if (count === toDelete.length) resolve();
+          };
+          req.onerror = () => reject(req.error);
+        });
+
+        if (toDelete.length === 0) resolve();
+      });
+    });
+  });
+}
+
+function clearAllActivityVersionsFromDb() {
+  return openAppDb().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("activity_versions", "readwrite");
+      const store = tx.objectStore("activity_versions");
+      const req = store.clear();
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
   });
 }
 
@@ -580,7 +650,7 @@ async function loadDatabase() {
       migrateActivities();
 
       // Drop favorites pointing at activities that no longer exist (deleted since last save)
-      appState.favorites = (appState.favorites || []).filter(id => appState.activities.some(a => a.id === id));
+      appState.favorites = (appState.favorites || []).filter(id => appState.activities.some(a => a.id === id && !a.deleted));
     } else {
       await seedDatabase();
     }
@@ -1000,6 +1070,11 @@ async function seedDatabase() {
   appState.favorites = [];
   appState.selected_year = getDefaultFiscalYear();
   appState.selected_quarters = [1, 2, 3, 4];
+  try {
+    await clearAllActivityVersionsFromDb();
+  } catch (e) {
+    console.error("Error clearing versions during seed", e);
+  }
   await saveDatabase();
 }
 
@@ -1024,6 +1099,7 @@ function saveUiState() {
       search: document.getElementById("activity-search")?.value || "",
       filterSalle: document.getElementById("filter-salle")?.value || "",
       filterClientType: document.getElementById("filter-client-type")?.value || "",
+      filterStatus: document.getElementById("filter-status")?.value || "",
       sortKey: activitiesState.sortKey,
       sortOrder: activitiesState.sortOrder,
       page: activitiesState.page,
@@ -1065,9 +1141,11 @@ function restoreUiState() {
   const searchEl = document.getElementById("activity-search");
   const salleEl = document.getElementById("filter-salle");
   const clientTypeEl = document.getElementById("filter-client-type");
+  const statusEl = document.getElementById("filter-status");
   if (searchEl && act.search !== undefined) searchEl.value = act.search;
   if (salleEl && act.filterSalle !== undefined) salleEl.value = act.filterSalle;
   if (clientTypeEl && act.filterClientType !== undefined) clientTypeEl.value = act.filterClientType;
+  if (statusEl && act.filterStatus !== undefined) statusEl.value = act.filterStatus;
   if (act.sortKey) activitiesState.sortKey = act.sortKey;
   if (act.sortOrder) activitiesState.sortOrder = act.sortOrder;
   if (act.page) activitiesState.page = act.page;
