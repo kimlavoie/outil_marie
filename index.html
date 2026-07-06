@@ -368,6 +368,7 @@
               <button class="settings-tab-btn" data-settings-panel="departments">Départements</button>
               <button class="settings-tab-btn" data-settings-panel="salaries">Salaires</button>
               <button class="settings-tab-btn" data-settings-panel="services">Services</button>
+              <button class="settings-tab-btn" data-settings-panel="global-tasks">Tâches globales</button>
             </aside>
             
             <!-- Settings Panel Content -->
@@ -434,6 +435,22 @@
                   </button>
                 </div>
                 <div id="settings-services-list" class="settings-list">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+
+              <!-- 4.6 Global tasks settings panel -->
+              <div id="panel-global-tasks" class="settings-panel">
+                <div class="settings-panel-header">
+                  <h3 class="settings-panel-title">Tâches globales de planification</h3>
+                  <button id="add-global-task-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
+                    + Ajouter une tâche globale
+                  </button>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 12px;">
+                  Ces tâches sont ajoutées automatiquement à la liste de planification de chaque activité lors de l'insertion automatique des tâches.
+                </p>
+                <div id="settings-global-tasks-list" class="settings-list">
                   <!-- Dynamically populated -->
                 </div>
               </div>
@@ -1034,6 +1051,29 @@
     <div class="modal-footer">
       <button id="dept-modal-cancel" class="btn btn-secondary">Annuler</button>
       <button id="dept-modal-submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- Global Task Add/Edit Modal -->
+  <div id="global-task-modal" class="modal">
+    <div class="modal-header">
+      <h3 id="global-task-modal-title" class="modal-title">Ajouter une tâche globale</h3>
+      <button id="global-task-modal-close" class="btn-icon" aria-label="Fermer">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="modal-content">
+      <form id="global-task-form">
+        <input type="hidden" id="form-global-task-original-id">
+        <div class="form-group">
+          <label for="form-global-task-desc">Description de la tâche</label>
+          <input type="text" id="form-global-task-desc" class="form-input" required placeholder="Ex: Envoyer la confirmation au client">
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button id="global-task-modal-cancel" class="btn btn-secondary">Annuler</button>
+      <button id="global-task-modal-submit" class="btn btn-primary">Enregistrer</button>
     </div>
   </div>
 

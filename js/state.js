@@ -76,7 +76,8 @@ const DEFAULT_CONFIG = {
     { id: "salary-as", job: "Agent de sécurité", rate_versions: [{ id: "rv-as", effective_date: "", rate: 50 }] },
     { id: "salary-sauveteur", job: "Sauveteur", rate_versions: [{ id: "rv-sauveteur", effective_date: "", rate: 42 }] }
   ],
-  services: []
+  services: [],
+  global_tasks: []
 };
 
 const TECHNICAL_SERVICES = ["Microphone", "Écran projecteur", "Éclairage de scène", "Musique d'ambiance", "Fichier audio, vidéo ou présentation PowerPoint"];
@@ -101,7 +102,8 @@ let appState = {
     last_backup_date: "",
     backup_reminder_days: 7,
     salaries: [...DEFAULT_CONFIG.salaries],
-    services: [...DEFAULT_CONFIG.services]
+    services: [...DEFAULT_CONFIG.services],
+    global_tasks: [...DEFAULT_CONFIG.global_tasks]
   },
   activities: [],
   favorites: [], // ids of activities pinned (by the user) to the "Accès rapide" list
@@ -285,6 +287,7 @@ async function loadDatabase() {
       if (!appState.settings.departments) appState.settings.departments = [...DEFAULT_CONFIG.departments];
       if (!appState.settings.salaries || appState.settings.salaries.length === 0) appState.settings.salaries = [...DEFAULT_CONFIG.salaries];
       if (!appState.settings.services) appState.settings.services = [...DEFAULT_CONFIG.services];
+      if (!appState.settings.global_tasks) appState.settings.global_tasks = [...DEFAULT_CONFIG.global_tasks];
       if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
       appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
       if (isNaN(appState.settings.backup_reminder_days)) {
@@ -511,7 +514,8 @@ async function seedDatabase() {
     accounts: [...DEFAULT_CONFIG.accounts].sort((a, b) => a.code.localeCompare(b.code)),
     last_backup_date: "",
     backup_reminder_days: 7,
-    salaries: [...DEFAULT_CONFIG.salaries]
+    salaries: [...DEFAULT_CONFIG.salaries],
+    global_tasks: [...DEFAULT_CONFIG.global_tasks]
   };
 
   appState.activities = [];

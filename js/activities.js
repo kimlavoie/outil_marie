@@ -906,7 +906,8 @@ function persistPlanningTasks() {
 
 // Derives the planning checklist from the Soumission tab's data: one room-reservation task per
 // room (naming any linked rooms that come along with it), a personnel-reservation task per room
-// that has staff attached, and one task per linked "tâche du gestionnaire" on that room's config.
+// that has staff attached, one task per linked "tâche du gestionnaire" on that room's config, and
+// one task per configured global task (Configuration > Tâches globales).
 function generatePlanningTasks(act) {
   if ((act.planning_tasks || []).length > 0) return;
 
@@ -927,6 +928,10 @@ function generatePlanningTasks(act) {
     (roomConfig ? roomConfig.linked_tasks || [] : []).forEach(lt => {
       tasks.push({ id: generateUid("task"), description: lt.description, done: false, auto_generated: true });
     });
+  });
+
+  (appState.settings.global_tasks || []).forEach(gt => {
+    tasks.push({ id: generateUid("task"), description: gt.description, done: false, auto_generated: true });
   });
 
   commitActivityPatch(act.id, (a) => { a.planning_tasks = tasks; });

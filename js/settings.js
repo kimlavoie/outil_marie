@@ -78,6 +78,12 @@ function initSettingsHandlers() {
   document.getElementById("add-service-btn").addEventListener("click", () => openServiceModal());
   document.getElementById("service-modal-submit").addEventListener("click", submitServiceForm);
   document.getElementById("form-add-service-rate-btn").addEventListener("click", () => addServiceRateRow());
+
+  // Global tasks CRUD modal handlers
+  document.getElementById("global-task-modal-close").addEventListener("click", () => closeSettingsModal("global-task"));
+  document.getElementById("global-task-modal-cancel").addEventListener("click", () => closeSettingsModal("global-task"));
+  document.getElementById("add-global-task-btn").addEventListener("click", () => openGlobalTaskModal());
+  document.getElementById("global-task-modal-submit").addEventListener("click", submitGlobalTaskForm);
 }
 
 function renderSettings() {
@@ -86,6 +92,7 @@ function renderSettings() {
   renderDepartmentsList();
   renderSalariesList();
   renderServicesList();
+  renderGlobalTasksList();
 }
 
 function closeSettingsModal(type) {
@@ -1112,6 +1119,95 @@ function deleteService(id) {
 
   if (confirm(`Voulez-vous vraiment supprimer le service "${serviceName}" ?`)) {
     appState.settings.services = services.filter(s => s.id !== id);
+    saveDatabase();
+    renderSettings();
+  }
+}
+
+/* ==========================================================================
+   GLOBAL TASKS SETTINGS (auto-inserted into every activity's planning checklist)
+   ========================================================================== */
+
+function renderGlobalTasksList() {
+  const container = document.getElementById("settings-global-tasks-list");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const globalTasks = appState.settings.global_tasks || [];
+  globalTasks.forEach(t => {
+    container.innerHTML += `
+      <div class="settings-list-item">
+        <div class="settings-list-item-info">
+          <span class="settings-list-item-desc">${t.description}</span>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-icon edit-global-task-btn" data-id="${t.id}" title="Modifier">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </button>
+          <button class="btn-icon delete-global-task-btn" data-id="${t.id}" title="Supprimer" style="color: var(--danger);">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  document.querySelectorAll(".edit-global-task-btn").forEach(btn => {
+    btn.addEventListener("click", () => openGlobalTaskModal(btn.getAttribute("data-id")));
+  });
+  document.querySelectorAll(".delete-global-task-btn").forEach(btn => {
+    btn.addEventListener("click", () => deleteGlobalTask(btn.getAttribute("data-id")));
+  });
+}
+
+function openGlobalTaskModal(id = null) {
+  const form = document.getElementById("global-task-form");
+  const title = document.getElementById("global-task-modal-title");
+  form.reset();
+
+  if (id) {
+    title.textContent = "Modifier la tâche globale";
+    const task = (appState.settings.global_tasks || []).find(t => t.id === id);
+    if (task) {
+      document.getElementById("form-global-task-original-id").value = task.id;
+      document.getElementById("form-global-task-desc").value = task.description;
+    }
+  } else {
+    title.textContent = "Ajouter une tâche globale";
+    document.getElementById("form-global-task-original-id").value = "";
+  }
+  openSettingsModal("global-task");
+}
+
+function submitGlobalTaskForm(e) {
+  e.preventDefault();
+  const originalId = document.getElementById("form-global-task-original-id").value;
+  const description = document.getElementById("form-global-task-desc").value.trim();
+
+  if (!description) {
+    alert("Veuillez saisir une description.");
+    return;
+  }
+
+  const globalTasks = appState.settings.global_tasks || [];
+
+  if (originalId) {
+    const idx = globalTasks.findIndex(t => t.id === originalId);
+    if (idx !== -1) globalTasks[idx].description = description;
+  } else {
+    globalTasks.push({ id: generateUid("global-task"), description });
+  }
+
+  appState.settings.global_tasks = globalTasks;
+
+  saveDatabase();
+  closeSettingsModal("global-task");
+  renderSettings();
+}
+
+function deleteGlobalTask(id) {
+  if (confirm("Voulez-vous vraiment supprimer cette tâche globale ?")) {
+    appState.settings.global_tasks = (appState.settings.global_tasks || []).filter(t => t.id !== id);
     saveDatabase();
     renderSettings();
   }
