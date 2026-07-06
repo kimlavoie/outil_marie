@@ -806,13 +806,15 @@ function renderSalariesList() {
   const salaries = appState.settings.salaries || [];
   salaries.forEach(sal => {
     const currentRate = getActiveSalaryRate(sal, "");
+    const currentOvertimeRate = getActiveSalaryOvertimeRate(sal, "");
+    const overtimeNote = currentOvertimeRate > 0 ? ` · ${parseFloat(currentOvertimeRate).toFixed(2)} $ / heure (temps sup.)` : "";
     const versionCount = (sal.rate_versions || []).length;
     const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
     container.innerHTML += `
       <div class="settings-list-item">
         <div class="settings-list-item-info">
           <span class="settings-list-item-code" style="font-family: inherit;">${sal.job}</span>
-          <span class="settings-list-item-desc">${parseFloat(currentRate).toFixed(2)} $ / heure${versionNote}</span>
+          <span class="settings-list-item-desc">${parseFloat(currentRate).toFixed(2)} $ / heure${overtimeNote}${versionNote}</span>
         </div>
         <div class="flex gap-2">
           <button class="btn-icon edit-salary-btn" data-id="${sal.id}" title="Modifier">
@@ -850,24 +852,25 @@ function openSalaryModal(id = null) {
       document.getElementById("form-salary-original-id").value = sal.id;
       document.getElementById("form-salary-job").value = sal.job;
       document.getElementById("form-salary-gl-account").innerHTML = buildGlAccountOptionsHtml(sal.gl_account_code || "");
-      (sal.rate_versions || []).forEach(v => addSalaryRateRow(v.effective_date, v.rate));
+      (sal.rate_versions || []).forEach(v => addSalaryRateRow(v.effective_date, v.rate, v.overtime_rate));
     }
   } else {
     title.textContent = "Ajouter un emploi";
     document.getElementById("form-salary-original-id").value = "";
-    addSalaryRateRow("", "");
+    addSalaryRateRow("", "", "");
   }
   openSettingsModal("salary");
 }
 
-function addSalaryRateRow(effectiveDate = "", rate = "") {
+function addSalaryRateRow(effectiveDate = "", rate = "", overtimeRate = "") {
   const container = document.getElementById("form-salary-rates-list");
   const rowId = generateUid("salary-rate-row");
 
   const rowHtml = `
-    <div id="${rowId}" class="distribution-row room-tarif-row">
+    <div id="${rowId}" class="distribution-row" style="grid-template-columns: 1.4fr 1fr 1fr auto;">
       <input type="text" class="form-input salary-rate-date-input" value="${effectiveDate || ""}" placeholder="AAAA-MM-JJ (vide = depuis toujours)" style="padding: 8px 12px; font-size: 0.85rem;">
-      <input type="number" class="form-input salary-rate-amount-input" min="0" step="0.01" value="${rate !== "" ? rate : ""}" placeholder="Taux $/heure" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" class="form-input salary-rate-amount-input" min="0" step="0.01" value="${rate !== "" ? rate : ""}" placeholder="Taux régulier $/h" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" class="form-input salary-rate-overtime-input" min="0" step="0.01" value="${overtimeRate !== "" && overtimeRate !== undefined ? overtimeRate : ""}" placeholder="Taux temps sup. $/h" title="Taux horaire en temps supplémentaire (optionnel)" style="padding: 8px 12px; font-size: 0.85rem;">
       <button type="button" class="btn-icon delete-salary-rate-row-btn" data-row-id="${rowId}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
@@ -895,14 +898,18 @@ function submitSalaryForm(e) {
   document.querySelectorAll("#form-salary-rates-list .distribution-row").forEach(row => {
     const dateStr = row.querySelector(".salary-rate-date-input").value.trim();
     const rateStr = row.querySelector(".salary-rate-amount-input").value.trim();
+    const overtimeRateStr = row.querySelector(".salary-rate-overtime-input").value.trim();
     const rate = parseFloat(rateStr);
-    if (!dateStr && !rateStr) return;
+    const overtimeRate = overtimeRateStr ? parseFloat(overtimeRateStr) : 0;
+    if (!dateStr && !rateStr && !overtimeRateStr) return;
     if (!rateStr || isNaN(rate) || rate < 0) {
       rateErrorMsg = "Veuillez saisir un taux horaire valide (supérieur ou égal à 0) pour chaque version.";
+    } else if (overtimeRateStr && (isNaN(overtimeRate) || overtimeRate < 0)) {
+      rateErrorMsg = "Veuillez saisir un taux de temps supplémentaire valide (supérieur ou égal à 0), ou le laisser vide.";
     } else if (dateStr && !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
       rateErrorMsg = "La date d'entrée en vigueur doit être au format AAAA-MM-JJ, ou vide.";
     } else {
-      rateVersions.push({ id: generateUid("rv"), effective_date: dateStr, rate });
+      rateVersions.push({ id: generateUid("rv"), effective_date: dateStr, rate, overtime_rate: overtimeRate });
     }
   });
 

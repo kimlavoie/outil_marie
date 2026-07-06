@@ -19,11 +19,23 @@ function buildSeedPricingGrid(gridId, paramId, tarifPairs) {
 
 const DEFAULT_CONFIG = {
   rooms: [
-    { name: "POLY", color: "#4f46e5", pricing_grids: [buildSeedPricingGrid("grid-poly", "param-poly", [{ description: "Interne", amount: 175.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "SALON", color: "#059669", pricing_grids: [buildSeedPricingGrid("grid-salon", "param-salon", [{ description: "Interne", amount: 50.0 }, { description: "Externe", amount: 100.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "SFB-SALON-HALL", color: "#d97706", pricing_grids: [buildSeedPricingGrid("grid-sfbsh", "param-sfbsh", [{ description: "Interne", amount: 200.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "SFB-POLY", color: "#db2777", pricing_grids: [buildSeedPricingGrid("grid-sfbp", "param-sfbp", [{ description: "Interne", amount: 375.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "HALL SFB", color: "#0891b2", pricing_grids: [buildSeedPricingGrid("grid-hallsfb", "param-hallsfb", [{ description: "Interne", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] }
+    { name: "Salle Polyvalente (200.2)", color: "#4f46e5", pricing_grids: [buildSeedPricingGrid("grid-poly", "param-poly", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Salle François-Brassard (326.1)", color: "#059669", pricing_grids: [buildSeedPricingGrid("grid-sfb", "param-sfb", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Hall de la salle François-Brassard (341.1)", color: "#d97706", pricing_grids: [buildSeedPricingGrid("grid-hall-sfb", "param-hall-sfb", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Petit salon de la salle François-Brassard (326.1)", color: "#db2777", pricing_grids: [buildSeedPricingGrid("grid-salon-sfb", "param-salon-sfb", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Billetterie de la salle François-Brassard (320.1)", color: "#0891b2", pricing_grids: [buildSeedPricingGrid("grid-billetterie", "param-billetterie", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Pas perdus (201.2)", color: "#7c3aed", pricing_grids: [buildSeedPricingGrid("grid-pas-perdus", "param-pas-perdus", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Cafétéria (120.2)", color: "#ea580c", pricing_grids: [buildSeedPricingGrid("grid-cafeteria", "param-cafeteria", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Cantine Pavillon J.-Angers (CANATM)", color: "#0284c7", pricing_grids: [buildSeedPricingGrid("grid-cantine-jangers", "param-cantine-jangers", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Cantine Pavillon Lionel-Gaudreault (CANPLG)", color: "#65a30d", pricing_grids: [buildSeedPricingGrid("grid-cantine-plg", "param-cantine-plg", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Piscine (261.1)", color: "#0d9488", pricing_grids: [buildSeedPricingGrid("grid-piscine", "param-piscine", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Gymnase (249.1)", color: "#ca8a04", pricing_grids: [buildSeedPricingGrid("grid-gymnase", "param-gymnase", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Jardin intérieur (JAR.1)", color: "#16a34a", pricing_grids: [buildSeedPricingGrid("grid-jardin", "param-jardin", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Terrain forêt nourricière (FON.1)", color: "#4d7c0f", pricing_grids: [buildSeedPricingGrid("grid-foret", "param-foret", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Terrain Piékouagami-PLG (TER-03)", color: "#9333ea", pricing_grids: [buildSeedPricingGrid("grid-piekouagami", "param-piekouagami", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Surface synthétique (EDU.1)", color: "#be185d", pricing_grids: [buildSeedPricingGrid("grid-synthetique", "param-synthetique", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Local Club social (841.0)", color: "#475569", pricing_grids: [buildSeedPricingGrid("grid-club-social", "param-club-social", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
+    { name: "Hall de la direction générale (HALLDG)", color: "#0891b2", pricing_grids: [buildSeedPricingGrid("grid-halldg", "param-halldg", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] }
   ],
   departments: [
     "ACEECJ",
@@ -69,15 +81,18 @@ const DEFAULT_CONFIG = {
     { code: "892-9020-07-889", description: "INTERNE (PROJO POLY)" }
   ],
   salaries: [
-    { id: "salary-dt", job: "Directeur technique", rate_versions: [{ id: "rv-dt", effective_date: "", rate: 74 }] },
-    { id: "salary-tc", job: "Technicien contractuel", rate_versions: [{ id: "rv-tc", effective_date: "", rate: 57 }] },
-    { id: "salary-aet", job: "Appariteur étudiant technicien", rate_versions: [{ id: "rv-aet", effective_date: "", rate: 37 }] },
-    { id: "salary-hote", job: "Hôte", rate_versions: [{ id: "rv-hote", effective_date: "", rate: 27 }] },
-    { id: "salary-as", job: "Agent de sécurité", rate_versions: [{ id: "rv-as", effective_date: "", rate: 50 }] },
-    { id: "salary-sauveteur", job: "Sauveteur", rate_versions: [{ id: "rv-sauveteur", effective_date: "", rate: 42 }] }
+    { id: "salary-dt", job: "Directeur technique", rate_versions: [{ id: "rv-dt", effective_date: "", rate: 74, overtime_rate: 0 }] },
+    { id: "salary-tc", job: "Technicien contractuel", rate_versions: [{ id: "rv-tc", effective_date: "", rate: 57, overtime_rate: 0 }] },
+    { id: "salary-aet", job: "Appariteur étudiant technicien", rate_versions: [{ id: "rv-aet", effective_date: "", rate: 37, overtime_rate: 0 }] },
+    { id: "salary-hote", job: "Hôte", rate_versions: [{ id: "rv-hote", effective_date: "", rate: 27, overtime_rate: 0 }] },
+    { id: "salary-as", job: "Agent de sécurité", rate_versions: [{ id: "rv-as", effective_date: "", rate: 50, overtime_rate: 0 }] },
+    { id: "salary-sauveteur", job: "Sauveteur", rate_versions: [{ id: "rv-sauveteur", effective_date: "", rate: 42, overtime_rate: 0 }] }
   ],
   services: [],
-  global_tasks: []
+  global_tasks: [
+    { id: "global-task-dossier-serveur", description: "Créer un dossier sur le serveur" },
+    { id: "global-task-dossier-outlook", description: "Créer un dossier dans Outlook" }
+  ]
 };
 
 const TECHNICAL_SERVICES = ["Microphone", "Écran projecteur", "Éclairage de scène", "Musique d'ambiance", "Fichier audio, vidéo ou présentation PowerPoint"];
@@ -287,7 +302,7 @@ async function loadDatabase() {
       if (!appState.settings.departments) appState.settings.departments = [...DEFAULT_CONFIG.departments];
       if (!appState.settings.salaries || appState.settings.salaries.length === 0) appState.settings.salaries = [...DEFAULT_CONFIG.salaries];
       if (!appState.settings.services) appState.settings.services = [...DEFAULT_CONFIG.services];
-      if (!appState.settings.global_tasks) appState.settings.global_tasks = [...DEFAULT_CONFIG.global_tasks];
+      if (!appState.settings.global_tasks || appState.settings.global_tasks.length === 0) appState.settings.global_tasks = [...DEFAULT_CONFIG.global_tasks];
       if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
       appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
       if (isNaN(appState.settings.backup_reminder_days)) {
@@ -349,12 +364,17 @@ function migrateRoomsConfig() {
   });
 }
 
-// Migrate legacy flat salary rate to a versioned rate history per job
+// Migrate legacy flat salary rate to a versioned rate history per job, and ensure every
+// version carries an overtime_rate (added later, defaults to 0 for pre-existing versions).
 function migrateSalariesConfig() {
   (appState.settings.salaries || []).forEach(sal => {
-    if (sal.rate_versions) return; // already migrated
-    sal.rate_versions = [{ id: generateUid("rv"), effective_date: "", rate: sal.rate || 0 }];
-    delete sal.rate;
+    if (!sal.rate_versions) {
+      sal.rate_versions = [{ id: generateUid("rv"), effective_date: "", rate: sal.rate || 0 }];
+      delete sal.rate;
+    }
+    sal.rate_versions.forEach(v => {
+      if (v.overtime_rate === undefined) v.overtime_rate = 0;
+    });
   });
 }
 
@@ -373,17 +393,29 @@ function getActivePricingGrid(room, dateStr) {
   return applicable;
 }
 
-// Returns the salary rate in effect for `dateStr` (same resolution rule as getActivePricingGrid)
-function getActiveSalaryRate(salary, dateStr) {
-  const versions = (salary && salary.rate_versions) || [];
+// Resolves the value of `field` from whichever rate version is in effect for `dateStr` (the
+// most recent version whose effective_date is empty or <= dateStr; falls back to the earliest
+// version if dateStr is empty or precedes every version).
+function getActiveRateVersionField(versions, dateStr, field) {
+  versions = versions || [];
   if (versions.length === 0) return 0;
   const sorted = [...versions].sort((a, b) => (a.effective_date || "").localeCompare(b.effective_date || ""));
-  if (!dateStr) return sorted[0].rate;
+  if (!dateStr) return sorted[0][field] || 0;
   let applicable = sorted[0];
   sorted.forEach(v => {
     if (!v.effective_date || v.effective_date <= dateStr) applicable = v;
   });
-  return applicable.rate;
+  return applicable[field] || 0;
+}
+
+// Returns the salary rate in effect for `dateStr` (same resolution rule as getActivePricingGrid)
+function getActiveSalaryRate(salary, dateStr) {
+  return getActiveRateVersionField(salary && salary.rate_versions, dateStr, "rate");
+}
+
+// Returns the overtime (temps supplémentaire) rate in effect for `dateStr`
+function getActiveSalaryOvertimeRate(salary, dateStr) {
+  return getActiveRateVersionField(salary && salary.rate_versions, dateStr, "overtime_rate");
 }
 
 // Returns the service rate in effect for `dateStr` (services share the same versioned
@@ -465,6 +497,7 @@ function migrateActivities() {
     });
 
     if (act.description === undefined) act.description = "";
+    if (act.coba === undefined) act.coba = "";
     if (!act.activity_manager) {
       act.activity_manager = { first_name: "", last_name: "", type: "employe", phone: "", email: "" };
     }
@@ -495,6 +528,7 @@ function migrateActivities() {
     if (act.mode === undefined) act.mode = "soumission";
     if (!act.client) act.client = { first_name: "", last_name: "", phone: "", email: "" };
     if (!act.staff) act.staff = [];
+    act.staff.forEach(s => { if (s.overtime_hours === undefined) s.overtime_hours = 0; });
     if (!act.fees) act.fees = [];
     if (!act.services) act.services = [];
     if (!act.submission) act.submission = { file_link_id: "", generated_at: "", sent_at: "" };
