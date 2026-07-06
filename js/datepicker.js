@@ -45,7 +45,7 @@ function initCustomDatepickers() {
 
   // Single delegated "click outside" listener for every datepicker wrapper
   // (including ones added dynamically later), instead of one per wrapper.
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", e => {
     document.querySelectorAll(".calendar-popover.active").forEach(popover => {
       const wrapper = popover.closest(".datepicker-wrapper");
       if (wrapper && !wrapper.contains(e.target)) {
@@ -101,7 +101,20 @@ function renderCalendar(popover, input, displayDate) {
   const month = displayDate.getMonth(); // 0-11
 
   // Month names in French
-  const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+  const monthNames = [
+    "Janvier",
+    "Février",
+    "Mars",
+    "Avril",
+    "Mai",
+    "Juin",
+    "Juillet",
+    "Août",
+    "Septembre",
+    "Octobre",
+    "Novembre",
+    "Décembre"
+  ];
 
   // Days of week headers
   const daysHeaderHtml = ["D", "L", "M", "M", "J", "V", "S"].map(d => `<div class="calendar-day-header">${d}</div>`).join("");
@@ -134,7 +147,7 @@ function renderCalendar(popover, input, displayDate) {
   const maxDate = fyRange ? parseLocalDateStr(fyRange.end) : null;
 
   for (let i = 1; i <= lastDay; i++) {
-    const isSelected = (activeYear === year && activeMonth === month && activeDay === i) ? "selected" : "";
+    const isSelected = activeYear === year && activeMonth === month && activeDay === i ? "selected" : "";
     const dayDate = new Date(year, month, i);
     const isDisabled = (minDate && dayDate < minDate) || (maxDate && dayDate > maxDate);
     daysHtml += `<div class="calendar-day ${isSelected}${isDisabled ? " disabled" : ""}" ${isDisabled ? "" : `data-day="${i}"`}>${i}</div>`;
@@ -160,13 +173,13 @@ function renderCalendar(popover, input, displayDate) {
   `;
 
   // Wire nav buttons
-  popover.querySelector(".prev-btn").addEventListener("click", (e) => {
+  popover.querySelector(".prev-btn").addEventListener("click", e => {
     e.stopPropagation();
     displayDate.setMonth(displayDate.getMonth() - 1);
     renderCalendar(popover, input, displayDate);
   });
 
-  popover.querySelector(".next-btn").addEventListener("click", (e) => {
+  popover.querySelector(".next-btn").addEventListener("click", e => {
     e.stopPropagation();
     displayDate.setMonth(displayDate.getMonth() + 1);
     renderCalendar(popover, input, displayDate);
@@ -174,12 +187,12 @@ function renderCalendar(popover, input, displayDate) {
 
   // Wire day clicks
   popover.querySelectorAll(".calendar-grid .calendar-day").forEach(dayEl => {
-    dayEl.addEventListener("click", (e) => {
+    dayEl.addEventListener("click", e => {
       e.stopPropagation();
       const day = dayEl.getAttribute("data-day");
       if (day) {
-        const paddedMonth = String(month + 1).padStart(2, '0');
-        const paddedDay = String(day).padStart(2, '0');
+        const paddedMonth = String(month + 1).padStart(2, "0");
+        const paddedDay = String(day).padStart(2, "0");
         input.value = `${year}-${paddedMonth}-${paddedDay}`;
         popover.classList.remove("active");
 

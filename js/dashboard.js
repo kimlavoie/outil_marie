@@ -54,12 +54,7 @@ function computeDashboardStats(activities, selectedYear, selectedQuarters, recon
 }
 
 function renderDashboard() {
-  const stats = computeDashboardStats(
-    appState.activities,
-    appState.selected_year,
-    appState.selected_quarters,
-    reconciliationState.results
-  );
+  const stats = computeDashboardStats(appState.activities, appState.selected_year, appState.selected_quarters, reconciliationState.results);
 
   document.getElementById("stat-revenue-total").textContent = formatCurrency(stats.totalRevenue);
   document.getElementById("stat-revenue-internal-free").textContent = formatCurrency(stats.totalInternalFree);
@@ -102,14 +97,16 @@ function renderDashboardCharts() {
     type: "bar",
     data: {
       labels: Object.keys(quarterlySums),
-      datasets: [{
-        label: "Revenus réels ($)",
-        data: Object.values(quarterlySums),
-        backgroundColor: "rgba(59, 130, 246, 0.75)",
-        borderColor: "#3b82f6",
-        borderWidth: 2,
-        borderRadius: 6
-      }]
+      datasets: [
+        {
+          label: "Revenus réels ($)",
+          data: Object.values(quarterlySums),
+          backgroundColor: "rgba(59, 130, 246, 0.75)",
+          borderColor: "#3b82f6",
+          borderWidth: 2,
+          borderRadius: 6
+        }
+      ]
     },
     options: {
       responsive: true,
@@ -136,7 +133,7 @@ function renderDashboardCharts() {
       return;
     }
 
-    const rName = (act.rooms && act.rooms.length) ? act.rooms.map(r => r.name).join(", ") : "Inconnue";
+    const rName = act.reservations && act.reservations.length ? act.reservations.map(getReservationRoomLabel).join(", ") : "Inconnue";
     const sumDist = act.distributions.reduce((sum, dist) => sum + dist.amount, 0);
     roomSums[rName] = (roomSums[rName] || 0) + sumDist;
   });
@@ -156,19 +153,21 @@ function renderDashboardCharts() {
     type: "doughnut",
     data: {
       labels: roomLabels,
-      datasets: [{
-        data: roomData,
-        backgroundColor: [
-          "#3b82f6", // Blue
-          "#10b981", // Green
-          "#8b5cf6", // Purple
-          "#f59e0b", // Yellow/Orange
-          "#f43f5e", // Pink/Red
-          "#14b8a6", // Teal
-        ],
-        borderWidth: isDark ? 2 : 1,
-        borderColor: isDark ? "#111827" : "#ffffff"
-      }]
+      datasets: [
+        {
+          data: roomData,
+          backgroundColor: [
+            "#3b82f6", // Blue
+            "#10b981", // Green
+            "#8b5cf6", // Purple
+            "#f59e0b", // Yellow/Orange
+            "#f43f5e", // Pink/Red
+            "#14b8a6" // Teal
+          ],
+          borderWidth: isDark ? 2 : 1,
+          borderColor: isDark ? "#111827" : "#ffffff"
+        }
+      ]
     },
     options: {
       responsive: true,
@@ -215,14 +214,16 @@ function renderDashboardCharts() {
     type: "bar",
     data: {
       labels: accLabels,
-      datasets: [{
-        label: "Revenus ($)",
-        data: accData,
-        backgroundColor: "rgba(139, 92, 246, 0.75)",
-        borderColor: "#8b5cf6",
-        borderWidth: 2,
-        borderRadius: 4
-      }]
+      datasets: [
+        {
+          label: "Revenus ($)",
+          data: accData,
+          backgroundColor: "rgba(139, 92, 246, 0.75)",
+          borderColor: "#8b5cf6",
+          borderWidth: 2,
+          borderRadius: 4
+        }
+      ]
     },
     options: {
       responsive: true,

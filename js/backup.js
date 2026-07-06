@@ -214,7 +214,7 @@ async function writeAutoBackupNow() {
     // A successful auto backup counts as a real backup for reminder purposes.
     // Saved directly (not via saveDatabase()) to avoid re-triggering this
     // same debounced write in a loop.
-    const today = autoBackupLastWrite.toISOString().split('T')[0];
+    const today = autoBackupLastWrite.toISOString().split("T")[0];
     if (appState.settings.last_backup_date !== today) {
       appState.settings.last_backup_date = today;
       await saveAppStateToDb(appState);
@@ -230,7 +230,7 @@ function initBackupHandlers() {
   // Export JSON Backup
   document.getElementById("backup-export-json").addEventListener("click", async () => {
     // Update last backup date to today before export
-    appState.settings.last_backup_date = new Date().toISOString().split('T')[0];
+    appState.settings.last_backup_date = new Date().toISOString().split("T")[0];
     await saveDatabase();
 
     // Refresh banner and backup view
@@ -238,10 +238,10 @@ function initBackupHandlers() {
     renderBackupView();
 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
-    const dlAnchorElem = document.createElement('a');
+    const dlAnchorElem = document.createElement("a");
     dlAnchorElem.setAttribute("href", dataStr);
 
-    const timestamp = new Date().toISOString().split('T')[0];
+    const timestamp = new Date().toISOString().split("T")[0];
     dlAnchorElem.setAttribute("download", `compta_marie_sauvegarde_${timestamp}.json`);
     dlAnchorElem.click();
   });
@@ -252,7 +252,7 @@ function initBackupHandlers() {
 
   jsonDropZone.addEventListener("click", () => jsonFileInput.click());
 
-  jsonFileInput.addEventListener("change", (e) => {
+  jsonFileInput.addEventListener("change", e => {
     const file = e.target.files[0];
     if (file) handleJsonBackupFile(file);
   });
@@ -264,7 +264,11 @@ function initBackupHandlers() {
 
   // Reset database button
   document.getElementById("backup-reset-db").addEventListener("click", async () => {
-    if (confirm("ATTENTION : Cette action va supprimer définitivement toutes vos activités enregistrées. Les comptes, tarifs de salles et départements seront réinitialisés à leurs valeurs d'origine. Voulez-vous continuer ?")) {
+    if (
+      confirm(
+        "ATTENTION : Cette action va supprimer définitivement toutes vos activités enregistrées. Les comptes, tarifs de salles et départements seront réinitialisés à leurs valeurs d'origine. Voulez-vous continuer ?"
+      )
+    ) {
       await seedDatabase();
       applyTheme("dark");
       renderAll();
@@ -276,7 +280,7 @@ function initBackupHandlers() {
   // Reminder days input event handler
   const reminderInput = document.getElementById("backup-reminder-days-input");
   if (reminderInput) {
-    reminderInput.addEventListener("change", (e) => {
+    reminderInput.addEventListener("change", e => {
       let val = parseInt(e.target.value, 10);
       if (isNaN(val) || val < 1) {
         val = 7;
@@ -300,7 +304,7 @@ function initBackupHandlers() {
   // Automatic file backup controls (event delegation: buttons are re-rendered)
   const autoBackupContainer = document.getElementById("auto-backup-status");
   if (autoBackupContainer) {
-    autoBackupContainer.addEventListener("click", (e) => {
+    autoBackupContainer.addEventListener("click", e => {
       if (e.target.id === "auto-backup-connect-btn") connectAutoBackupFile();
       else if (e.target.id === "auto-backup-reconnect-btn") reconnectAutoBackupPermission();
       else if (e.target.id === "auto-backup-disconnect-btn") disconnectAutoBackup();
@@ -320,7 +324,7 @@ function initBackupHandlers() {
 function handleJsonBackupFile(file) {
   const reader = new FileReader();
 
-  reader.onload = async function(e) {
+  reader.onload = async function (e) {
     try {
       const parsed = JSON.parse(e.target.result);
       if (parsed.settings && parsed.activities) {
@@ -372,7 +376,7 @@ function getDaysSinceLastBackup() {
   if (!appState.settings.last_backup_date) {
     return null;
   }
-  const parts = appState.settings.last_backup_date.split('-');
+  const parts = appState.settings.last_backup_date.split("-");
   if (parts.length !== 3) return null;
 
   const lastBackupDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
@@ -389,16 +393,13 @@ function getDaysSinceLastBackup() {
 
 function formatLocalDateToFrench(dateStr) {
   if (!dateStr) return "Aucune sauvegarde effectuée";
-  const parts = dateStr.split('-');
+  const parts = dateStr.split("-");
   if (parts.length !== 3) return dateStr;
   const year = parseInt(parts[0], 10);
   const monthIdx = parseInt(parts[1], 10) - 1;
   const day = parseInt(parts[2], 10);
 
-  const months = [
-    "janvier", "février", "mars", "avril", "mai", "juin",
-    "juillet", "août", "septembre", "octobre", "novembre", "décembre"
-  ];
+  const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 
   return `${day} ${months[monthIdx]} ${year}`;
 }
@@ -426,7 +427,7 @@ function checkBackupReminder() {
     if (days !== null && days >= reminderDays) {
       document.getElementById("backup-alert-text").innerHTML = `
         <svg viewBox="0 0 24 24" class="alert-icon" style="fill: var(--warning-text); margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-        <span>Attention : Votre dernière sauvegarde remonte à <strong>${days}</strong> ${days > 1 ? 'jours' : 'jour'} (limite configurée à ${reminderDays} jours).</span>
+        <span>Attention : Votre dernière sauvegarde remonte à <strong>${days}</strong> ${days > 1 ? "jours" : "jour"} (limite configurée à ${reminderDays} jours).</span>
       `;
       banner.style.display = "flex";
     } else {
@@ -473,7 +474,8 @@ function renderBackupView() {
 function exportToExcel() {
   // Helper to convert column index to letter
   function getExcelColName(colIdx) {
-    let temp, letter = "";
+    let temp,
+      letter = "";
     while (colIdx > 0) {
       temp = (colIdx - 1) % 26;
       letter = String.fromCharCode(65 + temp) + letter;
@@ -519,7 +521,7 @@ function exportToExcel() {
       if (act.name.trim() === "") return false;
       const actYear = getFiscalYear(act.date_start);
       const actQuarter = getQuarterNumber(act.date_start);
-      return (actYear === appState.selected_year) && appState.selected_quarters.includes(actQuarter);
+      return actYear === appState.selected_year && appState.selected_quarters.includes(actQuarter);
     });
 
     // Add activities rows
@@ -535,12 +537,12 @@ function exportToExcel() {
 
       // Nbre jour occupation (written as formula in row index rIdx + 2 since index 1 is headers)
       const excelRow = rIdx + 2;
-      row.push({ t: 'n', f: `E${excelRow}-D${excelRow}+1` });
+      row.push({ t: "n", f: `E${excelRow}-D${excelRow}+1` });
 
       row.push(isFilled ? act.client_type : ""); // Client interne ou externe
-      row.push(isFilled ? (act.category || "") : ""); // CATÉGORIE (champ retiré du formulaire, conservé vide pour ne pas décaler les colonnes)
-      row.push(isFilled ? (act.rooms || []).map(r => r.name).join(", ") : ""); // SALLE
-      row.push(isFilled ? act.remi_hours : 0); // TEMPS RÉMI
+      row.push(isFilled ? act.category || "" : ""); // CATÉGORIE (champ retiré du formulaire, conservé vide pour ne pas décaler les colonnes)
+      row.push(isFilled ? (act.reservations || []).map(getReservationRoomLabel).join(", ") : ""); // SALLE
+      row.push(0); // TEMPS RÉMI (champ retiré du formulaire, conservé vide pour ne pas décaler les colonnes)
       row.push(isFilled ? act.department : ""); // DÉPARTEMENT
 
       // PRIX SALLE SANS FRAIS
@@ -564,7 +566,7 @@ function exportToExcel() {
       const firstDistCol = getExcelColName(13 + 1); // 1-based index (N)
       const lastDistCol = getExcelColName(13 + accountsOrder.length); // End of accounts
 
-      row.push({ t: 'n', f: `SUM(${firstDistCol}${excelRow}:${lastDistCol}${excelRow})` });
+      row.push({ t: "n", f: `SUM(${firstDistCol}${excelRow}:${lastDistCol}${excelRow})` });
 
       sheetData.push(row);
     });
@@ -580,18 +582,18 @@ function exportToExcel() {
 
     accountsOrder.forEach((code, aIdx) => {
       const colLetter = getExcelColName(13 + aIdx + 1);
-      totalRow.push({ t: 'n', f: `SUM(${colLetter}${startRow}:${colLetter}${endRow})` });
+      totalRow.push({ t: "n", f: `SUM(${colLetter}${startRow}:${colLetter}${endRow})` });
     });
 
     const totalColLetter = getExcelColName(13 + accountsOrder.length + 1);
-    totalRow.push({ t: 'n', f: `SUM(${totalColLetter}${startRow}:${totalColLetter}${endRow})` });
+    totalRow.push({ t: "n", f: `SUM(${totalColLetter}${startRow}:${totalColLetter}${endRow})` });
 
     sheetData.push(totalRow);
 
     const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
     // Adjust columns widths
-    ws['!cols'] = [
+    ws["!cols"] = [
       { wch: 15 }, // ID
       { wch: 20 }, // Responsable
       { wch: 25 }, // Nom
@@ -604,12 +606,12 @@ function exportToExcel() {
       { wch: 10 }, // Rémi
       { wch: 22 }, // Département
       { wch: 15 }, // Sans frais
-      { wch: 20 }  // Facture/RI
+      { wch: 20 } // Facture/RI
     ];
 
     // Push account columns sizes
-    accountsOrder.forEach(() => ws['!cols'].push({ wch: 18 }));
-    ws['!cols'].push({ wch: 20 }); // Total revenue
+    accountsOrder.forEach(() => ws["!cols"].push({ wch: 18 }));
+    ws["!cols"].push({ wch: 20 }); // Total revenue
 
     XLSX.utils.book_append_sheet(wb, ws, "ACTIVITÉS");
 
@@ -619,15 +621,18 @@ function exportToExcel() {
       const grid = getActivePricingGrid(r, "");
       const tarifs = grid ? getFlattenedRoomTarifs(r, "") : [];
       (tarifs.length ? tarifs : [{ description: "", amount: "" }]).forEach(t => {
-        roomsData.push([r.name, grid ? (grid.effective_date || "Depuis toujours") : "", t.description, t.amount]);
+        roomsData.push([r.name, grid ? grid.effective_date || "Depuis toujours" : "", t.description, t.amount]);
       });
     });
     const wsRooms = XLSX.utils.aoa_to_sheet(roomsData);
     XLSX.utils.book_append_sheet(wb, wsRooms, "SALLES");
 
     // Trigger download: includes selected period in filename
-    const qStr = appState.selected_quarters.sort().map(q => `T${q}`).join("-");
-    const filename = `compta_marie_rapport_${appState.selected_year}_${qStr || 'aucun'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const qStr = appState.selected_quarters
+      .sort()
+      .map(q => `T${q}`)
+      .join("-");
+    const filename = `compta_marie_rapport_${appState.selected_year}_${qStr || "aucun"}_${new Date().toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(wb, filename);
   } catch (err) {
     console.error(err);

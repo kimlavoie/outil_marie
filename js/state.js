@@ -19,23 +19,244 @@ function buildSeedPricingGrid(gridId, paramId, tarifPairs) {
 
 const DEFAULT_CONFIG = {
   rooms: [
-    { name: "Salle Polyvalente (200.2)", color: "#4f46e5", pricing_grids: [buildSeedPricingGrid("grid-poly", "param-poly", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Salle François-Brassard (326.1)", color: "#059669", pricing_grids: [buildSeedPricingGrid("grid-sfb", "param-sfb", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Hall de la salle François-Brassard (341.1)", color: "#d97706", pricing_grids: [buildSeedPricingGrid("grid-hall-sfb", "param-hall-sfb", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Petit salon de la salle François-Brassard (326.1)", color: "#db2777", pricing_grids: [buildSeedPricingGrid("grid-salon-sfb", "param-salon-sfb", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Billetterie de la salle François-Brassard (320.1)", color: "#0891b2", pricing_grids: [buildSeedPricingGrid("grid-billetterie", "param-billetterie", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Pas perdus (201.2)", color: "#7c3aed", pricing_grids: [buildSeedPricingGrid("grid-pas-perdus", "param-pas-perdus", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Cafétéria (120.2)", color: "#ea580c", pricing_grids: [buildSeedPricingGrid("grid-cafeteria", "param-cafeteria", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Cantine Pavillon J.-Angers (CANATM)", color: "#0284c7", pricing_grids: [buildSeedPricingGrid("grid-cantine-jangers", "param-cantine-jangers", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Cantine Pavillon Lionel-Gaudreault (CANPLG)", color: "#65a30d", pricing_grids: [buildSeedPricingGrid("grid-cantine-plg", "param-cantine-plg", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Piscine (261.1)", color: "#0d9488", pricing_grids: [buildSeedPricingGrid("grid-piscine", "param-piscine", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Gymnase (249.1)", color: "#ca8a04", pricing_grids: [buildSeedPricingGrid("grid-gymnase", "param-gymnase", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Jardin intérieur (JAR.1)", color: "#16a34a", pricing_grids: [buildSeedPricingGrid("grid-jardin", "param-jardin", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Terrain forêt nourricière (FON.1)", color: "#4d7c0f", pricing_grids: [buildSeedPricingGrid("grid-foret", "param-foret", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Terrain Piékouagami-PLG (TER-03)", color: "#9333ea", pricing_grids: [buildSeedPricingGrid("grid-piekouagami", "param-piekouagami", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Surface synthétique (EDU.1)", color: "#be185d", pricing_grids: [buildSeedPricingGrid("grid-synthetique", "param-synthetique", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Local Club social (841.0)", color: "#475569", pricing_grids: [buildSeedPricingGrid("grid-club-social", "param-club-social", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] },
-    { name: "Hall de la direction générale (HALLDG)", color: "#0891b2", pricing_grids: [buildSeedPricingGrid("grid-halldg", "param-halldg", [{ description: "Interne", amount: 0.0 }, { description: "Externe", amount: 0.0 }])], linked_rooms: [], linked_staff: [], linked_fees: [], linked_tasks: [] }
+    {
+      name: "Salle Polyvalente (200.2)",
+      color: "#4f46e5",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-poly", "param-poly", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Salle François-Brassard (326.1)",
+      color: "#059669",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-sfb", "param-sfb", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Hall de la salle François-Brassard (341.1)",
+      color: "#d97706",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-hall-sfb", "param-hall-sfb", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Petit salon de la salle François-Brassard (326.1)",
+      color: "#db2777",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-salon-sfb", "param-salon-sfb", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Billetterie de la salle François-Brassard (320.1)",
+      color: "#0891b2",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-billetterie", "param-billetterie", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Pas perdus (201.2)",
+      color: "#7c3aed",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-pas-perdus", "param-pas-perdus", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Cafétéria (120.2)",
+      color: "#ea580c",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-cafeteria", "param-cafeteria", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Cantine Pavillon J.-Angers (CANATM)",
+      color: "#0284c7",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-cantine-jangers", "param-cantine-jangers", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Cantine Pavillon Lionel-Gaudreault (CANPLG)",
+      color: "#65a30d",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-cantine-plg", "param-cantine-plg", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Piscine (261.1)",
+      color: "#0d9488",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-piscine", "param-piscine", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Gymnase (249.1)",
+      color: "#ca8a04",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-gymnase", "param-gymnase", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Jardin intérieur (JAR.1)",
+      color: "#16a34a",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-jardin", "param-jardin", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Terrain forêt nourricière (FON.1)",
+      color: "#4d7c0f",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-foret", "param-foret", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Terrain Piékouagami-PLG (TER-03)",
+      color: "#9333ea",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-piekouagami", "param-piekouagami", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Surface synthétique (EDU.1)",
+      color: "#be185d",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-synthetique", "param-synthetique", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Local Club social (841.0)",
+      color: "#475569",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-club-social", "param-club-social", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    },
+    {
+      name: "Hall de la direction générale (HALLDG)",
+      color: "#0891b2",
+      pricing_grids: [
+        buildSeedPricingGrid("grid-halldg", "param-halldg", [
+          { description: "Interne", amount: 0.0 },
+          { description: "Externe", amount: 0.0 }
+        ])
+      ],
+      linked_rooms: [],
+      linked_staff: [],
+      linked_fees: [],
+      linked_tasks: []
+    }
   ],
   departments: [
     "ACEECJ",
@@ -83,21 +304,51 @@ const DEFAULT_CONFIG = {
   salaries: [
     { id: "salary-dt", job: "Directeur technique", rate_versions: [{ id: "rv-dt", effective_date: "", rate: 74, overtime_rate: 0 }] },
     { id: "salary-tc", job: "Technicien contractuel", rate_versions: [{ id: "rv-tc", effective_date: "", rate: 57, overtime_rate: 0 }] },
-    { id: "salary-aet", job: "Appariteur étudiant technicien", rate_versions: [{ id: "rv-aet", effective_date: "", rate: 37, overtime_rate: 0 }] },
+    {
+      id: "salary-aet",
+      job: "Appariteur étudiant technicien",
+      rate_versions: [{ id: "rv-aet", effective_date: "", rate: 37, overtime_rate: 0 }]
+    },
     { id: "salary-hote", job: "Hôte", rate_versions: [{ id: "rv-hote", effective_date: "", rate: 27, overtime_rate: 0 }] },
     { id: "salary-as", job: "Agent de sécurité", rate_versions: [{ id: "rv-as", effective_date: "", rate: 50, overtime_rate: 0 }] },
     { id: "salary-sauveteur", job: "Sauveteur", rate_versions: [{ id: "rv-sauveteur", effective_date: "", rate: 42, overtime_rate: 0 }] }
   ],
-  services: [],
+  services: [
+    {
+      id: "service-location-projecteur",
+      name: "Location de projecteur",
+      type: "hourly",
+      gl_account_code: "",
+      rate_versions: [{ id: "rv-location-projecteur", effective_date: "", rate: 20 }]
+    },
+    {
+      id: "service-piano-queue",
+      name: "Piano à queue",
+      type: "fixed",
+      gl_account_code: "",
+      rate_versions: [{ id: "rv-piano-queue", effective_date: "", rate: 350 }]
+    },
+    {
+      id: "service-projecteur-equipement",
+      name: "Projecteur / équipement informatique",
+      type: "fixed",
+      gl_account_code: "",
+      rate_versions: [{ id: "rv-projecteur-equipement", effective_date: "", rate: 32 }]
+    }
+  ],
   global_tasks: [
     { id: "global-task-dossier-serveur", description: "Créer un dossier sur le serveur" },
     { id: "global-task-dossier-outlook", description: "Créer un dossier dans Outlook" }
   ]
 };
 
-const TECHNICAL_SERVICES = ["Microphone", "Écran projecteur", "Éclairage de scène", "Musique d'ambiance", "Fichier audio, vidéo ou présentation PowerPoint"];
-const CONSUMPTION_OPTIONS = ["Consommation de breuvage avec alcool", "Consommation de breuvage sans alcool", "Cueillette au bar et paiement de ce qui est consommé", "Breuvages aux frais des participants (service de bar)", "Commande spéciale de produit"];
-const HOST_SERVICES_OPTIONS = ["Service de bar payant", "Surveillance aux portes", "Distribution de breuvages et nettoyages de coupes", "Distribution de bouchées", "Aide au montage", "Aide au démontage"];
+// Free technical services (no fee): paid technical items (location de projecteur, piano à
+// queue, projecteur / équipement informatique) live in appState.settings.services instead, so
+// their amounts stay modifiable from the Services settings tab.
+const TECHNICAL_SERVICES = ["Microphone", "Éclairage de scène", "Musique d'ambiance", "Fichier audio, vidéo ou présentation PowerPoint"];
+const BAR_DRINK_TYPES = ["Avec alcool", "Sans alcool"];
+const BAR_SERVICE_TYPES = ["Service autonome", "Service d'hôtesses", "Distribution de breuvages et nettoyage de coupes"];
+const HOST_DUTY_OPTIONS = ["Distribution de bouchées"];
 const EVENT_TYPES = [
   { value: "pedagogique", label: "Activité pédagogique" },
   { value: "parascolaire", label: "Activité parascolaire" },
@@ -224,6 +475,14 @@ function parseLocalDateStr(dateStr) {
   return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
 }
 
+// Formats a local Date back into a "YYYY-MM-DD" string (inverse of parseLocalDateStr)
+function formatDateStrLocal(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 // --- IndexedDB Configuration for App State ---
 const APP_DB_NAME = "outil_marie_app";
 const APP_STORE_NAME = "app_state_store";
@@ -232,7 +491,7 @@ const APP_STATE_KEY = "app_state";
 function openAppDb() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(APP_DB_NAME, 1);
-    req.onupgradeneeded = (e) => {
+    req.onupgradeneeded = e => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(APP_STORE_NAME)) {
         db.createObjectStore(APP_STORE_NAME);
@@ -302,7 +561,8 @@ async function loadDatabase() {
       if (!appState.settings.departments) appState.settings.departments = [...DEFAULT_CONFIG.departments];
       if (!appState.settings.salaries || appState.settings.salaries.length === 0) appState.settings.salaries = [...DEFAULT_CONFIG.salaries];
       if (!appState.settings.services) appState.settings.services = [...DEFAULT_CONFIG.services];
-      if (!appState.settings.global_tasks || appState.settings.global_tasks.length === 0) appState.settings.global_tasks = [...DEFAULT_CONFIG.global_tasks];
+      if (!appState.settings.global_tasks || appState.settings.global_tasks.length === 0)
+        appState.settings.global_tasks = [...DEFAULT_CONFIG.global_tasks];
       if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
       appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
       if (isNaN(appState.settings.backup_reminder_days)) {
@@ -316,6 +576,7 @@ async function loadDatabase() {
 
       migrateRoomsConfig();
       migrateSalariesConfig();
+      migrateServicesConfig();
       migrateActivities();
 
       // Drop favorites pointing at activities that no longer exist (deleted since last save)
@@ -347,13 +608,15 @@ function migrateRoomsConfig() {
     if (!room.pricing_grids) {
       const paramId = generateUid("param");
       const tarifs = room.tarifs || [];
-      room.pricing_grids = [{
-        id: generateUid("grid"),
-        effective_date: "",
-        parameters: [{ id: paramId, name: "Tarif" }],
-        client_types: tarifs.map(t => ({ id: t.id, name: t.description })),
-        cells: tarifs.map(t => ({ parameter_id: paramId, client_type_id: t.id, amount: t.amount }))
-      }];
+      room.pricing_grids = [
+        {
+          id: generateUid("grid"),
+          effective_date: "",
+          parameters: [{ id: paramId, name: "Tarif" }],
+          client_types: tarifs.map(t => ({ id: t.id, name: t.description })),
+          cells: tarifs.map(t => ({ parameter_id: paramId, client_type_id: t.id, amount: t.amount }))
+        }
+      ];
     }
     delete room.tarifs;
 
@@ -375,6 +638,18 @@ function migrateSalariesConfig() {
     sal.rate_versions.forEach(v => {
       if (v.overtime_rate === undefined) v.overtime_rate = 0;
     });
+  });
+}
+
+// Adds the hardcoded technical service fees (location de projecteur, piano à queue, projecteur /
+// équipement informatique) to existing databases that predate them, matched by id so it never
+// duplicates or overwrites amounts the user has already customized.
+function migrateServicesConfig() {
+  if (!appState.settings.services) appState.settings.services = [];
+  DEFAULT_CONFIG.services.forEach(defaultSvc => {
+    if (!appState.settings.services.some(s => s.id === defaultSvc.id)) {
+      appState.settings.services.push(JSON.parse(JSON.stringify(defaultSvc)));
+    }
   });
 }
 
@@ -436,7 +711,12 @@ function getFlattenedRoomTarifs(room, dateStr) {
     grid.client_types.forEach(ct => {
       const cell = grid.cells.find(c => c.parameter_id === param.id && c.client_type_id === ct.id);
       const desc = grid.parameters.length > 1 ? `${param.name} - ${ct.name}` : ct.name;
-      tarifs.push({ id: `${param.id}::${ct.id}`, description: desc, amount: cell ? cell.amount : 0, gl_account_code: param.gl_account_code || "" });
+      tarifs.push({
+        id: `${param.id}::${ct.id}`,
+        description: desc,
+        amount: cell ? cell.amount : 0,
+        gl_account_code: param.gl_account_code || ""
+      });
     });
   });
   return tarifs;
@@ -466,9 +746,7 @@ function migrateActivities() {
         const roomConfig = (appState.settings.rooms || []).find(r => r.name === name);
         const wantedTariffDesc = act.client_type === "interne" ? "Interne" : "Externe";
         const flatTarifs = roomConfig ? getFlattenedRoomTarifs(roomConfig, act.date_start) : [];
-        const matchedTariff = flatTarifs.length
-          ? (flatTarifs.find(t => t.description === wantedTariffDesc) || flatTarifs[0])
-          : null;
+        const matchedTariff = flatTarifs.length ? flatTarifs.find(t => t.description === wantedTariffDesc) || flatTarifs[0] : null;
         return {
           name,
           tariff_id: matchedTariff ? matchedTariff.id : "",
@@ -492,19 +770,107 @@ function migrateActivities() {
     delete act.start_time;
     delete act.end_time;
 
-    (act.rooms || []).forEach(r => {
+    // Legacy: "Services techniques", "Consommation" and "Service d'hôtes.ses" used to be a
+    // single set of fields shared by the whole activity. An activity can book several rooms
+    // with different technical/bar/hostess needs, so these now live per room instead. Any
+    // pre-existing activity-level values (including the older flat consumption/host_services
+    // pill lists) are folded into a single legacy bar_service/host_duties shape here, then
+    // broadcast onto every already-booked room before being dropped from the activity itself.
+    let legacyBarService = act.bar_service;
+    if (!legacyBarService) {
+      legacyBarService = {
+        active: false,
+        drink_type: "",
+        service_type: "",
+        hostess_count: 0,
+        special_order: act.consumption_special_products || ""
+      };
+      if (Array.isArray(act.consumption) && act.consumption.length > 0) {
+        legacyBarService.active = true;
+        if (act.consumption.some(c => c.includes("avec alcool"))) legacyBarService.drink_type = "Avec alcool";
+        else if (act.consumption.some(c => c.includes("sans alcool"))) legacyBarService.drink_type = "Sans alcool";
+      }
+      if (Array.isArray(act.host_services) && act.host_services.includes("Service de bar payant")) {
+        legacyBarService.active = true;
+        legacyBarService.service_type = "Service d'hôtesses";
+      } else if (legacyBarService.active) {
+        legacyBarService.service_type = "Service autonome";
+      }
+    }
+    let legacyHostDuties = act.host_duties;
+    if (!legacyHostDuties) {
+      legacyHostDuties = { duties: [], hostess_count: 0 };
+      if (Array.isArray(act.host_services)) {
+        if (act.host_services.some(h => h.startsWith("Distribution de breuvages"))) {
+          legacyHostDuties.duties.push("Distribution de breuvages et nettoyage de coupes");
+        }
+        if (act.host_services.includes("Distribution de bouchées")) {
+          legacyHostDuties.duties.push("Distribution de bouchées");
+        }
+      }
+    }
+    const legacyTechnicalServices = act.technical_services || [];
+
+    // Legacy: "Personnel requis", "Services" and "Autres frais" were also shared by the whole
+    // activity (each row tagged with a source_room only when auto-added from a room's linked
+    // config). They now live per room too. Rows with a source_room matching a still-booked room
+    // go there; anything else (manually added rows never carried a source_room) has no reliable
+    // room to attribute to, so it's attached to the activity's first room.
+    const legacyStaff = act.staff || [];
+    const legacyServices = act.services || [];
+    const legacyFees = act.fees || [];
+
+    (act.rooms || []).forEach((r, idx) => {
       if (r.tariff_gl_account_code === undefined) r.tariff_gl_account_code = "";
+      if (!r.technical_services) r.technical_services = [...legacyTechnicalServices];
+      if (!r.bar_service) r.bar_service = JSON.parse(JSON.stringify(legacyBarService));
+      if (!r.host_duties) r.host_duties = JSON.parse(JSON.stringify(legacyHostDuties));
+      if (!r.staff) {
+        r.staff = legacyStaff
+          .filter(s => s.source_room === r.name || (!s.source_room && idx === 0))
+          .map(s => {
+            const c = { ...s };
+            delete c.source_room;
+            return c;
+          });
+      }
+      if (!r.services) {
+        r.services = legacyServices
+          .filter(s => s.source_room === r.name || (!s.source_room && idx === 0))
+          .map(s => {
+            const c = { ...s };
+            delete c.source_room;
+            return c;
+          });
+      }
+      if (!r.fees) {
+        r.fees = legacyFees
+          .filter(f => f.source_room === r.name || (!f.source_room && idx === 0))
+          .map(f => {
+            const c = { ...f };
+            delete c.source_room;
+            return c;
+          });
+      }
     });
+
+    delete act.technical_services;
+    delete act.bar_service;
+    delete act.host_duties;
+    delete act.consumption;
+    delete act.consumption_special_products;
+    delete act.host_services;
+    delete act.staff;
+    delete act.services;
+    delete act.fees;
+    delete act.remi_hours;
 
     if (act.description === undefined) act.description = "";
     if (act.coba === undefined) act.coba = "";
     if (!act.activity_manager) {
       act.activity_manager = { first_name: "", last_name: "", type: "employe", phone: "", email: "" };
     }
-    if (!act.technical_services) act.technical_services = [];
-    if (!act.consumption) act.consumption = [];
-    if (act.consumption_special_products === undefined) act.consumption_special_products = "";
-    if (!act.host_services) act.host_services = [];
+
     if (act.event_type === undefined) act.event_type = "";
     if (act.event_type_other === undefined) act.event_type_other = "";
 
@@ -527,15 +893,92 @@ function migrateActivities() {
     // submission data, so they default to "soumission" rather than the lighter estimation mode.
     if (act.mode === undefined) act.mode = "soumission";
     if (!act.client) act.client = { first_name: "", last_name: "", phone: "", email: "" };
-    if (!act.staff) act.staff = [];
-    act.staff.forEach(s => { if (s.overtime_hours === undefined) s.overtime_hours = 0; });
-    if (!act.fees) act.fees = [];
-    if (!act.services) act.services = [];
+    (act.rooms || []).forEach(r => {
+      (r.staff || []).forEach(s => {
+        if (s.overtime_hours === undefined) s.overtime_hours = 0;
+      });
+    });
     if (!act.submission) act.submission = { file_link_id: "", generated_at: "", sent_at: "" };
     if (!act.contract) act.contract = { file_link_id: "", approved_at: "" };
     if (!act.planning_tasks) act.planning_tasks = [];
     if (act.billed_at === undefined) act.billed_at = "";
     if (act.completed_at === undefined) act.completed_at = "";
+
+    // Legacy: a booked room used to carry a single continuous date_start -> date_end
+    // event span plus a single optional install/dismantle pair. A room can now be
+    // booked several times (different services) with several non-contiguous slots,
+    // so rooms[] becomes reservations[], with one slot generated per day of the old
+    // span (same start_time/end_time on each) to keep the tariff total (days x tariff)
+    // identical after migration.
+    if (!act.reservations) {
+      act.reservations = (act.rooms || []).map(r => {
+        const slots = [];
+        if (r.date_start) {
+          const dayCount = calculateDaysCount(r.date_start, r.date_end || r.date_start);
+          const start = parseLocalDateStr(r.date_start);
+          for (let i = 0; i < dayCount; i++) {
+            const d = new Date(start);
+            d.setDate(d.getDate() + i);
+            slots.push({
+              id: generateUid("slot"),
+              date: formatDateStrLocal(d),
+              start_time: r.start_time || "",
+              end_time: r.end_time || ""
+            });
+          }
+        }
+        return {
+          id: generateUid("res"),
+          room_name: r.name,
+          room_other_details: "",
+          tariff_id: r.tariff_id || "",
+          tariff_description: r.tariff_description || "",
+          tariff_amount: r.tariff_amount || 0,
+          tariff_gl_account_code: r.tariff_gl_account_code || "",
+          install: { enabled: !!r.install_date, date: r.install_date || "", start_time: r.install_time || "", end_time: "" },
+          dismantle: { enabled: !!r.dismantle_date, date: r.dismantle_date || "", start_time: r.dismantle_time || "", end_time: "" },
+          slots,
+          technical_services: r.technical_services || [],
+          bar_service: r.bar_service || { active: false, drink_type: "", service_type: "", hostess_count: 0, special_order: "" },
+          host_duties: r.host_duties || { duties: [], hostess_count: 0 },
+          staff: r.staff || [],
+          services: r.services || [],
+          fees: r.fees || []
+        };
+      });
+      delete act.rooms;
+    }
+
+    // Legacy: montage/démontage briefly had a full début/fin date range (two dates), and before
+    // that a single moment (one date + one heure, field named `time`). Both collapse to a single
+    // date with a start/end heure: the range's start_date becomes the date (end_date is dropped,
+    // now meaningless), and the single moment's `time` becomes start_time with an empty end_time.
+    (act.reservations || []).forEach(r => {
+      if (r.install) {
+        if (r.install.start_date !== undefined) {
+          r.install = {
+            enabled: r.install.enabled,
+            date: r.install.start_date || "",
+            start_time: r.install.start_time || "",
+            end_time: r.install.end_time || ""
+          };
+        } else if (r.install.time !== undefined) {
+          r.install = { enabled: r.install.enabled, date: r.install.date || "", start_time: r.install.time || "", end_time: "" };
+        }
+      }
+      if (r.dismantle) {
+        if (r.dismantle.start_date !== undefined) {
+          r.dismantle = {
+            enabled: r.dismantle.enabled,
+            date: r.dismantle.start_date || "",
+            start_time: r.dismantle.start_time || "",
+            end_time: r.dismantle.end_time || ""
+          };
+        } else if (r.dismantle.time !== undefined) {
+          r.dismantle = { enabled: r.dismantle.enabled, date: r.dismantle.date || "", start_time: r.dismantle.time || "", end_time: "" };
+        }
+      }
+    });
   });
 }
 
@@ -549,6 +992,7 @@ async function seedDatabase() {
     last_backup_date: "",
     backup_reminder_days: 7,
     salaries: [...DEFAULT_CONFIG.salaries],
+    services: [...DEFAULT_CONFIG.services],
     global_tasks: [...DEFAULT_CONFIG.global_tasks]
   };
 

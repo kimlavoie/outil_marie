@@ -13,7 +13,9 @@ let roomModalState = { grids: [], activeGridIndex: 0 };
 // Activates a settings tab + its panel (e.g. "accounts", "departments"), used both by the tab
 // buttons themselves and by the global search's "jump to this record" navigation.
 function openSettingsPanel(panel) {
-  document.querySelectorAll(".settings-tab-btn").forEach(b => b.classList.toggle("active", b.getAttribute("data-settings-panel") === panel));
+  document
+    .querySelectorAll(".settings-tab-btn")
+    .forEach(b => b.classList.toggle("active", b.getAttribute("data-settings-panel") === panel));
   document.querySelectorAll(".settings-panel").forEach(p => p.classList.toggle("active", p.id === `panel-${panel}`));
 }
 
@@ -44,13 +46,13 @@ function initSettingsHandlers() {
   document.getElementById("room-grid-delete-version-btn").addEventListener("click", deleteRoomGridVersion);
   document.getElementById("room-grid-add-param-btn").addEventListener("click", addRoomGridParameter);
   document.getElementById("room-grid-add-clienttype-btn").addEventListener("click", addRoomGridClientType);
-  document.getElementById("room-grid-effective-date").addEventListener("input", (e) => {
+  document.getElementById("room-grid-effective-date").addEventListener("input", e => {
     roomModalState.grids[roomModalState.activeGridIndex].effective_date = e.target.value.trim();
     renderRoomGridVersionTabs();
   });
 
   // Salles liées: delegated toggle listener (survives the pills being rebuilt on every open)
-  document.getElementById("room-linked-rooms-group").addEventListener("click", (e) => {
+  document.getElementById("room-linked-rooms-group").addEventListener("click", e => {
     const btn = e.target.closest(".pill-toggle");
     if (!btn) return;
     btn.classList.toggle("active");
@@ -303,9 +305,9 @@ function openRoomModal(name = null) {
   // Salles liées: build one pill per other room
   const linkedRoomsContainer = document.getElementById("room-linked-rooms-group");
   const otherRooms = appState.settings.rooms.filter(r => !room || r.name !== room.name);
-  linkedRoomsContainer.innerHTML = otherRooms.map(r =>
-    `<button type="button" class="pill-toggle" data-value="${r.name}">${r.name}</button>`
-  ).join("");
+  linkedRoomsContainer.innerHTML = otherRooms
+    .map(r => `<button type="button" class="pill-toggle" data-value="${r.name}">${r.name}</button>`)
+    .join("");
   setPillGroupActive("room-linked-rooms-group", (room && room.linked_rooms) || []);
 
   // Personnel lié
@@ -335,11 +337,15 @@ function renderRoomGridEditor() {
 
 function renderRoomGridVersionTabs() {
   const container = document.getElementById("room-grid-version-tabs");
-  container.innerHTML = roomModalState.grids.map((g, i) => `
+  container.innerHTML = roomModalState.grids
+    .map(
+      (g, i) => `
     <button type="button" class="pill-toggle grid-version-tab ${i === roomModalState.activeGridIndex ? "active" : ""}" data-index="${i}">
       ${g.effective_date ? g.effective_date : "Depuis toujours"}
     </button>
-  `).join("");
+  `
+    )
+    .join("");
   container.querySelectorAll(".grid-version-tab").forEach(btn => {
     btn.addEventListener("click", () => {
       roomModalState.activeGridIndex = parseInt(btn.getAttribute("data-index"), 10);
@@ -371,7 +377,9 @@ function deleteRoomGridVersion() {
 function renderRoomGridParamsList() {
   const grid = roomModalState.grids[roomModalState.activeGridIndex];
   const container = document.getElementById("room-grid-params-list");
-  container.innerHTML = grid.parameters.map((p, i) => `
+  container.innerHTML = grid.parameters
+    .map(
+      (p, i) => `
     <div class="distribution-row room-tarif-row" data-param-id="${p.id}" style="grid-template-columns: 1fr 1fr auto;">
       <input type="text" class="form-input room-grid-param-name-input" value="${(p.name || "").replace(/"/g, "&quot;")}" placeholder="Ex: Journée" style="padding: 8px 12px; font-size: 0.85rem;">
       <select class="select-input room-grid-param-gl-select" style="padding: 8px 12px; font-size: 0.85rem;" title="Compte GL pour la facturation (optionnel)">
@@ -381,7 +389,9 @@ function renderRoomGridParamsList() {
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
     </div>
-  `).join("");
+  `
+    )
+    .join("");
 
   container.querySelectorAll(".room-grid-param-name-input").forEach((input, i) => {
     input.addEventListener("input", () => {
@@ -416,14 +426,18 @@ function addRoomGridParameter() {
 function renderRoomGridClientTypesList() {
   const grid = roomModalState.grids[roomModalState.activeGridIndex];
   const container = document.getElementById("room-grid-clienttypes-list");
-  container.innerHTML = grid.client_types.map((ct, i) => `
+  container.innerHTML = grid.client_types
+    .map(
+      (ct, i) => `
     <div class="distribution-row room-tarif-row" data-ct-id="${ct.id}" style="grid-template-columns: 1fr auto;">
       <input type="text" class="form-input room-grid-ct-name-input" value="${(ct.name || "").replace(/"/g, "&quot;")}" placeholder="Ex: Interne" style="padding: 8px 12px; font-size: 0.85rem;">
       <button type="button" class="btn-icon delete-room-grid-ct-btn" data-index="${i}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
     </div>
-  `).join("");
+  `
+    )
+    .join("");
 
   container.querySelectorAll(".room-grid-ct-name-input").forEach((input, i) => {
     input.addEventListener("input", () => {
@@ -460,14 +474,18 @@ function renderRoomGridCellsTable() {
   }
 
   const headerCells = grid.client_types.map(ct => `<th>${ct.name || "(sans nom)"}</th>`).join("");
-  const bodyRows = grid.parameters.map(p => {
-    const cells = grid.client_types.map(ct => {
-      const cell = grid.cells.find(c => c.parameter_id === p.id && c.client_type_id === ct.id);
-      const amount = cell ? cell.amount : "";
-      return `<td><input type="number" min="0" step="0.01" class="form-input room-grid-cell-input" data-param-id="${p.id}" data-ct-id="${ct.id}" value="${amount}" style="padding: 6px 10px; font-size: 0.85rem; width: 100px;"></td>`;
-    }).join("");
-    return `<tr><td class="bold" style="white-space: nowrap; padding-right: 12px;">${p.name || "(sans nom)"}</td>${cells}</tr>`;
-  }).join("");
+  const bodyRows = grid.parameters
+    .map(p => {
+      const cells = grid.client_types
+        .map(ct => {
+          const cell = grid.cells.find(c => c.parameter_id === p.id && c.client_type_id === ct.id);
+          const amount = cell ? cell.amount : "";
+          return `<td><input type="number" min="0" step="0.01" class="form-input room-grid-cell-input" data-param-id="${p.id}" data-ct-id="${ct.id}" value="${amount}" style="padding: 6px 10px; font-size: 0.85rem; width: 100px;"></td>`;
+        })
+        .join("");
+      return `<tr><td class="bold" style="white-space: nowrap; padding-right: 12px;">${p.name || "(sans nom)"}</td>${cells}</tr>`;
+    })
+    .join("");
 
   wrapper.innerHTML = `
     <table class="detail-dist-table">
@@ -498,9 +516,9 @@ function addLinkedStaffRow(salaryId = "", count = 1) {
   const container = document.getElementById("room-linked-staff-list");
   const rowId = generateUid("linked-staff-row");
 
-  const salaryOptionsHtml = (appState.settings.salaries || []).map(s =>
-    `<option value="${s.id}" ${s.id === salaryId ? "selected" : ""}>${s.job}</option>`
-  ).join("");
+  const salaryOptionsHtml = (appState.settings.salaries || [])
+    .map(s => `<option value="${s.id}" ${s.id === salaryId ? "selected" : ""}>${s.job}</option>`)
+    .join("");
 
   const rowHtml = `
     <div id="${rowId}" class="distribution-row">
@@ -516,9 +534,12 @@ function addLinkedStaffRow(salaryId = "", count = 1) {
     </div>
   `;
   container.insertAdjacentHTML("beforeend", rowHtml);
-  document.getElementById(rowId).querySelector(".delete-linked-staff-row-btn").addEventListener("click", () => {
-    document.getElementById(rowId).remove();
-  });
+  document
+    .getElementById(rowId)
+    .querySelector(".delete-linked-staff-row-btn")
+    .addEventListener("click", () => {
+      document.getElementById(rowId).remove();
+    });
 }
 
 /* --- Salles liées: frais --- */
@@ -540,9 +561,12 @@ function addLinkedFeeRow(description = "", amount = "", glAccountCode = "") {
     </div>
   `;
   container.insertAdjacentHTML("beforeend", rowHtml);
-  document.getElementById(rowId).querySelector(".delete-linked-fee-row-btn").addEventListener("click", () => {
-    document.getElementById(rowId).remove();
-  });
+  document
+    .getElementById(rowId)
+    .querySelector(".delete-linked-fee-row-btn")
+    .addEventListener("click", () => {
+      document.getElementById(rowId).remove();
+    });
 }
 
 /* --- Salles liées: tâches gestionnaire --- */
@@ -560,9 +584,12 @@ function addLinkedTaskRow(description = "") {
     </div>
   `;
   container.insertAdjacentHTML("beforeend", rowHtml);
-  document.getElementById(rowId).querySelector(".delete-linked-task-row-btn").addEventListener("click", () => {
-    document.getElementById(rowId).remove();
-  });
+  document
+    .getElementById(rowId)
+    .querySelector(".delete-linked-task-row-btn")
+    .addEventListener("click", () => {
+      document.getElementById(rowId).remove();
+    });
 }
 
 function submitRoomForm(e) {
@@ -660,13 +687,13 @@ function submitRoomForm(e) {
 
       // Update existing activities room name reference!
       appState.activities.forEach(act => {
-        (act.rooms || []).forEach(r => {
-          if (r.name === originalName) r.name = newName;
+        (act.reservations || []).forEach(r => {
+          if (r.room_name === originalName) r.room_name = newName;
         });
       });
       // Update other rooms' linked_rooms references
       appState.settings.rooms.forEach(r => {
-        r.linked_rooms = (r.linked_rooms || []).map(n => n === originalName ? newName : n);
+        r.linked_rooms = (r.linked_rooms || []).map(n => (n === originalName ? newName : n));
       });
     }
   } else {
@@ -753,8 +780,8 @@ function submitDeptForm(e) {
     return;
   }
 
-  const duplicate = appState.settings.departments.some(d =>
-    d.toUpperCase() === name.toUpperCase() && d.toUpperCase() !== originalName.toUpperCase()
+  const duplicate = appState.settings.departments.some(
+    d => d.toUpperCase() === name.toUpperCase() && d.toUpperCase() !== originalName.toUpperCase()
   );
   if (duplicate) {
     alert("Ce département existe déjà.");
@@ -877,9 +904,12 @@ function addSalaryRateRow(effectiveDate = "", rate = "", overtimeRate = "") {
     </div>
   `;
   container.insertAdjacentHTML("beforeend", rowHtml);
-  document.getElementById(rowId).querySelector(".delete-salary-rate-row-btn").addEventListener("click", () => {
-    document.getElementById(rowId).remove();
-  });
+  document
+    .getElementById(rowId)
+    .querySelector(".delete-salary-rate-row-btn")
+    .addEventListener("click", () => {
+      document.getElementById(rowId).remove();
+    });
 }
 
 function submitSalaryForm(e) {
@@ -925,9 +955,7 @@ function submitSalaryForm(e) {
   const salaries = appState.settings.salaries || [];
 
   // Check duplicate job name
-  const duplicate = salaries.some(s =>
-    s.job.toUpperCase() === job.toUpperCase() && s.id !== originalId
-  );
+  const duplicate = salaries.some(s => s.job.toUpperCase() === job.toUpperCase() && s.id !== originalId);
   if (duplicate) {
     alert("Cet emploi existe déjà.");
     return;
@@ -1048,9 +1076,12 @@ function addServiceRateRow(effectiveDate = "", rate = "") {
     </div>
   `;
   container.insertAdjacentHTML("beforeend", rowHtml);
-  document.getElementById(rowId).querySelector(".delete-service-rate-row-btn").addEventListener("click", () => {
-    document.getElementById(rowId).remove();
-  });
+  document
+    .getElementById(rowId)
+    .querySelector(".delete-service-rate-row-btn")
+    .addEventListener("click", () => {
+      document.getElementById(rowId).remove();
+    });
 }
 
 function submitServiceForm(e) {
@@ -1092,9 +1123,7 @@ function submitServiceForm(e) {
 
   const services = appState.settings.services || [];
 
-  const duplicate = services.some(s =>
-    s.name.toUpperCase() === name.toUpperCase() && s.id !== originalId
-  );
+  const duplicate = services.some(s => s.name.toUpperCase() === name.toUpperCase() && s.id !== originalId);
   if (duplicate) {
     alert("Ce service existe déjà.");
     return;

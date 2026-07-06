@@ -19,13 +19,13 @@ function initReconciliationHandlers() {
   // Click dropzone triggers file picker
   dropZone.addEventListener("click", () => fileInput.click());
 
-  fileInput.addEventListener("change", (e) => {
+  fileInput.addEventListener("change", e => {
     const file = e.target.files[0];
     if (file) handleLedgerFile(file);
   });
 
   // Drag & drop events
-  dropZone.addEventListener("dragover", (e) => {
+  dropZone.addEventListener("dragover", e => {
     e.preventDefault();
     dropZone.classList.add("dragover");
   });
@@ -34,7 +34,7 @@ function initReconciliationHandlers() {
     dropZone.classList.remove("dragover");
   });
 
-  dropZone.addEventListener("drop", (e) => {
+  dropZone.addEventListener("drop", e => {
     e.preventDefault();
     dropZone.classList.remove("dragover");
     const file = e.dataTransfer.files[0];
@@ -71,10 +71,10 @@ function initReconciliationHandlers() {
 function handleLedgerFile(file) {
   const reader = new FileReader();
 
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     try {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
+      const workbook = XLSX.read(data, { type: "array" });
       const firstSheet = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheet];
       const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
@@ -314,7 +314,13 @@ function renderReconciliationTable() {
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucun enregistrement dans cette catégorie.</td></tr>`;
-    renderPaginationBar(document.getElementById("reconciliation-pagination"), { page: reconciliationState.page, pageSize: reconciliationState.pageSize, totalItems: 0, onPageChange: () => {}, onPageSizeChange: () => {} });
+    renderPaginationBar(document.getElementById("reconciliation-pagination"), {
+      page: reconciliationState.page,
+      pageSize: reconciliationState.pageSize,
+      totalItems: 0,
+      onPageChange: () => {},
+      onPageSizeChange: () => {}
+    });
     return;
   }
 
@@ -322,8 +328,15 @@ function renderReconciliationTable() {
     page: reconciliationState.page,
     pageSize: reconciliationState.pageSize,
     totalItems: filtered.length,
-    onPageChange: (p) => { reconciliationState.page = p; renderReconciliationTable(); },
-    onPageSizeChange: (s) => { reconciliationState.pageSize = s; reconciliationState.page = 1; renderReconciliationTable(); }
+    onPageChange: p => {
+      reconciliationState.page = p;
+      renderReconciliationTable();
+    },
+    onPageSizeChange: s => {
+      reconciliationState.pageSize = s;
+      reconciliationState.page = 1;
+      renderReconciliationTable();
+    }
   });
   const startIdx = (reconciliationState.page - 1) * reconciliationState.pageSize;
   const pageItems = filtered.slice(startIdx, startIdx + reconciliationState.pageSize);
@@ -378,9 +391,9 @@ function renderReconciliationTable() {
             ${r.activityId ? `${r.activityId} : ${r.activityName}` : r.activityName}
           </div>
         </td>
-        <td class="font-mono">${r.reference || '-'}</td>
-        <td class="bold">${r.amount_saisi > 0 ? formatCurrency(r.amount_saisi) : '-'}</td>
-        <td class="bold">${r.amount_gl > 0 ? formatCurrency(r.amount_gl) : '-'}</td>
+        <td class="font-mono">${r.reference || "-"}</td>
+        <td class="bold">${r.amount_saisi > 0 ? formatCurrency(r.amount_saisi) : "-"}</td>
+        <td class="bold">${r.amount_gl > 0 ? formatCurrency(r.amount_gl) : "-"}</td>
         <td>${diffText}</td>
         <td>${badgeHtml}</td>
         <td class="text-right">${actionBtn}</td>
@@ -420,7 +433,8 @@ function openReconDetailModal(reconRecord) {
   const modal = document.getElementById("recon-detail-modal");
   const backdrop = document.getElementById("modal-backdrop");
 
-  document.getElementById("recon-detail-account").textContent = `${reconRecord.account_code} (${appState.settings.accounts.find(a => a.code === reconRecord.account_code)?.description || 'Inconnu'})`;
+  document.getElementById("recon-detail-account").textContent =
+    `${reconRecord.account_code} (${appState.settings.accounts.find(a => a.code === reconRecord.account_code)?.description || "Inconnu"})`;
   document.getElementById("recon-detail-ref").textContent = reconRecord.reference;
 
   const tbody = document.getElementById("recon-detail-table-body");
@@ -429,11 +443,11 @@ function openReconDetailModal(reconRecord) {
   reconRecord.ledgerTxs.forEach(tx => {
     tbody.innerHTML += `
       <tr>
-        <td class="font-mono" style="white-space: nowrap;">${tx["Date versée"] || '-'}</td>
-        <td>${tx["Auxiliaire"] || '-'}</td>
-        <td style="font-size: 0.82rem;">${tx["Description"] || '-'}</td>
-        <td>${tx["Tr. type"] || '-'}</td>
-        <td class="font-mono">${tx["No doc. GL"] || '-'}</td>
+        <td class="font-mono" style="white-space: nowrap;">${tx["Date versée"] || "-"}</td>
+        <td>${tx["Auxiliaire"] || "-"}</td>
+        <td style="font-size: 0.82rem;">${tx["Description"] || "-"}</td>
+        <td>${tx["Tr. type"] || "-"}</td>
+        <td class="font-mono">${tx["No doc. GL"] || "-"}</td>
         <td class="text-right bold font-mono">${formatCurrency(parseFloat(tx["Montant courant"]))}</td>
       </tr>
     `;

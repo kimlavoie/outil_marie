@@ -1,1251 +1,1408 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr" data-theme="dark">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestion Comptable & Rapprochement - Service Communautaire</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Local dependencies loaded offline -->
-  <script src="lib/xlsx.full.min.js"></script>
-  <script src="lib/chart.umd.js"></script>
-</head>
-<body>
-
-  <div class="app-container">
-    
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-logo">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.25z"/>
-          </svg>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestion Comptable & Rapprochement - Service Communautaire</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- Local dependencies loaded offline -->
+    <script src="lib/xlsx.full.min.js"></script>
+    <script src="lib/chart.umd.js"></script>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-logo">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.25z"
+              />
+            </svg>
+          </div>
+          <span class="sidebar-title">Gestion des services communautaires</span>
         </div>
-        <span class="sidebar-title">Gestion des services communautaires</span>
-      </div>
-      
-      <nav class="nav-menu">
-        <li class="nav-item active" data-view="dashboard">
-          <button title="Raccourci : Alt + 1">
-            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-            Tableau de bord
-          </button>
-        </li>
-        <li class="nav-item" data-view="activities">
-          <button title="Raccourci : Alt + 2">
-            <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-            Activités
-          </button>
-        </li>
-        <li class="nav-item" data-view="validation">
-          <button title="Raccourci : Alt + 3">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-            Rapprochement GL
-          </button>
-        </li>
-        <li class="nav-item" data-view="account-report">
-          <button title="Raccourci : Alt + 4">
-            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-            Grand Livre local
-          </button>
-        </li>
-        <li class="nav-item" data-view="settings">
-          <button title="Raccourci : Alt + 5">
-            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-            Configuration
-          </button>
-        </li>
-        <li class="nav-item" data-view="backup">
-          <button title="Raccourci : Alt + 6">
-            <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
-            Sauvegarde & Export
-          </button>
-        </li>
-      </nav>
 
-      <div class="sidebar-footer">
-        <button id="theme-toggle" class="theme-toggle-btn">
-          <svg id="theme-sun-icon" viewBox="0 0 24 24" style="display:none;"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zm-12.37 12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41z"/></svg>
-          <svg id="theme-moon-icon" viewBox="0 0 24 24"><path d="M12.3 2a10 10 0 0 0-1.9 14 10 10 0 0 0 14.1.2 10.3 10.3 0 0 1-12.2-14.2z"/></svg>
-          <span id="theme-btn-text">Mode Clair</span>
-        </button>
-        <span style="font-size: 0.75rem; color: #64748b; text-align: center;">V1.0 - Hors ligne</span>
-      </div>
-    </aside>
+        <nav class="nav-menu">
+          <li class="nav-item active" data-view="dashboard">
+            <button title="Raccourci : Alt + 1">
+              <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" /></svg>
+              Tableau de bord
+            </button>
+          </li>
+          <li class="nav-item" data-view="activities">
+            <button title="Raccourci : Alt + 2">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"
+                />
+              </svg>
+              Activités
+            </button>
+          </li>
+          <li class="nav-item" data-view="validation">
+            <button title="Raccourci : Alt + 3">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
+                />
+              </svg>
+              Rapprochement GL
+            </button>
+          </li>
+          <li class="nav-item" data-view="account-report">
+            <button title="Raccourci : Alt + 4">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
+                />
+              </svg>
+              Grand Livre local
+            </button>
+          </li>
+          <li class="nav-item" data-view="settings">
+            <button title="Raccourci : Alt + 5">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+                />
+              </svg>
+              Configuration
+            </button>
+          </li>
+          <li class="nav-item" data-view="backup">
+            <button title="Raccourci : Alt + 6">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"
+                />
+              </svg>
+              Sauvegarde & Export
+            </button>
+          </li>
+        </nav>
 
-    <!-- Main Content Panel -->
-    <main class="main-content">
-      
-      <!-- Top Header Bar -->
-      <header class="top-bar">
-        <div class="top-bar-row top-bar-row-main">
-          <h1 id="view-title" class="top-bar-title">Tableau de bord</h1>
+        <div class="sidebar-footer">
+          <button id="theme-toggle" class="theme-toggle-btn">
+            <svg id="theme-sun-icon" viewBox="0 0 24 24" style="display: none">
+              <path
+                d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zm-12.37 12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41z"
+              />
+            </svg>
+            <svg id="theme-moon-icon" viewBox="0 0 24 24">
+              <path d="M12.3 2a10 10 0 0 0-1.9 14 10 10 0 0 0 14.1.2 10.3 10.3 0 0 1-12.2-14.2z" />
+            </svg>
+            <span id="theme-btn-text">Mode Clair</span>
+          </button>
+          <span style="font-size: 0.75rem; color: #64748b; text-align: center">V1.0 - Hors ligne</span>
+        </div>
+      </aside>
 
-          <div class="top-bar-actions">
-            <div class="global-search-wrapper" style="position: relative;">
-              <div class="search-wrapper" style="width: 260px;">
-                <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input type="text" id="global-search-input" class="search-input" aria-label="Recherche globale" placeholder="Recherche globale...">
-              </div>
-              <div id="global-search-results" class="calendar-popover" style="left: 0; right: auto; width: 340px;">
-                <!-- Populated dynamically -->
-              </div>
-            </div>
-            <div class="quick-access-dropdown" style="position: relative;">
-              <button id="quick-access-toggle-btn" class="btn btn-secondary" title="Accès rapide">
-                <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor; margin-right: 6px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                Accès rapide
-                <span id="quick-access-count-badge" class="badge badge-info" style="display: none; margin-left: 6px;">0</span>
-              </button>
-              <div id="quick-access-dropdown-panel" class="calendar-popover" style="width: 320px; left: auto; right: 0;">
-                <div id="quick-access-list-global" style="display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto;">
+      <!-- Main Content Panel -->
+      <main class="main-content">
+        <!-- Top Header Bar -->
+        <header class="top-bar">
+          <div class="top-bar-row top-bar-row-main">
+            <h1 id="view-title" class="top-bar-title">Tableau de bord</h1>
+
+            <div class="top-bar-actions">
+              <div class="global-search-wrapper" style="position: relative">
+                <div class="search-wrapper" style="width: 260px">
+                  <svg class="search-icon" viewBox="0 0 24 24">
+                    <path
+                      d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+                    />
+                  </svg>
+                  <input
+                    type="text"
+                    id="global-search-input"
+                    class="search-input"
+                    aria-label="Recherche globale"
+                    placeholder="Recherche globale..."
+                  />
+                </div>
+                <div id="global-search-results" class="calendar-popover" style="left: 0; right: auto; width: 340px">
                   <!-- Populated dynamically -->
+                </div>
+              </div>
+              <div class="quick-access-dropdown" style="position: relative">
+                <button id="quick-access-toggle-btn" class="btn btn-secondary" title="Accès rapide">
+                  <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor; margin-right: 6px">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                  </svg>
+                  Accès rapide
+                  <span id="quick-access-count-badge" class="badge badge-info" style="display: none; margin-left: 6px">0</span>
+                </button>
+                <div id="quick-access-dropdown-panel" class="calendar-popover" style="width: 320px; left: auto; right: 0">
+                  <div
+                    id="quick-access-list-global"
+                    style="display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto"
+                  >
+                    <!-- Populated dynamically -->
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="top-bar-row top-bar-row-secondary">
-          <!-- Period Selector Widget -->
-          <div class="period-selector-widget">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <label for="top-fiscal-year" style="font-size: 0.8rem; font-weight: 700; white-space: nowrap; color: var(--text-secondary);">Année financière :</label>
-              <select id="top-fiscal-year" class="select-input" style="padding: 4px 10px; font-size: 0.8rem; font-weight: 600; border-radius: var(--radius-sm);">
-                <!-- Populated dynamically -->
-              </select>
-            </div>
-
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-right: 4px;">Trimestres :</span>
-              <button class="quarter-toggle active" data-q="1" title="Trimestre 1 (Juillet - Septembre)">T1</button>
-              <button class="quarter-toggle active" data-q="2" title="Trimestre 2 (Octobre - Décembre)">T2</button>
-              <button class="quarter-toggle active" data-q="3" title="Trimestre 3 (Janvier - Mars)">T3</button>
-              <button class="quarter-toggle active" data-q="4" title="Trimestre 4 (Avril - Juin)">T4</button>
-            </div>
-          </div>
-
-          <div class="top-bar-actions">
-            <button id="quick-export-excel" class="btn btn-secondary btn-compact" title="Exporter au format Excel">
-              <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;">
-                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
-              </svg>
-            </button>
-            <button id="add-estimation-btn-quick" class="btn btn-secondary btn-compact" title="Créer une estimation, non enregistrée tant qu'elle n'est pas sauvegardée">
-              Estimation
-            </button>
-            <button id="add-activity-btn-quick" class="btn btn-primary btn-compact" title="Raccourci : Alt + N (ou Alt + A)">
-              + Nouvelle Activité
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <!-- Global Backup Reminder Alert Banner -->
-      <div id="backup-reminder-banner" class="backup-alert-banner" style="display: none;">
-        <span id="backup-alert-text" class="backup-alert-message">
-          <!-- Dynamically populated via JS -->
-        </span>
-        <button id="backup-banner-action-btn" class="btn-warning-outline">Sauvegarder maintenant</button>
-      </div>
-
-      <!-- Global Auto-Backup Reconnection Alert Banner -->
-      <div id="auto-backup-reminder-banner" class="backup-alert-banner" style="display: none;">
-        <span class="backup-alert-message">
-          <svg viewBox="0 0 24 24" class="alert-icon" style="fill: var(--warning-text); margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-          <span>La sauvegarde automatique vers <strong id="auto-backup-reminder-filename"></strong> a besoin d'être reconnectée.</span>
-        </span>
-        <button id="auto-backup-reminder-btn" class="btn-warning-outline">Reconnecter</button>
-      </div>
-
-      <!-- View Containers -->
-      <div class="view-container">
-        
-        <!-- 1. DASHBOARD VIEW -->
-        <section id="view-dashboard" class="view-section active">
-          <div class="stats-grid">
-            <div class="stat-card">
-              <span class="stat-label">Revenus totaux saisis</span>
-              <span id="stat-revenue-total" class="stat-value">0,00 $</span>
-              <span class="stat-desc">Calculés sur toutes les activités</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Revenus internes (sans frais)</span>
-              <span id="stat-revenue-internal-free" class="stat-value">0,00 $</span>
-              <span class="stat-desc">Valeur théorique estimée</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Nombre d'activités</span>
-              <span id="stat-activities-count" class="stat-value">0</span>
-              <span class="stat-desc">Activités au trimestre courant</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Taux de rapprochement</span>
-              <span id="stat-reconciled-percent" class="stat-value">0%</span>
-              <span class="stat-desc">Conformité avec le Grand Livre</span>
-            </div>
-          </div>
-
-          <div class="charts-grid">
-            <div class="chart-card">
-              <div class="chart-header">
-                <span class="chart-title">Revenus trimestriels réels</span>
-              </div>
-              <div class="chart-container">
-                <canvas id="chart-quarterly-revenues"></canvas>
-              </div>
-            </div>
-            <div class="chart-card">
-              <div class="chart-header">
-                <span class="chart-title">Répartition par salle</span>
-              </div>
-              <div class="chart-container">
-                <canvas id="chart-salle-share"></canvas>
-              </div>
-            </div>
-          </div>
-          
-          <div class="charts-grid" style="grid-template-columns: 1fr;">
-            <div class="chart-card" style="min-height: 320px;">
-              <div class="chart-header">
-                <span class="chart-title">Volume des revenus par compte de Grand Livre (Top Comptes)</span>
-              </div>
-              <div class="chart-container">
-                <canvas id="chart-accounts-volume"></canvas>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 2. ACTIVITIES VIEW -->
-        <section id="view-activities" class="view-section">
-          <div class="table-card">
-            <div class="table-toolbar">
-              <div class="search-wrapper">
-                <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input type="text" id="activity-search" class="search-input" aria-label="Rechercher une activité" placeholder="Rechercher par nom, responsable, RI/Facture...">
-              </div>
-
-              <div class="filter-actions">
-                <select id="filter-salle" class="select-input" aria-label="Filtrer par salle">
-                  <option value="">Toutes les salles</option>
+          <div class="top-bar-row top-bar-row-secondary">
+            <!-- Period Selector Widget -->
+            <div class="period-selector-widget">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <label for="top-fiscal-year" style="font-size: 0.8rem; font-weight: 700; white-space: nowrap; color: var(--text-secondary)"
+                  >Année financière :</label
+                >
+                <select
+                  id="top-fiscal-year"
+                  class="select-input"
+                  style="padding: 4px 10px; font-size: 0.8rem; font-weight: 600; border-radius: var(--radius-sm)"
+                >
                   <!-- Populated dynamically -->
                 </select>
-                <select id="filter-client-type" class="select-input" aria-label="Filtrer par type de client">
-                  <option value="">Tous types clients</option>
-                  <option value="interne">Interne</option>
-                  <option value="externe">Externe</option>
-                </select>
-                <button id="open-calendar-btn" class="btn btn-secondary" title="Voir le calendrier des événements">
-                  <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H5V8h14v13zM7 10h5v5H7z"/></svg>
-                  Calendrier
-                </button>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 6px">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-right: 4px">Trimestres :</span>
+                <button class="quarter-toggle active" data-q="1" title="Trimestre 1 (Juillet - Septembre)">T1</button>
+                <button class="quarter-toggle active" data-q="2" title="Trimestre 2 (Octobre - Décembre)">T2</button>
+                <button class="quarter-toggle active" data-q="3" title="Trimestre 3 (Janvier - Mars)">T3</button>
+                <button class="quarter-toggle active" data-q="4" title="Trimestre 4 (Avril - Juin)">T4</button>
               </div>
             </div>
-            
-            <div class="table-responsive">
-              <table>
-                <thead>
-                  <tr>
-                    <th data-sort="id">N° Activité</th>
-                    <th data-sort="name">Nom de l'Activité</th>
-                    <th data-sort="responsable">Responsable</th>
-                    <th data-sort="date_start">Dates / Occ.</th>
-                    <th data-sort="room_name">Salle</th>
-                    <th data-sort="reference">RI / Facture</th>
-                    <th data-sort="totalRev">Revenu Saisi</th>
-                    <th data-sort="sansFrais">Sans Frais</th>
-                    <th style="width: 160px;">État / Planification</th>
-                    <th class="text-right" style="width: 100px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="activities-table-body">
-                  <!-- Loaded dynamically -->
-                </tbody>
-              </table>
-            </div>
-            <div id="activities-pagination" class="pagination-bar"></div>
-          </div>
-        </section>
 
-        <!-- 3. RECONCILIATION VIEW -->
-        <section id="view-validation" class="view-section">
-          <!-- File Drop Zone -->
-          <div id="drop-zone" class="drop-zone">
-            <svg class="drop-zone-icon" viewBox="0 0 24 24">
-              <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/>
+            <div class="top-bar-actions">
+              <button id="quick-export-excel" class="btn btn-secondary btn-compact" title="Exporter au format Excel">
+                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor">
+                  <path
+                    d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"
+                  />
+                </svg>
+              </button>
+              <button
+                id="add-estimation-btn-quick"
+                class="btn btn-secondary btn-compact"
+                title="Créer une estimation, non enregistrée tant qu'elle n'est pas sauvegardée"
+              >
+                Estimation
+              </button>
+              <button id="add-activity-btn-quick" class="btn btn-primary btn-compact" title="Raccourci : Alt + N (ou Alt + A)">
+                + Nouvelle Activité
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <!-- Global Backup Reminder Alert Banner -->
+        <div id="backup-reminder-banner" class="backup-alert-banner" style="display: none">
+          <span id="backup-alert-text" class="backup-alert-message">
+            <!-- Dynamically populated via JS -->
+          </span>
+          <button id="backup-banner-action-btn" class="btn-warning-outline">Sauvegarder maintenant</button>
+        </div>
+
+        <!-- Global Auto-Backup Reconnection Alert Banner -->
+        <div id="auto-backup-reminder-banner" class="backup-alert-banner" style="display: none">
+          <span class="backup-alert-message">
+            <svg viewBox="0 0 24 24" class="alert-icon" style="fill: var(--warning-text); margin-right: 8px">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
             </svg>
-            <div class="drop-zone-text">Déposez le fichier extrait du Grand Livre (.xls, .xlsx) ici</div>
-            <div class="drop-zone-desc">ou cliquez pour parcourir vos fichiers</div>
-            <input type="file" id="ledger-file-input" style="display: none;" accept=".xls,.xlsx">
-          </div>
+            <span>La sauvegarde automatique vers <strong id="auto-backup-reminder-filename"></strong> a besoin d'être reconnectée.</span>
+          </span>
+          <button id="auto-backup-reminder-btn" class="btn-warning-outline">Reconnecter</button>
+        </div>
 
-          <!-- Reconciliation Panel (hidden initially until file parsed) -->
-          <div id="reconciliation-panel" style="display: none;" class="reconciliation-grid">
-            <div class="reconcile-summary-bar">
-              <div class="summary-box" style="border-left: 4px solid var(--success);">
-                <div id="recon-stat-valid" class="summary-box-val text-success">0</div>
-                <div class="summary-box-lbl">Validés</div>
+        <!-- View Containers -->
+        <div class="view-container">
+          <!-- 1. DASHBOARD VIEW -->
+          <section id="view-dashboard" class="view-section active">
+            <div class="stats-grid">
+              <div class="stat-card">
+                <span class="stat-label">Revenus totaux saisis</span>
+                <span id="stat-revenue-total" class="stat-value">0,00 $</span>
+                <span class="stat-desc">Calculés sur toutes les activités</span>
               </div>
-              <div class="summary-box" style="border-left: 4px solid var(--danger);">
-                <div id="recon-stat-diff" class="summary-box-val text-danger">0</div>
-                <div class="summary-box-lbl">Écarts Montant</div>
+              <div class="stat-card">
+                <span class="stat-label">Revenus internes (sans frais)</span>
+                <span id="stat-revenue-internal-free" class="stat-value">0,00 $</span>
+                <span class="stat-desc">Valeur théorique estimée</span>
               </div>
-              <div class="summary-box" style="border-left: 4px solid var(--warning);">
-                <div id="recon-stat-unlogged" class="summary-box-val text-warning">0</div>
-                <div class="summary-box-lbl">Non dans le GL</div>
+              <div class="stat-card">
+                <span class="stat-label">Nombre d'activités</span>
+                <span id="stat-activities-count" class="stat-value">0</span>
+                <span class="stat-desc">Activités au trimestre courant</span>
               </div>
-              <div class="summary-box" style="border-left: 4px solid var(--info);">
-                <div id="recon-stat-unentered" class="summary-box-val text-info">0</div>
-                <div class="summary-box-lbl">Non saisis (GL seul)</div>
+              <div class="stat-card">
+                <span class="stat-label">Taux de rapprochement</span>
+                <span id="stat-reconciled-percent" class="stat-value">0%</span>
+                <span class="stat-desc">Conformité avec le Grand Livre</span>
               </div>
             </div>
 
+            <div class="charts-grid">
+              <div class="chart-card">
+                <div class="chart-header">
+                  <span class="chart-title">Revenus trimestriels réels</span>
+                </div>
+                <div class="chart-container">
+                  <canvas id="chart-quarterly-revenues"></canvas>
+                </div>
+              </div>
+              <div class="chart-card">
+                <div class="chart-header">
+                  <span class="chart-title">Répartition par salle</span>
+                </div>
+                <div class="chart-container">
+                  <canvas id="chart-salle-share"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="charts-grid" style="grid-template-columns: 1fr">
+              <div class="chart-card" style="min-height: 320px">
+                <div class="chart-header">
+                  <span class="chart-title">Volume des revenus par compte de Grand Livre (Top Comptes)</span>
+                </div>
+                <div class="chart-container">
+                  <canvas id="chart-accounts-volume"></canvas>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 2. ACTIVITIES VIEW -->
+          <section id="view-activities" class="view-section">
             <div class="table-card">
               <div class="table-toolbar">
-                <div class="reconcile-tabs">
-                  <button class="reconcile-tab active" data-recon-filter="all">Tous (<span id="count-recon-all">0</span>)</button>
-                  <button class="reconcile-tab text-success" data-recon-filter="valid">Validés (<span id="count-recon-valid">0</span>)</button>
-                  <button class="reconcile-tab text-danger" data-recon-filter="diff">Écarts (<span id="count-recon-diff">0</span>)</button>
-                  <button class="reconcile-tab text-warning" data-recon-filter="unlogged">Non dans GL (<span id="count-recon-unlogged">0</span>)</button>
-                  <button class="reconcile-tab text-info" data-recon-filter="unentered">Non saisis (<span id="count-recon-unentered">0</span>)</button>
+                <div class="search-wrapper">
+                  <svg class="search-icon" viewBox="0 0 24 24">
+                    <path
+                      d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+                    />
+                  </svg>
+                  <input
+                    type="text"
+                    id="activity-search"
+                    class="search-input"
+                    aria-label="Rechercher une activité"
+                    placeholder="Rechercher par nom, responsable, RI/Facture..."
+                  />
                 </div>
-                <div>
-                  <button id="clear-ledger-btn" class="btn btn-secondary btn-danger">Effacer l'import</button>
+
+                <div class="filter-actions">
+                  <select id="filter-salle" class="select-input" aria-label="Filtrer par salle">
+                    <option value="">Toutes les salles</option>
+                    <!-- Populated dynamically -->
+                  </select>
+                  <select id="filter-client-type" class="select-input" aria-label="Filtrer par type de client">
+                    <option value="">Tous types clients</option>
+                    <option value="interne">Interne</option>
+                    <option value="externe">Externe</option>
+                  </select>
+                  <button id="open-calendar-btn" class="btn btn-secondary" title="Voir le calendrier des événements">
+                    <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px">
+                      <path
+                        d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H5V8h14v13zM7 10h5v5H7z"
+                      />
+                    </svg>
+                    Calendrier
+                  </button>
                 </div>
               </div>
-              
+
               <div class="table-responsive">
                 <table>
                   <thead>
                     <tr>
-                      <th>Poste Budgétaire / Description</th>
-                      <th>RI / Facture Réf.</th>
-                      <th>Montant Saisi</th>
-                      <th>Montant Réel (GL)</th>
-                      <th>Écart</th>
-                      <th>Statut Rapprochement</th>
-                      <th class="text-right">Action</th>
+                      <th data-sort="id">N° Activité</th>
+                      <th data-sort="name">Nom de l'Activité</th>
+                      <th data-sort="responsable">Responsable</th>
+                      <th data-sort="date_start">Dates / Occ.</th>
+                      <th data-sort="room_name">Salle</th>
+                      <th data-sort="reference">RI / Facture</th>
+                      <th data-sort="totalRev">Revenu Saisi</th>
+                      <th data-sort="sansFrais">Sans Frais</th>
+                      <th style="width: 160px">État / Planification</th>
+                      <th class="text-right" style="width: 100px">Actions</th>
                     </tr>
                   </thead>
-                  <tbody id="reconciliation-table-body">
-                    <!-- Populated dynamically -->
+                  <tbody id="activities-table-body">
+                    <!-- Loaded dynamically -->
                   </tbody>
                 </table>
               </div>
-              <div id="reconciliation-pagination" class="pagination-bar"></div>
+              <div id="activities-pagination" class="pagination-bar"></div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- 3.5 GRAND LIVRE LOCAL VIEW -->
-        <section id="view-account-report" class="view-section">
-          <div class="table-card">
-            <div class="table-toolbar">
-              <div style="font-weight: 700; font-size: 1.05rem;">Fiches d'écriture par compte GL</div>
-              <div class="filter-actions" style="display: flex; align-items: center; gap: 8px;">
-                <label for="filter-report-account">Compte :</label>
-                <select id="filter-report-account" class="select-input">
-                  <option value="">Tous les comptes</option>
+          <!-- 3. RECONCILIATION VIEW -->
+          <section id="view-validation" class="view-section">
+            <!-- File Drop Zone -->
+            <div id="drop-zone" class="drop-zone">
+              <svg class="drop-zone-icon" viewBox="0 0 24 24">
+                <path
+                  d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"
+                />
+              </svg>
+              <div class="drop-zone-text">Déposez le fichier extrait du Grand Livre (.xls, .xlsx) ici</div>
+              <div class="drop-zone-desc">ou cliquez pour parcourir vos fichiers</div>
+              <input type="file" id="ledger-file-input" style="display: none" accept=".xls,.xlsx" />
+            </div>
+
+            <!-- Reconciliation Panel (hidden initially until file parsed) -->
+            <div id="reconciliation-panel" style="display: none" class="reconciliation-grid">
+              <div class="reconcile-summary-bar">
+                <div class="summary-box" style="border-left: 4px solid var(--success)">
+                  <div id="recon-stat-valid" class="summary-box-val text-success">0</div>
+                  <div class="summary-box-lbl">Validés</div>
+                </div>
+                <div class="summary-box" style="border-left: 4px solid var(--danger)">
+                  <div id="recon-stat-diff" class="summary-box-val text-danger">0</div>
+                  <div class="summary-box-lbl">Écarts Montant</div>
+                </div>
+                <div class="summary-box" style="border-left: 4px solid var(--warning)">
+                  <div id="recon-stat-unlogged" class="summary-box-val text-warning">0</div>
+                  <div class="summary-box-lbl">Non dans le GL</div>
+                </div>
+                <div class="summary-box" style="border-left: 4px solid var(--info)">
+                  <div id="recon-stat-unentered" class="summary-box-val text-info">0</div>
+                  <div class="summary-box-lbl">Non saisis (GL seul)</div>
+                </div>
+              </div>
+
+              <div class="table-card">
+                <div class="table-toolbar">
+                  <div class="reconcile-tabs">
+                    <button class="reconcile-tab active" data-recon-filter="all">Tous (<span id="count-recon-all">0</span>)</button>
+                    <button class="reconcile-tab text-success" data-recon-filter="valid">
+                      Validés (<span id="count-recon-valid">0</span>)
+                    </button>
+                    <button class="reconcile-tab text-danger" data-recon-filter="diff">
+                      Écarts (<span id="count-recon-diff">0</span>)
+                    </button>
+                    <button class="reconcile-tab text-warning" data-recon-filter="unlogged">
+                      Non dans GL (<span id="count-recon-unlogged">0</span>)
+                    </button>
+                    <button class="reconcile-tab text-info" data-recon-filter="unentered">
+                      Non saisis (<span id="count-recon-unentered">0</span>)
+                    </button>
+                  </div>
+                  <div>
+                    <button id="clear-ledger-btn" class="btn btn-secondary btn-danger">Effacer l'import</button>
+                  </div>
+                </div>
+
+                <div class="table-responsive">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Poste Budgétaire / Description</th>
+                        <th>RI / Facture Réf.</th>
+                        <th>Montant Saisi</th>
+                        <th>Montant Réel (GL)</th>
+                        <th>Écart</th>
+                        <th>Statut Rapprochement</th>
+                        <th class="text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="reconciliation-table-body">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+                <div id="reconciliation-pagination" class="pagination-bar"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 3.5 GRAND LIVRE LOCAL VIEW -->
+          <section id="view-account-report" class="view-section">
+            <div class="table-card">
+              <div class="table-toolbar">
+                <div style="font-weight: 700; font-size: 1.05rem">Fiches d'écriture par compte GL</div>
+                <div class="filter-actions" style="display: flex; align-items: center; gap: 8px">
+                  <label for="filter-report-account">Compte :</label>
+                  <select id="filter-report-account" class="select-input">
+                    <option value="">Tous les comptes</option>
+                    <!-- Populated dynamically -->
+                  </select>
+                </div>
+              </div>
+
+              <div id="account-report-container" style="padding: 24px; display: flex; flex-direction: column; gap: 32px">
+                <!-- Populated dynamically via JS -->
+              </div>
+            </div>
+          </section>
+
+          <!-- 4. CONFIGURATION VIEW -->
+          <section id="view-settings" class="view-section">
+            <div class="settings-container">
+              <!-- Settings subnavigation -->
+              <aside class="settings-tabs">
+                <button class="settings-tab-btn active" data-settings-panel="accounts">Comptes GL</button>
+                <button class="settings-tab-btn" data-settings-panel="rooms">Salles & Tarifs</button>
+                <button class="settings-tab-btn" data-settings-panel="departments">Départements</button>
+                <button class="settings-tab-btn" data-settings-panel="salaries">Salaires</button>
+                <button class="settings-tab-btn" data-settings-panel="services">Services</button>
+                <button class="settings-tab-btn" data-settings-panel="global-tasks">Tâches globales</button>
+              </aside>
+
+              <!-- Settings Panel Content -->
+              <div class="settings-content">
+                <!-- 4.1 Accounts settings panel -->
+                <div id="panel-accounts" class="settings-panel active">
+                  <div class="settings-panel-header">
+                    <h3 class="settings-panel-title">Comptes de Grand Livre (Postes budgétaires)</h3>
+                    <button id="add-account-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                      + Ajouter un compte
+                    </button>
+                  </div>
+                  <div id="settings-accounts-list" class="settings-list">
+                    <!-- Dynamically populated -->
+                  </div>
+                </div>
+
+                <!-- 4.2 Rooms settings panel -->
+                <div id="panel-rooms" class="settings-panel">
+                  <div class="settings-panel-header">
+                    <h3 class="settings-panel-title">Gestion des Salles</h3>
+                    <button id="add-room-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                      + Ajouter une salle
+                    </button>
+                  </div>
+                  <div id="settings-rooms-list" class="settings-list">
+                    <!-- Dynamically populated -->
+                  </div>
+                </div>
+
+                <!-- 4.3 Departments settings panel -->
+                <div id="panel-departments" class="settings-panel">
+                  <div class="settings-panel-header">
+                    <h3 class="settings-panel-title">Départements pour Facturation</h3>
+                    <button id="add-dept-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                      + Ajouter un département
+                    </button>
+                  </div>
+                  <div id="settings-depts-list" class="settings-list">
+                    <!-- Dynamically populated -->
+                  </div>
+                </div>
+
+                <!-- 4.4 Salaries settings panel -->
+                <div id="panel-salaries" class="settings-panel">
+                  <div class="settings-panel-header">
+                    <h3 class="settings-panel-title">Gestion des Salaires / Emplois</h3>
+                    <button id="add-salary-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                      + Ajouter un emploi
+                    </button>
+                  </div>
+                  <div id="settings-salaries-list" class="settings-list">
+                    <!-- Dynamically populated -->
+                  </div>
+                </div>
+
+                <!-- 4.5 Services settings panel -->
+                <div id="panel-services" class="settings-panel">
+                  <div class="settings-panel-header">
+                    <h3 class="settings-panel-title">Gestion des Services</h3>
+                    <button id="add-service-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                      + Ajouter un service
+                    </button>
+                  </div>
+                  <div id="settings-services-list" class="settings-list">
+                    <!-- Dynamically populated -->
+                  </div>
+                </div>
+
+                <!-- 4.6 Global tasks settings panel -->
+                <div id="panel-global-tasks" class="settings-panel">
+                  <div class="settings-panel-header">
+                    <h3 class="settings-panel-title">Tâches globales de planification</h3>
+                    <button id="add-global-task-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                      + Ajouter une tâche globale
+                    </button>
+                  </div>
+                  <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 12px">
+                    Ces tâches sont ajoutées automatiquement à la liste de planification de chaque activité lors de l'insertion automatique
+                    des tâches.
+                  </p>
+                  <div id="settings-global-tasks-list" class="settings-list">
+                    <!-- Dynamically populated -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 5. BACKUP VIEW -->
+          <section id="view-backup" class="view-section">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px">
+              <div class="stat-card" style="gap: 16px">
+                <h3 class="chart-title">Exportations de Données</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary)">
+                  Exportez les données de l'application dans des formats réutilisables ou pour archivage.
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 12px">
+                  <button id="backup-export-json" class="btn btn-primary btn-secondary" style="justify-content: flex-start">
+                    <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor; margin-right: 8px">
+                      <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                    </svg>
+                    Sauvegarder la base de données (Fichier JSON)
+                  </button>
+                  <button id="backup-export-excel" class="btn btn-primary" style="justify-content: flex-start">
+                    <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor; margin-right: 8px">
+                      <path
+                        d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-6 2h6v2h-6V5zm0 4h6v2h-6V9zm-8 8l3.5-4.5 2.5 3 3.5-4.5 4.5 6H5z"
+                      />
+                    </svg>
+                    Générer le rapport d'activités (Format Excel)
+                  </button>
+                </div>
+              </div>
+
+              <div class="stat-card" style="gap: 16px">
+                <h3 class="chart-title">Restauration des Données</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary)">
+                  Restaurez la base de données de l'application à partir d'un fichier de sauvegarde JSON précédemment exporté.
+                </p>
+
+                <div
+                  style="
+                    border: 2px dashed var(--border-color);
+                    padding: 24px;
+                    border-radius: var(--radius-md);
+                    text-align: center;
+                    cursor: pointer;
+                  "
+                  id="json-drop-zone"
+                >
+                  <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: var(--text-secondary); margin-bottom: 8px">
+                    <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" />
+                  </svg>
+                  <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary)">
+                    Sélectionnez ou déposez votre sauvegarde (.json)
+                  </div>
+                  <input type="file" id="json-file-input" style="display: none" accept=".json" />
+                </div>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px">
+              <div class="stat-card" style="gap: 16px">
+                <h3 class="chart-title">Statut de la Sauvegarde</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary)">
+                  Consultez la date de la dernière exportation réussie et le statut actuel.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.95rem">
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      justify-content: space-between;
+                      border-bottom: 1px solid var(--border-color);
+                      padding-bottom: 8px;
+                    "
+                  >
+                    <span style="color: var(--text-secondary)">Dernière sauvegarde :</span>
+                    <span id="backup-status-date" style="font-weight: 600">Aucune sauvegarde effectuée</span>
+                  </div>
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 4px">
+                    <span style="color: var(--text-secondary)">Statut :</span>
+                    <span id="backup-status-badge-container">
+                      <!-- populated dynamically via JS -->
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stat-card" style="gap: 16px">
+                <h3 class="chart-title">Paramètres de Rappel</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary)">
+                  Configurez le nombre de jours au-delà duquel un rappel de sauvegarde vous sera présenté.
+                </p>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    margin-top: auto;
+                    margin-bottom: auto;
+                    background-color: var(--bg-main);
+                    padding: 12px;
+                    border-radius: var(--radius-md);
+                    border: 1px solid var(--border-color);
+                  "
+                >
+                  <label
+                    for="backup-reminder-days-input"
+                    style="font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); cursor: pointer"
+                    >Rappeler après :</label
+                  >
+                  <input
+                    type="number"
+                    id="backup-reminder-days-input"
+                    class="form-input"
+                    min="1"
+                    max="365"
+                    style="width: 80px; padding: 6px 10px; text-align: center"
+                    value="7"
+                  />
+                  <span style="font-size: 0.9rem; color: var(--text-secondary)">jours</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px">
+              <div class="stat-card" style="gap: 16px">
+                <h3 class="chart-title">Sauvegarde automatique (fichier local)</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary)">
+                  Choisissez un fichier sur votre ordinateur : l'application y réécrira automatiquement une copie à jour des données à
+                  chaque modification. Fonctionne sur Chrome et Edge uniquement.
+                </p>
+                <div id="auto-backup-status" style="font-size: 0.9rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+                  <!-- Populated dynamically via JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Danger Zone to clear local database -->
+            <div class="stat-card" style="gap: 16px; border-color: rgba(244, 63, 94, 0.2); background-color: rgba(244, 63, 94, 0.02)">
+              <h3 class="chart-title" style="color: var(--danger)">Zone de Danger</h3>
+              <p style="font-size: 0.9rem; color: var(--text-secondary)">
+                Effacez définitivement toutes les activités saisies localement et réinitialisez l'application à son état d'origine.
+              </p>
+              <div>
+                <button id="backup-reset-db" class="btn btn-danger">Réinitialiser la base de données (Effacer toutes les activités)</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- DRAWERS & MODALS -->
+
+    <!-- Drawer Container Backdrop -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+
+    <!-- 1. Activity Record Drawer (3-tab lifecycle view: Soumission et contrat / Planification / Facturation) -->
+    <div id="activity-drawer" class="drawer">
+      <div class="drawer-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h2 id="activity-drawer-title" class="drawer-title">Activité</h2>
+          <span id="auto-save-status" class="auto-save-status">
+            <svg class="auto-save-spinner" viewBox="0 0 24 24" style="display: none;"><path d="M12 4V2C6.48 2 2 6.48 2 12h2c0-4.41 3.59-8 8-8z"/></svg>
+            <span class="auto-save-text">Enregistré</span>
+          </span>
+        </div>
+        <button id="activity-drawer-close" class="btn-icon" aria-label="Fermer" style="margin-left: auto;">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+
+      <div id="activity-state-bar" class="activity-state-bar">
+        <!-- Populated dynamically: state badge, planning progress, transition buttons -->
+      </div>
+
+      <div class="activity-tabs">
+        <button type="button" class="activity-tab-btn active" data-activity-tab="submission">Soumission et contrat</button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="planning">Planification</button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="billing">Facturation</button>
+      </div>
+
+      <div class="drawer-content">
+        <form id="activity-form">
+          <input type="hidden" id="form-activity-internal-id" />
+
+          <!-- ============ TAB: Soumission et contrat ============ -->
+          <div id="activity-tab-panel-submission" class="activity-tab-panel active">
+            <!-- Mode: Estimation (calcul allégé) vs Soumission (formulaire complet) -->
+            <div class="form-group">
+              <label for="activity-mode-toggle">Mode</label>
+              <div id="activity-mode-toggle" class="pill-toggle-group">
+                <button type="button" class="pill-toggle" data-mode="estimation">Estimation</button>
+                <button type="button" class="pill-toggle" data-mode="soumission">Soumission</button>
+              </div>
+              <div id="activity-mode-locked-hint" style="margin-top: 6px; font-size: 0.78rem; color: var(--text-muted); display: none">
+                Le mode est verrouillé sur « Soumission » une fois l'activité soumise ou approuvée.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="form-activity-id">Numéro d'activité (Généré automatiquement, ex: 2627-001)</label>
+              <input type="text" id="form-activity-id" class="form-input" placeholder="Généré automatiquement" disabled />
+            </div>
+
+            <div class="form-group">
+              <label for="form-activity-coba">Références COBA collégial</label>
+              <input type="text" id="form-activity-coba" class="form-input" placeholder="Ex: 123456; 789012" />
+            </div>
+
+            <div class="form-group">
+              <label for="form-activity-name">Nom de l'activité *</label>
+              <input type="text" id="form-activity-name" class="form-input" required placeholder="Ex: Réunion SCOUTS" />
+            </div>
+
+            <div class="form-group estimation-hide">
+              <label for="form-activity-attendees">Nombre de personnes attendues</label>
+              <input type="number" id="form-activity-attendees" class="form-input" min="0" placeholder="Ex: 50" />
+            </div>
+
+            <!-- Identification du client -->
+            <div class="estimation-hide">
+              <div class="form-section-title">Identification du client</div>
+              <div class="form-group-row">
+                <div class="form-group">
+                  <label for="form-activity-client-firstname">Prénom du responsable</label>
+                  <input type="text" id="form-activity-client-firstname" class="form-input" placeholder="Prénom" />
+                </div>
+                <div class="form-group">
+                  <label for="form-activity-client-lastname">Nom du responsable</label>
+                  <input type="text" id="form-activity-client-lastname" class="form-input" placeholder="Nom" />
+                </div>
+              </div>
+              <div class="form-group-row">
+                <div class="form-group">
+                  <label for="form-activity-client-phone">Téléphone</label>
+                  <input type="tel" id="form-activity-client-phone" class="form-input" placeholder="Ex: 514-555-1234" />
+                </div>
+                <div class="form-group">
+                  <label for="form-activity-client-email">Courriel</label>
+                  <input type="email" id="form-activity-client-email" class="form-input" placeholder="nom@exemple.com" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Facturation -->
+            <div class="estimation-hide">
+              <div class="form-section-title">Facturation</div>
+              <div class="form-group-row">
+                <div class="form-group">
+                  <label for="form-activity-responsable">Responsable Facturation</label>
+                  <input type="text" id="form-activity-responsable" class="form-input" placeholder="Ex: M. Dupont" />
+                </div>
+                <div class="form-group">
+                  <label for="form-activity-client-type">Client interne ou externe</label>
+                  <select id="form-activity-client-type" class="select-input" style="padding: 10px 14px">
+                    <option value="">Sélectionner...</option>
+                    <option value="interne">Interne</option>
+                    <option value="externe">Externe</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="form-activity-dept">Département</label>
+                <select id="form-activity-dept" class="select-input" style="padding: 10px 14px">
                   <!-- Populated dynamically -->
                 </select>
               </div>
             </div>
-            
-            <div id="account-report-container" style="padding: 24px; display: flex; flex-direction: column; gap: 32px;">
-              <!-- Populated dynamically via JS -->
+
+            <!-- Description -->
+            <div class="form-group estimation-hide">
+              <label for="form-activity-description">Description de l'activité</label>
+              <textarea id="form-activity-description" class="form-input" rows="3" placeholder="Décrivez l'activité..."></textarea>
             </div>
-          </div>
-        </section>
 
-        <!-- 4. CONFIGURATION VIEW -->
-        <section id="view-settings" class="view-section">
-          <div class="settings-container">
-            <!-- Settings subnavigation -->
-            <aside class="settings-tabs">
-              <button class="settings-tab-btn active" data-settings-panel="accounts">Comptes GL</button>
-              <button class="settings-tab-btn" data-settings-panel="rooms">Salles & Tarifs</button>
-              <button class="settings-tab-btn" data-settings-panel="departments">Départements</button>
-              <button class="settings-tab-btn" data-settings-panel="salaries">Salaires</button>
-              <button class="settings-tab-btn" data-settings-panel="services">Services</button>
-              <button class="settings-tab-btn" data-settings-panel="global-tasks">Tâches globales</button>
-            </aside>
-            
-            <!-- Settings Panel Content -->
-            <div class="settings-content">
-              
-              <!-- 4.1 Accounts settings panel -->
-              <div id="panel-accounts" class="settings-panel active">
-                <div class="settings-panel-header">
-                  <h3 class="settings-panel-title">Comptes de Grand Livre (Postes budgétaires)</h3>
-                  <button id="add-account-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
-                    + Ajouter un compte
-                  </button>
+            <!-- Responsable de l'activité -->
+            <div class="estimation-hide">
+              <div class="form-section-title">Responsable de l'activité</div>
+              <div class="form-group-row">
+                <div class="form-group">
+                  <label for="form-activity-manager-firstname">Prénom</label>
+                  <input type="text" id="form-activity-manager-firstname" class="form-input" placeholder="Prénom" />
                 </div>
-                <div id="settings-accounts-list" class="settings-list">
-                  <!-- Dynamically populated -->
+                <div class="form-group">
+                  <label for="form-activity-manager-lastname">Nom</label>
+                  <input type="text" id="form-activity-manager-lastname" class="form-input" placeholder="Nom" />
                 </div>
               </div>
-
-              <!-- 4.2 Rooms settings panel -->
-              <div id="panel-rooms" class="settings-panel">
-                <div class="settings-panel-header">
-                  <h3 class="settings-panel-title">Gestion des Salles</h3>
-                  <button id="add-room-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
-                    + Ajouter une salle
-                  </button>
+              <div class="form-group-row">
+                <div class="form-group">
+                  <label for="form-activity-manager-type">Fonction</label>
+                  <select id="form-activity-manager-type" class="select-input" style="padding: 10px 14px">
+                    <option value="">Sélectionner...</option>
+                    <option value="employe">Employé</option>
+                    <option value="etudiant">Étudiant</option>
+                    <option value="externe">Externe</option>
+                  </select>
                 </div>
-                <div id="settings-rooms-list" class="settings-list">
-                  <!-- Dynamically populated -->
-                </div>
-              </div>
-
-              <!-- 4.3 Departments settings panel -->
-              <div id="panel-departments" class="settings-panel">
-                <div class="settings-panel-header">
-                  <h3 class="settings-panel-title">Départements pour Facturation</h3>
-                  <button id="add-dept-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
-                    + Ajouter un département
-                  </button>
-                </div>
-                <div id="settings-depts-list" class="settings-list">
-                  <!-- Dynamically populated -->
+                <div class="form-group">
+                  <label for="form-activity-manager-phone">Numéro de téléphone</label>
+                  <input type="tel" id="form-activity-manager-phone" class="form-input" placeholder="Ex: 514-555-1234" />
                 </div>
               </div>
-
-              <!-- 4.4 Salaries settings panel -->
-              <div id="panel-salaries" class="settings-panel">
-                <div class="settings-panel-header">
-                  <h3 class="settings-panel-title">Gestion des Salaires / Emplois</h3>
-                  <button id="add-salary-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
-                    + Ajouter un emploi
-                  </button>
-                </div>
-                <div id="settings-salaries-list" class="settings-list">
-                  <!-- Dynamically populated -->
-                </div>
-              </div>
-
-              <!-- 4.5 Services settings panel -->
-              <div id="panel-services" class="settings-panel">
-                <div class="settings-panel-header">
-                  <h3 class="settings-panel-title">Gestion des Services</h3>
-                  <button id="add-service-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
-                    + Ajouter un service
-                  </button>
-                </div>
-                <div id="settings-services-list" class="settings-list">
-                  <!-- Dynamically populated -->
-                </div>
-              </div>
-
-              <!-- 4.6 Global tasks settings panel -->
-              <div id="panel-global-tasks" class="settings-panel">
-                <div class="settings-panel-header">
-                  <h3 class="settings-panel-title">Tâches globales de planification</h3>
-                  <button id="add-global-task-btn" class="btn btn-primary btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
-                    + Ajouter une tâche globale
-                  </button>
-                </div>
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 12px;">
-                  Ces tâches sont ajoutées automatiquement à la liste de planification de chaque activité lors de l'insertion automatique des tâches.
-                </p>
-                <div id="settings-global-tasks-list" class="settings-list">
-                  <!-- Dynamically populated -->
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        <!-- 5. BACKUP VIEW -->
-        <section id="view-backup" class="view-section">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-            
-            <div class="stat-card" style="gap: 16px;">
-              <h3 class="chart-title">Exportations de Données</h3>
-              <p style="font-size: 0.9rem; color: var(--text-secondary);">Exportez les données de l'application dans des formats réutilisables ou pour archivage.</p>
-              
-              <div style="display: flex; flex-direction: column; gap: 12px;">
-                <button id="backup-export-json" class="btn btn-primary btn-secondary" style="justify-content: flex-start;">
-                  <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor; margin-right: 8px;">
-                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                  </svg>
-                  Sauvegarder la base de données (Fichier JSON)
-                </button>
-                <button id="backup-export-excel" class="btn btn-primary" style="justify-content: flex-start;">
-                  <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor; margin-right: 8px;">
-                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-6 2h6v2h-6V5zm0 4h6v2h-6V9zm-8 8l3.5-4.5 2.5 3 3.5-4.5 4.5 6H5z"/>
-                  </svg>
-                  Générer le rapport d'activités (Format Excel)
-                </button>
+              <div class="form-group">
+                <label for="form-activity-manager-email">Courriel</label>
+                <input type="email" id="form-activity-manager-email" class="form-input" placeholder="nom@exemple.com" />
               </div>
             </div>
 
-            <div class="stat-card" style="gap: 16px;">
-              <h3 class="chart-title">Restauration des Données</h3>
-              <p style="font-size: 0.9rem; color: var(--text-secondary);">Restaurez la base de données de l'application à partir d'un fichier de sauvegarde JSON précédemment exporté.</p>
-              
-              <div style="border: 2px dashed var(--border-color); padding: 24px; border-radius: var(--radius-md); text-align: center; cursor: pointer;" id="json-drop-zone">
-                <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: var(--text-secondary); margin-bottom: 8px;">
-                  <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
-                </svg>
-                <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Sélectionnez ou déposez votre sauvegarde (.json)</div>
-                <input type="file" id="json-file-input" style="display: none;" accept=".json">
-              </div>
+            <!-- Réservations de salle -->
+            <div class="form-section-title">Réservations de salle</div>
+            <div id="form-activity-reservations">
+              <!-- One reservation card per réservation, populated dynamically -->
             </div>
-
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-            <div class="stat-card" style="gap: 16px;">
-              <h3 class="chart-title">Statut de la Sauvegarde</h3>
-              <p style="font-size: 0.9rem; color: var(--text-secondary);">Consultez la date de la dernière exportation réussie et le statut actuel.</p>
-              <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.95rem;">
-                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
-                  <span style="color: var(--text-secondary);">Dernière sauvegarde :</span>
-                  <span id="backup-status-date" style="font-weight: 600;">Aucune sauvegarde effectuée</span>
-                </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 4px;">
-                  <span style="color: var(--text-secondary);">Statut :</span>
-                  <span id="backup-status-badge-container">
-                    <!-- populated dynamically via JS -->
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div class="stat-card" style="gap: 16px;">
-              <h3 class="chart-title">Paramètres de Rappel</h3>
-              <p style="font-size: 0.9rem; color: var(--text-secondary);">Configurez le nombre de jours au-delà duquel un rappel de sauvegarde vous sera présenté.</p>
-              <div style="display: flex; align-items: center; gap: 12px; margin-top: auto; margin-bottom: auto; background-color: var(--bg-main); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                <label for="backup-reminder-days-input" style="font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); cursor: pointer;">Rappeler après :</label>
-                <input type="number" id="backup-reminder-days-input" class="form-input" min="1" max="365" style="width: 80px; padding: 6px 10px; text-align: center;" value="7">
-                <span style="font-size: 0.9rem; color: var(--text-secondary);">jours</span>
-              </div>
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px;">
-            <div class="stat-card" style="gap: 16px;">
-              <h3 class="chart-title">Sauvegarde automatique (fichier local)</h3>
-              <p style="font-size: 0.9rem; color: var(--text-secondary);">Choisissez un fichier sur votre ordinateur : l'application y réécrira automatiquement une copie à jour des données à chaque modification. Fonctionne sur Chrome et Edge uniquement.</p>
-              <div id="auto-backup-status" style="font-size: 0.9rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <!-- Populated dynamically via JS -->
-              </div>
-            </div>
-          </div>
-
-          <!-- Danger Zone to clear local database -->
-          <div class="stat-card" style="gap: 16px; border-color: rgba(244, 63, 94, 0.2); background-color: rgba(244, 63, 94, 0.02);">
-            <h3 class="chart-title" style="color: var(--danger);">Zone de Danger</h3>
-            <p style="font-size: 0.9rem; color: var(--text-secondary);">Effacez définitivement toutes les activités saisies localement et réinitialisez l'application à son état d'origine.</p>
-            <div>
-              <button id="backup-reset-db" class="btn btn-danger">
-                Réinitialiser la base de données (Effacer toutes les activités)
+            <div style="margin-top: 8px; margin-bottom: 12px">
+              <button type="button" id="add-reservation-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                + Ajouter une réservation
               </button>
             </div>
-          </div>
-        </section>
 
+            <!-- Help text for days of the week (based on the overall span across all réservations) -->
+            <div
+              id="form-activity-dates-helper"
+              style="
+                margin-top: -8px;
+                margin-bottom: 12px;
+                font-size: 0.78rem;
+                color: var(--text-secondary);
+                display: none;
+                align-items: center;
+                gap: 6px;
+              "
+            >
+              <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: var(--primary)">
+                <path
+                  d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm3.3 14.3L11 12.5V7h1.5v4.7l3.7 2.2-.7 1.4z"
+                />
+              </svg>
+              <span
+                ><strong>Jours de la semaine :</strong> <span id="form-activity-days-list" style="color: var(--text-primary)"></span
+              ></span>
+            </div>
+
+            <!-- Type d'événement -->
+            <div class="estimation-hide">
+              <div class="form-group">
+                <label for="form-activity-event-type">Type d'événement</label>
+                <select id="form-activity-event-type" class="select-input" style="padding: 10px 14px">
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
+              <div class="form-group" id="form-activity-event-type-other-group" style="display: none">
+                <label for="form-activity-event-type-other">Précisez le type d'événement</label>
+                <input type="text" id="form-activity-event-type-other" class="form-input" placeholder="Précisez..." />
+              </div>
+            </div>
+
+            <!-- Récapitulatif financier (taxes québécoises) -->
+            <div class="distribution-section">
+              <div class="distribution-header">
+                <label>Récapitulatif financier</label>
+              </div>
+              <div id="submission-financial-summary" class="financial-summary">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Soumission -->
+            <div class="distribution-section estimation-hide">
+              <div class="distribution-header">
+                <label>Soumission</label>
+              </div>
+              <div id="submission-file-status" class="file-link-status"></div>
+            </div>
+
+            <!-- Contrat -->
+            <div class="distribution-section estimation-hide">
+              <div class="distribution-header">
+                <label>Contrat</label>
+              </div>
+              <div id="contract-file-status" class="file-link-status"></div>
+            </div>
+          </div>
+
+          <!-- ============ TAB: Planification ============ -->
+          <div id="activity-tab-panel-planning" class="activity-tab-panel">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px">
+              <div id="planning-progress-wrapper" style="flex-grow: 1; display: flex; align-items: center; gap: 10px">
+                <div id="planning-progress-bar-container" style="flex-grow: 1"></div>
+                <span id="planning-progress-label" style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap"></span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 16px">
+              <button type="button" id="generate-planning-tasks-btn" class="btn btn-secondary">Générer les tâches automatiquement</button>
+              <button type="button" id="add-planning-task-btn" class="btn btn-secondary">+ Ajouter une tâche</button>
+            </div>
+            <div id="planning-tasks-list" class="distribution-list">
+              <!-- Dynamic rows -->
+            </div>
+          </div>
+
+          <!-- ============ TAB: Facturation ============ -->
+          <div id="activity-tab-panel-billing" class="activity-tab-panel">
+            <!-- Accounts Dynamic Distribution Interface -->
+            <div class="distribution-section">
+              <div class="distribution-header">
+                <label>Ventilation par compte de revenus (avec Numéro Facture, RI ou Encaissement par compte)</label>
+                <div style="display: flex; gap: 8px">
+                  <button
+                    type="button"
+                    id="generate-billing-lines-btn"
+                    class="btn btn-secondary"
+                    style="padding: 6px 12px; font-size: 0.8rem"
+                  >
+                    Générer les lignes de facturation
+                  </button>
+                  <button
+                    type="button"
+                    id="form-add-distribution-btn"
+                    class="btn btn-secondary"
+                    style="padding: 6px 12px; font-size: 0.8rem"
+                  >
+                    + Ajouter
+                  </button>
+                </div>
+              </div>
+              <div id="form-distribution-list" class="distribution-list">
+                <!-- Dynamic rows -->
+              </div>
+              <div class="distribution-total">
+                <span>Total saisi</span>
+                <span id="form-distribution-total-val">0,00 $</span>
+              </div>
+            </div>
+
+            <div class="distribution-section">
+              <div class="distribution-header">
+                <label>État de la facturation</label>
+              </div>
+              <div id="billing-state-status" class="file-link-status"></div>
+            </div>
+          </div>
+        </form>
       </div>
-    </main>
 
-  </div>
-
-  <!-- DRAWERS & MODALS -->
-
-  <!-- Drawer Container Backdrop -->
-  <div id="drawer-backdrop" class="drawer-backdrop"></div>
-
-  <!-- 1. Activity Record Drawer (3-tab lifecycle view: Soumission et contrat / Planification / Facturation) -->
-  <div id="activity-drawer" class="drawer">
-    <div class="drawer-header">
-      <h2 id="activity-drawer-title" class="drawer-title">Activité</h2>
-      <button id="activity-drawer-close" class="btn-icon" aria-label="Fermer">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
+      <div class="drawer-footer">
+        <button id="activity-drawer-back-to-calendar-btn" class="btn btn-secondary" style="margin-right: auto; display: none">
+          <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+          </svg>
+          Retour au calendrier
+        </button>
+        <button id="activity-drawer-delete" class="btn btn-danger" style="margin-right: auto; display: none">Supprimer</button>
+        <button id="activity-drawer-submit" class="btn btn-primary" style="display: none;">Enregistrer</button>
+      </div>
     </div>
 
-    <div id="activity-state-bar" class="activity-state-bar">
-      <!-- Populated dynamically: state badge, planning progress, transition buttons -->
+    <!-- New Activity (name-only) Modal -->
+    <div id="new-activity-modal" class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="new-activity-modal-title">Nouvelle activité</h3>
+        <button id="new-activity-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <form id="new-activity-form">
+          <div class="form-group">
+            <label for="form-new-activity-name">Nom de l'activité *</label>
+            <input type="text" id="form-new-activity-name" class="form-input" required placeholder="Ex: Réunion SCOUTS" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="new-activity-modal-cancel" class="btn btn-secondary">Annuler</button>
+        <button id="new-activity-modal-submit" class="btn btn-primary">Créer</button>
+      </div>
     </div>
 
-    <div class="activity-tabs">
-      <button type="button" class="activity-tab-btn active" data-activity-tab="submission">Soumission et contrat</button>
-      <button type="button" class="activity-tab-btn" data-activity-tab="planning">Planification</button>
-      <button type="button" class="activity-tab-btn" data-activity-tab="billing">Facturation</button>
+    <!-- Modal Container Backdrop -->
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+
+    <!-- 2. Account Add/Edit Modal -->
+    <div id="account-modal" class="modal">
+      <div class="modal-header">
+        <h3 id="account-modal-title" class="modal-title">Ajouter un compte</h3>
+        <button id="account-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <form id="account-form">
+          <input type="hidden" id="form-account-original-code" />
+          <div class="form-group">
+            <label for="form-account-code">Numéro de compte (XXX-XXXX-XX-XXX)</label>
+            <input type="text" id="form-account-code" class="form-input" required placeholder="XXX-XXXX-XX-XXX" />
+          </div>
+          <div class="form-group">
+            <label for="form-account-desc">Description / Libellé</label>
+            <input type="text" id="form-account-desc" class="form-input" required placeholder="Ex: SCOLAIRE" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="account-modal-cancel" class="btn btn-secondary">Annuler</button>
+        <button id="account-modal-submit" class="btn btn-primary">Enregistrer</button>
+      </div>
     </div>
 
-    <div class="drawer-content">
-      <form id="activity-form">
-        <input type="hidden" id="form-activity-internal-id">
-
-        <!-- ============ TAB: Soumission et contrat ============ -->
-        <div id="activity-tab-panel-submission" class="activity-tab-panel active">
-          <!-- Mode: Estimation (calcul allégé) vs Soumission (formulaire complet) -->
-          <div class="form-group">
-            <label for="activity-mode-toggle">Mode</label>
-            <div id="activity-mode-toggle" class="pill-toggle-group">
-              <button type="button" class="pill-toggle" data-mode="estimation">Estimation</button>
-              <button type="button" class="pill-toggle" data-mode="soumission">Soumission</button>
+    <!-- 3. Room Add/Edit Modal -->
+    <div id="room-modal" class="modal" style="width: 760px; max-width: 95vw">
+      <div class="modal-header">
+        <h3 id="room-modal-title" class="modal-title">Ajouter une salle</h3>
+        <button id="room-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <form id="room-form">
+          <input type="hidden" id="form-room-original-name" />
+          <div class="form-group-row">
+            <div class="form-group" style="flex-grow: 1">
+              <label for="form-room-name">Nom de la salle</label>
+              <input type="text" id="form-room-name" class="form-input" required placeholder="Ex: POLY" />
             </div>
-            <div id="activity-mode-locked-hint" style="margin-top: 6px; font-size: 0.78rem; color: var(--text-muted); display: none;">
-              Le mode est verrouillé sur « Soumission » une fois l'activité soumise ou approuvée.
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="form-activity-id">Numéro d'activité (Généré automatiquement, ex: 2627-001)</label>
-            <input type="text" id="form-activity-id" class="form-input" placeholder="Généré automatiquement" disabled>
-          </div>
-
-          <div class="form-group">
-            <label for="form-activity-coba">#COBA</label>
-            <input type="text" id="form-activity-coba" class="form-input" placeholder="Ex: 123456; 789012">
-          </div>
-
-          <div class="form-group">
-            <label for="form-activity-name">Nom de l'activité *</label>
-            <input type="text" id="form-activity-name" class="form-input" required placeholder="Ex: Réunion SCOUTS">
-          </div>
-
-          <div class="form-group estimation-hide">
-            <label for="form-activity-attendees">Nombre de personnes attendues</label>
-            <input type="number" id="form-activity-attendees" class="form-input" min="0" placeholder="Ex: 50">
-          </div>
-
-          <!-- Identification du client -->
-          <div class="estimation-hide">
-            <div class="form-section-title">Identification du client</div>
-            <div class="form-group-row">
-              <div class="form-group">
-                <label for="form-activity-client-firstname">Prénom du responsable</label>
-                <input type="text" id="form-activity-client-firstname" class="form-input" placeholder="Prénom">
-              </div>
-              <div class="form-group">
-                <label for="form-activity-client-lastname">Nom du responsable</label>
-                <input type="text" id="form-activity-client-lastname" class="form-input" placeholder="Nom">
-              </div>
-            </div>
-            <div class="form-group-row">
-              <div class="form-group">
-                <label for="form-activity-client-phone">Téléphone</label>
-                <input type="tel" id="form-activity-client-phone" class="form-input" placeholder="Ex: 514-555-1234">
-              </div>
-              <div class="form-group">
-                <label for="form-activity-client-email">Courriel</label>
-                <input type="email" id="form-activity-client-email" class="form-input" placeholder="nom@exemple.com">
-              </div>
+            <div class="form-group" style="flex-grow: 0">
+              <label for="form-room-color">Couleur</label>
+              <input
+                type="color"
+                id="form-room-color"
+                class="form-input"
+                value="#4f46e5"
+                style="width: 56px; padding: 4px; cursor: pointer"
+              />
             </div>
           </div>
 
-          <!-- Facturation -->
-          <div class="estimation-hide">
-            <div class="form-section-title">Facturation</div>
-            <div class="form-group-row">
-              <div class="form-group">
-                <label for="form-activity-responsable">Responsable Facturation</label>
-                <input type="text" id="form-activity-responsable" class="form-input" placeholder="Ex: M. Dupont">
-              </div>
-              <div class="form-group">
-                <label for="form-activity-client-type">Client interne ou externe</label>
-                <select id="form-activity-client-type" class="select-input" style="padding: 10px 14px;">
-                  <option value="">Sélectionner...</option>
-                  <option value="interne">Interne</option>
-                  <option value="externe">Externe</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="form-activity-dept">Département</label>
-              <select id="form-activity-dept" class="select-input" style="padding: 10px 14px;">
-                <!-- Populated dynamically -->
-              </select>
-            </div>
-          </div>
-
-          <!-- Description -->
-          <div class="form-group estimation-hide">
-            <label for="form-activity-description">Description de l'activité</label>
-            <textarea id="form-activity-description" class="form-input" rows="3" placeholder="Décrivez l'activité..."></textarea>
-          </div>
-
-          <!-- Responsable de l'activité -->
-          <div class="estimation-hide">
-            <div class="form-section-title">Responsable de l'activité</div>
-            <div class="form-group-row">
-              <div class="form-group">
-                <label for="form-activity-manager-firstname">Prénom</label>
-                <input type="text" id="form-activity-manager-firstname" class="form-input" placeholder="Prénom">
-              </div>
-              <div class="form-group">
-                <label for="form-activity-manager-lastname">Nom</label>
-                <input type="text" id="form-activity-manager-lastname" class="form-input" placeholder="Nom">
-              </div>
-            </div>
-            <div class="form-group-row">
-              <div class="form-group">
-                <label for="form-activity-manager-type">Fonction</label>
-                <select id="form-activity-manager-type" class="select-input" style="padding: 10px 14px;">
-                  <option value="">Sélectionner...</option>
-                  <option value="employe">Employé</option>
-                  <option value="etudiant">Étudiant</option>
-                  <option value="externe">Externe</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="form-activity-manager-phone">Numéro de téléphone</label>
-                <input type="tel" id="form-activity-manager-phone" class="form-input" placeholder="Ex: 514-555-1234">
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="form-activity-manager-email">Courriel</label>
-              <input type="email" id="form-activity-manager-email" class="form-input" placeholder="nom@exemple.com">
-            </div>
-          </div>
-
-          <!-- Salle(s), horaire et tarif -->
-          <div class="form-section-title">Salle(s), horaire et tarif</div>
-          <div class="form-group">
-            <label for="form-activity-salle-group">Salle(s)</label>
-            <div id="form-activity-salle-group" class="pill-toggle-group">
-              <!-- Populated dynamically -->
-            </div>
-          </div>
-
-          <div id="form-activity-rooms-schedule">
-            <!-- One schedule card per selected room, populated dynamically -->
-          </div>
-
-          <!-- Help text for days of the week (based on the overall span across all rooms) -->
-          <div id="form-activity-dates-helper" style="margin-top: -8px; margin-bottom: 12px; font-size: 0.78rem; color: var(--text-secondary); display: none; align-items: center; gap: 6px;">
-            <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: var(--primary);"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm3.3 14.3L11 12.5V7h1.5v4.7l3.7 2.2-.7 1.4z"/></svg>
-            <span><strong>Jours de la semaine :</strong> <span id="form-activity-days-list" style="color: var(--text-primary);"></span></span>
-          </div>
-
-          <!-- Services techniques -->
-          <div class="form-group">
-            <label for="form-activity-services-group">Services techniques</label>
-            <div id="form-activity-services-group" class="pill-toggle-group">
-              <!-- Populated dynamically -->
-            </div>
-          </div>
-
-          <!-- Consommation -->
-          <div class="form-group">
-            <label for="form-activity-consumption-group">Consommation</label>
-            <div id="form-activity-consumption-group" class="pill-toggle-group">
-              <!-- Populated dynamically -->
-            </div>
-          </div>
-          <div class="form-group" id="form-activity-consumption-special-group" style="display: none;">
-            <label for="form-activity-consumption-special">Précisez les produits (commande spéciale)</label>
-            <input type="text" id="form-activity-consumption-special" class="form-input" placeholder="Précisez les produits...">
-          </div>
-
-          <!-- Service d'hôtes.ses -->
-          <div class="form-group">
-            <label for="form-activity-host-services-group">Service d'hôtes.ses</label>
-            <div id="form-activity-host-services-group" class="pill-toggle-group">
-              <!-- Populated dynamically -->
-            </div>
-          </div>
-
-          <!-- Type d'événement -->
-          <div class="estimation-hide">
-            <div class="form-group">
-              <label for="form-activity-event-type">Type d'événement</label>
-              <select id="form-activity-event-type" class="select-input" style="padding: 10px 14px;">
-                <!-- Populated dynamically -->
-              </select>
-            </div>
-            <div class="form-group" id="form-activity-event-type-other-group" style="display: none;">
-              <label for="form-activity-event-type-other">Précisez le type d'événement</label>
-              <input type="text" id="form-activity-event-type-other" class="form-input" placeholder="Précisez...">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="form-activity-remi">Temps Rémi (heures)</label>
-            <input type="number" id="form-activity-remi" class="form-input" step="0.25" min="0" value="0">
-          </div>
-
-          <!-- Personnel requis -->
+          <!-- Grille tarifaire versionnée -->
           <div class="distribution-section">
             <div class="distribution-header">
-              <label>Personnel requis</label>
-              <button type="button" id="form-add-staff-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
-            </div>
-            <div id="form-staff-list" class="distribution-list"></div>
-          </div>
-
-          <!-- Services -->
-          <div class="distribution-section">
-            <div class="distribution-header">
-              <label>Services</label>
-              <button type="button" id="form-add-service-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
-            </div>
-            <div id="form-services-list" class="distribution-list"></div>
-          </div>
-
-          <!-- Autres frais -->
-          <div class="distribution-section">
-            <div class="distribution-header">
-              <label>Autres frais</label>
-              <button type="button" id="form-add-fee-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
-            </div>
-            <div id="form-fees-list" class="distribution-list"></div>
-          </div>
-
-          <!-- Récapitulatif financier (taxes québécoises) -->
-          <div class="distribution-section">
-            <div class="distribution-header">
-              <label>Récapitulatif financier</label>
-            </div>
-            <div id="submission-financial-summary" class="financial-summary">
-              <!-- Populated dynamically -->
-            </div>
-          </div>
-
-          <!-- Soumission -->
-          <div class="distribution-section estimation-hide">
-            <div class="distribution-header">
-              <label>Soumission</label>
-            </div>
-            <div id="submission-file-status" class="file-link-status"></div>
-          </div>
-
-          <!-- Contrat -->
-          <div class="distribution-section estimation-hide">
-            <div class="distribution-header">
-              <label>Contrat</label>
-            </div>
-            <div id="contract-file-status" class="file-link-status"></div>
-          </div>
-        </div>
-
-        <!-- ============ TAB: Planification ============ -->
-        <div id="activity-tab-panel-planning" class="activity-tab-panel">
-          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-            <div id="planning-progress-wrapper" style="flex-grow: 1; display: flex; align-items: center; gap: 10px;">
-              <div id="planning-progress-bar-container" style="flex-grow: 1;"></div>
-              <span id="planning-progress-label" style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap;"></span>
-            </div>
-          </div>
-          <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-            <button type="button" id="generate-planning-tasks-btn" class="btn btn-secondary">Générer les tâches automatiquement</button>
-            <button type="button" id="add-planning-task-btn" class="btn btn-secondary">+ Ajouter une tâche</button>
-          </div>
-          <div id="planning-tasks-list" class="distribution-list">
-            <!-- Dynamic rows -->
-          </div>
-        </div>
-
-        <!-- ============ TAB: Facturation ============ -->
-        <div id="activity-tab-panel-billing" class="activity-tab-panel">
-          <!-- Accounts Dynamic Distribution Interface -->
-          <div class="distribution-section">
-            <div class="distribution-header">
-              <label>Ventilation par compte de revenus (avec Numéro Facture, RI ou Encaissement par compte)</label>
-              <div style="display: flex; gap: 8px;">
-                <button type="button" id="generate-billing-lines-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Générer les lignes de facturation</button>
-                <button type="button" id="form-add-distribution-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
-                  + Ajouter
+              <label>Grille tarifaire (paramètre × type de client)</label>
+              <div style="display: flex; gap: 8px">
+                <button type="button" id="room-grid-add-version-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                  + Nouvelle version
+                </button>
+                <button
+                  type="button"
+                  id="room-grid-delete-version-btn"
+                  class="btn btn-secondary"
+                  style="padding: 6px 12px; font-size: 0.8rem; color: var(--danger)"
+                >
+                  Supprimer la version
                 </button>
               </div>
             </div>
-            <div id="form-distribution-list" class="distribution-list">
-              <!-- Dynamic rows -->
+            <div id="room-grid-version-tabs" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px"></div>
+            <div class="form-group" style="max-width: 260px">
+              <label for="room-grid-effective-date">Date d'entrée en vigueur de cette version</label>
+              <input type="text" id="room-grid-effective-date" class="form-input" placeholder="AAAA-MM-JJ (vide = depuis toujours)" />
             </div>
-            <div class="distribution-total">
-              <span>Total saisi</span>
-              <span id="form-distribution-total-val">0,00 $</span>
+            <div class="form-group-row">
+              <div class="form-group">
+                <div class="distribution-header" style="margin-bottom: 8px">
+                  <label style="font-size: 0.8rem">Paramètres (lignes)</label>
+                  <button
+                    type="button"
+                    id="room-grid-add-param-btn"
+                    class="btn btn-secondary"
+                    style="padding: 4px 10px; font-size: 0.75rem"
+                  >
+                    + Paramètre
+                  </button>
+                </div>
+                <div id="room-grid-params-list" class="distribution-list"></div>
+              </div>
+              <div class="form-group">
+                <div class="distribution-header" style="margin-bottom: 8px">
+                  <label style="font-size: 0.8rem">Types de client (colonnes)</label>
+                  <button
+                    type="button"
+                    id="room-grid-add-clienttype-btn"
+                    class="btn btn-secondary"
+                    style="padding: 4px 10px; font-size: 0.75rem"
+                  >
+                    + Type de client
+                  </button>
+                </div>
+                <div id="room-grid-clienttypes-list" class="distribution-list"></div>
+              </div>
             </div>
+            <div id="room-grid-cells-table-wrapper" style="overflow-x: auto"></div>
           </div>
 
+          <!-- Salles liées -->
           <div class="distribution-section">
             <div class="distribution-header">
-              <label>État de la facturation</label>
+              <label>Salles liées (réservées automatiquement avec cette salle)</label>
             </div>
-            <div id="billing-state-status" class="file-link-status"></div>
+            <div id="room-linked-rooms-group" class="pill-toggle-group"></div>
           </div>
-        </div>
-      </form>
-    </div>
 
-    <div class="drawer-footer">
-      <button id="activity-drawer-back-to-calendar-btn" class="btn btn-secondary" style="margin-right: auto; display: none;">
-        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        Retour au calendrier
-      </button>
-      <button id="activity-drawer-delete" class="btn btn-danger" style="margin-right: auto; display: none;">Supprimer</button>
-      <button id="activity-drawer-cancel" class="btn btn-secondary">Fermer</button>
-      <button id="activity-drawer-submit" class="btn btn-primary">Enregistrer</button>
-    </div>
-  </div>
-
-  <!-- New Activity (name-only) Modal -->
-  <div id="new-activity-modal" class="modal">
-    <div class="modal-header">
-      <h3 class="modal-title" id="new-activity-modal-title">Nouvelle activité</h3>
-      <button id="new-activity-modal-close" class="btn-icon" aria-label="Fermer">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="modal-content">
-      <form id="new-activity-form">
-        <div class="form-group">
-          <label for="form-new-activity-name">Nom de l'activité *</label>
-          <input type="text" id="form-new-activity-name" class="form-input" required placeholder="Ex: Réunion SCOUTS">
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button id="new-activity-modal-cancel" class="btn btn-secondary">Annuler</button>
-      <button id="new-activity-modal-submit" class="btn btn-primary">Créer</button>
-    </div>
-  </div>
-
-  <!-- Modal Container Backdrop -->
-  <div id="modal-backdrop" class="modal-backdrop"></div>
-
-  <!-- 2. Account Add/Edit Modal -->
-  <div id="account-modal" class="modal">
-    <div class="modal-header">
-      <h3 id="account-modal-title" class="modal-title">Ajouter un compte</h3>
-      <button id="account-modal-close" class="btn-icon" aria-label="Fermer">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="modal-content">
-      <form id="account-form">
-        <input type="hidden" id="form-account-original-code">
-        <div class="form-group">
-          <label for="form-account-code">Numéro de compte (XXX-XXXX-XX-XXX)</label>
-          <input type="text" id="form-account-code" class="form-input" required placeholder="XXX-XXXX-XX-XXX">
-        </div>
-        <div class="form-group">
-          <label for="form-account-desc">Description / Libellé</label>
-          <input type="text" id="form-account-desc" class="form-input" required placeholder="Ex: SCOLAIRE">
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button id="account-modal-cancel" class="btn btn-secondary">Annuler</button>
-      <button id="account-modal-submit" class="btn btn-primary">Enregistrer</button>
-    </div>
-  </div>
-
-  <!-- 3. Room Add/Edit Modal -->
-  <div id="room-modal" class="modal" style="width: 760px; max-width: 95vw;">
-    <div class="modal-header">
-      <h3 id="room-modal-title" class="modal-title">Ajouter une salle</h3>
-      <button id="room-modal-close" class="btn-icon" aria-label="Fermer">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="modal-content">
-      <form id="room-form">
-        <input type="hidden" id="form-room-original-name">
-        <div class="form-group-row">
-          <div class="form-group" style="flex-grow: 1;">
-            <label for="form-room-name">Nom de la salle</label>
-            <input type="text" id="form-room-name" class="form-input" required placeholder="Ex: POLY">
-          </div>
-          <div class="form-group" style="flex-grow: 0;">
-            <label for="form-room-color">Couleur</label>
-            <input type="color" id="form-room-color" class="form-input" value="#4f46e5" style="width: 56px; padding: 4px; cursor: pointer;">
-          </div>
-        </div>
-
-        <!-- Grille tarifaire versionnée -->
-        <div class="distribution-section">
-          <div class="distribution-header">
-            <label>Grille tarifaire (paramètre × type de client)</label>
-            <div style="display: flex; gap: 8px;">
-              <button type="button" id="room-grid-add-version-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Nouvelle version</button>
-              <button type="button" id="room-grid-delete-version-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; color: var(--danger);">Supprimer la version</button>
+          <!-- Personnel lié -->
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Personnel lié (ajouté automatiquement à la réservation)</label>
+              <button type="button" id="room-add-linked-staff-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                + Ajouter
+              </button>
             </div>
+            <div id="room-linked-staff-list" class="distribution-list"></div>
           </div>
-          <div id="room-grid-version-tabs" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;"></div>
-          <div class="form-group" style="max-width: 260px;">
-            <label for="room-grid-effective-date">Date d'entrée en vigueur de cette version</label>
-            <input type="text" id="room-grid-effective-date" class="form-input" placeholder="AAAA-MM-JJ (vide = depuis toujours)">
-          </div>
-          <div class="form-group-row">
-            <div class="form-group">
-              <div class="distribution-header" style="margin-bottom: 8px;">
-                <label style="font-size: 0.8rem;">Paramètres (lignes)</label>
-                <button type="button" id="room-grid-add-param-btn" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;">+ Paramètre</button>
-              </div>
-              <div id="room-grid-params-list" class="distribution-list"></div>
+
+          <!-- Frais liés -->
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Frais liés (ajoutés automatiquement à la réservation)</label>
+              <button type="button" id="room-add-linked-fee-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                + Ajouter
+              </button>
             </div>
-            <div class="form-group">
-              <div class="distribution-header" style="margin-bottom: 8px;">
-                <label style="font-size: 0.8rem;">Types de client (colonnes)</label>
-                <button type="button" id="room-grid-add-clienttype-btn" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;">+ Type de client</button>
-              </div>
-              <div id="room-grid-clienttypes-list" class="distribution-list"></div>
+            <div id="room-linked-fees-list" class="distribution-list"></div>
+          </div>
+
+          <!-- Tâches du gestionnaire liées -->
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Tâches du gestionnaire liées (générées automatiquement en planification)</label>
+              <button type="button" id="room-add-linked-task-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                + Ajouter
+              </button>
             </div>
+            <div id="room-linked-tasks-list" class="distribution-list"></div>
           </div>
-          <div id="room-grid-cells-table-wrapper" style="overflow-x: auto;"></div>
-        </div>
-
-        <!-- Salles liées -->
-        <div class="distribution-section">
-          <div class="distribution-header">
-            <label>Salles liées (réservées automatiquement avec cette salle)</label>
-          </div>
-          <div id="room-linked-rooms-group" class="pill-toggle-group"></div>
-        </div>
-
-        <!-- Personnel lié -->
-        <div class="distribution-section">
-          <div class="distribution-header">
-            <label>Personnel lié (ajouté automatiquement à la réservation)</label>
-            <button type="button" id="room-add-linked-staff-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
-          </div>
-          <div id="room-linked-staff-list" class="distribution-list"></div>
-        </div>
-
-        <!-- Frais liés -->
-        <div class="distribution-section">
-          <div class="distribution-header">
-            <label>Frais liés (ajoutés automatiquement à la réservation)</label>
-            <button type="button" id="room-add-linked-fee-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
-          </div>
-          <div id="room-linked-fees-list" class="distribution-list"></div>
-        </div>
-
-        <!-- Tâches du gestionnaire liées -->
-        <div class="distribution-section">
-          <div class="distribution-header">
-            <label>Tâches du gestionnaire liées (générées automatiquement en planification)</label>
-            <button type="button" id="room-add-linked-task-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
-          </div>
-          <div id="room-linked-tasks-list" class="distribution-list"></div>
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button id="room-modal-cancel" class="btn btn-secondary">Annuler</button>
-      <button id="room-modal-submit" class="btn btn-primary">Enregistrer</button>
-    </div>
-  </div>
-
-  <!-- 4. Department Add/Edit Modal -->
-  <div id="dept-modal" class="modal">
-    <div class="modal-header">
-      <h3 id="dept-modal-title" class="modal-title">Ajouter un département</h3>
-      <button id="dept-modal-close" class="btn-icon" aria-label="Fermer">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="modal-content">
-      <form id="dept-form">
-        <input type="hidden" id="form-dept-original-name">
-        <div class="form-group">
-          <label for="form-dept-name">Nom du département</label>
-          <input type="text" id="form-dept-name" class="form-input" required placeholder="Ex: ACEECJ">
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button id="dept-modal-cancel" class="btn btn-secondary">Annuler</button>
-      <button id="dept-modal-submit" class="btn btn-primary">Enregistrer</button>
-    </div>
-  </div>
-
-  <!-- Global Task Add/Edit Modal -->
-  <div id="global-task-modal" class="modal">
-    <div class="modal-header">
-      <h3 id="global-task-modal-title" class="modal-title">Ajouter une tâche globale</h3>
-      <button id="global-task-modal-close" class="btn-icon" aria-label="Fermer">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="modal-content">
-      <form id="global-task-form">
-        <input type="hidden" id="form-global-task-original-id">
-        <div class="form-group">
-          <label for="form-global-task-desc">Description de la tâche</label>
-          <input type="text" id="form-global-task-desc" class="form-input" required placeholder="Ex: Envoyer la confirmation au client">
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button id="global-task-modal-cancel" class="btn btn-secondary">Annuler</button>
-      <button id="global-task-modal-submit" class="btn btn-primary">Enregistrer</button>
-    </div>
-  </div>
-
-  <!-- Salary Add/Edit Modal -->
-  <div id="salary-modal" class="modal">
-    <div class="modal-header">
-      <h3 id="salary-modal-title" class="modal-title">Ajouter un emploi</h3>
-      <button id="salary-modal-close" class="btn-icon" aria-label="Fermer">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="modal-content">
-      <form id="salary-form">
-        <input type="hidden" id="form-salary-original-id">
-        <div class="form-group">
-          <label for="form-salary-job">Nom de l'emploi / fonction</label>
-          <input type="text" id="form-salary-job" class="form-input" required placeholder="Ex: Technicien de scène">
-        </div>
-        <div class="form-group">
-          <label for="form-salary-gl-account">Compte GL associé (optionnel, pour la facturation)</label>
-          <select id="form-salary-gl-account" class="select-input">
-            <option value="">Aucun</option>
-          </select>
-        </div>
-        <div class="distribution-section">
-          <div class="distribution-header">
-            <label>Historique des taux horaires (date d'entrée en vigueur, taux régulier et taux en temps supplémentaire)</label>
-            <button type="button" id="form-add-salary-rate-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
-              + Ajouter une version
-            </button>
-          </div>
-          <div id="form-salary-rates-list" class="distribution-list">
-            <!-- Dynamic rows -->
-          </div>
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button id="salary-modal-cancel" class="btn btn-secondary">Annuler</button>
-      <button id="salary-modal-submit" class="btn btn-primary">Enregistrer</button>
-    </div>
-  </div>
-
-  <!-- Service Add/Edit Modal -->
-  <div id="service-modal" class="modal">
-    <div class="modal-header">
-      <h3 id="service-modal-title" class="modal-title">Ajouter un service</h3>
-      <button id="service-modal-close" class="btn-icon" aria-label="Fermer">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="modal-content">
-      <form id="service-form">
-        <input type="hidden" id="form-service-original-id">
-        <div class="form-group">
-          <label for="form-service-name">Nom du service</label>
-          <input type="text" id="form-service-name" class="form-input" required placeholder="Ex: Location d'écran">
-        </div>
-        <div class="form-group">
-          <label for="form-service-type">Type de frais</label>
-          <select id="form-service-type" class="select-input">
-            <option value="fixed">Frais fixe</option>
-            <option value="hourly">Frais horaire</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="form-service-gl-account">Compte budgétaire associé (optionnel, pour la facturation)</label>
-          <select id="form-service-gl-account" class="select-input">
-            <option value="">Aucun</option>
-          </select>
-        </div>
-        <div class="distribution-section">
-          <div class="distribution-header">
-            <label>Historique des tarifs (date d'entrée en vigueur et montant)</label>
-            <button type="button" id="form-add-service-rate-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
-              + Ajouter une version
-            </button>
-          </div>
-          <div id="form-service-rates-list" class="distribution-list">
-            <!-- Dynamic rows -->
-          </div>
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button id="service-modal-cancel" class="btn btn-secondary">Annuler</button>
-      <button id="service-modal-submit" class="btn btn-primary">Enregistrer</button>
-    </div>
-  </div>
-
-  <!-- 5. Reconciliation Details Modal -->
-  <div id="recon-detail-modal" class="modal" style="width: 800px; max-width: 95vw;">
-    <div class="modal-header">
-      <h3 class="modal-title">Lignes de Grand Livre détaillées</h3>
-      <button id="recon-detail-modal-close" class="btn-icon" aria-label="Fermer">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="modal-content" style="padding: 0;">
-      <div style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-main); font-size: 0.9rem;">
-        <div><strong>Compte :</strong> <span id="recon-detail-account"></span></div>
-        <div style="margin-top: 4px;"><strong>Référence :</strong> <span id="recon-detail-ref"></span></div>
+        </form>
       </div>
-      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Auxiliaire</th>
-              <th>Description</th>
-              <th>Type Tr.</th>
-              <th>No Doc GL</th>
-              <th class="text-right">Montant</th>
-            </tr>
-          </thead>
-          <tbody id="recon-detail-table-body">
-            <!-- Populated dynamically -->
-          </tbody>
-        </table>
+      <div class="modal-footer">
+        <button id="room-modal-cancel" class="btn btn-secondary">Annuler</button>
+        <button id="room-modal-submit" class="btn btn-primary">Enregistrer</button>
       </div>
     </div>
-    <div class="modal-footer">
-      <button id="recon-detail-modal-close-btn" class="btn btn-secondary">Fermer</button>
-    </div>
-  </div>
 
-  <!-- 7. Activities Calendar Modal -->
-  <div id="calendar-modal" class="modal" style="width: 980px; max-width: 96vw;">
-    <div class="modal-header">
-      <h3 class="modal-title">Calendrier des activités</h3>
-      <button id="calendar-modal-close" class="btn-icon" aria-label="Fermer">
-        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
+    <!-- 4. Department Add/Edit Modal -->
+    <div id="dept-modal" class="modal">
+      <div class="modal-header">
+        <h3 id="dept-modal-title" class="modal-title">Ajouter un département</h3>
+        <button id="dept-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <form id="dept-form">
+          <input type="hidden" id="form-dept-original-name" />
+          <div class="form-group">
+            <label for="form-dept-name">Nom du département</label>
+            <input type="text" id="form-dept-name" class="form-input" required placeholder="Ex: ACEECJ" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="dept-modal-cancel" class="btn btn-secondary">Annuler</button>
+        <button id="dept-modal-submit" class="btn btn-primary">Enregistrer</button>
+      </div>
     </div>
-    <div class="modal-content">
-      <div class="event-calendar-toolbar">
-        <div class="event-calendar-header">
-          <button type="button" id="event-calendar-prev-btn" class="calendar-nav-btn">&lt;</button>
-          <span id="event-calendar-month-label" class="event-calendar-month-label"></span>
-          <button type="button" id="event-calendar-next-btn" class="calendar-nav-btn">&gt;</button>
+
+    <!-- Global Task Add/Edit Modal -->
+    <div id="global-task-modal" class="modal">
+      <div class="modal-header">
+        <h3 id="global-task-modal-title" class="modal-title">Ajouter une tâche globale</h3>
+        <button id="global-task-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <form id="global-task-form">
+          <input type="hidden" id="form-global-task-original-id" />
+          <div class="form-group">
+            <label for="form-global-task-desc">Description de la tâche</label>
+            <input type="text" id="form-global-task-desc" class="form-input" required placeholder="Ex: Envoyer la confirmation au client" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="global-task-modal-cancel" class="btn btn-secondary">Annuler</button>
+        <button id="global-task-modal-submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </div>
+
+    <!-- Salary Add/Edit Modal -->
+    <div id="salary-modal" class="modal">
+      <div class="modal-header">
+        <h3 id="salary-modal-title" class="modal-title">Ajouter un emploi</h3>
+        <button id="salary-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <form id="salary-form">
+          <input type="hidden" id="form-salary-original-id" />
+          <div class="form-group">
+            <label for="form-salary-job">Nom de l'emploi / fonction</label>
+            <input type="text" id="form-salary-job" class="form-input" required placeholder="Ex: Technicien de scène" />
+          </div>
+          <div class="form-group">
+            <label for="form-salary-gl-account">Compte GL associé (optionnel, pour la facturation)</label>
+            <select id="form-salary-gl-account" class="select-input">
+              <option value="">Aucun</option>
+            </select>
+          </div>
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Historique des taux horaires (date d'entrée en vigueur, taux régulier et taux en temps supplémentaire)</label>
+              <button type="button" id="form-add-salary-rate-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                + Ajouter une version
+              </button>
+            </div>
+            <div id="form-salary-rates-list" class="distribution-list">
+              <!-- Dynamic rows -->
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="salary-modal-cancel" class="btn btn-secondary">Annuler</button>
+        <button id="salary-modal-submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </div>
+
+    <!-- Service Add/Edit Modal -->
+    <div id="service-modal" class="modal">
+      <div class="modal-header">
+        <h3 id="service-modal-title" class="modal-title">Ajouter un service</h3>
+        <button id="service-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <form id="service-form">
+          <input type="hidden" id="form-service-original-id" />
+          <div class="form-group">
+            <label for="form-service-name">Nom du service</label>
+            <input type="text" id="form-service-name" class="form-input" required placeholder="Ex: Location d'écran" />
+          </div>
+          <div class="form-group">
+            <label for="form-service-type">Type de frais</label>
+            <select id="form-service-type" class="select-input">
+              <option value="fixed">Frais fixe</option>
+              <option value="hourly">Frais horaire</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="form-service-gl-account">Compte budgétaire associé (optionnel, pour la facturation)</label>
+            <select id="form-service-gl-account" class="select-input">
+              <option value="">Aucun</option>
+            </select>
+          </div>
+          <div class="distribution-section">
+            <div class="distribution-header">
+              <label>Historique des tarifs (date d'entrée en vigueur et montant)</label>
+              <button type="button" id="form-add-service-rate-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                + Ajouter une version
+              </button>
+            </div>
+            <div id="form-service-rates-list" class="distribution-list">
+              <!-- Dynamic rows -->
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="service-modal-cancel" class="btn btn-secondary">Annuler</button>
+        <button id="service-modal-submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </div>
+
+    <!-- 5. Reconciliation Details Modal -->
+    <div id="recon-detail-modal" class="modal" style="width: 800px; max-width: 95vw">
+      <div class="modal-header">
+        <h3 class="modal-title">Lignes de Grand Livre détaillées</h3>
+        <button id="recon-detail-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content" style="padding: 0">
+        <div style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-main); font-size: 0.9rem">
+          <div><strong>Compte :</strong> <span id="recon-detail-account"></span></div>
+          <div style="margin-top: 4px"><strong>Référence :</strong> <span id="recon-detail-ref"></span></div>
         </div>
-        <div class="event-calendar-view-switch">
-          <button type="button" class="event-calendar-view-btn" data-view="day">Jour</button>
-          <button type="button" class="event-calendar-view-btn" data-view="week">Semaine</button>
-          <button type="button" class="event-calendar-view-btn active" data-view="month">Mois</button>
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Auxiliaire</th>
+                <th>Description</th>
+                <th>Type Tr.</th>
+                <th>No Doc GL</th>
+                <th class="text-right">Montant</th>
+              </tr>
+            </thead>
+            <tbody id="recon-detail-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
         </div>
       </div>
-      <div id="event-calendar-legend" class="event-calendar-legend"></div>
-      <div id="event-calendar-grid" class="event-calendar-grid"></div>
+      <div class="modal-footer">
+        <button id="recon-detail-modal-close-btn" class="btn btn-secondary">Fermer</button>
+      </div>
     </div>
-    <div class="modal-footer">
-      <button id="calendar-modal-close-btn" class="btn btn-secondary">Fermer</button>
-    </div>
-  </div>
 
-  <!-- Application Logic (order matters: each file depends on the ones before it) -->
-  <script src="js/state.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/navigation.js"></script>
-  <script src="js/dashboard.js"></script>
-  <script src="js/activities.js"></script>
-  <script src="js/reconciliation.js"></script>
-  <script src="js/settings.js"></script>
-  <script src="js/backup.js"></script>
-  <script src="js/account-report.js"></script>
-  <script src="js/datepicker.js"></script>
-  <script src="js/calendar.js"></script>
-  <script src="js/main.js"></script>
-</body>
+    <!-- 7. Activities Calendar Modal -->
+    <div id="calendar-modal" class="modal" style="width: 980px; max-width: 96vw">
+      <div class="modal-header">
+        <h3 class="modal-title">Calendrier des activités</h3>
+        <button id="calendar-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <div class="event-calendar-toolbar">
+          <div class="event-calendar-header">
+            <button type="button" id="event-calendar-prev-btn" class="calendar-nav-btn">&lt;</button>
+            <span id="event-calendar-month-label" class="event-calendar-month-label"></span>
+            <button type="button" id="event-calendar-next-btn" class="calendar-nav-btn">&gt;</button>
+          </div>
+          <div class="event-calendar-view-switch">
+            <button type="button" class="event-calendar-view-btn" data-view="day">Jour</button>
+            <button type="button" class="event-calendar-view-btn" data-view="week">Semaine</button>
+            <button type="button" class="event-calendar-view-btn active" data-view="month">Mois</button>
+          </div>
+        </div>
+        <div id="event-calendar-legend" class="event-calendar-legend"></div>
+        <div id="event-calendar-grid" class="event-calendar-grid"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="calendar-modal-close-btn" class="btn btn-secondary">Fermer</button>
+      </div>
+    </div>
+
+    <!-- Application Logic (order matters: each file depends on the ones before it) -->
+    <script src="js/state.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/activities.js"></script>
+    <script src="js/reconciliation.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/backup.js"></script>
+    <script src="js/account-report.js"></script>
+    <script src="js/datepicker.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/main.js"></script>
+  </body>
 </html>

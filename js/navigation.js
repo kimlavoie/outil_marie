@@ -104,21 +104,24 @@ function initGlobalSearch() {
   const resultsPanel = document.getElementById("global-search-results");
   if (!input || !resultsPanel) return;
 
-  input.addEventListener("input", debounce(() => renderGlobalSearchResults(input.value.trim().toLowerCase()), 200));
+  input.addEventListener(
+    "input",
+    debounce(() => renderGlobalSearchResults(input.value.trim().toLowerCase()), 200)
+  );
 
   input.addEventListener("focus", () => {
     if (input.value.trim()) resultsPanel.classList.add("active");
   });
 
   // Close on outside click, keep open on clicks inside the panel itself
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", e => {
     if (resultsPanel.classList.contains("active") && !resultsPanel.contains(e.target) && e.target !== input) {
       resultsPanel.classList.remove("active");
     }
   });
 
   // Close on Escape, alongside the app's other drawers/modals
-  window.addEventListener("keydown", (e) => {
+  window.addEventListener("keydown", e => {
     if (e.key === "Escape") resultsPanel.classList.remove("active");
   });
 }
@@ -172,10 +175,11 @@ function renderGlobalSearchResults(query) {
 
   const matchingActivities = appState.activities
     .filter(act => act.name.trim() !== "")
-    .filter(act =>
-      act.id.toLowerCase().includes(query) ||
-      act.name.toLowerCase().includes(query) ||
-      (act.responsable || "").toLowerCase().includes(query)
+    .filter(
+      act =>
+        act.id.toLowerCase().includes(query) ||
+        act.name.toLowerCase().includes(query) ||
+        (act.responsable || "").toLowerCase().includes(query)
     )
     .slice(0, GLOBAL_SEARCH_MAX_PER_CATEGORY);
 
@@ -196,12 +200,14 @@ function renderGlobalSearchResults(query) {
   }
 
   const activitiesHtml = matchingActivities
-    .map(act => buildGlobalSearchItemHtml({
-      type: "activity",
-      id: act.id,
-      title: act.name,
-      subtitle: `${act.id}${act.responsable ? ` · ${act.responsable}` : ""}`
-    }))
+    .map(act =>
+      buildGlobalSearchItemHtml({
+        type: "activity",
+        id: act.id,
+        title: act.name,
+        subtitle: `${act.id}${act.responsable ? ` · ${act.responsable}` : ""}`
+      })
+    )
     .join("");
 
   const accountsHtml = matchingAccounts
@@ -239,20 +245,20 @@ function initQuickAccessDropdown() {
   const panel = document.getElementById("quick-access-dropdown-panel");
   if (!toggleBtn || !panel) return;
 
-  toggleBtn.addEventListener("click", (e) => {
+  toggleBtn.addEventListener("click", e => {
     e.stopPropagation();
     panel.classList.toggle("active");
   });
 
   // Close on outside click, keep open on clicks inside the panel itself
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", e => {
     if (panel.classList.contains("active") && !panel.contains(e.target) && e.target !== toggleBtn) {
       panel.classList.remove("active");
     }
   });
 
   // Close on Escape, alongside the app's other drawers/modals
-  window.addEventListener("keydown", (e) => {
+  window.addEventListener("keydown", e => {
     if (e.key === "Escape") panel.classList.remove("active");
   });
 }
@@ -287,23 +293,25 @@ function getUpcomingActivityIds() {
 // get an unpin (x) button, entries surfaced automatically ("recent"/"upcoming") get a pin
 // (star) button so the user can promote them to the permanent list in one click.
 function buildQuickAccessItemHtml(act, category) {
-  const actionBtnHtml = category === "favorite"
-    ? `<button class="btn-icon remove-quick-access-btn" data-id="${act.id}" title="Retirer des accès rapides" style="flex: 0 0 auto;">
+  const actionBtnHtml =
+    category === "favorite"
+      ? `<button class="btn-icon remove-quick-access-btn" data-id="${act.id}" title="Retirer des accès rapides" style="flex: 0 0 auto;">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>`
-    : `<button class="btn-icon pin-quick-access-btn" data-id="${act.id}" title="Épingler dans l'accès rapide" style="flex: 0 0 auto;">
+      : `<button class="btn-icon pin-quick-access-btn" data-id="${act.id}" title="Épingler dans l'accès rapide" style="flex: 0 0 auto;">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M12 15.39l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.09l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.39zM12 2L9.19 8.62 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24l-7.19-.62L12 2z"/></svg>
       </button>`;
 
-  const dateSuffix = category === "upcoming" && act.date_start
-    ? ` · ${parseLocalDateStr(act.date_start).toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' })}`
-    : '';
+  const dateSuffix =
+    category === "upcoming" && act.date_start
+      ? ` · ${parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" })}`
+      : "";
 
   return `
     <div class="quick-access-item" data-id="${act.id}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-main); cursor: pointer;">
       <span style="display: flex; flex-direction: column; overflow: hidden;">
-        <span class="bold" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${act.name || 'Vierge'}</span>
-        <span class="font-mono" style="font-size: 0.72rem; color: var(--text-muted);">${act.id}${act.responsable ? ` · ${act.responsable}` : ''}${dateSuffix}</span>
+        <span class="bold" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${act.name || "Vierge"}</span>
+        <span class="font-mono" style="font-size: 0.72rem; color: var(--text-muted);">${act.id}${act.responsable ? ` · ${act.responsable}` : ""}${dateSuffix}</span>
       </span>
       ${actionBtnHtml}
     </div>
@@ -325,7 +333,7 @@ function buildQuickAccessSectionHtml(label, items, category) {
 // Wires click-to-open, unpin, and pin buttons for a rendered quick access container
 function wireQuickAccessItemEvents(container) {
   container.querySelectorAll(".quick-access-item").forEach(item => {
-    item.addEventListener("click", (e) => {
+    item.addEventListener("click", e => {
       if (e.target.closest(".remove-quick-access-btn") || e.target.closest(".pin-quick-access-btn")) return;
       const id = item.getAttribute("data-id");
       closeQuickAccessDropdown();
@@ -335,7 +343,7 @@ function wireQuickAccessItemEvents(container) {
   });
 
   container.querySelectorAll(".remove-quick-access-btn, .pin-quick-access-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
+    btn.addEventListener("click", e => {
       e.stopPropagation();
       toggleFavoriteActivity(btn.getAttribute("data-id"));
       renderQuickAccessAll();
@@ -362,18 +370,19 @@ function renderQuickAccessAll() {
 
   const seen = new Set();
   let totalCount = 0;
-  const sectionsHtml = categories.map(cat => {
-    const items = cat.ids
-      .map(id => appState.activities.find(a => a.id === id))
-      .filter(act => act && !seen.has(act.id));
-    items.forEach(act => seen.add(act.id));
-    totalCount += items.length;
-    return buildQuickAccessSectionHtml(cat.label, items, cat.key);
-  }).join("");
+  const sectionsHtml = categories
+    .map(cat => {
+      const items = cat.ids.map(id => appState.activities.find(a => a.id === id)).filter(act => act && !seen.has(act.id));
+      items.forEach(act => seen.add(act.id));
+      totalCount += items.length;
+      return buildQuickAccessSectionHtml(cat.label, items, cat.key);
+    })
+    .join("");
 
-  listContainer.innerHTML = totalCount > 0
-    ? sectionsHtml
-    : `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 4px;">Aucune activité épinglée, consultée récemment ou à venir bientôt.</div>`;
+  listContainer.innerHTML =
+    totalCount > 0
+      ? sectionsHtml
+      : `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 4px;">Aucune activité épinglée, consultée récemment ou à venir bientôt.</div>`;
   wireQuickAccessItemEvents(listContainer);
 
   if (countBadge) {
@@ -417,9 +426,7 @@ function renderAll() {
 // Populate dropdown elements globally
 function populateDropdowns() {
   const filterSalleSelect = document.getElementById("filter-salle");
-  const deptsSelects = [
-    document.getElementById("form-activity-dept")
-  ];
+  const deptsSelects = [document.getElementById("form-activity-dept")];
 
   // Filter Salle dropdown (single-select filter, unaffected by multi-room support)
   if (filterSalleSelect) {
@@ -431,43 +438,15 @@ function populateDropdowns() {
     filterSalleSelect.value = previousSalleValue;
   }
 
-  // Form Salle pill group (multi-select)
-  const salleGroup = document.getElementById("form-activity-salle-group");
-  if (salleGroup) {
-    const previouslyActive = Array.from(salleGroup.querySelectorAll(".pill-toggle.active")).map(b => b.dataset.value);
-    salleGroup.innerHTML = "";
-    appState.settings.rooms.forEach(r => {
-      const isActive = previouslyActive.includes(r.name);
-      salleGroup.innerHTML += `<button type="button" class="pill-toggle${isActive ? ' active' : ''}" data-value="${r.name}">${r.name}</button>`;
-    });
-  }
-
-  // Form Services techniques pill group (multi-select, static list)
-  const servicesGroup = document.getElementById("form-activity-services-group");
-  if (servicesGroup && !servicesGroup.dataset.populated) {
-    servicesGroup.innerHTML = TECHNICAL_SERVICES.map(s => `<button type="button" class="pill-toggle" data-value="${s}">${s}</button>`).join("");
-    servicesGroup.dataset.populated = "true";
-  }
-
-  // Form Consommation pill group (multi-select, static list)
-  const consumptionGroup = document.getElementById("form-activity-consumption-group");
-  if (consumptionGroup && !consumptionGroup.dataset.populated) {
-    consumptionGroup.innerHTML = CONSUMPTION_OPTIONS.map(s => `<button type="button" class="pill-toggle" data-value="${s}">${s}</button>`).join("");
-    consumptionGroup.dataset.populated = "true";
-  }
-
-  // Form Service d'hôtes.ses pill group (multi-select, static list)
-  const hostServicesGroup = document.getElementById("form-activity-host-services-group");
-  if (hostServicesGroup && !hostServicesGroup.dataset.populated) {
-    hostServicesGroup.innerHTML = HOST_SERVICES_OPTIONS.map(s => `<button type="button" class="pill-toggle" data-value="${s}">${s}</button>`).join("");
-    hostServicesGroup.dataset.populated = "true";
-  }
+  // Note: the salle selector inside each reservation card is a searchable combobox built
+  // directly from appState.settings.rooms at card-creation time (see buildRoomSelectItems()
+  // and addReservationCard() in activities.js), so it doesn't need populating here.
 
   // Form Event type dropdown
   const eventTypeSelect = document.getElementById("form-activity-event-type");
   if (eventTypeSelect && !eventTypeSelect.dataset.populated) {
-    eventTypeSelect.innerHTML = '<option value="">Sélectionner...</option>' +
-      EVENT_TYPES.map(t => `<option value="${t.value}">${t.label}</option>`).join("");
+    eventTypeSelect.innerHTML =
+      '<option value="">Sélectionner...</option>' + EVENT_TYPES.map(t => `<option value="${t.value}">${t.label}</option>`).join("");
     eventTypeSelect.dataset.populated = "true";
   }
 
@@ -537,7 +516,7 @@ function initPeriodSelector() {
   // Wire year select
   const yearSelect = document.getElementById("top-fiscal-year");
   if (yearSelect) {
-    yearSelect.addEventListener("change", (e) => {
+    yearSelect.addEventListener("change", e => {
       appState.selected_year = e.target.value;
       saveDatabase();
 
@@ -571,7 +550,7 @@ function populateFiscalYears() {
 
   select.innerHTML = "";
   sortedYears.forEach(fy => {
-    const isSelected = fy === appState.selected_year ? 'selected' : '';
+    const isSelected = fy === appState.selected_year ? "selected" : "";
     select.innerHTML += `<option value="${fy}" ${isSelected}>${fy}</option>`;
   });
 }

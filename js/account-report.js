@@ -48,11 +48,13 @@ function renderAccountReport() {
         });
       } else {
         // Fallback in case account code is not in configured settings list
-        accountEntries[d.account_code] = [{
-          activity: act,
-          amount: d.amount,
-          reference: d.reference
-        }];
+        accountEntries[d.account_code] = [
+          {
+            activity: act,
+            amount: d.amount,
+            reference: d.reference
+          }
+        ];
       }
     });
   });
@@ -144,8 +146,8 @@ function renderAccountReport() {
         const act = e.activity;
         let datesText = "-";
         if (act.date_start && act.date_end) {
-          const start = new Date(act.date_start).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
-          const end = new Date(act.date_end).toLocaleDateString('fr-CA', {month: 'short', day: 'numeric'});
+          const start = new Date(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
+          const end = new Date(act.date_end).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
           datesText = `${start} au ${end}`;
         }
 
@@ -155,7 +157,7 @@ function renderAccountReport() {
             <td>${act.name}</td>
             <td>${datesText}</td>
             <td>${act.department}</td>
-            <td class="font-mono">${e.reference || '-'}</td>
+            <td class="font-mono">${e.reference || "-"}</td>
             <td class="bold text-right font-mono" style="color: var(--success-text);">${formatCurrency(e.amount)}</td>
           </tr>
         `;
@@ -178,12 +180,12 @@ function renderAccountReport() {
           <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
             <thead>
               <tr style="background-color: var(--bg-main);">
-                <th data-sort="id" class="${accountReportState.sortKey === 'id' ? (accountReportState.sortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">N° Activité</th>
-                <th data-sort="name" class="${accountReportState.sortKey === 'name' ? (accountReportState.sortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Nom de l'Activité</th>
-                <th data-sort="date_start" class="${accountReportState.sortKey === 'date_start' ? (accountReportState.sortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Dates d'occupation</th>
-                <th data-sort="department" class="${accountReportState.sortKey === 'department' ? (accountReportState.sortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Département</th>
-                <th data-sort="reference" class="${accountReportState.sortKey === 'reference' ? (accountReportState.sortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">RI / Facture Réf.</th>
-                <th data-sort="amount" class="${accountReportState.sortKey === 'amount' ? (accountReportState.sortOrder === 'asc' ? 'sort-asc' : 'sort-desc') : ''}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); text-align: right;">Montant</th>
+                <th data-sort="id" class="${accountReportState.sortKey === "id" ? (accountReportState.sortOrder === "asc" ? "sort-asc" : "sort-desc") : ""}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">N° Activité</th>
+                <th data-sort="name" class="${accountReportState.sortKey === "name" ? (accountReportState.sortOrder === "asc" ? "sort-asc" : "sort-desc") : ""}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Nom de l'Activité</th>
+                <th data-sort="date_start" class="${accountReportState.sortKey === "date_start" ? (accountReportState.sortOrder === "asc" ? "sort-asc" : "sort-desc") : ""}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Dates d'occupation</th>
+                <th data-sort="department" class="${accountReportState.sortKey === "department" ? (accountReportState.sortOrder === "asc" ? "sort-asc" : "sort-desc") : ""}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Département</th>
+                <th data-sort="reference" class="${accountReportState.sortKey === "reference" ? (accountReportState.sortOrder === "asc" ? "sort-asc" : "sort-desc") : ""}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">RI / Facture Réf.</th>
+                <th data-sort="amount" class="${accountReportState.sortKey === "amount" ? (accountReportState.sortOrder === "asc" ? "sort-asc" : "sort-desc") : ""}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); text-align: right;">Montant</th>
               </tr>
             </thead>
             <tbody>
@@ -216,7 +218,7 @@ function renderAccountReport() {
   // Wire up sortable headers and pagination controls (delegated, since the
   // per-account cards are rebuilt via innerHTML += on every render, which
   // would otherwise tear down any directly-attached listeners)
-  container.onclick = (e) => {
+  container.onclick = e => {
     const th = e.target.closest("th[data-sort]");
     if (th && container.contains(th)) {
       const sortKey = th.getAttribute("data-sort");
@@ -239,7 +241,7 @@ function renderAccountReport() {
     }
   };
 
-  container.onchange = (e) => {
+  container.onchange = e => {
     const select = e.target.closest(".pagination-size-select");
     if (select && container.contains(select)) {
       accountReportState.pageSize = parseInt(select.value, 10);

@@ -32,7 +32,7 @@ test("values free internal bookings at their room tariff when no revenue was cha
       date_start: "2025-08-01",
       client_type: "interne",
       distributions: [], // no revenue recorded
-      rooms: [{ date_start: "2025-08-01", date_end: "2025-08-01", tariff_amount: 175 }]
+      reservations: [{ slots: [{ date: "2025-08-01" }], tariff_amount: 175 }]
     }
   ];
 
@@ -47,7 +47,7 @@ test("does not value internal bookings that were actually charged", () => {
       date_start: "2025-08-01",
       client_type: "interne",
       distributions: [{ amount: 50 }],
-      rooms: [{ date_start: "2025-08-01", date_end: "2025-08-01", tariff_amount: 175 }]
+      reservations: [{ slots: [{ date: "2025-08-01" }], tariff_amount: 175 }]
     }
   ];
 

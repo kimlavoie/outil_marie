@@ -4,7 +4,20 @@
  * room color CRUD)
  */
 
-const MONTH_NAMES_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+const MONTH_NAMES_FR = [
+  "Janvier",
+  "Février",
+  "Mars",
+  "Avril",
+  "Mai",
+  "Juin",
+  "Juillet",
+  "Août",
+  "Septembre",
+  "Octobre",
+  "Novembre",
+  "Décembre"
+];
 const DAY_NAMES_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 const MAX_EVENTS_PER_DAY = 3;
 
@@ -89,7 +102,7 @@ function openCalendarAtDate(dateStr) {
 // Delegated on the document so buttons added later (e.g. per-room schedule cards) work
 // without needing to be individually re-wired.
 function initViewCalendarButtons() {
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", e => {
     const btn = e.target.closest(".view-calendar-btn");
     if (!btn) return;
     const targetId = btn.getAttribute("data-target");
@@ -107,8 +120,8 @@ function getWeekStart(date) {
 
 function toDateStr(date) {
   const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
@@ -132,16 +145,20 @@ function getActivitiesForDay(dateStr) {
 
 function renderEventCalendarLegend() {
   const legendEl = document.getElementById("event-calendar-legend");
-  legendEl.innerHTML = appState.settings.rooms.map(r => `
+  legendEl.innerHTML = appState.settings.rooms
+    .map(
+      r => `
     <span class="event-calendar-legend-item">
       <span class="room-color-swatch" style="background-color: ${getRoomColor(r.name)};"></span>${r.name}
     </span>
-  `).join("");
+  `
+    )
+    .join("");
 }
 
 function attachEventClickHandlers() {
   document.querySelectorAll("#event-calendar-grid [data-id]").forEach(el => {
-    el.addEventListener("click", (e) => {
+    el.addEventListener("click", e => {
       e.stopPropagation();
       const id = el.getAttribute("data-id");
       const calendarReturn = { refDate: new Date(eventCalendarState.refDate), viewMode: eventCalendarState.viewMode };
@@ -156,7 +173,9 @@ function attachEventClickHandlers() {
 function reopenCalendarModal(calendarReturn) {
   eventCalendarState.refDate = new Date(calendarReturn.refDate);
   eventCalendarState.viewMode = calendarReturn.viewMode;
-  document.querySelectorAll(".event-calendar-view-btn").forEach(b => b.classList.toggle("active", b.getAttribute("data-view") === eventCalendarState.viewMode));
+  document
+    .querySelectorAll(".event-calendar-view-btn")
+    .forEach(b => b.classList.toggle("active", b.getAttribute("data-view") === eventCalendarState.viewMode));
   renderEventCalendar();
   document.getElementById("calendar-modal").classList.add("active");
   document.getElementById("modal-backdrop").classList.add("active");
@@ -187,7 +206,8 @@ function renderMonthView() {
   grid.classList.add("event-calendar-grid-month");
 
   const daysHeaderHtml = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"]
-    .map(d => `<div class="event-calendar-day-header">${d}</div>`).join("");
+    .map(d => `<div class="event-calendar-day-header">${d}</div>`)
+    .join("");
 
   const firstDayIndex = new Date(year, month, 1).getDay();
   const lastDay = new Date(year, month + 1, 0).getDate();
@@ -205,7 +225,7 @@ function renderMonthView() {
 
   // Current month days
   for (let i = 1; i <= lastDay; i++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
     cellsHtml += buildDayCellHtml(dateStr, i, isCurrentMonth && today.getDate() === i);
   }
 
@@ -275,22 +295,22 @@ function renderDayView() {
     return;
   }
 
-  grid.innerHTML = dayActivities.map(act => {
-    const color = getRoomColor((act.rooms || [])[0]?.name || "");
-    const roomsLabel = (act.rooms || []).map(r => r.name).join(", ") || "-";
-    const timeLabel = act.start_time || act.end_time
-      ? `${act.start_time || '?'} - ${act.end_time || '?'}`
-      : "";
-    return `
+  grid.innerHTML = dayActivities
+    .map(act => {
+      const color = getRoomColor(getReservationRoomLabel((act.reservations || [])[0]));
+      const roomsLabel = (act.reservations || []).map(getReservationRoomLabel).join(", ") || "-";
+      const timeLabel = act.start_time || act.end_time ? `${act.start_time || "?"} - ${act.end_time || "?"}` : "";
+      return `
       <div class="event-calendar-day-item" data-id="${act.id}" style="border-left-color: ${color};">
         <div class="event-calendar-day-item-color" style="background-color: ${color};"></div>
         <div class="event-calendar-day-item-info">
           <div class="event-calendar-day-item-name">${act.name}</div>
-          <div class="event-calendar-day-item-meta">${roomsLabel}${timeLabel ? ` &bull; ${timeLabel}` : ''}${act.responsable ? ` &bull; ${act.responsable}` : ''}</div>
+          <div class="event-calendar-day-item-meta">${roomsLabel}${timeLabel ? ` &bull; ${timeLabel}` : ""}${act.responsable ? ` &bull; ${act.responsable}` : ""}</div>
         </div>
       </div>
     `;
-  }).join("");
+    })
+    .join("");
 
   attachEventClickHandlers();
 }
@@ -304,19 +324,22 @@ function buildDayCellHtml(dateStr, dayNum, isToday, tall = false) {
 
   let eventsHtml = "";
   dayActivities.slice(0, maxVisible).forEach(act => {
-    const color = getRoomColor((act.rooms || [])[0]?.name || "");
-    const roomsLabel = (act.rooms || []).map(r => r.name).join(", ");
-    eventsHtml += `<div class="event-calendar-event" data-id="${act.id}" style="background-color: ${color};" title="${act.name}${roomsLabel ? ` (${roomsLabel})` : ''}">${act.name}</div>`;
+    const color = getRoomColor(getReservationRoomLabel((act.reservations || [])[0]));
+    const roomsLabel = (act.reservations || []).map(getReservationRoomLabel).join(", ");
+    eventsHtml += `<div class="event-calendar-event" data-id="${act.id}" style="background-color: ${color};" title="${act.name}${roomsLabel ? ` (${roomsLabel})` : ""}">${act.name}</div>`;
   });
 
   let moreHtml = "";
   if (dayActivities.length > maxVisible) {
-    const remaining = dayActivities.slice(maxVisible).map(a => a.name).join(", ");
+    const remaining = dayActivities
+      .slice(maxVisible)
+      .map(a => a.name)
+      .join(", ");
     moreHtml = `<div class="event-calendar-more" title="${remaining}">+${dayActivities.length - maxVisible} de plus</div>`;
   }
 
   return `
-    <div class="event-calendar-cell${isToday ? ' today' : ''}${tall ? ' tall' : ''}" data-date="${dateStr}">
+    <div class="event-calendar-cell${isToday ? " today" : ""}${tall ? " tall" : ""}" data-date="${dateStr}">
       <div class="event-calendar-cell-daynum">${displayNum}</div>
       ${eventsHtml}
       ${moreHtml}
@@ -327,7 +350,7 @@ function buildDayCellHtml(dateStr, dayNum, isToday, tall = false) {
 // Clicking anywhere in a day cell (but not directly on an event) opens the day view for that date
 function attachDayCellClickHandlers() {
   document.querySelectorAll("#event-calendar-grid .event-calendar-cell[data-date]").forEach(cell => {
-    cell.addEventListener("click", (e) => {
+    cell.addEventListener("click", e => {
       if (e.target.closest(".event-calendar-event")) return;
       goToDayView(cell.getAttribute("data-date"));
     });
