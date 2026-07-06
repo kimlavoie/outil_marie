@@ -323,6 +323,9 @@
                 <table>
                   <thead>
                     <tr>
+                      <th style="width: 40px; text-align: center; vertical-align: middle">
+                        <input type="checkbox" id="activities-select-all" style="cursor: pointer" />
+                      </th>
                       <th data-sort="id">N° Activité</th>
                       <th data-sort="name">Nom de l'Activité</th>
                       <th data-sort="responsable">Responsable</th>
@@ -341,6 +344,38 @@
                 </table>
               </div>
               <div id="activities-pagination" class="pagination-bar"></div>
+
+              <!-- Floating Bulk Actions Bar -->
+              <div id="bulk-actions-bar" class="bulk-actions-bar">
+                <div class="bulk-actions-content">
+                  <span id="bulk-selected-count" class="bulk-selected-count">0 sélectionnée(s)</span>
+                  <div class="bulk-actions-buttons">
+                    <button id="bulk-delete-btn" class="btn btn-danger btn-compact" title="Supprimer les activités sélectionnées">
+                      <svg
+                        viewBox="0 0 24 24"
+                        style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px"
+                      >
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                      </svg>
+                      Supprimer
+                    </button>
+                    <div class="bulk-dropdown-container">
+                      <button id="bulk-state-btn" class="btn btn-secondary btn-compact" title="Changer l'état des activités sélectionnées">
+                        Changer le statut...
+                      </button>
+                      <div id="bulk-state-menu" class="bulk-state-menu hidden">
+                        <button class="bulk-state-item" data-state="brouillon">Brouillon</button>
+                        <button class="bulk-state-item" data-state="soumise">Soumise au client</button>
+                        <button class="bulk-state-item" data-state="approuvee">Approuvée</button>
+                        <button class="bulk-state-item" data-state="planifiee">Planifiée</button>
+                        <button class="bulk-state-item" data-state="facturee">Facturée</button>
+                        <button class="bulk-state-item" data-state="terminee">Terminée</button>
+                      </div>
+                    </div>
+                    <button id="bulk-clear-btn" class="btn btn-ghost btn-compact">Annuler</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -1008,7 +1043,6 @@
           </svg>
           Retour au calendrier
         </button>
-        <button id="activity-drawer-delete" class="btn btn-danger" style="margin-right: auto; display: none">Supprimer</button>
         <button id="activity-drawer-submit" class="btn btn-primary" style="display: none">Enregistrer</button>
       </div>
     </div>

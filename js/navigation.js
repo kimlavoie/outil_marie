@@ -31,6 +31,20 @@ function switchToView(view) {
   const targetSection = document.getElementById(`view-${view}`);
   if (!targetSection) return;
 
+  // Clear activity selections if we leave the activities view
+  if (view !== "activities" && typeof activitiesState !== "undefined" && activitiesState.selectedIds) {
+    activitiesState.selectedIds.clear();
+    const selectAllCheckbox = document.getElementById("activities-select-all");
+    if (selectAllCheckbox) {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = false;
+    }
+    const bar = document.getElementById("bulk-actions-bar");
+    if (bar) {
+      bar.classList.remove("visible");
+    }
+  }
+
   // Update active nav item
   navItems.forEach(i => i.classList.toggle("active", i.getAttribute("data-view") === view));
 

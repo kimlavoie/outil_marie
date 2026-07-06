@@ -13,7 +13,8 @@ let activitiesState = {
   // "Estimation" quick button). Discarded (removed from appState.activities, not just closed) if
   // the drawer is closed/cancelled without clicking "Enregistrer".
   draftActivityId: null,
-  openedActivitySnapshot: null
+  openedActivitySnapshot: null,
+  selectedIds: new Set()
 };
 
 // Which flow the "Nom de l'activité" modal is currently serving: "soumission" creates and saves
@@ -163,7 +164,7 @@ function renderActivities() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucune activité trouvée. Cliquez sur "+ Nouvelle Activité" pour en créer une.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucune activité trouvée. Cliquez sur "+ Nouvelle Activité" pour en créer une.</td></tr>`;
     renderPaginationBar(document.getElementById("activities-pagination"), {
       page: activitiesState.page,
       pageSize: activitiesState.pageSize,
@@ -180,11 +181,13 @@ function renderActivities() {
     totalItems: filtered.length,
     onPageChange: p => {
       activitiesState.page = p;
+      activitiesState.selectedIds.clear();
       renderActivities();
     },
     onPageSizeChange: s => {
       activitiesState.pageSize = s;
       activitiesState.page = 1;
+      activitiesState.selectedIds.clear();
       renderActivities();
     }
   });
@@ -269,7 +272,10 @@ function renderActivities() {
       : "-";
 
     tbody.innerHTML += `
-      <tr class="activity-row ${isFilled ? "" : "row-empty"}" data-id="${act.id}" style="cursor: pointer; ${isFilled ? "" : "opacity: 0.5; font-style: italic;"}">
+      <tr class="activity-row ${isFilled ? "" : "row-empty"} ${activitiesState.selectedIds.has(act.id) ? "selected" : ""}" data-id="${act.id}" style="cursor: pointer; ${isFilled ? "" : "opacity: 0.5; font-style: italic;"}">
+        <td onclick="event.stopPropagation();" style="text-align: center; vertical-align: middle; width: 40px;">
+          <input type="checkbox" class="activity-select-checkbox" data-id="${act.id}" ${activitiesState.selectedIds.has(act.id) ? "checked" : ""} style="cursor: pointer;" />
+        </td>
         <td class="font-mono bold">${act.id}</td>
         <td>
           <span class="bold">${isFilled ? act.name : "Vierge"}</span> ${statusBadge}
@@ -316,6 +322,21 @@ function renderActivities() {
         </td>
       </tr>
     `;
+  });
+
+  // Attach checkbox change event listeners
+  document.querySelectorAll(".activity-select-checkbox").forEach(cb => {
+    cb.addEventListener("change", e => {
+      const id = cb.getAttribute("data-id");
+      if (cb.checked) {
+        activitiesState.selectedIds.add(id);
+        cb.closest("tr").classList.add("selected");
+      } else {
+        activitiesState.selectedIds.delete(id);
+        cb.closest("tr").classList.remove("selected");
+      }
+      updateBulkActionsBar();
+    });
   });
 
   // Attach row click listeners to open the activity record (tabbed lifecycle view)
@@ -373,9 +394,153 @@ function renderActivities() {
       }
     });
   });
+
+  // Update floating bulk actions bar status
+  updateBulkActionsBar();
+}
+
+function updateBulkActionsBar() {
+  const bar = document.getElementById("bulk-actions-bar");
+  const countSpan = document.getElementById("bulk-selected-count");
+  const selectAllCheckbox = document.getElementById("activities-select-all");
+
+  const selectedCount = activitiesState.selectedIds.size;
+
+  if (selectedCount > 0) {
+    if (bar) {
+      bar.classList.add("visible");
+    }
+    if (countSpan) {
+      countSpan.textContent = `${selectedCount} activité${selectedCount > 1 ? "s" : ""} sélectionnée${selectedCount > 1 ? "s" : ""}`;
+    }
+  } else {
+    if (bar) {
+      bar.classList.remove("visible");
+    }
+  }
+
+  // Update the select-all checkbox state based on visible rows
+  if (selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll(".activity-select-checkbox");
+    if (checkboxes.length > 0) {
+      const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+      if (checkedCount === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+      } else if (checkedCount === checkboxes.length) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+      } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+      }
+    } else {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = false;
+    }
+  }
+}
+
+function initBulkActionsHandlers() {
+  const selectAllCheckbox = document.getElementById("activities-select-all");
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener("change", e => {
+      const checkboxes = document.querySelectorAll(".activity-select-checkbox");
+      const isChecked = e.target.checked;
+      checkboxes.forEach(cb => {
+        const id = cb.getAttribute("data-id");
+        cb.checked = isChecked;
+        if (isChecked) {
+          activitiesState.selectedIds.add(id);
+          cb.closest("tr").classList.add("selected");
+        } else {
+          activitiesState.selectedIds.delete(id);
+          cb.closest("tr").classList.remove("selected");
+        }
+      });
+      updateBulkActionsBar();
+    });
+  }
+
+  // Clear selections button
+  const clearBtn = document.getElementById("bulk-clear-btn");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      activitiesState.selectedIds.clear();
+      renderActivities();
+    });
+  }
+
+  // Delete bulk button
+  const deleteBtn = document.getElementById("bulk-delete-btn");
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", () => {
+      const count = activitiesState.selectedIds.size;
+      if (count === 0) return;
+      if (confirm(`Voulez-vous vraiment supprimer les ${count} activités sélectionnées ?`)) {
+        activitiesState.selectedIds.forEach(id => {
+          const act = appState.activities.find(a => a.id === id);
+          if (act) {
+            act.deleted = true;
+          }
+          appState.favorites = (appState.favorites || []).filter(f => f !== id);
+        });
+        activitiesState.selectedIds.clear();
+        saveDatabase();
+        if (reconciliationState.ledgerTransactions.length > 0) {
+          reconcileLedger();
+        }
+        renderAll();
+      }
+    });
+  }
+
+  // State bulk dropdown toggle
+  const stateBtn = document.getElementById("bulk-state-btn");
+  const stateMenu = document.getElementById("bulk-state-menu");
+  if (stateBtn && stateMenu) {
+    stateBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      stateMenu.classList.toggle("hidden");
+    });
+  }
+
+  // State menu items
+  document.querySelectorAll(".bulk-state-item").forEach(item => {
+    item.addEventListener("click", e => {
+      const newState = item.getAttribute("data-state");
+      const count = activitiesState.selectedIds.size;
+      if (count === 0) return;
+
+      activitiesState.selectedIds.forEach(id => {
+        const act = appState.activities.find(a => a.id === id);
+        if (act) {
+          act.state = newState;
+        }
+      });
+
+      activitiesState.selectedIds.clear();
+      saveDatabase();
+      renderAll();
+
+      if (stateMenu) {
+        stateMenu.classList.add("hidden");
+      }
+    });
+  });
+
+  // Close dropdown on click outside
+  document.addEventListener("click", e => {
+    const stateMenu = document.getElementById("bulk-state-menu");
+    const stateBtn = document.getElementById("bulk-state-btn");
+    if (stateMenu && stateBtn && !stateBtn.contains(e.target) && !stateMenu.contains(e.target)) {
+      stateMenu.classList.add("hidden");
+    }
+  });
 }
 
 function initFormHandlers() {
+  initBulkActionsHandlers();
   const backdrop = document.getElementById("drawer-backdrop");
 
   // Open drawers buttons: creating a "soumission" activity only asks for a name first (see
@@ -414,6 +579,7 @@ function initFormHandlers() {
   // Inputs search
   const resetActivitiesPageAndRender = () => {
     activitiesState.page = 1;
+    activitiesState.selectedIds.clear();
     renderActivities();
   };
   // Debounced on the free-text search box only: typing fires an "input" event per
@@ -429,9 +595,6 @@ function initFormHandlers() {
     addDistributionRow("", 0);
     autoSaveActivityForm();
   });
-
-  // Delete Button
-  document.getElementById("activity-drawer-delete").addEventListener("click", deleteActivity);
 
   // Submit Button (only for draft activities/estimations)
   const submitBtn = document.getElementById("activity-drawer-submit");
@@ -1563,18 +1726,14 @@ function addReservationCard(reservationData = null) {
       </div>
 
       <div class="form-group">
-        <label class="form-checkbox-label">
-          <input type="checkbox" class="reservation-install-toggle" ${install.enabled ? "checked" : ""}> Montage
-        </label>
+        <label>Montage / Démontage</label>
+        <div class="pill-toggle-group">
+          <button type="button" class="pill-toggle reservation-install-toggle ${install.enabled ? "active" : ""}">Montage</button>
+          <button type="button" class="pill-toggle reservation-dismantle-toggle ${dismantle.enabled ? "active" : ""}">Démontage</button>
+        </div>
       </div>
       <div class="form-group-row reservation-install-fields" style="display: ${install.enabled ? "flex" : "none"};">
         ${buildDatePeriodFieldHtml(`${uid}-install-date`, `${uid}-install-start-time`, `${uid}-install-end-time`, "Montage")}
-      </div>
-
-      <div class="form-group">
-        <label class="form-checkbox-label">
-          <input type="checkbox" class="reservation-dismantle-toggle" ${dismantle.enabled ? "checked" : ""}> Démontage
-        </label>
       </div>
       <div class="form-group-row reservation-dismantle-fields" style="display: ${dismantle.enabled ? "flex" : "none"};">
         ${buildDatePeriodFieldHtml(`${uid}-dismantle-date`, `${uid}-dismantle-start-time`, `${uid}-dismantle-end-time`, "Démontage")}
@@ -1757,14 +1916,16 @@ function addReservationCard(reservationData = null) {
   // Montage/démontage optional toggles
   const installToggle = card.querySelector(".reservation-install-toggle");
   const installFields = card.querySelector(".reservation-install-fields");
-  installToggle.addEventListener("change", () => {
-    installFields.style.display = installToggle.checked ? "flex" : "none";
+  installToggle.addEventListener("click", () => {
+    installToggle.classList.toggle("active");
+    installFields.style.display = installToggle.classList.contains("active") ? "flex" : "none";
     autoSaveActivityForm();
   });
   const dismantleToggle = card.querySelector(".reservation-dismantle-toggle");
   const dismantleFields = card.querySelector(".reservation-dismantle-fields");
-  dismantleToggle.addEventListener("change", () => {
-    dismantleFields.style.display = dismantleToggle.checked ? "flex" : "none";
+  dismantleToggle.addEventListener("click", () => {
+    dismantleToggle.classList.toggle("active");
+    dismantleFields.style.display = dismantleToggle.classList.contains("active") ? "flex" : "none";
     autoSaveActivityForm();
   });
 
@@ -1912,8 +2073,8 @@ function collectReservationsFromForm() {
       }
     }
 
-    const installEnabled = card.querySelector(".reservation-install-toggle").checked;
-    const dismantleEnabled = card.querySelector(".reservation-dismantle-toggle").checked;
+    const installEnabled = card.querySelector(".reservation-install-toggle").classList.contains("active");
+    const dismantleEnabled = card.querySelector(".reservation-dismantle-toggle").classList.contains("active");
 
     const barToggleActive = card.querySelector(".room-bar-toggle-group .pill-toggle.active") !== null;
     const barDrinkType = getExclusivePillValueEl(card.querySelector(".room-bar-drink-group"));
@@ -2257,7 +2418,6 @@ function openActivityDrawer(id, calendarReturn = null) {
   const drawer = document.getElementById("activity-drawer");
   const backdrop = document.getElementById("drawer-backdrop");
   const form = document.getElementById("activity-form");
-  const deleteBtn = document.getElementById("activity-drawer-delete");
   const titleEl = document.getElementById("activity-drawer-title");
 
   const act = appState.activities.find(a => a.id === id);
@@ -2281,7 +2441,6 @@ function openActivityDrawer(id, calendarReturn = null) {
   document.getElementById("form-activity-coba").value = act.coba || "";
   fillActivityFormFields(act);
   renderActivityStateBar(act);
-  deleteBtn.style.display = "inline-flex";
 
   const submitBtn = document.getElementById("activity-drawer-submit");
   if (submitBtn) {
@@ -2546,28 +2705,6 @@ function submitActivityForm(e) {
 
   autoSaveActivityForm();
   closeActivityDrawer();
-}
-
-function deleteActivity() {
-  const id = document.getElementById("form-activity-internal-id").value;
-  if (!id) return;
-
-  if (confirm(`Êtes-vous sûr de vouloir supprimer l'activité ${id} ?`)) {
-    // Soft delete: instead of deleting from the array, mark as deleted
-    const act = appState.activities.find(a => a.id === id);
-    if (act) {
-      act.deleted = true;
-    }
-    appState.favorites = (appState.favorites || []).filter(f => f !== id);
-    if (activitiesState.draftActivityId === id) activitiesState.draftActivityId = null;
-
-    saveDatabase();
-    closeActivityDrawer();
-    if (reconciliationState.ledgerTransactions.length > 0) {
-      reconcileLedger();
-    }
-    renderActivities();
-  }
 }
 
 function initActivitiesSort() {
