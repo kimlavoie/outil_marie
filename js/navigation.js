@@ -8,7 +8,6 @@ function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   appState.settings.theme = theme;
 
-  const themeBtn = document.getElementById("theme-toggle");
   const sunIcon = document.getElementById("theme-sun-icon");
   const moonIcon = document.getElementById("theme-moon-icon");
   const btnText = document.getElementById("theme-btn-text");
@@ -91,6 +90,144 @@ function initNavigation() {
   }
 
   initQuickAccessDropdown();
+  initGlobalSearch();
+}
+
+/* ==========================================================================
+   GLOBAL SEARCH — searches activities, GL accounts, and departments at once
+   ========================================================================== */
+
+const GLOBAL_SEARCH_MAX_PER_CATEGORY = 5;
+
+function initGlobalSearch() {
+  const input = document.getElementById("global-search-input");
+  const resultsPanel = document.getElementById("global-search-results");
+  if (!input || !resultsPanel) return;
+
+  input.addEventListener("input", debounce(() => renderGlobalSearchResults(input.value.trim().toLowerCase()), 200));
+
+  input.addEventListener("focus", () => {
+    if (input.value.trim()) resultsPanel.classList.add("active");
+  });
+
+  // Close on outside click, keep open on clicks inside the panel itself
+  document.addEventListener("click", (e) => {
+    if (resultsPanel.classList.contains("active") && !resultsPanel.contains(e.target) && e.target !== input) {
+      resultsPanel.classList.remove("active");
+    }
+  });
+
+  // Close on Escape, alongside the app's other drawers/modals
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") resultsPanel.classList.remove("active");
+  });
+}
+
+// Builds one labeled results section (skipped entirely if empty, so an empty category leaves
+// no dangling header behind).
+function buildGlobalSearchSectionHtml(label, itemsHtml) {
+  if (!itemsHtml) return "";
+  return `
+    <div class="quick-access-section">
+      <div class="quick-access-section-label" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); margin: 4px 0 2px;">${label}</div>
+      ${itemsHtml}
+    </div>
+  `;
+}
+
+function buildGlobalSearchItemHtml({ type, id, title, subtitle }) {
+  return `
+    <div class="quick-access-item global-search-result" data-type="${type}" data-id="${id}" style="display: flex; flex-direction: column; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-main); cursor: pointer; margin-bottom: 4px;">
+      <span class="bold" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${title}</span>
+      ${subtitle ? `<span class="font-mono" style="font-size: 0.72rem; color: var(--text-muted);">${subtitle}</span>` : ""}
+    </div>
+  `;
+}
+
+// Opens the result the user clicked: jumps to the right view (and, for settings entities, the
+// right tab panel) then opens the matching edit modal/drawer directly.
+function openGlobalSearchResult(type, id) {
+  if (type === "activity") {
+    switchToView("activities");
+    openActivityDrawer(id);
+  } else if (type === "account") {
+    switchToView("settings");
+    openSettingsPanel("accounts");
+    openAccountModal(id);
+  } else if (type === "department") {
+    switchToView("settings");
+    openSettingsPanel("departments");
+    openDeptModal(id);
+  }
+}
+
+function renderGlobalSearchResults(query) {
+  const resultsPanel = document.getElementById("global-search-results");
+
+  if (!query) {
+    resultsPanel.classList.remove("active");
+    resultsPanel.innerHTML = "";
+    return;
+  }
+
+  const matchingActivities = appState.activities
+    .filter(act => act.name.trim() !== "")
+    .filter(act =>
+      act.id.toLowerCase().includes(query) ||
+      act.name.toLowerCase().includes(query) ||
+      (act.responsable || "").toLowerCase().includes(query)
+    )
+    .slice(0, GLOBAL_SEARCH_MAX_PER_CATEGORY);
+
+  const matchingAccounts = appState.settings.accounts
+    .filter(acc => acc.code.toLowerCase().includes(query) || acc.description.toLowerCase().includes(query))
+    .slice(0, GLOBAL_SEARCH_MAX_PER_CATEGORY);
+
+  const matchingDepartments = appState.settings.departments
+    .filter(dept => dept.toLowerCase().includes(query))
+    .slice(0, GLOBAL_SEARCH_MAX_PER_CATEGORY);
+
+  const totalCount = matchingActivities.length + matchingAccounts.length + matchingDepartments.length;
+
+  if (totalCount === 0) {
+    resultsPanel.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 4px;">Aucun résultat.</div>`;
+    resultsPanel.classList.add("active");
+    return;
+  }
+
+  const activitiesHtml = matchingActivities
+    .map(act => buildGlobalSearchItemHtml({
+      type: "activity",
+      id: act.id,
+      title: act.name,
+      subtitle: `${act.id}${act.responsable ? ` · ${act.responsable}` : ""}`
+    }))
+    .join("");
+
+  const accountsHtml = matchingAccounts
+    .map(acc => buildGlobalSearchItemHtml({ type: "account", id: acc.code, title: acc.code, subtitle: acc.description }))
+    .join("");
+
+  const departmentsHtml = matchingDepartments
+    .map(dept => buildGlobalSearchItemHtml({ type: "department", id: dept, title: dept }))
+    .join("");
+
+  resultsPanel.innerHTML =
+    buildGlobalSearchSectionHtml("Activités", activitiesHtml) +
+    buildGlobalSearchSectionHtml("Comptes GL", accountsHtml) +
+    buildGlobalSearchSectionHtml("Départements", departmentsHtml);
+
+  resultsPanel.classList.add("active");
+
+  resultsPanel.querySelectorAll(".global-search-result").forEach(item => {
+    item.addEventListener("click", () => {
+      const type = item.getAttribute("data-type");
+      const id = item.getAttribute("data-id");
+      resultsPanel.classList.remove("active");
+      document.getElementById("global-search-input").value = "";
+      openGlobalSearchResult(type, id);
+    });
+  });
 }
 
 /* ==========================================================================

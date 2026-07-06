@@ -119,28 +119,31 @@ function handleLedgerFile(file) {
   reader.readAsArrayBuffer(file);
 }
 
-// Reconciliation Engine Algorithm
-function reconcileLedger() {
-  reconciliationState.results = [];
+// Format reference key: uppercased, trimmed, and stripped of the trailing ".0" Excel adds when
+// a numeric reference column is read as a float.
+function cleanRef(val) {
+  if (val === undefined || val === null) return "";
+  let s = String(val).trim().toUpperCase();
+  if (s.endsWith(".0")) s = s.substring(0, s.length - 2);
+  return s;
+}
 
-  // Format reference key
-  function cleanRef(val) {
-    if (val === undefined || val === null) return "";
-    let s = String(val).trim().toUpperCase();
-    if (s.endsWith(".0")) s = s.substring(0, s.length - 2);
-    return s;
-  }
+// Reconciliation Engine Algorithm (pure: no DOM, no globals besides its arguments) — matches
+// each activity distribution against the imported GL ledger for the selected fiscal
+// year/quarters. Kept separate from reconcileLedger() so it can be unit tested directly.
+function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear, selectedQuarters) {
+  const results = [];
 
   // 1. Group ledger transactions by Account & Clean Reference
   const ledgerGroups = {};
 
-  reconciliationState.ledgerTransactions.forEach(tx => {
+  ledgerTransactions.forEach(tx => {
     // Period filter: Check transaction date against selected year and quarters
     const txDateStr = String(tx["Date versée"] || "").trim();
     const txYear = getFiscalYear(txDateStr);
     const txQuarter = getQuarterNumber(txDateStr);
 
-    if (txYear !== appState.selected_year || !appState.selected_quarters.includes(txQuarter)) {
+    if (txYear !== selectedYear || !selectedQuarters.includes(txQuarter)) {
       return; // Skip transaction outside selected period
     }
 
@@ -177,13 +180,13 @@ function reconcileLedger() {
   const matchedKeys = new Set();
 
   // 2. Loop through all activities in app database
-  appState.activities.forEach(act => {
+  activities.forEach(act => {
     if (act.name.trim() === "") return; // Skip blank activities
 
     // Period filter
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
+    if (actYear !== selectedYear || !selectedQuarters.includes(actQuarter)) {
       return; // Skip activity outside selected period
     }
 
@@ -193,7 +196,7 @@ function reconcileLedger() {
 
       if (!distRef) {
         // Distribution without a reference: marked as "unlogged"
-        reconciliationState.results.push({
+        results.push({
           activityId: act.id,
           activityName: act.name,
           account_code: dist.account_code,
@@ -216,7 +219,7 @@ function reconcileLedger() {
         const diff = dist.amount - expectedRevenue;
         const isMatch = Math.abs(diff) < 0.02;
 
-        reconciliationState.results.push({
+        results.push({
           activityId: act.id,
           activityName: act.name,
           account_code: dist.account_code,
@@ -229,7 +232,7 @@ function reconcileLedger() {
         });
       } else {
         // Logged in app, but not found in ledger
-        reconciliationState.results.push({
+        results.push({
           activityId: act.id,
           activityName: act.name,
           account_code: dist.account_code,
@@ -250,7 +253,7 @@ function reconcileLedger() {
       // Revenue is credit (negative in GL), multiply by -1
       const amountGl = group.montant_somme * -1;
 
-      reconciliationState.results.push({
+      results.push({
         activityId: "",
         activityName: "(Non saisi dans l'application)",
         account_code: group.account_code,
@@ -263,6 +266,17 @@ function reconcileLedger() {
       });
     }
   });
+
+  return results;
+}
+
+function reconcileLedger() {
+  reconciliationState.results = matchDistributionsToLedger(
+    appState.activities,
+    reconciliationState.ledgerTransactions,
+    appState.selected_year,
+    appState.selected_quarters
+  );
 }
 
 function renderReconciliation() {
@@ -432,4 +446,9 @@ function openReconDetailModal(reconRecord) {
 function closeReconDetailModal() {
   document.getElementById("recon-detail-modal").classList.remove("active");
   document.getElementById("modal-backdrop").classList.remove("active");
+}
+
+// Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
+if (typeof module !== "undefined") {
+  module.exports = { matchDistributionsToLedger, cleanRef };
 }

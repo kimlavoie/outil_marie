@@ -9,19 +9,20 @@ let dashboardCharts = {
   accounts: null
 };
 
-function renderDashboard() {
+// Pure KPI computation (no DOM) so it can be unit tested directly.
+function computeDashboardStats(activities, selectedYear, selectedQuarters, reconciliationResults) {
   let totalRevenue = 0;
   let totalInternalFree = 0;
   let filledCount = 0;
 
-  appState.activities.forEach(act => {
+  activities.forEach(act => {
     const isFilled = act.name.trim() !== "";
     if (!isFilled) return;
 
     // Period filter
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
+    if (actYear !== selectedYear || !selectedQuarters.includes(actQuarter)) {
       return;
     }
 
@@ -37,22 +38,33 @@ function renderDashboard() {
     }
   });
 
-  document.getElementById("stat-revenue-total").textContent = formatCurrency(totalRevenue);
-  document.getElementById("stat-revenue-internal-free").textContent = formatCurrency(totalInternalFree);
-  document.getElementById("stat-activities-count").textContent = filledCount;
-
   // Reconciliation Rate
   let reconciliationRate = 0;
-  if (reconciliationState.results.length > 0) {
-    const validCount = reconciliationState.results.filter(r => r.status === "valid").length;
+  if (reconciliationResults.length > 0) {
+    const validCount = reconciliationResults.filter(r => r.status === "valid").length;
     // Rate is valid divided by total matched records in ledger/application
     // Let's filter records that are relevant (exclude ledger-only missing entries)
-    const appRecordsCount = reconciliationState.results.filter(r => r.status !== "unentered").length;
+    const appRecordsCount = reconciliationResults.filter(r => r.status !== "unentered").length;
     if (appRecordsCount > 0) {
       reconciliationRate = Math.round((validCount / appRecordsCount) * 100);
     }
   }
-  document.getElementById("stat-reconciled-percent").textContent = `${reconciliationRate}%`;
+
+  return { totalRevenue, totalInternalFree, filledCount, reconciliationRate };
+}
+
+function renderDashboard() {
+  const stats = computeDashboardStats(
+    appState.activities,
+    appState.selected_year,
+    appState.selected_quarters,
+    reconciliationState.results
+  );
+
+  document.getElementById("stat-revenue-total").textContent = formatCurrency(stats.totalRevenue);
+  document.getElementById("stat-revenue-internal-free").textContent = formatCurrency(stats.totalInternalFree);
+  document.getElementById("stat-activities-count").textContent = stats.filledCount;
+  document.getElementById("stat-reconciled-percent").textContent = `${stats.reconciliationRate}%`;
 
   // Render charts
   renderDashboardCharts();
@@ -222,4 +234,9 @@ function renderDashboardCharts() {
       }
     }
   });
+}
+
+// Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
+if (typeof module !== "undefined") {
+  module.exports = { computeDashboardStats };
 }

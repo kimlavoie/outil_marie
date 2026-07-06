@@ -78,18 +78,44 @@
       
       <!-- Top Header Bar -->
       <header class="top-bar">
-        <div style="display: flex; align-items: center; gap: 24px;">
+        <div class="top-bar-row top-bar-row-main">
           <h1 id="view-title" class="top-bar-title">Tableau de bord</h1>
-          
+
+          <div class="top-bar-actions">
+            <div class="global-search-wrapper" style="position: relative;">
+              <div class="search-wrapper" style="width: 260px;">
+                <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" id="global-search-input" class="search-input" aria-label="Recherche globale" placeholder="Recherche globale...">
+              </div>
+              <div id="global-search-results" class="calendar-popover" style="left: 0; right: auto; width: 340px;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+            <div class="quick-access-dropdown" style="position: relative;">
+              <button id="quick-access-toggle-btn" class="btn btn-secondary" title="Accès rapide">
+                <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor; margin-right: 6px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                Accès rapide
+                <span id="quick-access-count-badge" class="badge badge-info" style="display: none; margin-left: 6px;">0</span>
+              </button>
+              <div id="quick-access-dropdown-panel" class="calendar-popover" style="width: 320px; left: auto; right: 0;">
+                <div id="quick-access-list-global" style="display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto;">
+                  <!-- Populated dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="top-bar-row top-bar-row-secondary">
           <!-- Period Selector Widget -->
-          <div class="period-selector-widget" style="display: flex; align-items: center; gap: 16px; border-left: 1px solid var(--border-color); padding-left: 20px; display: flex;">
+          <div class="period-selector-widget">
             <div style="display: flex; align-items: center; gap: 8px;">
               <label for="top-fiscal-year" style="font-size: 0.8rem; font-weight: 700; white-space: nowrap; color: var(--text-secondary);">Année financière :</label>
               <select id="top-fiscal-year" class="select-input" style="padding: 4px 10px; font-size: 0.8rem; font-weight: 600; border-radius: var(--radius-sm);">
                 <!-- Populated dynamically -->
               </select>
             </div>
-            
+
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-right: 4px;">Trimestres :</span>
               <button class="quarter-toggle active" data-q="1" title="Trimestre 1 (Juillet - Septembre)">T1</button>
@@ -98,32 +124,20 @@
               <button class="quarter-toggle active" data-q="4" title="Trimestre 4 (Avril - Juin)">T4</button>
             </div>
           </div>
-        </div>
-        <div class="top-bar-actions">
-          <div class="quick-access-dropdown" style="position: relative;">
-            <button id="quick-access-toggle-btn" class="btn btn-secondary" title="Accès rapide">
-              <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor; margin-right: 6px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-              Accès rapide
-              <span id="quick-access-count-badge" class="badge badge-info" style="display: none; margin-left: 6px;">0</span>
+
+          <div class="top-bar-actions">
+            <button id="quick-export-excel" class="btn btn-secondary btn-compact" title="Exporter au format Excel">
+              <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+              </svg>
             </button>
-            <div id="quick-access-dropdown-panel" class="calendar-popover" style="width: 320px; left: auto; right: 0;">
-              <div id="quick-access-list-global" style="display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto;">
-                <!-- Populated dynamically -->
-              </div>
-            </div>
+            <button id="add-estimation-btn-quick" class="btn btn-secondary btn-compact" title="Créer une estimation, non enregistrée tant qu'elle n'est pas sauvegardée">
+              Estimation
+            </button>
+            <button id="add-activity-btn-quick" class="btn btn-primary btn-compact" title="Raccourci : Alt + N (ou Alt + A)">
+              + Nouvelle Activité
+            </button>
           </div>
-          <button id="quick-export-excel" class="btn btn-secondary">
-            <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor; margin-right: 6px;">
-              <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
-            </svg>
-            Exporter au format Excel
-          </button>
-          <button id="add-estimation-btn-quick" class="btn btn-secondary" title="Créer une estimation, non enregistrée tant qu'elle n'est pas sauvegardée">
-            Estimation
-          </button>
-          <button id="add-activity-btn-quick" class="btn btn-primary" title="Raccourci : Alt + N (ou Alt + A)">
-            + Nouvelle Activité
-          </button>
         </div>
       </header>
 
@@ -209,15 +223,15 @@
             <div class="table-toolbar">
               <div class="search-wrapper">
                 <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input type="text" id="activity-search" class="search-input" placeholder="Rechercher par nom, responsable, RI/Facture...">
+                <input type="text" id="activity-search" class="search-input" aria-label="Rechercher une activité" placeholder="Rechercher par nom, responsable, RI/Facture...">
               </div>
-              
+
               <div class="filter-actions">
-                <select id="filter-salle" class="select-input">
+                <select id="filter-salle" class="select-input" aria-label="Filtrer par salle">
                   <option value="">Toutes les salles</option>
                   <!-- Populated dynamically -->
                 </select>
-                <select id="filter-client-type" class="select-input">
+                <select id="filter-client-type" class="select-input" aria-label="Filtrer par type de client">
                   <option value="">Tous types clients</option>
                   <option value="interne">Interne</option>
                   <option value="externe">Externe</option>
@@ -532,7 +546,7 @@
   <div id="activity-drawer" class="drawer">
     <div class="drawer-header">
       <h2 id="activity-drawer-title" class="drawer-title">Activité</h2>
-      <button id="activity-drawer-close" class="btn-icon">
+      <button id="activity-drawer-close" class="btn-icon" aria-label="Fermer">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
@@ -855,7 +869,7 @@
   <div id="new-activity-modal" class="modal">
     <div class="modal-header">
       <h3 class="modal-title" id="new-activity-modal-title">Nouvelle activité</h3>
-      <button id="new-activity-modal-close" class="btn-icon">
+      <button id="new-activity-modal-close" class="btn-icon" aria-label="Fermer">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
@@ -880,7 +894,7 @@
   <div id="account-modal" class="modal">
     <div class="modal-header">
       <h3 id="account-modal-title" class="modal-title">Ajouter un compte</h3>
-      <button id="account-modal-close" class="btn-icon">
+      <button id="account-modal-close" class="btn-icon" aria-label="Fermer">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
@@ -907,7 +921,7 @@
   <div id="room-modal" class="modal" style="width: 760px; max-width: 95vw;">
     <div class="modal-header">
       <h3 id="room-modal-title" class="modal-title">Ajouter une salle</h3>
-      <button id="room-modal-close" class="btn-icon">
+      <button id="room-modal-close" class="btn-icon" aria-label="Fermer">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
@@ -1004,7 +1018,7 @@
   <div id="dept-modal" class="modal">
     <div class="modal-header">
       <h3 id="dept-modal-title" class="modal-title">Ajouter un département</h3>
-      <button id="dept-modal-close" class="btn-icon">
+      <button id="dept-modal-close" class="btn-icon" aria-label="Fermer">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
@@ -1027,7 +1041,7 @@
   <div id="salary-modal" class="modal">
     <div class="modal-header">
       <h3 id="salary-modal-title" class="modal-title">Ajouter un emploi</h3>
-      <button id="salary-modal-close" class="btn-icon">
+      <button id="salary-modal-close" class="btn-icon" aria-label="Fermer">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
@@ -1067,7 +1081,7 @@
   <div id="service-modal" class="modal">
     <div class="modal-header">
       <h3 id="service-modal-title" class="modal-title">Ajouter un service</h3>
-      <button id="service-modal-close" class="btn-icon">
+      <button id="service-modal-close" class="btn-icon" aria-label="Fermer">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
@@ -1114,7 +1128,7 @@
   <div id="recon-detail-modal" class="modal" style="width: 800px; max-width: 95vw;">
     <div class="modal-header">
       <h3 class="modal-title">Lignes de Grand Livre détaillées</h3>
-      <button id="recon-detail-modal-close" class="btn-icon">
+      <button id="recon-detail-modal-close" class="btn-icon" aria-label="Fermer">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
@@ -1150,7 +1164,7 @@
   <div id="calendar-modal" class="modal" style="width: 980px; max-width: 96vw;">
     <div class="modal-header">
       <h3 class="modal-title">Calendrier des activités</h3>
-      <button id="calendar-modal-close" class="btn-icon">
+      <button id="calendar-modal-close" class="btn-icon" aria-label="Fermer">
         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>

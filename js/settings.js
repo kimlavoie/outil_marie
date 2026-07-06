@@ -10,17 +10,17 @@
 // shape changes (a parameter/client type is added or removed, or the active version changes).
 let roomModalState = { grids: [], activeGridIndex: 0 };
 
+// Activates a settings tab + its panel (e.g. "accounts", "departments"), used both by the tab
+// buttons themselves and by the global search's "jump to this record" navigation.
+function openSettingsPanel(panel) {
+  document.querySelectorAll(".settings-tab-btn").forEach(b => b.classList.toggle("active", b.getAttribute("data-settings-panel") === panel));
+  document.querySelectorAll(".settings-panel").forEach(p => p.classList.toggle("active", p.id === `panel-${panel}`));
+}
+
 function initSettingsHandlers() {
   // Settings panels switcher
   document.querySelectorAll(".settings-tab-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".settings-tab-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-
-      const panel = btn.getAttribute("data-settings-panel");
-      document.querySelectorAll(".settings-panel").forEach(p => p.classList.remove("active"));
-      document.getElementById(`panel-${panel}`).classList.add("active");
-    });
+    btn.addEventListener("click", () => openSettingsPanel(btn.getAttribute("data-settings-panel")));
   });
 
   // Modals close buttons

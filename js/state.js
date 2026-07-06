@@ -133,7 +133,7 @@ function getRecentlyViewedActivityIds() {
   try {
     const raw = localStorage.getItem(RECENT_ACTIVITIES_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch (e) {
+  } catch {
     return [];
   }
 }
@@ -608,4 +608,9 @@ function restoreUiState() {
   if (report.sortOrder) accountReportState.sortOrder = report.sortOrder;
   if (report.pageSize) accountReportState.pageSize = report.pageSize;
   if (report.pages) accountReportState.pages = report.pages;
+}
+
+// Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
+if (typeof module !== "undefined") {
+  module.exports = { getFiscalYear, getQuarterNumber, getQuarter, getFiscalYearRange, parseLocalDateStr };
 }

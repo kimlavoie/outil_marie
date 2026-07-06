@@ -19,7 +19,7 @@
   
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-muted: #6b7280; /* WCAG AA (4.5:1) against --bg-main and --bg-card */
   --text-light: #f8fafc;
   
   --primary: #3b82f6;
@@ -52,7 +52,7 @@
   
   --text-primary: #f9fafb;
   --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  --text-muted: #8b95a5; /* WCAG AA (4.5:1) against --bg-main and --bg-card */
   
   --primary: #3b82f6;
   --primary-hover: #60a5fa;
@@ -209,15 +209,21 @@ body {
 }
 
 .top-bar {
-  height: 70px;
   border-bottom: 1px solid var(--border-color);
   background-color: var(--bg-card);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 32px;
   flex-shrink: 0;
   transition: var(--transition-smooth);
+}
+
+.top-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .top-bar-title {
@@ -229,7 +235,19 @@ body {
 .top-bar-actions {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.period-selector-widget {
+  display: flex;
+  align-items: center;
   gap: 16px;
+}
+
+.btn-compact {
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  gap: 6px;
 }
 
 /* Theme Toggle */

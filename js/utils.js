@@ -13,6 +13,17 @@ function generateUid(prefix) {
   return `${prefix}-${Date.now()}${Math.random().toString(36).substr(2, 5)}`;
 }
 
+// Returns a debounced wrapper that delays invoking fn until `delay` ms have
+// passed since the last call (used on search inputs to avoid a full re-render
+// on every keystroke).
+function debounce(fn, delay = 250) {
+  let timer = null;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
 // Helper: Calculate days between dates (inclusive)
 function calculateDaysCount(startStr, endStr) {
   if (!startStr || !endStr) return 1;
@@ -188,4 +199,9 @@ function maskPhoneInput(input) {
 
     input.value = formatted;
   });
+}
+
+// Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
+if (typeof module !== "undefined") {
+  module.exports = { formatCurrency, generateUid, debounce, calculateDaysCount, getActivityReferences, getRoomsTariffTotal };
 }

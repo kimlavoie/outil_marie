@@ -1,0 +1,17 @@
+{
+  "name": "outil-marie",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Outil de gestion des activités, de la facturation et du rapprochement comptable",
+  "scripts": {
+    "lint": "eslint js",
+    "lint:fix": "eslint js --fix",
+    "format": "prettier --write \"js/**/*.js\" \"*.html\" \"*.css\"",
+    "format:check": "prettier --check \"js/**/*.js\" \"*.html\" \"*.css\"",
+    "test": "node --test test/"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.4",
+    "prettier": "^3.9.4"
+  }
+}

@@ -1,0 +1,40 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { calculateDaysCount, getRoomsTariffTotal, getActivityReferences } = require("../js/utils.js");
+
+test("calculateDaysCount counts both endpoints inclusively", () => {
+  assert.equal(calculateDaysCount("2025-01-01", "2025-01-05"), 5);
+  assert.equal(calculateDaysCount("2025-01-01", "2025-01-01"), 1);
+});
+
+test("calculateDaysCount falls back to 1 day for missing or invalid input", () => {
+  assert.equal(calculateDaysCount("", "2025-01-05"), 1);
+  assert.equal(calculateDaysCount("2025-01-05", ""), 1);
+  assert.equal(calculateDaysCount("not-a-date", "2025-01-05"), 1);
+});
+
+test("calculateDaysCount falls back to 1 day when the end precedes the start", () => {
+  assert.equal(calculateDaysCount("2025-01-05", "2025-01-01"), 1);
+});
+
+test("getRoomsTariffTotal sums tariff_amount x days across every booked room", () => {
+  const activity = {
+    rooms: [
+      { date_start: "2025-01-01", date_end: "2025-01-02", tariff_amount: 100 }, // 2 days x 100 = 200
+      { date_start: "2025-02-01", date_end: "2025-02-03", tariff_amount: 50 } // 3 days x 50 = 150
+    ]
+  };
+  assert.equal(getRoomsTariffTotal(activity), 350);
+});
+
+test("getRoomsTariffTotal returns 0 when the activity has no rooms", () => {
+  assert.equal(getRoomsTariffTotal({}), 0);
+  assert.equal(getRoomsTariffTotal({ rooms: [] }), 0);
+});
+
+test("getActivityReferences joins distinct, non-empty references", () => {
+  const activity = {
+    distributions: [{ reference: "RI001" }, { reference: "RI001" }, { reference: "RI002" }, { reference: "" }]
+  };
+  assert.equal(getActivityReferences(activity), "RI001, RI002");
+});

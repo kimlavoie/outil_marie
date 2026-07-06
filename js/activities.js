@@ -344,7 +344,6 @@ function renderActivities() {
 }
 
 function initFormHandlers() {
-  const drawer = document.getElementById("activity-drawer");
   const backdrop = document.getElementById("drawer-backdrop");
 
   // Open drawers buttons: creating an activity only asks for a name (see initNewActivityModal);
@@ -372,7 +371,10 @@ function initFormHandlers() {
 
   // Inputs search
   const resetActivitiesPageAndRender = () => { activitiesState.page = 1; renderActivities(); };
-  document.getElementById("activity-search").addEventListener("input", resetActivitiesPageAndRender);
+  // Debounced on the free-text search box only: typing fires an "input" event per
+  // keystroke, and each one re-filters/re-sorts/re-renders the whole table.
+  // Filter selects fire one discrete "change" event per interaction, so they stay immediate.
+  document.getElementById("activity-search").addEventListener("input", debounce(resetActivitiesPageAndRender, 250));
   document.getElementById("filter-salle").addEventListener("change", resetActivitiesPageAndRender);
   document.getElementById("filter-client-type").addEventListener("change", resetActivitiesPageAndRender);
 
@@ -726,7 +728,7 @@ async function pickAndLinkFile(activityId, kind) {
   let handle;
   try {
     [handle] = await window.showOpenFilePicker();
-  } catch (e) {
+  } catch {
     return; // user cancelled the picker
   }
 
