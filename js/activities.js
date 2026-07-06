@@ -346,10 +346,12 @@ function renderActivities() {
 function initFormHandlers() {
   const backdrop = document.getElementById("drawer-backdrop");
 
-  // Open drawers buttons: creating an activity only asks for a name (see initNewActivityModal);
-  // the full tabbed record opens immediately afterwards.
+  // Open drawers buttons: creating a "soumission" activity only asks for a name first (see
+  // initNewActivityModal); "estimation" skips that step and opens the drawer directly on a
+  // blank draft, since the drawer's own name field already handles an empty name (see
+  // openActivityDrawer()).
   document.getElementById("add-activity-btn-quick").addEventListener("click", () => openNewActivityModal("soumission"));
-  document.getElementById("add-estimation-btn-quick").addEventListener("click", () => openNewActivityModal("estimation"));
+  document.getElementById("add-estimation-btn-quick").addEventListener("click", () => openActivityDrawer(createDraftActivity("")));
 
   // Close buttons: discard the activity if it was only an in-memory draft (Estimation flow)
   // that was never actually saved via "Enregistrer".
