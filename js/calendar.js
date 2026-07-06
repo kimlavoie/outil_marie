@@ -54,6 +54,7 @@ function openCalendarModal() {
   eventCalendarState.refDate = new Date();
   eventCalendarState.viewMode = "month";
   document.querySelectorAll(".event-calendar-view-btn").forEach(b => b.classList.toggle("active", b.getAttribute("data-view") === "month"));
+  initializeLegendState();
   renderEventCalendar();
   document.getElementById("calendar-modal").classList.add("active");
   document.getElementById("modal-backdrop").classList.add("active");
@@ -90,6 +91,7 @@ function goToDayView(dateStr) {
 function openCalendarAtDate(dateStr) {
   const parsed = dateStr ? parseLocalDateStr(dateStr) : null;
   if (parsed && !isNaN(parsed.getTime())) {
+    initializeLegendState();
     document.getElementById("calendar-modal").classList.add("active");
     document.getElementById("modal-backdrop").classList.add("active");
     goToDayView(dateStr);
@@ -144,9 +146,21 @@ function getActivitiesForDay(dateStr) {
   return matches;
 }
 
+function initializeLegendState() {
+  const detailsEl = document.querySelector(".event-calendar-legend-details");
+  if (detailsEl) {
+    if (appState.settings.rooms.length > 5) {
+      detailsEl.removeAttribute("open");
+    } else {
+      detailsEl.setAttribute("open", "");
+    }
+  }
+}
+
 function renderEventCalendarLegend() {
   const legendEl = document.getElementById("event-calendar-legend");
-  legendEl.innerHTML = appState.settings.rooms
+  const rooms = appState.settings.rooms;
+  legendEl.innerHTML = rooms
     .map(
       r => `
     <span class="event-calendar-legend-item">
@@ -155,6 +169,17 @@ function renderEventCalendarLegend() {
   `
     )
     .join("");
+
+  const previewEl = document.getElementById("event-calendar-legend-preview");
+  if (previewEl) {
+    previewEl.innerHTML = rooms
+      .map(
+        r => `
+      <span class="room-color-dot" style="background-color: ${getRoomColor(r.name)};" title="${r.name}"></span>
+    `
+      )
+      .join("");
+  }
 }
 
 function attachEventClickHandlers() {
@@ -177,6 +202,7 @@ function reopenCalendarModal(calendarReturn) {
   document
     .querySelectorAll(".event-calendar-view-btn")
     .forEach(b => b.classList.toggle("active", b.getAttribute("data-view") === eventCalendarState.viewMode));
+  initializeLegendState();
   renderEventCalendar();
   document.getElementById("calendar-modal").classList.add("active");
   document.getElementById("modal-backdrop").classList.add("active");

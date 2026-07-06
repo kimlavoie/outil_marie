@@ -1439,7 +1439,18 @@
             <button type="button" class="event-calendar-view-btn active" data-view="month">Mois</button>
           </div>
         </div>
-        <div id="event-calendar-legend" class="event-calendar-legend"></div>
+        <details class="event-calendar-legend-details" open>
+          <summary class="event-calendar-legend-summary">
+            <span class="legend-summary-title">Légende des salles</span>
+            <span id="event-calendar-legend-preview" class="legend-summary-preview"></span>
+            <span class="legend-chevron">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+              </svg>
+            </span>
+          </summary>
+          <div id="event-calendar-legend" class="event-calendar-legend"></div>
+        </details>
         <div id="event-calendar-grid" class="event-calendar-grid"></div>
       </div>
       <div class="modal-footer">
