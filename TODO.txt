@@ -185,7 +185,7 @@ Ordre suggéré :
        a. Datepicker — TERMINÉ (js/datepicker.ts)
        b. Liens de fichiers — TERMINÉ (js/activities-file-links.ts)
        c. Historique — TERMINÉ (js/activities-history.ts)
-       d. Financier (545 lignes)
+       d. Financier — TERMINÉ (js/activities-financials.ts)
        e. Rendu/liste (577 lignes)
        f. Formulaire (672 lignes)
        g. Réservations (1063 lignes, le plus gros, en dernier)
@@ -337,6 +337,32 @@ Activités c. Historique (js/activities-history.ts) — détails
 [ ] Validation manuelle à prioriser (à faire par vous, `npm run dev`) :
     éditer une activité plusieurs fois de suite et vérifier Ctrl+Z/Ctrl+Y
     (annuler/rétablir) — c'est le chemin qui était cassé.
+
+Activités d. Financier (js/activities-financials.ts) — détails
+- Même raisonnement "module TS classique" que les 3 précédents — manipule
+  directement le tiroir/formulaire d'activité pas encore converti.
+- Premier cas d'import circulaire du projet : activities-history.ts
+  importe autoSaveActivityForm/closeActivityDrawer/activityUndoSnapshotTimer/
+  ACTIVITY_UNDO_DEBOUNCE_MS/setActivityUndoSnapshotTimer depuis
+  activities-financials.ts, qui a lui-même besoin d'appeler
+  updateFormDatesHelper/scheduleActivityUndoSnapshot/saveActivityVersion
+  (définis dans activities-history.ts). Plutôt que de boucler l'import
+  dans les deux sens, ces 3 derniers restent des appels window.X() —
+  déjà pontés par activities-history.ts, déjà déclarés dans globals.d.ts.
+  Testé et confirmé sans problème à l'exécution (node --test, vite
+  build/dev) : les imports circulaires ES fonctionnent tant que rien
+  n'est appelé pendant l'évaluation synchrone du module, ce qui est le
+  cas ici (tout est dans des fonctions appelées plus tard).
+- Ajout d'un petit helper typé `el<T>(id)` pour remplacer les ~45
+  `document.getElementById(...)` du fichier (qui retourne Element, sans
+  .value/.disabled/.style) — plus lisible que 45 casts individuels.
+  Piège : mon remplacement global a d'abord touché la définition du
+  helper lui-même (récursion infinie) et une variable locale déjà nommée
+  `el` (collision de nom, "used before declaration") — les deux corrigés
+  avant validation.
+- Validé : 98/98 tests (8 sur ce fichier), tsc propre, lint 9 warnings,
+  vite build (33 modules, dist/ complet, aucun 404), vite dev (résout en
+  200).
 
 Phase 5 — Nettoyage
 -----------------------------------------------------------------

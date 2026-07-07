@@ -26,7 +26,7 @@ import {
   activityUndoSnapshotTimer,
   ACTIVITY_UNDO_DEBOUNCE_MS,
   setActivityUndoSnapshotTimer
-} from "./activities-financials.js";
+} from "./activities-financials.ts";
 
 // Groups every autosave from one continuous edit into a single undo step (see
 // activities-financials.js's ACTIVITY_UNDO_DEBOUNCE_MS doc comment for why).

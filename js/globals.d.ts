@@ -48,6 +48,21 @@ import type {
   restoreActivityVersion
 } from "./activities-history.ts";
 import type {
+  computeActivityFinancials,
+  updateSubmissionFinancialSummary,
+  buildPrintActivitySheetHtml,
+  printActivitySheet,
+  generateNextActivityId,
+  openActivityDrawer,
+  openActivityDetailModal,
+  closeActivityDrawer,
+  cancelActivityDrawer,
+  addDistributionRow,
+  updateDistributionTotal,
+  showAutoSaveStatus,
+  autoSaveActivityForm
+} from "./activities-financials.ts";
+import type {
   formatCurrency,
   escapeHtml,
   generateUid,
@@ -168,6 +183,19 @@ declare global {
     saveActivityVersion: typeof saveActivityVersion;
     loadAndRenderActivityHistory: typeof loadAndRenderActivityHistory;
     restoreActivityVersion: typeof restoreActivityVersion;
+    computeActivityFinancials: typeof computeActivityFinancials;
+    updateSubmissionFinancialSummary: typeof updateSubmissionFinancialSummary;
+    buildPrintActivitySheetHtml: typeof buildPrintActivitySheetHtml;
+    printActivitySheet: typeof printActivitySheet;
+    generateNextActivityId: typeof generateNextActivityId;
+    openActivityDrawer: typeof openActivityDrawer;
+    openActivityDetailModal: typeof openActivityDetailModal;
+    closeActivityDrawer: typeof closeActivityDrawer;
+    cancelActivityDrawer: typeof cancelActivityDrawer;
+    addDistributionRow: typeof addDistributionRow;
+    updateDistributionTotal: typeof updateDistributionTotal;
+    showAutoSaveStatus: typeof showAutoSaveStatus;
+    autoSaveActivityForm: typeof autoSaveActivityForm;
   }
 
   // populateDropdowns is a plain top-level function declaration in navigation.js (a non-module

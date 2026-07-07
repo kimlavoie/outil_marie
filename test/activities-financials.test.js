@@ -1,28 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// computeActivityFinancials calls appState, getRoomsTariffTotal, getAggregateEventDates,
-// getActiveSalaryRate and getActiveServiceRate as globals (plain <script> globals in the
-// browser); wire them up before importing it.
-import { getRoomsTariffTotal } from "../js/utils.ts";
-import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../js/state.js";
-import { getAggregateEventDates } from "../js/activities-reservations.js";
-global.getRoomsTariffTotal = getRoomsTariffTotal;
-global.getActiveSalaryRate = getActiveSalaryRate;
-global.getActiveSalaryOvertimeRate = getActiveSalaryOvertimeRate;
-global.getActiveServiceRate = getActiveServiceRate;
-global.getAggregateEventDates = getAggregateEventDates;
-global.appState = {
-  settings: {
-    salaries: [{ id: "sal1", rate_versions: [{ effective_date: "", rate: 20, overtime_rate: 30 }] }],
-    services: [
-      { id: "svc-hourly", type: "hourly", rate_versions: [{ effective_date: "", rate: 10 }] },
-      { id: "svc-flat", type: "flat", rate_versions: [{ effective_date: "", rate: 50 }] }
-    ]
-  }
-};
+// activities-financials.ts imports appState directly from state.js (a real, shared, mutable
+// object) rather than reading it as a global, so we set up its test fixture by mutating that same
+// imported object's .settings rather than replacing the binding.
+import { appState } from "../js/state.js";
+import { computeActivityFinancials } from "../js/activities-financials.ts";
 
-import { computeActivityFinancials } from "../js/activities-financials.js";
+appState.settings = {
+  salaries: [{ id: "sal1", rate_versions: [{ effective_date: "", rate: 20, overtime_rate: 30 }] }],
+  services: [
+    { id: "svc-hourly", type: "hourly", rate_versions: [{ effective_date: "", rate: 10 }] },
+    { id: "svc-flat", type: "flat", rate_versions: [{ effective_date: "", rate: 50 }] }
+  ]
+};
 
 function makeActivity(reservationOverrides) {
   return {

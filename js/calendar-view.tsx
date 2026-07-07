@@ -13,7 +13,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { appState, parseLocalDateStr } from "./state.js";
 import { escapeHtml, getRoomColor, getReservationRoomLabel } from "./utils.ts";
-import { openActivityDrawer, openActivityDetailModal } from "./activities-financials.js";
+import { openActivityDrawer, openActivityDetailModal } from "./activities-financials.ts";
 
 const MONTH_NAMES_FR = [
   "Janvier",

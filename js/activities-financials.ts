@@ -1,13 +1,42 @@
 /**
- * activities-financials.js - Financial summary computation, PDF print sheet,
+ * activities-financials.ts - Financial summary computation, PDF print sheet,
  * drawer open/close/cancel lifecycle, and revenue distribution rows.
  * Part 4/5 of the activities module (see activities-render.js for context).
+ *
+ * Manipulates the not-yet-converted activity drawer/form (js/activities-form.js) directly — like
+ * js/datepicker.ts, js/activities-file-links.ts and js/activities-history.ts, this stays a plain
+ * TS module rather than a React component until that form gets its own turn in Phase 4.
+ *
+ * updateFormDatesHelper/scheduleActivityUndoSnapshot/saveActivityVersion (all defined in
+ * activities-history.ts, which itself imports several things from this file) are called as bare
+ * globals rather than real imports, to avoid a circular import between the two — they're already
+ * bridged to window by activities-history.ts and declared in globals.d.ts.
  */
 import { clearDateFieldErrors } from "./datepicker.ts";
+import { appState, saveDatabase, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate, recordActivityView } from "./state.js";
+import { formatCurrency, escapeHtml, getReservationRoomLabel, getRoomsTariffTotal, showLoadingOverlay, hideLoadingOverlay, showToast } from "./utils.ts";
+import { isNonEmptyString } from "./validation.ts";
+import { activitiesState, renderActivities } from "./activities-render.js";
+import {
+  collectReservationsFromForm,
+  getAggregateEventDates,
+  updateStaffRowSubtotal,
+  updateServiceRowSubtotal
+} from "./activities-reservations.js";
+import { reconciliationState, reconcileLedger } from "./reconciliation.js";
+
+// Typed shorthand for document.getElementById in this file's heavy DOM-manipulation code:
+// getElementById returns plain Element, which lacks .value/.disabled/.style/.focus() etc. Since
+// this file predates any type annotations on the actual markup, casting to HTMLInputElement (a
+// safe superset of the properties used below, including on <select>/<button> elements the real
+// DOM doesn't strictly type that way) avoids ~45 one-off casts without changing any behavior.
+function el<T extends Element = HTMLInputElement>(id: string): T {
+  return document.getElementById(id) as unknown as T;
+}
 
 // Recomputes and displays the room/personnel/frais subtotal, TPS (5%), TVQ (9.975%), and total
 function updateSubmissionFinancialSummary() {
-  const container = document.getElementById("submission-financial-summary");
+  const container = el("submission-financial-summary");
   if (!container) return;
 
   const reservations = collectReservationsFromForm();
@@ -17,10 +46,10 @@ function updateSubmissionFinancialSummary() {
   let staffTotal = 0;
   document.querySelectorAll("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
     updateStaffRowSubtotal(row);
-    const salaryId = row.querySelector(".staff-salary-select").value;
-    const count = parseInt(row.querySelector(".staff-count-input").value, 10) || 0;
-    const hours = parseFloat(row.querySelector(".staff-hours-input").value) || 0;
-    const overtimeHours = parseFloat(row.querySelector(".staff-overtime-hours-input").value) || 0;
+    const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select").value;
+    const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input").value, 10) || 0;
+    const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input").value) || 0;
+    const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input").value) || 0;
     const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
     const rate = salary ? getActiveSalaryRate(salary, eventDateStart) : 0;
     const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart) : 0;
@@ -30,9 +59,9 @@ function updateSubmissionFinancialSummary() {
   let servicesTotal = 0;
   document.querySelectorAll("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
     updateServiceRowSubtotal(row);
-    const serviceId = row.querySelector(".service-select").value;
-    const count = parseInt(row.querySelector(".service-count-input").value, 10) || 0;
-    const hours = parseFloat(row.querySelector(".service-hours-input").value) || 0;
+    const serviceId = row.querySelector<HTMLInputElement>(".service-select").value;
+    const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input").value, 10) || 0;
+    const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input").value) || 0;
     const service = (appState.settings.services || []).find(s => s.id === serviceId);
     const rate = service ? getActiveServiceRate(service, eventDateStart) : 0;
     servicesTotal += service && service.type === "hourly" ? rate * hours * count : rate * count;
@@ -40,7 +69,7 @@ function updateSubmissionFinancialSummary() {
 
   let feesTotal = 0;
   document.querySelectorAll("#form-activity-reservations .room-fees-list .distribution-row").forEach(row => {
-    feesTotal += parseFloat(row.querySelector(".fee-amount-input").value) || 0;
+    feesTotal += parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input").value) || 0;
   });
 
   const subtotal = roomsTotal + staffTotal + servicesTotal + feesTotal;
@@ -180,14 +209,14 @@ function buildPrintActivitySheetHtml(act) {
 // Populates the hidden print sheet with the currently-open activity and triggers the browser's
 // print dialog (the user can then "Enregistrer au format PDF" to export it).
 function printActivitySheet() {
-  const id = document.getElementById("form-activity-internal-id").value;
+  const id = el("form-activity-internal-id").value;
   const act = appState.activities.find(a => a.id === id);
   if (!act) return;
   showLoadingOverlay("Préparation du document...");
   // Deferred so the overlay actually paints before building the sheet and opening the (blocking)
   // browser print dialog.
   setTimeout(() => {
-    document.getElementById("print-activity-sheet").innerHTML = buildPrintActivitySheetHtml(act);
+    el("print-activity-sheet").innerHTML = buildPrintActivitySheetHtml(act);
     hideLoadingOverlay();
     window.print();
   }, 20);
@@ -220,10 +249,10 @@ function generateNextActivityId() {
 // `calendarReturn` is an optional eventCalendarState snapshot ({refDate, viewMode}) to return to
 // when the record was opened by clicking an event in the calendar.
 function openActivityDrawer(id, calendarReturn = null) {
-  const drawer = document.getElementById("activity-drawer");
-  const backdrop = document.getElementById("drawer-backdrop");
-  const form = document.getElementById("activity-form");
-  const titleEl = document.getElementById("activity-drawer-title");
+  const drawer = el("activity-drawer");
+  const backdrop = el("drawer-backdrop");
+  const form = el<HTMLFormElement>("activity-form");
+  const titleEl = el("activity-drawer-title");
 
   const act = appState.activities.find(a => a.id === id);
   if (!act) return;
@@ -239,27 +268,27 @@ function openActivityDrawer(id, calendarReturn = null) {
   }
 
   form.reset();
-  document.getElementById("form-distribution-list").innerHTML = "";
-  document.getElementById("form-distribution-total-val").textContent = "0,00 $";
+  el("form-distribution-list").innerHTML = "";
+  el("form-distribution-total-val").textContent = "0,00 $";
 
   titleEl.textContent = act.name.trim() !== "" ? act.name : `Activité ${act.id}`;
-  document.getElementById("form-activity-internal-id").value = act.id;
-  document.getElementById("form-activity-id").value = act.id;
-  document.getElementById("form-activity-id").disabled = true; // Cannot edit active key
-  document.getElementById("form-activity-coba").value = act.coba || "";
+  el("form-activity-internal-id").value = act.id;
+  el("form-activity-id").value = act.id;
+  el("form-activity-id").disabled = true; // Cannot edit active key
+  el("form-activity-coba").value = act.coba || "";
   fillActivityFormFields(act);
   renderActivityStateBar(act);
 
-  const submitBtn = document.getElementById("activity-drawer-submit");
+  const submitBtn = el("activity-drawer-submit");
   if (submitBtn) {
     submitBtn.style.display = activitiesState.draftActivityId === id ? "inline-flex" : "none";
   }
 
   activitiesState.calendarReturn = calendarReturn;
-  document.getElementById("activity-drawer-back-to-calendar-btn").style.display = calendarReturn ? "inline-flex" : "none";
+  el("activity-drawer-back-to-calendar-btn").style.display = calendarReturn ? "inline-flex" : "none";
 
   switchActivityTab("submission");
-  updateFormDatesHelper();
+  window.updateFormDatesHelper();
   clearDateFieldErrors();
 
   drawer.classList.add("active");
@@ -267,7 +296,7 @@ function openActivityDrawer(id, calendarReturn = null) {
 
   // Set cursor focus directly on the first editable field (Références COBA)
   setTimeout(() => {
-    document.getElementById("form-activity-coba").focus();
+    el("form-activity-coba").focus();
   }, 150);
 }
 
@@ -277,13 +306,13 @@ function openActivityDetailModal(id, calendarReturn) {
 }
 
 function closeActivityDrawer() {
-  const currentId = document.getElementById("form-activity-internal-id").value;
+  const currentId = el("form-activity-internal-id").value;
   if (currentId) {
     const currentAct = appState.activities.find(a => a.id === currentId);
     const snapshot = activitiesState.openedActivitySnapshot;
     if (currentAct && snapshot && currentAct.id === snapshot.id) {
       if (JSON.stringify(currentAct) !== JSON.stringify(snapshot)) {
-        saveActivityVersion(currentAct);
+        window.saveActivityVersion(currentAct);
       }
     }
   }
@@ -292,13 +321,13 @@ function closeActivityDrawer() {
   activitiesState.undoStack = [];
   activitiesState.redoStack = [];
 
-  document.getElementById("activity-drawer").classList.remove("active");
-  document.getElementById("drawer-backdrop").classList.remove("active");
+  el("activity-drawer").classList.remove("active");
+  el("drawer-backdrop").classList.remove("active");
 }
 
 function cancelActivityDrawer() {
-  const id = document.getElementById("form-activity-internal-id").value;
-  const nameInput = document.getElementById("form-activity-name");
+  const id = el("form-activity-internal-id").value;
+  const nameInput = el("form-activity-name");
 
   if (nameInput && !nameInput.value.trim()) {
     const isDraft = activitiesState.draftActivityId === id;
@@ -320,7 +349,7 @@ function cancelActivityDrawer() {
 }
 
 function addDistributionRow(accountCode = "", amount = 0, reference = "") {
-  const container = document.getElementById("form-distribution-list");
+  const container = el("form-distribution-list");
   const rowId = "dist-row-" + Date.now() + Math.random().toString(36).substr(2, 5);
 
   let optionsHtml = '<option value="">Choisir un compte...</option>';
@@ -345,7 +374,7 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "") {
   container.insertAdjacentHTML("beforeend", rowHtml);
 
   // Attach listeners
-  const newRow = document.getElementById(rowId);
+  const newRow = el(rowId);
   newRow.querySelector(".delete-dist-row-btn").addEventListener("click", () => {
     newRow.remove();
     updateDistributionTotal();
@@ -360,27 +389,27 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "") {
 function updateDistributionTotal() {
   let total = 0;
   document.querySelectorAll(".dist-amount-input").forEach(input => {
-    const val = parseFloat(input.value) || 0;
+    const val = parseFloat((input as HTMLInputElement).value) || 0;
     total += val;
   });
-  document.getElementById("form-distribution-total-val").textContent = formatCurrency(total);
+  el("form-distribution-total-val").textContent = formatCurrency(total);
 }
 
 let autoSaveTimeoutId = null;
 
 function showAutoSaveStatus(status) {
-  const internalId = document.getElementById("form-activity-internal-id").value;
+  const internalId = el("form-activity-internal-id").value;
   if (internalId && activitiesState.draftActivityId === internalId) {
-    const el = document.getElementById("auto-save-status");
-    if (el) el.classList.remove("active");
+    const statusEl = el("auto-save-status");
+    if (statusEl) statusEl.classList.remove("active");
     return;
   }
 
-  const el = document.getElementById("auto-save-status");
-  if (!el) return;
+  const statusEl = el("auto-save-status");
+  if (!statusEl) return;
 
-  const spinner = el.querySelector(".auto-save-spinner");
-  const text = el.querySelector(".auto-save-text");
+  const spinner = statusEl.querySelector<HTMLElement>(".auto-save-spinner");
+  const text = statusEl.querySelector<HTMLElement>(".auto-save-text");
 
   if (autoSaveTimeoutId) {
     clearTimeout(autoSaveTimeoutId);
@@ -388,22 +417,22 @@ function showAutoSaveStatus(status) {
   }
 
   if (status === "saving") {
-    el.className = "auto-save-status active saving";
+    statusEl.className = "auto-save-status active saving";
     if (spinner) spinner.style.display = "inline-block";
     if (text) text.textContent = "Enregistrement...";
   } else if (status === "saved") {
-    el.className = "auto-save-status active saved";
+    statusEl.className = "auto-save-status active saved";
     if (spinner) spinner.style.display = "none";
     if (text) text.textContent = "Enregistré";
 
     autoSaveTimeoutId = setTimeout(() => {
-      el.classList.remove("active");
+      statusEl.classList.remove("active");
     }, 2000);
   }
 }
 
 function autoSaveActivityForm() {
-  const internalId = document.getElementById("form-activity-internal-id").value;
+  const internalId = el("form-activity-internal-id").value;
   if (!internalId) return;
 
   // Do not auto-save draft activities until they have been saved once manually!
@@ -411,8 +440,8 @@ function autoSaveActivityForm() {
     return;
   }
 
-  const rawId = document.getElementById("form-activity-id").value.trim();
-  const name = document.getElementById("form-activity-name").value.trim();
+  const rawId = el("form-activity-id").value.trim();
+  const name = el("form-activity-name").value.trim();
 
   // The activity name cannot be empty. If it is, we don't save.
   if (!isNonEmptyString(name)) {
@@ -421,34 +450,34 @@ function autoSaveActivityForm() {
 
   showAutoSaveStatus("saving");
 
-  const attendeesInput = document.getElementById("form-activity-attendees").value.trim();
+  const attendeesInput = el("form-activity-attendees").value.trim();
   const attendeesCount = parseInt(attendeesInput) || 0;
-  const clientFirstName = document.getElementById("form-activity-client-firstname").value.trim();
-  const clientLastName = document.getElementById("form-activity-client-lastname").value.trim();
-  const clientPhone = document.getElementById("form-activity-client-phone").value.trim();
-  const clientEmail = document.getElementById("form-activity-client-email").value.trim();
-  const responsable = document.getElementById("form-activity-responsable").value.trim();
-  const clientType = document.getElementById("form-activity-client-type").value;
-  const description = document.getElementById("form-activity-description").value.trim();
-  const coba = document.getElementById("form-activity-coba").value.trim();
-  const managerFirstName = document.getElementById("form-activity-manager-firstname").value.trim();
-  const managerLastName = document.getElementById("form-activity-manager-lastname").value.trim();
-  const managerType = document.getElementById("form-activity-manager-type").value;
-  const managerPhone = document.getElementById("form-activity-manager-phone").value.trim();
-  const managerEmail = document.getElementById("form-activity-manager-email").value.trim();
+  const clientFirstName = el("form-activity-client-firstname").value.trim();
+  const clientLastName = el("form-activity-client-lastname").value.trim();
+  const clientPhone = el("form-activity-client-phone").value.trim();
+  const clientEmail = el("form-activity-client-email").value.trim();
+  const responsable = el("form-activity-responsable").value.trim();
+  const clientType = el("form-activity-client-type").value;
+  const description = el("form-activity-description").value.trim();
+  const coba = el("form-activity-coba").value.trim();
+  const managerFirstName = el("form-activity-manager-firstname").value.trim();
+  const managerLastName = el("form-activity-manager-lastname").value.trim();
+  const managerType = el("form-activity-manager-type").value;
+  const managerPhone = el("form-activity-manager-phone").value.trim();
+  const managerEmail = el("form-activity-manager-email").value.trim();
   const reservations = collectReservationsFromForm();
   const { date_start: start, date_end: end } = getAggregateEventDates(reservations);
-  const dept = document.getElementById("form-activity-dept").value;
-  const eventType = document.getElementById("form-activity-event-type").value;
-  const eventTypeOther = document.getElementById("form-activity-event-type-other").value.trim();
+  const dept = el("form-activity-dept").value;
+  const eventType = el("form-activity-event-type").value;
+  const eventTypeOther = el("form-activity-event-type-other").value.trim();
 
   // Build distributions array
   const distributions = [];
   document.querySelectorAll(".distribution-row").forEach(row => {
-    const acc = row.querySelector(".dist-account-select")?.value;
-    const amtStr = row.querySelector(".dist-amount-input")?.value.trim();
+    const acc = row.querySelector<HTMLInputElement>(".dist-account-select")?.value;
+    const amtStr = row.querySelector<HTMLInputElement>(".dist-amount-input")?.value.trim();
     const amt = parseFloat(amtStr) || 0;
-    const reference = row.querySelector(".dist-reference-input")?.value.trim();
+    const reference = row.querySelector<HTMLInputElement>(".dist-reference-input")?.value.trim();
 
     if (acc && amt > 0) {
       distributions.push({ account_code: acc, amount: amt, reference });
@@ -503,7 +532,7 @@ function autoSaveActivityForm() {
   // (keystrokes, a field's "input" then its "change" on blur, etc.) collapses into a single undo
   // step instead of one step per underlying save.
   activitiesState.redoStack = [];
-  scheduleActivityUndoSnapshot(idx);
+  window.scheduleActivityUndoSnapshot(idx);
 }
 
 // Groups every autosave from one continuous edit into a single undo step: each call postpones
