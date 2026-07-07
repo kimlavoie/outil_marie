@@ -6,7 +6,7 @@ import { generateUid, calculateDaysCount } from "../js/utils.js";
 global.generateUid = generateUid;
 global.calculateDaysCount = calculateDaysCount;
 
-import { migrateActivities, appState } from "../js/state.js";
+import { migrateActivities, migrateRoomsConfig, appState } from "../js/state.js";
 
 test("migrateActivities correctly migrates legacy room_name to reservations format", () => {
   // Setup legacy settings
@@ -113,4 +113,79 @@ test("migrateActivities broadcast legacy activity-level reference onto distribut
   // Verify distribution references
   assert.equal(migrated.distributions[0].reference, "RI-12345"); // Broadcasted
   assert.equal(migrated.distributions[1].reference, "RI-already-exists"); // Preserved
+});
+
+test("migrateRoomsConfig does nothing and does not throw when there are no rooms", () => {
+  appState.settings = { rooms: [] };
+  assert.doesNotThrow(() => migrateRoomsConfig());
+  assert.deepEqual(appState.settings.rooms, []);
+});
+
+test("migrateRoomsConfig builds a pricing grid from legacy price_internal/price_external", () => {
+  appState.settings = {
+    rooms: [{ name: "Salle A", price_internal: 100, price_external: 150 }]
+  };
+
+  migrateRoomsConfig();
+
+  const room = appState.settings.rooms[0];
+  assert.equal(room.price_internal, undefined);
+  assert.equal(room.price_external, undefined);
+  assert.equal(room.tarifs, undefined); // tarifs is always a transient step, deleted after migration
+  assert.equal(room.pricing_grids.length, 1);
+  const grid = room.pricing_grids[0];
+  assert.equal(grid.client_types.length, 2); // Interne + Externe
+  assert.deepEqual(
+    grid.cells.map(c => c.amount),
+    [100, 150]
+  );
+});
+
+test("migrateRoomsConfig leaves an existing pricing_grids untouched and still drops legacy tarifs", () => {
+  appState.settings = {
+    rooms: [
+      {
+        name: "Salle B",
+        // Legacy leftover tarifs alongside an already-migrated pricing_grids: pricing_grids wins.
+        tarifs: [{ id: "t1", description: "Interne", amount: 999 }],
+        pricing_grids: [
+          {
+            effective_date: "",
+            parameters: [{ id: "p1", name: "Tarif" }],
+            client_types: [{ id: "ct1", name: "Interne" }],
+            cells: [{ parameter_id: "p1", client_type_id: "ct1", amount: 42 }]
+          }
+        ]
+      }
+    ]
+  };
+
+  migrateRoomsConfig();
+
+  const room = appState.settings.rooms[0];
+  assert.equal(room.pricing_grids.length, 1);
+  assert.equal(room.pricing_grids[0].cells[0].amount, 42); // untouched, not rebuilt from tarifs
+  assert.equal(room.tarifs, undefined); // always dropped, even though it was ignored above
+});
+
+test("migrateRoomsConfig treats a null pricing_grids like a missing one and rebuilds it", () => {
+  appState.settings = {
+    rooms: [{ name: "Salle C", pricing_grids: null, tarifs: [{ id: "t1", description: "Interne", amount: 75 }] }]
+  };
+
+  migrateRoomsConfig();
+
+  const room = appState.settings.rooms[0];
+  assert.equal(room.pricing_grids.length, 1);
+  assert.equal(room.pricing_grids[0].cells[0].amount, 75);
+});
+
+test("migrateRoomsConfig always ensures linked_* arrays exist", () => {
+  appState.settings = { rooms: [{ name: "Salle D", pricing_grids: [] }] };
+  migrateRoomsConfig();
+  const room = appState.settings.rooms[0];
+  assert.deepEqual(room.linked_rooms, []);
+  assert.deepEqual(room.linked_staff, []);
+  assert.deepEqual(room.linked_fees, []);
+  assert.deepEqual(room.linked_tasks, []);
 });

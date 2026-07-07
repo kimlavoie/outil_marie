@@ -82,6 +82,28 @@ test("computeActivityFinancials applies Quebec taxes (TPS 5%, TVQ 9.975%) on the
   assert.ok(Math.abs(fin.total - (200 + 10 + 19.95)) < 1e-9);
 });
 
+test("computeActivityFinancials returns all zeros for an activity with no reservations array", () => {
+  const fin = computeActivityFinancials({});
+  assert.equal(fin.roomsTotal, 0);
+  assert.equal(fin.staffTotal, 0);
+  assert.equal(fin.servicesTotal, 0);
+  assert.equal(fin.feesTotal, 0);
+  assert.equal(fin.subtotal, 0);
+  assert.equal(fin.total, 0);
+});
+
+test("computeActivityFinancials aggregates totals across multiple reservations on the same activity", () => {
+  const fin = computeActivityFinancials({
+    reservations: [
+      { tariff_amount: 100, slots: [{ date: "2025-08-01" }], staff: [], services: [], fees: [{ amount: 10 }] },
+      { tariff_amount: 50, slots: [{ date: "2025-08-01" }], staff: [], services: [], fees: [{ amount: 5 }] }
+    ]
+  });
+  assert.equal(fin.roomsTotal, 150);
+  assert.equal(fin.feesTotal, 15);
+  assert.equal(fin.subtotal, 165);
+});
+
 test("computeActivityFinancials treats an unknown salary/service id as a zero rate instead of throwing", () => {
   const fin = computeActivityFinancials(
     makeActivity({

@@ -7,7 +7,7 @@ import { getFiscalYear, getQuarterNumber, parseLocalDateStr } from "../js/state.
 global.getFiscalYear = getFiscalYear;
 global.getQuarterNumber = getQuarterNumber;
 global.parseLocalDateStr = parseLocalDateStr;
-import { matchDistributionsToLedger, validateLedgerStructure } from "../js/reconciliation.js";
+import { matchDistributionsToLedger, validateLedgerStructure, findBestColumnMatch } from "../js/reconciliation.js";
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];
@@ -61,6 +61,44 @@ test("marks a ledger entry with no matching activity distribution as unentered",
   assert.equal(results.length, 1);
   assert.equal(results[0].status, "unentered");
   assert.equal(results[0].amount_gl, 100);
+});
+
+test("sums multiple ledger transactions sharing the same account+reference before comparing", () => {
+  const activities = [activity({ distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] })];
+  const ledger = [
+    { "Date versée": "2025-08-05", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -60 },
+    { "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -40 }
+  ];
+
+  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "valid"); // -60 + -40 = -100 -> expected revenue 100
+});
+
+test("evaluates two distributions sharing the same account+reference independently against the same ledger group", () => {
+  const activities = [
+    activity({
+      id: "act-1",
+      distributions: [
+        { account_code: "892-1", reference: "RI001", amount: 100 },
+        { account_code: "892-1", reference: "RI001", amount: 999 }
+      ]
+    })
+  ];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
+
+  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 2);
+  assert.equal(results[0].status, "valid");
+  assert.equal(results[1].status, "diff");
+});
+
+test("treats a zero-amount distribution matching a zero-amount ledger entry as valid, not unlogged", () => {
+  const activities = [activity({ distributions: [{ account_code: "892-1", reference: "RI001", amount: 0 }] })];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": 0 }];
+
+  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results[0].status, "valid");
 });
 
 test("skips activities and ledger transactions outside the selected fiscal period", () => {
@@ -165,4 +203,32 @@ test("validateLedgerStructure returns valid=false and error details for missing 
 test("validateLedgerStructure returns valid=false for empty ledger file", () => {
   assert.equal(validateLedgerStructure([]).valid, false);
   assert.equal(validateLedgerStructure(null).valid, false);
+});
+
+test("validateLedgerStructure treats a ledger made only of total rows as still structurally valid", () => {
+  // validateLedgerStructure only checks the required columns exist on the first row; it does not
+  // filter out "Total"/"Grand Total" rows itself (that's the caller's job downstream).
+  const totalsOnly = [{ "Poste budgétaire": "Total", "Date versée": "", "Montant courant": 0 }];
+  assert.equal(validateLedgerStructure(totalsOnly).valid, true);
+});
+
+test("findBestColumnMatch matches header/candidate names ignoring accents and case", () => {
+  const headers = ["Poste Budgétaire", "Date versée", "No Référence"];
+  assert.equal(findBestColumnMatch(headers, ["poste budgetaire"]), "Poste Budgétaire");
+  assert.equal(findBestColumnMatch(headers, ["REFERENCE"]), "No Référence");
+});
+
+test("findBestColumnMatch matches when one name is a substring of the other", () => {
+  const headers = ["Numéro de référence interne"];
+  assert.equal(findBestColumnMatch(headers, ["référence"]), "Numéro de référence interne");
+});
+
+test("findBestColumnMatch returns the first possible name that matches, in priority order", () => {
+  const headers = ["Compte", "Poste budgétaire"];
+  assert.equal(findBestColumnMatch(headers, ["poste budgetaire", "compte"]), "Poste budgétaire");
+});
+
+test("findBestColumnMatch returns an empty string when nothing matches", () => {
+  assert.equal(findBestColumnMatch(["Colonne inconnue"], ["poste budgetaire"]), "");
+  assert.equal(findBestColumnMatch([], ["poste budgetaire"]), "");
 });

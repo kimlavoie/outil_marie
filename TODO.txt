@@ -1,6 +1,111 @@
-TODO - Idées d'amélioration
+MIGRATION VITE + REACT + TYPESCRIPT — PLAN PAR ÉTAPES
+======================================================
 
-Fonctionnalités métier
-- Tableau de bord statistiques (taux d'occupation des salles, revenus par période, activités récurrentes) en s'appuyant sur Chart.js déjà présent
-- Sauvegarde automatique périodique en plus de l'export manuel Excel
-- Journal d'audit global (qui a modifié quoi, quand), en complément de l'historique de versions des activités
+Contexte : une tentative précédente de migration "big bang" (tout réécrit
+d'un coup) a échoué. Ce plan est conçu pour qu'à CHAQUE commit sur main,
+l'app reste 100% fonctionnelle. L'app doit continuer d'être servie depuis
+la racine (hébergement type GitHub Pages / Netlify, pas de sous-dossier).
+
+Principes directeurs
+---------------------
+- Une PR = un module ou une vue, jamais "tout en même temps".
+- Après chaque étape : `npm test` vert + checklist de smoke-test manuel
+  sur les vues touchées avant de merger.
+- La logique métier (state.js, db-utils.js, validation.js, fuzzy-match.js,
+  backup.js) n'est JAMAIS réécrite pendant la migration — seule la couche
+  de rendu DOM devient React, un morceau à la fois.
+- Aucune branche "v2" qui vit des semaines en parallèle : chaque étape
+  atterrit vite sur main.
+
+Phase 0 — Filet de sécurité (aucun changement de code produit) — TERMINÉ
+-----------------------------------------------------------------
+[x] Auditer la couverture de tests actuelle (76 tests) sur les chemins
+    critiques : rapprochement GL, migrations IndexedDB, calculs financiers,
+    backup/restore.
+[x] Combler les trous de tests critiques identifiés, avant de toucher au
+    build ou au framework. 22 tests ajoutés (findBestColumnMatch,
+    validateLedgerStructure, matchDistributionsToLedger multi-lignes/
+    montants nuls, migrateRoomsConfig, computeActivityFinancials sans
+    réservations, validateBackupSchema, getDaysSinceLastBackup,
+    formatLocalDateToFrench) — suite passée de 76 à 98 tests, tous verts.
+    Fonctions DOM-only (openActivityDrawer, exportToExcel, handleJsonBackupFile,
+    openLedgerMappingModal, etc.) volontairement laissées de côté : hors de
+    portée pour du test unitaire Node sans jsdom, à revisiter en Phase 3+
+    quand elles seront de toute façon réécrites en composants React.
+[x] Écrire une checklist de smoke-test manuel couvrant les 6 vues
+    (Tableau de bord, Activités, Rapprochement GL, Paramètres, Calendrier,
+    Rapport de compte) à rejouer à chaque étape suivante.
+    Voir test/SMOKE_TEST_CHECKLIST.md.
+
+Phase 1 — Vite comme simple outil de build, comportement identique — TERMINÉ
+-----------------------------------------------------------------
+[x] Ajouter Vite avec index.html comme entrée, sans toucher aux scripts
+    existants ni à leurs imports/globals window. Voir vite.config.js.
+    Vite 8.1 (moteur Rolldown) utilisé après mise à jour de Node vers 24.18.0
+    (répond à l'exigence 20.19+/22.12+ de Vite 8). Rebuild + revérification
+    complète refaites après la mise à jour : mêmes résultats qu'avec Vite 5.4
+    (dist/ identique modulo hashes, aucun 404, 98/98 tests verts). Bonus :
+    `npm audit` passe de 2 vulnérabilités (esbuild dev-server, modérée) à 0.
+[x] Configurer `base` pour un site servi à la racine (confirmé : hébergement
+    type GitHub Pages/Netlify à la racine du domaine, pas de sous-dossier) :
+    `base: "/"` dans vite.config.js.
+[x] `vite dev` remplace le serveur statique actuel ; `vite build` produit
+    un dist/ servi comme racine du déploiement.
+    Piège découvert et corrigé : Vite ne bundle que les <script type="module">
+    — les 8 scripts non-module (navigation.js, activities-file-links.js,
+    activities-form.js, settings.js, account-report.js, datepicker.js,
+    calendar.js, main.js) et les libs vendues (lib/xlsx.full.min.js,
+    lib/chart.umd.js) étaient silencieusement absents de dist/ après build
+    (404 en prod). Corrigé par un petit plugin (copyLegacyStaticScripts
+    dans vite.config.js) qui les copie tels quels après le build, sans
+    déplacer ni renommer aucun fichier source.
+[x] Valider : suite de tests verte (98/98) + build de prod vérifié sans
+    404 sur aucun asset référencé (curl sur chaque fichier servi via
+    `npx serve dist`), et diff ligne à ligne entre index.html et
+    dist/index.html confirmant que seuls les tags <script>/<link>
+    attendus changent (scripts modules fusionnés en un seul bundle,
+    scripts non-module et reste du HTML inchangés à l'identique).
+    Checklist de smoke-test manuel (test/SMOKE_TEST_CHECKLIST.md) à
+    rejouer par vous-même dans le navigateur via `npm run dev` puis
+    `npm run build && npm run preview` avant de merger, comme prévu au plan.
+[x] npm scripts ajoutés : `npm run dev`, `npm run build`, `npm run preview`.
+
+Phase 2 — TypeScript en mode permissif, aucune réécriture
+-----------------------------------------------------------------
+[ ] tsconfig.json avec allowJs activé, checkJs désactivé au départ.
+[ ] Renommer en .ts les modules les plus "feuilles" (peu de dépendants)
+    en premier : utils.js, logger.js, fuzzy-match.js, validation.js,
+    config-defaults.js, db-utils.js.
+[ ] Un fichier renommé = une PR, tests verts, comportement inchangé.
+
+Phase 3 — React pour une seule vue isolée
+-----------------------------------------------------------------
+[ ] Ajouter react, react-dom, @vitejs/plugin-react.
+[ ] Convertir la vue la plus isolée et la moins risquée en premier :
+    Tableau de bord (surtout affichage, peu d'écriture).
+[ ] React lit l'état existant via les fonctions déjà exportées de
+    state.js/db-utils.js — pas de duplication d'état.
+[ ] Supprimer l'ancien dashboard.js seulement après vérification manuelle
+    que le rendu React est équivalent.
+
+Phase 4 — Vue par vue, du moins risqué au plus risqué
+-----------------------------------------------------------------
+Ordre suggéré :
+  1. Tableau de bord
+  2. Paramètres
+  3. Calendrier / Datepicker (widgets autonomes)
+  4. Activités (formulaire / rendu / réservations / financier / historique
+     / liens de fichiers)
+  5. Rapprochement GL (le plus complexe, migré en dernier, avec le plus
+     de tests)
+[ ] Pour chaque vue : convertir en React + TS, garder la logique partagée
+    en modules TS simples importés par les composants — ne pas réécrire
+    la logique métier, seulement la couche de rendu.
+[ ] Retirer les globals window.X d'un module seulement une fois vérifié
+    par grep qu'ils ne sont plus référencés nulle part.
+
+Phase 5 — Nettoyage
+-----------------------------------------------------------------
+[ ] Retirer les scripts non-module restants (defer) et le bridging window.
+[ ] Activer strict: true dans tsconfig.
+[ ] Adapter la config eslint pour TypeScript.
