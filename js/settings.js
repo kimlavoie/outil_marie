@@ -111,7 +111,7 @@ function openSettingsModal(type) {
 function buildGlAccountOptionsHtml(selectedCode = "") {
   let html = '<option value="">Aucun</option>';
   appState.settings.accounts.forEach(acc => {
-    html += `<option value="${acc.code}" ${acc.code === selectedCode ? "selected" : ""}>${acc.code} (${acc.description})</option>`;
+    html += `<option value="${acc.code}" ${acc.code === selectedCode ? "selected" : ""}>${acc.code} (${escapeHtml(acc.description)})</option>`;
   });
   return html;
 }
@@ -126,7 +126,7 @@ function renderAccountsList() {
       <div class="settings-list-item">
         <div class="settings-list-item-info">
           <span class="settings-list-item-code">${acc.code}</span>
-          <span class="settings-list-item-desc">${acc.description}</span>
+          <span class="settings-list-item-desc">${escapeHtml(acc.description)}</span>
         </div>
         <div class="flex gap-2">
           <button class="btn-icon edit-acc-btn" data-code="${acc.code}" title="Modifier">
@@ -252,14 +252,14 @@ function renderRoomsList() {
       <div class="settings-list-item">
         <div class="settings-list-item-info">
           <span class="room-color-swatch" style="background-color: ${getRoomColor(r.name)};" title="Couleur de la salle"></span>
-          <span class="settings-list-item-code">${r.name}</span>
-          <span class="settings-list-item-desc">${tarifsDesc}${versionNote}</span>
+          <span class="settings-list-item-code">${escapeHtml(r.name)}</span>
+          <span class="settings-list-item-desc">${escapeHtml(tarifsDesc)}${versionNote}</span>
         </div>
         <div class="flex gap-2">
-          <button class="btn-icon edit-room-btn" data-name="${r.name}" title="Modifier">
+          <button class="btn-icon edit-room-btn" data-name="${escapeHtml(r.name)}" title="Modifier">
             <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
           </button>
-          <button class="btn-icon delete-room-btn" data-name="${r.name}" title="Supprimer" style="color: var(--danger);">
+          <button class="btn-icon delete-room-btn" data-name="${escapeHtml(r.name)}" title="Supprimer" style="color: var(--danger);">
             <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
           </button>
         </div>
@@ -306,7 +306,7 @@ function openRoomModal(name = null) {
   const linkedRoomsContainer = document.getElementById("room-linked-rooms-group");
   const otherRooms = appState.settings.rooms.filter(r => !room || r.name !== room.name);
   linkedRoomsContainer.innerHTML = otherRooms
-    .map(r => `<button type="button" class="pill-toggle" data-value="${r.name}">${r.name}</button>`)
+    .map(r => `<button type="button" class="pill-toggle" data-value="${escapeHtml(r.name)}">${escapeHtml(r.name)}</button>`)
     .join("");
   setPillGroupActive("room-linked-rooms-group", (room && room.linked_rooms) || []);
 
@@ -381,7 +381,7 @@ function renderRoomGridParamsList() {
     .map(
       (p, i) => `
     <div class="distribution-row room-tarif-row" data-param-id="${p.id}" style="grid-template-columns: 1fr 1fr auto;">
-      <input type="text" class="form-input room-grid-param-name-input" value="${(p.name || "").replace(/"/g, "&quot;")}" placeholder="Ex: Journée" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="text" class="form-input room-grid-param-name-input" value="${escapeHtml(p.name)}" placeholder="Ex: Journée" style="padding: 8px 12px; font-size: 0.85rem;">
       <select class="select-input room-grid-param-gl-select" style="padding: 8px 12px; font-size: 0.85rem;" title="Compte GL pour la facturation (optionnel)">
         ${buildGlAccountOptionsHtml(p.gl_account_code || "")}
       </select>
@@ -430,7 +430,7 @@ function renderRoomGridClientTypesList() {
     .map(
       (ct, i) => `
     <div class="distribution-row room-tarif-row" data-ct-id="${ct.id}" style="grid-template-columns: 1fr auto;">
-      <input type="text" class="form-input room-grid-ct-name-input" value="${(ct.name || "").replace(/"/g, "&quot;")}" placeholder="Ex: Interne" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="text" class="form-input room-grid-ct-name-input" value="${escapeHtml(ct.name)}" placeholder="Ex: Interne" style="padding: 8px 12px; font-size: 0.85rem;">
       <button type="button" class="btn-icon delete-room-grid-ct-btn" data-index="${i}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
@@ -473,7 +473,7 @@ function renderRoomGridCellsTable() {
     return;
   }
 
-  const headerCells = grid.client_types.map(ct => `<th>${ct.name || "(sans nom)"}</th>`).join("");
+  const headerCells = grid.client_types.map(ct => `<th>${escapeHtml(ct.name) || "(sans nom)"}</th>`).join("");
   const bodyRows = grid.parameters
     .map(p => {
       const cells = grid.client_types
@@ -483,7 +483,7 @@ function renderRoomGridCellsTable() {
           return `<td><input type="number" min="0" step="0.01" class="form-input room-grid-cell-input" data-param-id="${p.id}" data-ct-id="${ct.id}" value="${amount}" style="padding: 6px 10px; font-size: 0.85rem; width: 100px;"></td>`;
         })
         .join("");
-      return `<tr><td class="bold" style="white-space: nowrap; padding-right: 12px;">${p.name || "(sans nom)"}</td>${cells}</tr>`;
+      return `<tr><td class="bold" style="white-space: nowrap; padding-right: 12px;">${escapeHtml(p.name) || "(sans nom)"}</td>${cells}</tr>`;
     })
     .join("");
 
@@ -517,7 +517,7 @@ function addLinkedStaffRow(salaryId = "", count = 1) {
   const rowId = generateUid("linked-staff-row");
 
   const salaryOptionsHtml = (appState.settings.salaries || [])
-    .map(s => `<option value="${s.id}" ${s.id === salaryId ? "selected" : ""}>${s.job}</option>`)
+    .map(s => `<option value="${s.id}" ${s.id === salaryId ? "selected" : ""}>${escapeHtml(s.job)}</option>`)
     .join("");
 
   const rowHtml = `
@@ -550,7 +550,7 @@ function addLinkedFeeRow(description = "", amount = "", glAccountCode = "") {
 
   const rowHtml = `
     <div id="${rowId}" class="distribution-row">
-      <input type="text" class="form-input linked-fee-desc-input" value="${description ? description.replace(/"/g, "&quot;") : ""}" placeholder="Ex: Montage et démontage" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="text" class="form-input linked-fee-desc-input" value="${escapeHtml(description)}" placeholder="Ex: Montage et démontage" style="padding: 8px 12px; font-size: 0.85rem;">
       <input type="number" class="form-input linked-fee-amount-input" min="0" step="0.01" value="${amount !== "" ? amount : ""}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
       <select class="select-input linked-fee-gl-select" style="padding: 8px 12px; font-size: 0.85rem;">
         ${buildGlAccountOptionsHtml(glAccountCode)}
@@ -577,7 +577,7 @@ function addLinkedTaskRow(description = "") {
 
   const rowHtml = `
     <div id="${rowId}" class="distribution-row room-tarif-row" style="grid-template-columns: 1fr auto;">
-      <input type="text" class="form-input linked-task-desc-input" value="${description ? description.replace(/"/g, "&quot;") : ""}" placeholder="Ex: Envoyer un courriel au responsable de la salle" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="text" class="form-input linked-task-desc-input" value="${escapeHtml(description)}" placeholder="Ex: Envoyer un courriel au responsable de la salle" style="padding: 8px 12px; font-size: 0.85rem;">
       <button type="button" class="btn-icon delete-linked-task-row-btn" data-row-id="${rowId}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
@@ -731,13 +731,13 @@ function renderDepartmentsList() {
     container.innerHTML += `
       <div class="settings-list-item">
         <div class="settings-list-item-info">
-          <span class="settings-list-item-code" style="font-family: inherit;">${dept}</span>
+          <span class="settings-list-item-code" style="font-family: inherit;">${escapeHtml(dept)}</span>
         </div>
         <div class="flex gap-2">
-          <button class="btn-icon edit-dept-btn" data-name="${dept}" title="Modifier">
+          <button class="btn-icon edit-dept-btn" data-name="${escapeHtml(dept)}" title="Modifier">
             <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
           </button>
-          <button class="btn-icon delete-dept-btn" data-name="${dept}" title="Supprimer" style="color: var(--danger);">
+          <button class="btn-icon delete-dept-btn" data-name="${escapeHtml(dept)}" title="Supprimer" style="color: var(--danger);">
             <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
           </button>
         </div>
@@ -840,7 +840,7 @@ function renderSalariesList() {
     container.innerHTML += `
       <div class="settings-list-item">
         <div class="settings-list-item-info">
-          <span class="settings-list-item-code" style="font-family: inherit;">${sal.job}</span>
+          <span class="settings-list-item-code" style="font-family: inherit;">${escapeHtml(sal.job)}</span>
           <span class="settings-list-item-desc">${parseFloat(currentRate).toFixed(2)} $ / heure${overtimeNote}${versionNote}</span>
         </div>
         <div class="flex gap-2">
@@ -1013,7 +1013,7 @@ function renderServicesList() {
     container.innerHTML += `
       <div class="settings-list-item">
         <div class="settings-list-item-info">
-          <span class="settings-list-item-code" style="font-family: inherit;">${svc.name}</span>
+          <span class="settings-list-item-code" style="font-family: inherit;">${escapeHtml(svc.name)}</span>
           <span class="settings-list-item-desc">${parseFloat(currentRate).toFixed(2)} ${unit}${versionNote}</span>
         </div>
         <div class="flex gap-2">
@@ -1174,7 +1174,7 @@ function renderGlobalTasksList() {
     container.innerHTML += `
       <div class="settings-list-item">
         <div class="settings-list-item-info">
-          <span class="settings-list-item-desc">${t.description}</span>
+          <span class="settings-list-item-desc">${escapeHtml(t.description)}</span>
         </div>
         <div class="flex gap-2">
           <button class="btn-icon edit-global-task-btn" data-id="${t.id}" title="Modifier">

@@ -154,9 +154,9 @@ function buildGlobalSearchSectionHtml(label, itemsHtml) {
 
 function buildGlobalSearchItemHtml({ type, id, title, subtitle }) {
   return `
-    <div class="quick-access-item global-search-result" data-type="${type}" data-id="${id}" style="display: flex; flex-direction: column; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-main); cursor: pointer; margin-bottom: 4px;">
-      <span class="bold" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${title}</span>
-      ${subtitle ? `<span class="font-mono" style="font-size: 0.72rem; color: var(--text-muted);">${subtitle}</span>` : ""}
+    <div class="quick-access-item global-search-result" data-type="${type}" data-id="${escapeHtml(id)}" style="display: flex; flex-direction: column; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-main); cursor: pointer; margin-bottom: 4px;">
+      <span class="bold" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(title)}</span>
+      ${subtitle ? `<span class="font-mono" style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(subtitle)}</span>` : ""}
     </div>
   `;
 }
@@ -324,8 +324,8 @@ function buildQuickAccessItemHtml(act, category) {
   return `
     <div class="quick-access-item" data-id="${act.id}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-main); cursor: pointer;">
       <span style="display: flex; flex-direction: column; overflow: hidden;">
-        <span class="bold" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${act.name || "Vierge"}</span>
-        <span class="font-mono" style="font-size: 0.72rem; color: var(--text-muted);">${act.id}${act.responsable ? ` · ${act.responsable}` : ""}${dateSuffix}</span>
+        <span class="bold" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(act.name) || "Vierge"}</span>
+        <span class="font-mono" style="font-size: 0.72rem; color: var(--text-muted);">${act.id}${act.responsable ? ` · ${escapeHtml(act.responsable)}` : ""}${dateSuffix}</span>
       </span>
       ${actionBtnHtml}
     </div>
@@ -447,7 +447,7 @@ function populateDropdowns() {
     const previousSalleValue = filterSalleSelect.value;
     filterSalleSelect.innerHTML = '<option value="">Toutes les salles</option>';
     appState.settings.rooms.forEach(r => {
-      filterSalleSelect.innerHTML += `<option value="${r.name}">${r.name}</option>`;
+      filterSalleSelect.innerHTML += `<option value="${escapeHtml(r.name)}">${escapeHtml(r.name)}</option>`;
     });
     filterSalleSelect.value = previousSalleValue;
   }
@@ -469,7 +469,7 @@ function populateDropdowns() {
     if (!select) return;
     select.innerHTML = '<option value="">Sélectionner un département...</option>';
     appState.settings.departments.forEach(d => {
-      select.innerHTML += `<option value="${d}">${d}</option>`;
+      select.innerHTML += `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`;
     });
   });
 
@@ -479,7 +479,7 @@ function populateDropdowns() {
     const previousReportValue = reportAccountSelect.value;
     reportAccountSelect.innerHTML = '<option value="">Tous les comptes</option>';
     appState.settings.accounts.forEach(acc => {
-      reportAccountSelect.innerHTML += `<option value="${acc.code}">${acc.code} (${acc.description})</option>`;
+      reportAccountSelect.innerHTML += `<option value="${escapeHtml(acc.code)}">${escapeHtml(acc.code)} (${escapeHtml(acc.description)})</option>`;
     });
     reportAccountSelect.value = previousReportValue;
   }

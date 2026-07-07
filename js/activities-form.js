@@ -1,0 +1,824 @@
+/**
+ * activities-form.js - Activity drawer form wiring: modal/drawer lifecycle,
+ * file link tabs, planning tab, and drawer field population.
+ * Part 2/5 of the activities module (see activities-render.js for context).
+ */
+
+function initFormHandlers() {
+  initBulkActionsHandlers();
+  const backdrop = document.getElementById("drawer-backdrop");
+  const drawer = document.getElementById("activity-drawer");
+
+  // Open drawers buttons: creating a "soumission" activity only asks for a name first (see
+  // initNewActivityModal); "estimation" skips that step and opens the drawer directly on a
+  // blank draft, since the drawer's own name field already handles an empty name (see
+  // openActivityDrawer()).
+  document.getElementById("add-activity-btn-quick").addEventListener("click", () => openNewActivityModal("soumission"));
+  document.getElementById("add-estimation-btn-quick").addEventListener("click", () => openActivityDrawer(createDraftActivity("")));
+
+  // Close buttons: discard the activity if it was only an in-memory draft (Estimation flow)
+  // that was never actually saved via "Enregistrer".
+  document.getElementById("activity-drawer-close").addEventListener("click", cancelActivityDrawer);
+  backdrop.addEventListener("click", cancelActivityDrawer);
+  document.getElementById("activity-print-btn").addEventListener("click", printActivitySheet);
+
+  // Undo/Redo (Ctrl+Z / Ctrl+Y, or Ctrl+Shift+Z for redo) while the activity drawer is open
+  document.addEventListener("keydown", e => {
+    if (!drawer.classList.contains("active")) return;
+    const ctrlOrCmd = e.ctrlKey || e.metaKey;
+    if (!ctrlOrCmd) return;
+
+    if (e.key === "z" || e.key === "Z") {
+      e.preventDefault();
+      if (e.shiftKey) redoActivityFormChange();
+      else undoActivityFormChange();
+    } else if (e.key === "y" || e.key === "Y") {
+      e.preventDefault();
+      redoActivityFormChange();
+    }
+  });
+
+  // Activity record tabs (Soumission et contrat / Planification / Facturation / Historique)
+  document.querySelectorAll(".activity-tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tabName = btn.getAttribute("data-activity-tab");
+      switchActivityTab(tabName);
+      if (tabName === "history") {
+        const id = document.getElementById("form-activity-internal-id").value;
+        if (id) {
+          loadAndRenderActivityHistory(id);
+        }
+      }
+    });
+  });
+
+  // Back to calendar button (only visible when opened from the calendar view)
+  document.getElementById("activity-drawer-back-to-calendar-btn").addEventListener("click", () => {
+    const calendarReturn = activitiesState.calendarReturn;
+    cancelActivityDrawer();
+    if (calendarReturn) reopenCalendarModal(calendarReturn);
+  });
+
+  // Inputs search
+  const resetActivitiesPageAndRender = () => {
+    activitiesState.page = 1;
+    activitiesState.selectedIds.clear();
+    renderActivities();
+  };
+  // Debounced on the free-text search box only: typing fires an "input" event per
+  // keystroke, and each one re-filters/re-sorts/re-renders the whole table.
+  // Filter selects fire one discrete "change" event per interaction, so they stay immediate.
+  document.getElementById("activity-search").addEventListener("input", debounce(resetActivitiesPageAndRender, 250));
+  document.getElementById("filter-salle").addEventListener("change", resetActivitiesPageAndRender);
+  document.getElementById("filter-client-type").addEventListener("change", resetActivitiesPageAndRender);
+  document.getElementById("filter-status").addEventListener("change", resetActivitiesPageAndRender);
+
+  // Account distributions buttons
+  document.getElementById("form-add-distribution-btn").addEventListener("click", () => {
+    addDistributionRow("", 0);
+    autoSaveActivityForm();
+  });
+
+  // Submit Button (only for draft activities/estimations)
+  const submitBtn = document.getElementById("activity-drawer-submit");
+  if (submitBtn) {
+    submitBtn.addEventListener("click", submitActivityForm);
+  }
+
+  // Auto-save form-level inputs and changes
+  const activityForm = document.getElementById("activity-form");
+  if (activityForm) {
+    activityForm.addEventListener("input", () => {
+      showAutoSaveStatus("saving");
+    });
+    activityForm.addEventListener("input", debounce(autoSaveActivityForm, 500));
+    activityForm.addEventListener("change", () => {
+      showAutoSaveStatus("saving");
+      autoSaveActivityForm();
+    });
+  }
+
+  // Dates helper updates: recompute whenever any créneau's date/time changes. The actual
+  // autosave isn't triggered here — #form-activity-reservations is inside #activity-form, so
+  // these input/change events already bubble up to the listeners registered on activityForm
+  // above; calling autoSaveActivityForm() again here would double-save (and double-push an undo
+  // snapshot) for every keystroke in a reservation field.
+  const reservationsContainer = document.getElementById("form-activity-reservations");
+  reservationsContainer.addEventListener("input", () => {
+    updateFormDatesHelper();
+    updateSubmissionFinancialSummary();
+  });
+  reservationsContainer.addEventListener("change", () => {
+    updateFormDatesHelper();
+    updateSubmissionFinancialSummary();
+  });
+
+  // Note: Personnel requis / Services / Autres frais buttons are wired per reservation card in
+  // addReservationCard(), since each réservation has its own set of rows.
+
+  // Planification tab buttons
+  document.getElementById("generate-planning-tasks-btn").addEventListener("click", () => {
+    const id = document.getElementById("form-activity-internal-id").value;
+    const act = appState.activities.find(a => a.id === id);
+    if (act) generatePlanningTasks(act);
+  });
+  document.getElementById("add-planning-task-btn").addEventListener("click", () => {
+    addPlanningTaskRow({ id: generateUid("task"), description: "", done: false, auto_generated: false });
+  });
+
+  // Facturation tab button
+  document.getElementById("generate-billing-lines-btn").addEventListener("click", () => {
+    const id = document.getElementById("form-activity-internal-id").value;
+    const act = appState.activities.find(a => a.id === id);
+    if (act) generateBillingLines(act);
+  });
+
+  // Phone number masks
+  maskPhoneInput(document.getElementById("form-activity-manager-phone"));
+  maskPhoneInput(document.getElementById("form-activity-client-phone"));
+
+  // Estimation / Soumission mode toggle
+  initActivityModeToggle();
+
+  // "+ Ajouter une réservation" button
+  initReservationsSection();
+
+  // Note: Services techniques / Service de bar / Autres services pill groups are wired
+  // per reservation card in addReservationCard(), since each réservation has its own set of fields.
+
+  // Event type "Autre" reveals a free-text field
+  document.getElementById("form-activity-event-type").addEventListener("change", e => {
+    const otherGroup = document.getElementById("form-activity-event-type-other-group");
+    otherGroup.style.display = e.target.value === "autre" ? "flex" : "none";
+  });
+
+  // Keyboard Shortcuts: Navigation, Add, and Escape
+  window.addEventListener("keydown", e => {
+    // Alt + [1-6] for switching tabs
+    if (e.altKey && e.key >= "1" && e.key <= "6") {
+      e.preventDefault();
+      const views = ["dashboard", "activities", "validation", "account-report", "settings", "backup"];
+      const targetView = views[parseInt(e.key) - 1];
+      if (targetView) {
+        const navBtn = document.querySelector(`.nav-item[data-view="${targetView}"] button`);
+        if (navBtn) navBtn.click();
+      }
+    }
+
+    // Alt + N or Alt + A to open the new activity modal
+    if (e.altKey && (e.key.toLowerCase() === "n" || e.key.toLowerCase() === "a")) {
+      e.preventDefault();
+      openNewActivityModal();
+    }
+
+    // Escape to close drawers and modals
+    if (e.key === "Escape") {
+      cancelActivityDrawer();
+      closeNewActivityModal();
+      if (typeof closeSettingsModal === "function") {
+        closeSettingsModal("account");
+        closeSettingsModal("room");
+        closeSettingsModal("dept");
+        closeSettingsModal("salary");
+      }
+    }
+  });
+}
+
+/* ==========================================================================
+   NEW ACTIVITY MODAL (name-only creation)
+   ========================================================================== */
+
+function initNewActivityModal() {
+  document.getElementById("new-activity-modal-close").addEventListener("click", closeNewActivityModal);
+  document.getElementById("new-activity-modal-cancel").addEventListener("click", closeNewActivityModal);
+  document.getElementById("new-activity-modal-submit").addEventListener("click", submitNewActivityForm);
+}
+
+function openNewActivityModal(intent = "soumission") {
+  newActivityModalIntent = intent;
+  const form = document.getElementById("new-activity-form");
+  form.reset();
+  document.getElementById("new-activity-modal-title").textContent = intent === "estimation" ? "Nouvelle estimation" : "Nouvelle activité";
+  document.getElementById("new-activity-modal").classList.add("active");
+  document.getElementById("modal-backdrop").classList.add("active");
+  setTimeout(() => document.getElementById("form-new-activity-name").focus(), 150);
+}
+
+function closeNewActivityModal() {
+  document.getElementById("new-activity-modal").classList.remove("active");
+  document.getElementById("modal-backdrop").classList.remove("active");
+}
+
+function submitNewActivityForm(e) {
+  e.preventDefault();
+  const name = document.getElementById("form-new-activity-name").value.trim();
+  if (!name) {
+    showToast("Veuillez saisir le nom de l'activité.", "warning");
+    return;
+  }
+  const id = newActivityModalIntent === "estimation" ? createDraftActivity(name) : createActivity(name, "soumission");
+  closeNewActivityModal();
+  renderActivities();
+  openActivityDrawer(id);
+}
+
+// Shared field defaults for a brand-new activity record (all lifecycle/submission/planning/
+// billing fields at their defaults). Mirrors the defaults migrateActivities() backfills onto
+// legacy records, so both paths keep producing the same shape.
+function buildNewActivityRecord(id, name, mode) {
+  return {
+    id,
+    responsable: "",
+    name,
+    attendees_count: 0,
+    date_start: "",
+    date_end: "",
+    description: "",
+    coba: "",
+    activity_manager: { first_name: "", last_name: "", type: "employe", phone: "", email: "" },
+    client_type: "",
+    reservations: [],
+    department: "",
+    event_type: "",
+    event_type_other: "",
+    distributions: [],
+    state: "brouillon",
+    mode,
+    client: { first_name: "", last_name: "", phone: "", email: "" },
+    submission: { file_link_id: "", generated_at: "", sent_at: "" },
+    contract: { file_link_id: "", approved_at: "" },
+    planning_tasks: [],
+    billed_at: "",
+    completed_at: ""
+  };
+}
+
+// Builds a brand-new activity record, saves it immediately, and returns its id. Used by the
+// "Nouvelle Activité" quick button (mode "soumission").
+function createActivity(name, mode = "soumission") {
+  const id = generateNextActivityId();
+  appState.activities.push(buildNewActivityRecord(id, name, mode));
+  saveDatabase();
+  return id;
+}
+
+// Builds a brand-new activity record in "estimation" mode but only holds it in memory (not
+// persisted to the database) so the "Estimation" quick button can open it in the drawer without
+// registering it in the system until the user clicks "Enregistrer". See cancelActivityDrawer(),
+// which discards it if the drawer is closed without saving, and submitActivityForm(), which
+// clears the draft flag once it's actually saved.
+function createDraftActivity(name) {
+  const id = generateNextActivityId();
+  appState.activities.push(buildNewActivityRecord(id, name, "estimation"));
+  activitiesState.draftActivityId = id;
+  return id;
+}
+
+// Duplicates an existing activity's submission data (rooms, client, services, etc.) under a
+// fresh id, resetting the lifecycle fields (state, planning, submission/contract links, billing
+// dates) since a duplicate always restarts its own cycle from Brouillon.
+function duplicateActivityAndOpen(sourceId) {
+  const source = appState.activities.find(a => a.id === sourceId);
+  if (!source) return;
+
+  const clone = JSON.parse(JSON.stringify(source));
+  clone.id = generateNextActivityId();
+  clone.state = "brouillon";
+  clone.planning_tasks = [];
+  clone.submission = { file_link_id: "", generated_at: "", sent_at: "" };
+  clone.contract = { file_link_id: "", approved_at: "" };
+  clone.billed_at = "";
+  clone.completed_at = "";
+
+  appState.activities.push(clone);
+  saveDatabase();
+  renderActivities();
+  openActivityDrawer(clone.id);
+}
+
+/* ==========================================================================
+   ACTIVITY RECORD: STATE BAR & TABS
+   ========================================================================== */
+
+/* ==========================================================================
+   ACTIVITY RECORD: ESTIMATION / SOUMISSION MODE TOGGLE
+   ========================================================================== */
+
+// Applies the mode to the form: toggles the active pill and hides/shows the
+// ".estimation-hide" sections (client identification, billing, manager,
+// event type, submission/contract file links) that estimation mode skips.
+// `locked` disables switching back to estimation once the activity has moved
+// past Brouillon (a submitted/approved activity always needs its full data).
+function applyActivityFormMode(mode, locked) {
+  const toggle = document.getElementById("activity-mode-toggle");
+  const panel = document.getElementById("activity-tab-panel-submission");
+  toggle.querySelectorAll(".pill-toggle").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.mode === mode);
+    btn.disabled = locked;
+  });
+  toggle.classList.toggle("locked", locked);
+  panel.classList.toggle("mode-estimation", mode === "estimation");
+  document.getElementById("activity-mode-locked-hint").style.display = locked ? "block" : "none";
+}
+
+function getActivityFormMode() {
+  const activeBtn = document.querySelector("#activity-mode-toggle .pill-toggle.active");
+  return activeBtn ? activeBtn.dataset.mode : "estimation";
+}
+
+function initActivityModeToggle() {
+  document.getElementById("activity-mode-toggle").addEventListener("click", e => {
+    const btn = e.target.closest(".pill-toggle");
+    if (!btn || btn.disabled) return;
+    applyActivityFormMode(btn.dataset.mode, false);
+  });
+}
+
+function switchActivityTab(tabName) {
+  document.querySelectorAll(".activity-tab-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-activity-tab") === tabName);
+  });
+  document.querySelectorAll(".activity-tab-panel").forEach(panel => {
+    panel.classList.toggle("active", panel.id === `activity-tab-panel-${tabName}`);
+  });
+}
+
+// Renders the state badge + planning progress atop the activity record. Transition buttons
+// (Marquer comme Soumise/Approuvée/Facturée/Terminée) are added by the Soumission/Facturation
+// tabs once their gating logic exists.
+function renderActivityStateBar(act) {
+  const bar = document.getElementById("activity-state-bar");
+  const progress = getPlanningProgress(act);
+  bar.innerHTML = `
+    <span class="badge ${getActivityStateBadgeClass(act.state)}">${getActivityStateLabel(act.state)}</span>
+    ${
+      progress.total > 0
+        ? `
+      <div style="display: flex; align-items: center; gap: 8px; flex-grow: 1; max-width: 320px;">
+        ${buildProgressBarHtml(progress.percent)}
+        <span style="font-size: 0.78rem; color: var(--text-muted); white-space: nowrap;">${progress.done}/${progress.total} tâches</span>
+      </div>
+    `
+        : ""
+    }
+  `;
+}
+
+// Applies `patchFn` to the activity `id`, persists it, and refreshes the state bar / list —
+// for lifecycle mutations (file links, state transitions) that happen outside the main
+// "Enregistrer" form submit, so they take effect immediately.
+function commitActivityPatch(id, patchFn) {
+  const idx = appState.activities.findIndex(a => a.id === id);
+  if (idx === -1) return;
+  patchFn(appState.activities[idx]);
+  saveDatabase();
+  renderActivityStateBar(appState.activities[idx]);
+  renderActivities();
+
+  // Save version on lifecycle patch and update the open snapshot to match
+  const updatedAct = appState.activities[idx];
+  saveActivityVersion(updatedAct).then(() => {
+    // If the drawer is currently open on this activity, update the initial snapshot to match this new state
+    const currentOpenId = document.getElementById("form-activity-internal-id").value;
+    if (currentOpenId === id) {
+      activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(updatedAct));
+    }
+  });
+}
+
+/* ==========================================================================
+   SUBMISSION/CONTRACT FILE LINKS (File System Access API — Chrome/Edge only)
+   ========================================================================== */
+
+const FILE_LINKS_DB_NAME = "outil_marie_file_links";
+const FILE_LINKS_STORE_NAME = "links";
+
+function openFileLinksDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(FILE_LINKS_DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(FILE_LINKS_STORE_NAME)) {
+        db.createObjectStore(FILE_LINKS_STORE_NAME);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbSetFileLink(id, record) {
+  const db = await openFileLinksDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_LINKS_STORE_NAME, "readwrite");
+    tx.objectStore(FILE_LINKS_STORE_NAME).put(record, id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function idbGetFileLink(id) {
+  const db = await openFileLinksDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_LINKS_STORE_NAME, "readonly");
+    const req = tx.objectStore(FILE_LINKS_STORE_NAME).get(id);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// Lets the user pick an existing file on disk and links it (via the File System Access API) to
+// the given activity's submission/contract. Excel *generation* is deferred until the submission/
+// contract templates are provided — this only stores a reference to a file the user produced
+// manually, so they can reopen it and mark the activity Soumise/Approuvée.
+async function pickAndLinkFile(activityId, kind) {
+  if (!window.showOpenFilePicker) {
+    showToast("Le lien de fichier nécessite un navigateur compatible avec l'API File System Access (Chrome ou Edge).", "warning");
+    return;
+  }
+  let handle;
+  try {
+    [handle] = await window.showOpenFilePicker();
+  } catch {
+    return; // user cancelled the picker
+  }
+
+  const linkId = generateUid("filelink");
+  await idbSetFileLink(linkId, { handle, name: handle.name });
+
+  commitActivityPatch(activityId, act => {
+    act[kind].file_link_id = linkId;
+    if (kind === "submission") act.submission.generated_at = new Date().toISOString().split("T")[0];
+  });
+  renderFileLinkStatus(
+    kind,
+    appState.activities.find(a => a.id === activityId)
+  );
+}
+
+async function openLinkedFile(linkId) {
+  const record = await idbGetFileLink(linkId);
+  if (!record) {
+    showToast("Fichier introuvable (peut-être lié depuis un autre appareil).", "error");
+    return;
+  }
+  try {
+    let perm = await record.handle.queryPermission({ mode: "read" });
+    if (perm !== "granted") perm = await record.handle.requestPermission({ mode: "read" });
+    if (perm !== "granted") {
+      showToast("Permission refusée pour ouvrir ce fichier.", "error");
+      return;
+    }
+    const file = await record.handle.getFile();
+    const url = URL.createObjectURL(file);
+    window.open(url, "_blank");
+  } catch (e) {
+    showToast("Impossible d'ouvrir le fichier : " + e.message, "error");
+  }
+}
+
+// Renders the "Lier un fichier / Ouvrir / Changer" status row plus the relevant state
+// transition button (Marquer comme Soumise au client / Marquer comme Approuvée).
+function renderFileLinkStatus(kind, act) {
+  const container = document.getElementById(kind === "submission" ? "submission-file-status" : "contract-file-status");
+  if (!container) return;
+
+  const linkId = act[kind].file_link_id;
+  const linkedLabel = linkId
+    ? `<span class="badge badge-success">Fichier lié</span>`
+    : `<span style="color: var(--text-muted);">Aucun fichier lié</span>`;
+
+  let transitionBtnHtml = "";
+  if (kind === "submission") {
+    const canSubmit = !!linkId && act.state === "brouillon";
+    transitionBtnHtml = `<button type="button" id="mark-submitted-btn" class="btn btn-primary" ${canSubmit ? "" : "disabled"}>Marquer comme Soumise au client</button>`;
+  } else {
+    const canApprove = !!linkId && act.state === "soumise";
+    transitionBtnHtml = `<button type="button" id="mark-approved-btn" class="btn btn-primary" ${canApprove ? "" : "disabled"}>Marquer comme Approuvée</button>`;
+  }
+
+  container.innerHTML = `
+    ${linkedLabel}
+    <button type="button" class="btn btn-secondary" id="${kind}-link-file-btn" style="padding: 6px 12px; font-size: 0.85rem;">${linkId ? "Changer le fichier lié" : "Lier un fichier"}</button>
+    ${linkId ? `<button type="button" class="btn btn-secondary" id="${kind}-open-file-btn" style="padding: 6px 12px; font-size: 0.85rem;">Ouvrir</button>` : ""}
+    ${transitionBtnHtml}
+  `;
+
+  container.querySelector(`#${kind}-link-file-btn`).addEventListener("click", () => pickAndLinkFile(act.id, kind));
+  const openBtn = container.querySelector(`#${kind}-open-file-btn`);
+  if (openBtn) openBtn.addEventListener("click", () => openLinkedFile(linkId));
+
+  if (kind === "submission") {
+    const btn = container.querySelector("#mark-submitted-btn");
+    if (btn && !btn.disabled) {
+      btn.addEventListener("click", () => {
+        commitActivityPatch(act.id, a => {
+          a.state = "soumise";
+          a.mode = "soumission";
+          a.submission.sent_at = new Date().toISOString().split("T")[0];
+        });
+        const updated = appState.activities.find(a => a.id === act.id);
+        renderFileLinkStatus("submission", updated);
+        renderFileLinkStatus("contract", updated);
+      });
+    }
+  } else {
+    const btn = container.querySelector("#mark-approved-btn");
+    if (btn && !btn.disabled) {
+      btn.addEventListener("click", () => {
+        commitActivityPatch(act.id, a => {
+          a.state = "approuvee";
+          a.contract.approved_at = new Date().toISOString().split("T")[0];
+        });
+        const updated = appState.activities.find(a => a.id === act.id);
+        renderFileLinkStatus("submission", updated);
+        renderFileLinkStatus("contract", updated);
+      });
+    }
+  }
+}
+
+/* ==========================================================================
+   PLANIFICATION TAB (task checklist, auto-generation, progress)
+   ========================================================================== */
+
+function renderPlanningTab(act) {
+  document.getElementById("planning-tasks-list").innerHTML = "";
+  (act.planning_tasks || []).forEach(t => addPlanningTaskRow(t));
+  updatePlanningProgressDisplay(act);
+  document.getElementById("generate-planning-tasks-btn").disabled = (act.planning_tasks || []).length > 0;
+}
+
+function addPlanningTaskRow(task) {
+  const container = document.getElementById("planning-tasks-list");
+  const rowId = generateUid("task-row");
+  const doneStyle = task.done ? "text-decoration: line-through; color: var(--text-muted);" : "";
+
+  container.insertAdjacentHTML(
+    "beforeend",
+    `
+    <div id="${rowId}" class="distribution-row" data-task-id="${task.id}" data-auto-generated="${task.auto_generated ? "1" : ""}" style="grid-template-columns: auto 1fr auto; align-items: center;">
+      <input type="checkbox" class="task-done-checkbox" ${task.done ? "checked" : ""}>
+      <input type="text" class="form-input task-desc-input" value="${escapeHtml(task.description)}" placeholder="Description de la tâche" style="padding: 8px 12px; font-size: 0.85rem; ${doneStyle}">
+      <button type="button" class="btn-icon delete-task-row-btn" data-row-id="${rowId}">
+        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+  `
+  );
+
+  const row = document.getElementById(rowId);
+  const descInput = row.querySelector(".task-desc-input");
+  const checkbox = row.querySelector(".task-done-checkbox");
+
+  row.querySelector(".delete-task-row-btn").addEventListener("click", () => {
+    row.remove();
+    persistPlanningTasks();
+  });
+  checkbox.addEventListener("change", () => {
+    descInput.style.textDecoration = checkbox.checked ? "line-through" : "none";
+    descInput.style.color = checkbox.checked ? "var(--text-muted)" : "";
+    persistPlanningTasks();
+  });
+  descInput.addEventListener("input", persistPlanningTasks);
+}
+
+function collectPlanningTasksFromForm() {
+  return Array.from(document.querySelectorAll("#planning-tasks-list .distribution-row"))
+    .map(row => ({
+      id: row.dataset.taskId || generateUid("task"),
+      description: row.querySelector(".task-desc-input").value.trim(),
+      done: row.querySelector(".task-done-checkbox").checked,
+      auto_generated: row.dataset.autoGenerated === "1"
+    }))
+    .filter(t => t.description);
+}
+
+function updatePlanningProgressDisplay(act) {
+  const progress = getPlanningProgress(act);
+  document.getElementById("planning-progress-bar-container").innerHTML = buildProgressBarHtml(progress.percent);
+  document.getElementById("planning-progress-label").textContent =
+    progress.total > 0 ? `${progress.done}/${progress.total} tâches (${progress.percent}%)` : "Aucune tâche";
+}
+
+// Persists the current task list immediately (planning is a live checklist, not gated behind
+// the main "Enregistrer" button) and auto-advances the state to Planifiée once every task is
+// done — but never downgrades a state that has already moved past Planifiée.
+function persistPlanningTasks() {
+  const id = document.getElementById("form-activity-internal-id").value;
+  if (!id) return;
+  const tasks = collectPlanningTasksFromForm();
+
+  commitActivityPatch(id, act => {
+    act.planning_tasks = tasks;
+    const progress = getPlanningProgress(act);
+    if (progress.total > 0 && progress.done === progress.total && (act.state === "soumise" || act.state === "approuvee")) {
+      act.state = "planifiee";
+    }
+  });
+
+  const updated = appState.activities.find(a => a.id === id);
+  updatePlanningProgressDisplay(updated);
+  document.getElementById("generate-planning-tasks-btn").disabled = (updated.planning_tasks || []).length > 0;
+}
+
+// Derives the planning checklist from the Soumission tab's data: one room-reservation task per
+// réservation (naming any linked rooms that come along with it), a personnel-reservation task per
+// réservation that has staff attached, one task per linked "tâche du gestionnaire" on that room's
+// config, and one task per configured global task (Configuration > Tâches globales).
+function generatePlanningTasks(act) {
+  if ((act.planning_tasks || []).length > 0) return;
+
+  const tasks = [];
+  (act.reservations || []).forEach(r => {
+    const roomLabel = getReservationRoomLabel(r);
+    const roomConfig = r.room_name === OTHER_ROOM_VALUE ? null : appState.settings.rooms.find(rc => rc.name === r.room_name);
+    const linkedNames = roomConfig ? roomConfig.linked_rooms || [] : [];
+    const reserveDesc = linkedNames.length
+      ? `Réserver la salle ${roomLabel} (et salles liées : ${linkedNames.join(", ")}) dans le logiciel officiel`
+      : `Réserver la salle ${roomLabel} dans le logiciel officiel`;
+    tasks.push({ id: generateUid("task"), description: reserveDesc, done: false, auto_generated: true });
+
+    const hasStaffForRoom = (r.staff || []).length > 0;
+    if (hasStaffForRoom) {
+      tasks.push({ id: generateUid("task"), description: `Réserver le personnel pour ${roomLabel}`, done: false, auto_generated: true });
+    }
+
+    (roomConfig ? roomConfig.linked_tasks || [] : []).forEach(lt => {
+      tasks.push({ id: generateUid("task"), description: lt.description, done: false, auto_generated: true });
+    });
+  });
+
+  (appState.settings.global_tasks || []).forEach(gt => {
+    tasks.push({ id: generateUid("task"), description: gt.description, done: false, auto_generated: true });
+  });
+
+  commitActivityPatch(act.id, a => {
+    a.planning_tasks = tasks;
+  });
+  renderPlanningTab(appState.activities.find(a => a.id === act.id));
+}
+
+/* ==========================================================================
+   FACTURATION TAB (GL distribution auto-population, Facturée/Terminée)
+   ========================================================================== */
+
+// Builds distribution rows (account_code/amount/reference) from whichever room parameters,
+// personnel jobs, and autres frais already carry a configured GL account — items without one
+// are left out so the user adds/maps them manually, consistent with the existing distribution
+// row validation (an amount without a selected account blocks saving).
+function generateBillingLines(act) {
+  if (
+    (act.distributions || []).length > 0 &&
+    !confirm("Des lignes de facturation existent déjà. Les remplacer par les lignes générées automatiquement ?")
+  ) {
+    return;
+  }
+
+  document.getElementById("form-distribution-list").innerHTML = "";
+
+  const reservations = collectReservationsFromForm();
+  const eventDateStart = getAggregateEventDates(reservations).date_start;
+
+  reservations.forEach(r => {
+    if (r.tariff_gl_account_code && r.tariff_amount > 0) {
+      addDistributionRow(r.tariff_gl_account_code, r.tariff_amount * r.slots.length, "");
+    }
+  });
+
+  document.querySelectorAll("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
+    const salaryId = row.querySelector(".staff-salary-select").value;
+    const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+    if (!salary || !salary.gl_account_code) return;
+    const count = parseInt(row.querySelector(".staff-count-input").value, 10) || 0;
+    const hours = parseFloat(row.querySelector(".staff-hours-input").value) || 0;
+    const overtimeHours = parseFloat(row.querySelector(".staff-overtime-hours-input").value) || 0;
+    const amount =
+      getActiveSalaryRate(salary, eventDateStart) * hours * count +
+      getActiveSalaryOvertimeRate(salary, eventDateStart) * overtimeHours * count;
+    if (amount > 0) addDistributionRow(salary.gl_account_code, amount, "");
+  });
+
+  document.querySelectorAll("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
+    const serviceId = row.querySelector(".service-select").value;
+    const service = (appState.settings.services || []).find(s => s.id === serviceId);
+    if (!service || !service.gl_account_code) return;
+    const count = parseInt(row.querySelector(".service-count-input").value, 10) || 0;
+    const hours = parseFloat(row.querySelector(".service-hours-input").value) || 0;
+    const rate = getActiveServiceRate(service, eventDateStart);
+    const amount = service.type === "hourly" ? rate * hours * count : rate * count;
+    if (amount > 0) addDistributionRow(service.gl_account_code, amount, "");
+  });
+
+  document.querySelectorAll("#form-activity-reservations .room-fees-list .distribution-row").forEach(row => {
+    const glCode = row.querySelector(".fee-gl-select").value;
+    const amount = parseFloat(row.querySelector(".fee-amount-input").value) || 0;
+    if (glCode && amount > 0) addDistributionRow(glCode, amount, "");
+  });
+
+  if (document.querySelectorAll("#form-distribution-list .distribution-row").length === 0) {
+    addDistributionRow("", 0);
+  }
+  updateDistributionTotal();
+}
+
+// Renders the Facturée/Terminée billing dates and gated transition buttons
+function renderBillingStateStatus(act) {
+  const container = document.getElementById("billing-state-status");
+  if (!container) return;
+
+  const canBill = act.state === "planifiee";
+  const canComplete = act.state === "facturee";
+
+  container.innerHTML = `
+    ${act.billed_at ? `<span style="color: var(--text-muted);">Facturée le ${act.billed_at}</span>` : ""}
+    ${act.completed_at ? `<span style="color: var(--text-muted);">Terminée le ${act.completed_at}</span>` : ""}
+    <button type="button" id="mark-billed-btn" class="btn btn-primary" ${canBill ? "" : "disabled"}>Marquer comme Facturée</button>
+    <button type="button" id="mark-completed-btn" class="btn btn-primary" ${canComplete ? "" : "disabled"}>Marquer comme Terminée</button>
+  `;
+
+  const billBtn = container.querySelector("#mark-billed-btn");
+  if (!billBtn.disabled) {
+    billBtn.addEventListener("click", () => {
+      commitActivityPatch(act.id, a => {
+        a.state = "facturee";
+        a.billed_at = new Date().toISOString().split("T")[0];
+      });
+      renderBillingStateStatus(appState.activities.find(a => a.id === act.id));
+    });
+  }
+
+  const completeBtn = container.querySelector("#mark-completed-btn");
+  if (!completeBtn.disabled) {
+    completeBtn.addEventListener("click", () => {
+      commitActivityPatch(act.id, a => {
+        a.state = "terminee";
+        a.completed_at = new Date().toISOString().split("T")[0];
+      });
+      renderBillingStateStatus(appState.activities.find(a => a.id === act.id));
+    });
+  }
+}
+
+// Fills the activity form fields (everything except the id/internal-id keys)
+// from an existing activity object. Used by both Edit Mode and Duplicate Mode.
+function fillActivityFormFields(act) {
+  applyActivityFormMode(act.mode || "estimation", act.state !== "brouillon");
+  document.getElementById("form-activity-coba").value = act.coba || "";
+  document.getElementById("form-activity-name").value = act.name;
+  document.getElementById("form-activity-attendees").value = act.attendees_count || "";
+  document.getElementById("form-activity-client-firstname").value = act.client?.first_name || "";
+  document.getElementById("form-activity-client-lastname").value = act.client?.last_name || "";
+  document.getElementById("form-activity-client-phone").value = act.client?.phone || "";
+  document.getElementById("form-activity-client-email").value = act.client?.email || "";
+  document.getElementById("form-activity-responsable").value = act.responsable;
+  document.getElementById("form-activity-client-type").value = act.client_type;
+  document.getElementById("form-activity-description").value = act.description || "";
+  document.getElementById("form-activity-manager-firstname").value = act.activity_manager?.first_name || "";
+  document.getElementById("form-activity-manager-lastname").value = act.activity_manager?.last_name || "";
+  document.getElementById("form-activity-manager-type").value = act.activity_manager?.type || "employe";
+  document.getElementById("form-activity-manager-phone").value = act.activity_manager?.phone || "";
+  document.getElementById("form-activity-manager-email").value = act.activity_manager?.email || "";
+  document.getElementById("form-activity-reservations").innerHTML = "";
+  (act.reservations || []).forEach(r => addReservationCard(r));
+  // A brand-new activity starts with one réservation and one créneau pre-filled, so the user
+  // doesn't have to click "+ Ajouter une réservation" just to get going.
+  if ((act.reservations || []).length === 0) {
+    const card = addReservationCard();
+    addSlotRow(card.querySelector(".reservation-slots-list"));
+  }
+  updateFormDatesHelper();
+  document.getElementById("form-activity-dept").value = act.department;
+  document.getElementById("form-activity-event-type").value = act.event_type || "";
+  document.getElementById("form-activity-event-type-other").value = act.event_type_other || "";
+  document.getElementById("form-activity-event-type-other-group").style.display = act.event_type === "autre" ? "flex" : "none";
+
+  // Load distributions
+  (act.distributions || []).forEach(d => {
+    addDistributionRow(d.account_code, d.amount, d.reference);
+  });
+
+  renderFileLinkStatus("submission", act);
+  renderFileLinkStatus("contract", act);
+  updateSubmissionFinancialSummary();
+  renderPlanningTab(act);
+  renderBillingStateStatus(act);
+}
+
+/* ==========================================================================
+   RÉSERVATIONS (activity form "Réservations de salle") — one card per
+   réservation (salle + tarif + créneaux + services), several réservations may
+   share the same salle (different services each time).
+   ========================================================================== */
+
+const WEEKDAY_PILL_OPTIONS = [
+  { value: 1, label: "Lun" },
+  { value: 2, label: "Mar" },
+  { value: 3, label: "Mer" },
+  { value: 4, label: "Jeu" },
+  { value: 5, label: "Ven" },
+  { value: 6, label: "Sam" },
+  { value: 0, label: "Dim" }
+];
+

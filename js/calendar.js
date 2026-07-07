@@ -165,7 +165,7 @@ function renderEventCalendarLegend() {
     .map(
       r => `
     <span class="event-calendar-legend-item">
-      <span class="room-color-swatch" style="background-color: ${getRoomColor(r.name)};"></span>${r.name}
+      <span class="room-color-swatch" style="background-color: ${getRoomColor(r.name)};"></span>${escapeHtml(r.name)}
     </span>
   `
     )
@@ -176,7 +176,7 @@ function renderEventCalendarLegend() {
     previewEl.innerHTML = rooms
       .map(
         r => `
-      <span class="room-color-dot" style="background-color: ${getRoomColor(r.name)};" title="${r.name}"></span>
+      <span class="room-color-dot" style="background-color: ${getRoomColor(r.name)};" title="${escapeHtml(r.name)}"></span>
     `
       )
       .join("");
@@ -209,11 +209,11 @@ function showEventHoverPreview(el, id) {
   const dateLabel = act.date_start ? (act.date_end && act.date_end !== act.date_start ? `${act.date_start} → ${act.date_end}` : act.date_start) : "-";
 
   popover.innerHTML = `
-    <div class="event-calendar-hover-preview-title">${act.name || "(Sans nom)"}</div>
-    <div class="event-calendar-hover-preview-row">Salle(s) : ${roomsLabel}</div>
+    <div class="event-calendar-hover-preview-title">${escapeHtml(act.name) || "(Sans nom)"}</div>
+    <div class="event-calendar-hover-preview-row">Salle(s) : ${escapeHtml(roomsLabel)}</div>
     <div class="event-calendar-hover-preview-row">Dates : ${dateLabel}</div>
-    ${act.responsable ? `<div class="event-calendar-hover-preview-row">Responsable : ${act.responsable}</div>` : ""}
-    ${act.department ? `<div class="event-calendar-hover-preview-row">Département : ${act.department}</div>` : ""}
+    ${act.responsable ? `<div class="event-calendar-hover-preview-row">Responsable : ${escapeHtml(act.responsable)}</div>` : ""}
+    ${act.department ? `<div class="event-calendar-hover-preview-row">Département : ${escapeHtml(act.department)}</div>` : ""}
     <div class="event-calendar-hover-preview-row">Client : ${act.client_type === "interne" ? "Interne" : "Externe"}</div>
   `;
 
@@ -387,8 +387,8 @@ function renderDayView() {
       <div class="event-calendar-day-item" data-id="${act.id}" style="border-left-color: ${color};">
         <div class="event-calendar-day-item-color" style="background-color: ${color};"></div>
         <div class="event-calendar-day-item-info">
-          <div class="event-calendar-day-item-name">${act.name}</div>
-          <div class="event-calendar-day-item-meta">${roomsLabel}${timeLabel ? ` &bull; ${timeLabel}` : ""}${act.responsable ? ` &bull; ${act.responsable}` : ""}</div>
+          <div class="event-calendar-day-item-name">${escapeHtml(act.name)}</div>
+          <div class="event-calendar-day-item-meta">${escapeHtml(roomsLabel)}${timeLabel ? ` &bull; ${timeLabel}` : ""}${act.responsable ? ` &bull; ${escapeHtml(act.responsable)}` : ""}</div>
         </div>
       </div>
     `;
@@ -409,7 +409,7 @@ function buildDayCellHtml(dateStr, dayNum, isToday, tall = false) {
   dayActivities.slice(0, maxVisible).forEach(act => {
     const color = getRoomColor(getReservationRoomLabel((act.reservations || [])[0]));
     const roomsLabel = (act.reservations || []).map(getReservationRoomLabel).join(", ");
-    eventsHtml += `<div class="event-calendar-event" data-id="${act.id}" style="background-color: ${color};" title="${act.name}${roomsLabel ? ` (${roomsLabel})` : ""}">${act.name}</div>`;
+    eventsHtml += `<div class="event-calendar-event" data-id="${act.id}" style="background-color: ${color};" title="${escapeHtml(act.name)}${roomsLabel ? ` (${escapeHtml(roomsLabel)})` : ""}">${escapeHtml(act.name)}</div>`;
   });
 
   let moreHtml = "";
@@ -418,7 +418,7 @@ function buildDayCellHtml(dateStr, dayNum, isToday, tall = false) {
       .slice(maxVisible)
       .map(a => a.name)
       .join(", ");
-    moreHtml = `<div class="event-calendar-more" title="${remaining}">+${dayActivities.length - maxVisible} de plus</div>`;
+    moreHtml = `<div class="event-calendar-more" title="${escapeHtml(remaining)}">+${dayActivities.length - maxVisible} de plus</div>`;
   }
 
   return `

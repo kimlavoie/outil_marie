@@ -640,6 +640,25 @@ function saveAppStateToDb(state) {
 }
 
 // Load DB from IndexedDB (with transparent migration from localStorage)
+// Guards against a corrupted or partially-written database record crashing the whole app: list
+// rendering, search and financial totals all assume every activity has these fields/arrays
+// (e.g. act.name.toLowerCase(), act.distributions.some(...)) without their own fallback. Drops
+// only entries that aren't recoverable objects (no id); everything else gets safe defaults.
+function sanitizeActivitiesList(rawActivities) {
+  if (!Array.isArray(rawActivities)) return [];
+  return rawActivities
+    .filter(act => act && typeof act === "object" && typeof act.id === "string" && act.id)
+    .map(act => {
+      if (typeof act.name !== "string") act.name = "";
+      if (typeof act.responsable !== "string") act.responsable = "";
+      if (!Array.isArray(act.distributions)) act.distributions = [];
+      if (!Array.isArray(act.reservations)) act.reservations = [];
+      act.distributions = act.distributions.filter(d => d && typeof d === "object");
+      act.reservations = act.reservations.filter(r => r && typeof r === "object");
+      return act;
+    });
+}
+
 async function loadDatabase() {
   try {
     let dbData = await getAppStateFromDb();
@@ -663,7 +682,7 @@ async function loadDatabase() {
 
     if (dbData) {
       appState.settings = dbData.settings || appState.settings;
-      appState.activities = dbData.activities || [];
+      appState.activities = sanitizeActivitiesList(dbData.activities);
       appState.favorites = dbData.favorites || [];
       appState.selected_year = dbData.selected_year || getDefaultFiscalYear();
       appState.selected_quarters = dbData.selected_quarters || [1, 2, 3, 4];
@@ -1121,12 +1140,25 @@ async function seedDatabase() {
   await saveDatabase();
 }
 
+// Tracks whether the last save attempt failed, so repeated failures (e.g. IndexedDB quota
+// exceeded) don't spam a toast on every keystroke — only the first failure and the eventual
+// recovery are surfaced.
+let lastSaveFailed = false;
+
 // Save state to IndexedDB
 async function saveDatabase() {
   try {
     await saveAppStateToDb(appState);
+    if (lastSaveFailed && typeof showToast === "function") {
+      showToast("La sauvegarde a repris normalement.", "success");
+    }
+    lastSaveFailed = false;
   } catch (e) {
     console.error("Error saving database to IndexedDB", e);
+    if (!lastSaveFailed && typeof showToast === "function") {
+      showToast("Échec de la sauvegarde des données. Vos dernières modifications pourraient être perdues.", "error", 8000);
+    }
+    lastSaveFailed = true;
   }
   checkBackupReminder();
   if (typeof scheduleAutoBackupWrite === "function") scheduleAutoBackupWrite();
@@ -1215,5 +1247,17 @@ function restoreUiState() {
 
 // Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
 if (typeof module !== "undefined") {
-  module.exports = { getFiscalYear, getQuarterNumber, getQuarter, getFiscalYearRange, parseLocalDateStr };
+  module.exports = {
+    getFiscalYear,
+    getQuarterNumber,
+    getQuarter,
+    getFiscalYearRange,
+    parseLocalDateStr,
+    getActivePricingGrid,
+    getActiveSalaryRate,
+    getActiveSalaryOvertimeRate,
+    getActiveServiceRate,
+    getFlattenedRoomTarifs,
+    EVENT_TYPES
+  };
 }

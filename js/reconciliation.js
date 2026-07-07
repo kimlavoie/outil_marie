@@ -668,8 +668,8 @@ function renderReconciliationTable() {
             .map(
               s => `
             <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-              <span class="font-mono">${s.reference}</span> — ${formatCurrency(s.amount_gl)} (${s.ledger_date || "date inconnue"})
-              <button class="btn-icon recon-accept-suggestion-btn" data-idx="${idx}" data-suggestion-ref="${s.reference}" title="Corriger la référence de cette activité">
+              <span class="font-mono">${escapeHtml(s.reference)}</span> — ${formatCurrency(s.amount_gl)} (${s.ledger_date || "date inconnue"})
+              <button class="btn-icon recon-accept-suggestion-btn" data-idx="${idx}" data-suggestion-ref="${escapeHtml(s.reference)}" title="Corriger la référence de cette activité">
                 <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: var(--success);"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               </button>
             </div>
@@ -681,7 +681,7 @@ function renderReconciliationTable() {
     } else if (r.status === "unentered" && r.suggestedFor && r.suggestedFor.length > 0) {
       suggestionsHtml = `
         <div style="margin-top: 6px; font-size: 0.75rem; font-style: italic; color: var(--text-secondary);">
-          Ressemble à : ${r.suggestedFor.join(", ")}
+          Ressemble à : ${escapeHtml(r.suggestedFor.join(", "))}
         </div>
       `;
     }
@@ -693,13 +693,13 @@ function renderReconciliationTable() {
       <tr${rowMuted}>
         <td>
           <div class="bold font-mono">${r.account_code}</div>
-          <div style="font-size: 0.8rem; color: var(--text-secondary);">${accountDesc}</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary);">${escapeHtml(accountDesc)}</div>
           <div style="font-size: 0.78rem; font-style: italic; color: var(--text-muted); margin-top: 4px;">
-            ${r.activityId ? `${r.activityId} : ${r.activityName}` : r.activityName}
+            ${r.activityId ? `${r.activityId} : ${escapeHtml(r.activityName)}` : escapeHtml(r.activityName)}
           </div>
           ${suggestionsHtml}
         </td>
-        <td class="font-mono">${r.reference || "-"}</td>
+        <td class="font-mono">${escapeHtml(r.reference) || "-"}</td>
         <td class="bold">${r.amount_saisi > 0 ? formatCurrency(r.amount_saisi) : "-"}</td>
         <td class="bold">${r.amount_gl > 0 ? formatCurrency(r.amount_gl) : "-"}</td>
         <td>${diffText}</td>
@@ -787,11 +787,11 @@ function openReconDetailModal(reconRecord) {
   reconRecord.ledgerTxs.forEach(tx => {
     tbody.innerHTML += `
       <tr>
-        <td class="font-mono" style="white-space: nowrap;">${tx["Date versée"] || "-"}</td>
-        <td>${tx["Auxiliaire"] || "-"}</td>
-        <td style="font-size: 0.82rem;">${tx["Description"] || "-"}</td>
-        <td>${tx["Tr. type"] || "-"}</td>
-        <td class="font-mono">${tx["No doc. GL"] || "-"}</td>
+        <td class="font-mono" style="white-space: nowrap;">${escapeHtml(tx["Date versée"]) || "-"}</td>
+        <td>${escapeHtml(tx["Auxiliaire"]) || "-"}</td>
+        <td style="font-size: 0.82rem;">${escapeHtml(tx["Description"]) || "-"}</td>
+        <td>${escapeHtml(tx["Tr. type"]) || "-"}</td>
+        <td class="font-mono">${escapeHtml(tx["No doc. GL"]) || "-"}</td>
         <td class="text-right bold font-mono">${formatCurrency(parseFloat(tx["Montant courant"]))}</td>
       </tr>
     `;

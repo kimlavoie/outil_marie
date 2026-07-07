@@ -8,6 +8,13 @@ function formatCurrency(val) {
   return new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(val);
 }
 
+// Escapes HTML-sensitive characters so free-text fields (names, notes, descriptions...) can be
+// safely interpolated into innerHTML template literals without risking markup/script injection.
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
 // Short unique id for dynamically created rows/cards (tarifs, salles réservées, ventilations)
 function generateUid(prefix) {
   return `${prefix}-${Date.now()}${Math.random().toString(36).substr(2, 5)}`;

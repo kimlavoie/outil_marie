@@ -2,58 +2,45 @@
           PROPOSITIONS D'AMÉLIORATION - OUTIL DE GESTION DE MARIE
 ================================================================================
 
-Voici une liste d'améliorations proposées pour l'application, classées par catégorie. Ces points visent à améliorer l'expérience utilisateur (UX/UI), fiabiliser le processus de rapprochement comptable et renforcer la robustesse technique de l'application hors ligne.
+Voici une liste d'améliorations proposées pour l'application, classées par catégorie. Ces points visent à améliorer la qualité du code, la stabilité, la performance et la couverture de tests de l'application.
 
 --------------------------------------------------------------------------------
-1. AMÉLIORATIONS DE L'INTERFACE UTILISATEUR & ERGONOME (UI/UX)
+1. QUALITÉ DU CODE
 --------------------------------------------------------------------------------
-[x] Intégration de Notifications non-intrusives (Toasts)
-    - Problème : Actuellement, l'application utilise des alertes bloquantes (alert(), confirm()) pour informer l'utilisateur de certaines actions ou erreurs.
-    - Solution : Implémenter un gestionnaire de toasts CSS/JS pour afficher des messages temporaires et élégants dans le coin de l'écran (ex: "Activité enregistrée avec succès", "Export Excel terminé", "Sauvegarde réussie").
+[x] Découpage de js/activities.js
+    - Problème : Ce fichier fait à lui seul 3401 lignes (plus que tout le reste du projet combiné), ce qui rend les modifications risquées et les régressions difficiles à repérer.
+    - Solution : Scindé en 5 fichiers par domaine (activities-render.js, activities-form.js, activities-reservations.js, activities-financials.js, activities-history.js), toujours en scope global partagé via <script>. Aucune fonction déplacée n'a changé de comportement ; lint et suite de tests passent après le découpage.
 
-[n] Transition fluide du Thème (Dark / Light Mode)
-    - Problème : Le basculement entre le mode clair et sombre est instantané et peut générer un flash visuel désagréable.
-    - Solution : Ajouter une transition globale en CSS (ex: transition: background-color 0.3s ease, color 0.3s ease;) sur les éléments clés pour rendre le changement de thème agréable à l'œil.
+[x] Généraliser l'échappement HTML des champs texte libre
+    - Problème : escapeHtml() n'était utilisé qu'à 4 endroits alors qu'il y a une centaine d'assignations innerHTML = `...` avec interpolation. Plusieurs panneaux/popovers injectaient des champs libres (nom de client, notes, responsable, salle, description) sans échappement.
+    - Solution : escapeHtml() déplacé dans utils.js (partagé), et appliqué systématiquement dans calendar.js, reconciliation.js, account-report.js, settings.js, navigation.js, et les 5 fichiers activities-*.js (texte, attributs value="" et title="").
 
-[x] Détection des conflits de réservation de salles en temps réel
-    - Problème : Il est actuellement possible d'enregistrer deux activités réservant la même salle sur les mêmes créneaux de dates.
-    - Solution : Lors de la modification ou création d'une réservation dans le tiroir d'activité, effectuer une vérification instantanée avec les autres activités non supprimées et afficher un message d'avertissement en cas de chevauchement.
-
-[x] Amélioration de la vue Calendrier globale
-    - Problème : Le calendrier actuel est minimaliste.
-    - Solution : Mettre en place un calendrier interactif mensuel et hebdomadaire plus complet (type FullCalendar léger) permettant :
-      - De visualiser d'un coup d'œil l'occupation de toutes les salles (code couleur par salle).
-      - De cliquer sur un jour pour ouvrir directement le formulaire de création d'activité pré-rempli à cette date.
-      - D'avoir un aperçu des détails de l'activité en survolant l'événement.
+[x] Ajouter un gestionnaire d'erreurs global
+    - Problème : Il n'y avait aucun window.onerror ni écouteur unhandledrejection. Une erreur JS non interceptée dans un handler d'événement échouait silencieusement.
+    - Solution : Ajouté dans main.js : window.addEventListener("error"/"unhandledrejection") logue en console et affiche un toast d'erreur générique.
 
 --------------------------------------------------------------------------------
-2. AMÉLIORATIONS DES FONCTIONNALITÉS MÉTIER & RAPPROCHEMENT
+2. STABILITÉ
 --------------------------------------------------------------------------------
-[x] Algorithme de rapprochement par similarité (Fuzzy Matching)
-    - Problème : Le rapprochement automatique actuel nécessite une correspondance exacte sur la référence et le compte. Si une référence saisie dans le Grand Livre a une légère différence typo ou si la date est décalée, elle n'est pas rapprochée.
-    - Solution : Proposer des suggestions de rapprochement "intelligent" si aucun match exact n'est trouvé. Par exemple, suggérer des correspondances basées sur :
-      - Le même montant à ± 0.05 $ ET une date proche à ± 5 jours.
-      - La similarité textuelle entre le nom de l'activité dans l'application et la description de l'écriture dans le Grand Livre.
+[x] Feedback visuel en cas d'échec de sauvegarde
+    - Problème : saveDatabase() était asynchrone mais appelée sans await à la plupart des endroits ; en cas d'échec IndexedDB, l'erreur n'était que loguée en console, sans que l'utilisateur en soit informé.
+    - Solution : saveDatabase() (state.js) affiche maintenant un toast d'échec (une seule fois tant que les sauvegardes échouent, pour ne pas spammer) et un toast de reprise une fois la sauvegarde redevenue fonctionnelle.
 
-[x] Persistence de l'historique et des décisions de rapprochement
-    - Problème : À chaque fois qu'un utilisateur importe un nouveau fichier de Grand Livre (GL), il doit réviser et valider à nouveau les écarts ou les entrées non saisies.
-    - Solution : Ajouter une table de suivi des transactions GL déjà "validées manuellement" ou "ignorées" dans IndexedDB pour que l'état de rapprochement d'un trimestre précédent soit conservé d'un import à l'autre.
-
-[x] Export Excel du tableau de rapprochement
-    - Problème : L'utilisateur peut exporter les activités ou les fiches de compte, mais pas le tableau de rapprochement avec la liste des écarts constatés.
-    - Solution : Ajouter un bouton "Exporter le rapprochement" pour générer un fichier Excel structuré contenant les lignes conformes, les écarts de montants et les lignes manquantes.
+[x] Validation de schéma au chargement des données
+    - Problème : Aucune vérification de structure n'était faite sur appState.activities au chargement ; des données corrompues auraient pu planter l'app (ex: act.name.toLowerCase() sur une entrée sans nom).
+    - Solution : Ajout de sanitizeActivitiesList() (state.js), appelée au chargement : élimine les entrées non récupérables (sans id) et corrige les champs/tableaux manquants (name, responsable, distributions, reservations) avec des valeurs par défaut sûres.
 
 --------------------------------------------------------------------------------
-3. AMÉLIORATIONS TECHNIQUES, FIABILITÉ & ARCHITECTURE
+3. PERFORMANCE
 --------------------------------------------------------------------------------
-[n] Module de sauvegarde externe (Cloud / Lecteur réseau)
-    - Problème : L'application fonctionne 100% hors ligne et stocke ses données dans IndexedDB et localStorage. Si l'utilisateur nettoie l'historique de son navigateur ou change de poste, il risque de perdre ses données s'il n'a pas fait d'export manuel.
-    - Solution : Permettre une synchronisation ou une sauvegarde automatique optionnelle vers un service distant (ex: Google Drive, Dropbox, ou un serveur de fichier WebDAV d'organisation) ou au moins un rappel visuel plus incitatif de faire une sauvegarde physique.
+[ ] Surveiller le coût du rendu du tableau d'activités à grande échelle
+    - Problème : renderActivitiesTable() refait un filter + sort complet sur toutes les activités à chaque frappe/tri, avec des clones JSON fréquents pour les snapshots d'annulation. Pas de problème à l'échelle actuelle (debounce déjà en place sur la recherche et l'auto-save).
+    - Statut : Non modifié — aucun problème de performance réel constaté à l'échelle actuelle des données ; une optimisation (pagination/virtualisation, index de recherche) serait prématurée sans preuve d'un ralentissement réel. À reconsidérer si le volume d'activités grossit significativement (plusieurs milliers d'entrées).
 
-[x] Export PDF optimisé pour les estimations et contrats
-    - Problème : Actuellement, il n'y a pas d'option propre d'impression ou d'export PDF pour transmettre une estimation ou une facture à un client externe.
-    - Solution : Intégrer une feuille de style d'impression (@media print) dédiée ou utiliser une bibliothèque JS de génération de PDF (`jsPDF`) pour permettre de télécharger une fiche d'activité dans un format PDF professionnel et épuré.
-
-[x] Système d'annulation / Rétablissement (Undo / Redo)
-    - Problème : Si l'utilisateur fait une erreur en modifiant une activité et que la sauvegarde automatique s'exécute, il est difficile de revenir en arrière.
-    - Solution : Mettre en place un historique de modifications temporaire (pile d'annulation) pendant que le tiroir de l'activité est ouvert, permettant de faire Ctrl+Z / Ctrl+Y.
+--------------------------------------------------------------------------------
+4. TESTS
+--------------------------------------------------------------------------------
+[x] Étendre la couverture de tests aux fonctions pures à fort risque
+    - Problème : Seulement 29 tests existaient, couvrant 4 fichiers sur 12. Les calculs financiers, la logique undo/redo/historique et les tarifs versionnés n'avaient aucun test.
+    - Solution : 21 nouveaux tests ajoutés (50 au total) : calculs financiers (computeActivityFinancials — personnel, services, frais, taxes TPS/TVQ), détection de conflits de réservation (timeRangesOverlap, getReservationOccupiedRanges), diff d'historique (computeActivityDiff), et résolution de tarifs/salaires versionnés par date d'effet (getActivePricingGrid, getActiveSalaryRate, getFlattenedRoomTarifs).
+    - Non couvert : backup.js (export/import, IndexedDB, File System Access API) n'a pas de test — ses fonctions sont fortement couplées aux API navigateur (IndexedDB, FileReader, Blob) et nécessiteraient une dépendance de mocking (ex: fake-indexeddb) qui n'est pas dans le projet actuellement. À discuter si souhaité.

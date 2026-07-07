@@ -155,10 +155,10 @@ function renderAccountReport() {
         tableRowsHtml += `
           <tr>
             <td class="font-mono bold">${act.id}</td>
-            <td>${act.name}</td>
+            <td>${escapeHtml(act.name)}</td>
             <td>${datesText}</td>
-            <td>${act.department}</td>
-            <td class="font-mono">${e.reference || "-"}</td>
+            <td>${escapeHtml(act.department)}</td>
+            <td class="font-mono">${escapeHtml(e.reference) || "-"}</td>
             <td class="bold text-right font-mono" style="color: var(--success-text);">${formatCurrency(e.amount)}</td>
           </tr>
         `;
@@ -170,7 +170,7 @@ function renderAccountReport() {
         <div style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); background-color: var(--primary-light); display: flex; justify-content: space-between; align-items: center; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
           <div>
             <span class="font-mono bold" style="font-size: 1.05rem; color: var(--primary);">${acc.code}</span>
-            <span class="bold" style="margin-left: 12px; font-size: 0.95rem; color: var(--text-primary);">${acc.description}</span>
+            <span class="bold" style="margin-left: 12px; font-size: 0.95rem; color: var(--text-primary);">${escapeHtml(acc.description)}</span>
           </div>
           <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
             ${entries.length} écriture(s)
