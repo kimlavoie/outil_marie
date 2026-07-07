@@ -179,7 +179,7 @@ Phase 4 — Vue par vue, du moins risqué au plus risqué
 Ordre suggéré :
   1. Tableau de bord — TERMINÉ (Phase 3)
   2. Paramètres — TERMINÉ
-  3. Calendrier / Datepicker (widgets autonomes)
+  3. Calendrier (modal) — TERMINÉ. Datepicker — REPORTÉ (voir note plus bas)
   4. Activités (formulaire / rendu / réservations / financier / historique
      / liens de fichiers)
   5. Rapprochement GL (le plus complexe, migré en dernier, avec le plus
@@ -227,6 +227,47 @@ Paramètres (js/settings-view.tsx) — détails
     paramètres, types de client, cellules), salles/personnel/frais/tâches
     liés, et la recherche globale qui doit encore ouvrir le bon onglet +
     la bonne modale pré-remplie pour un compte ou un département.
+
+Calendrier (js/calendar-view.tsx) — détails
+- Modal (jour/semaine/mois, aperçu au survol, création rapide "+" par
+  jour) converti en un seul composant, monté sur demande dans
+  #calendar-modal-root. Mêmes calculs de grille (mois/semaine/jour) qu'avant.
+- État interne en React (refDate, viewMode, légende ouverte/fermée,
+  aperçu au survol) au lieu de l'objet mutable eventCalendarState + DOM
+  direct. L'aperçu au survol est mesuré après rendu via useLayoutEffect
+  (clamp au viewport), pour reproduire la séquence "set innerHTML puis
+  mesurer offsetWidth/Height" de l'original.
+- js/activities-form.js (non converti) appelle encore reopenCalendarModal
+  (bouton "retour au calendrier") et js/main.js appelle initCalendarModal()/
+  initViewCalendarButtons() au bootstrap — tous pontés via window.X comme
+  avant, plus une file de commandes (comme Paramètres) pour ouvrir/rouvrir
+  le modal avec le bon état initial (aujourd'hui, une date précise, ou un
+  snapshot sauvegardé).
+- openActivityDrawer/openActivityDetailModal importés directement depuis
+  activities-financials.js (déjà un vrai export ES) plutôt que via window —
+  mieux que l'ancien pont. createDraftActivity (dans activities-form.js,
+  non-module) reste appelé via window.createDraftActivity(...) : TypeScript
+  reconnaît automatiquement les déclarations de fonctions de haut niveau
+  des scripts non-module (pas d'entrée manuelle nécessaire dans globals.d.ts
+  pour celles-ci, contrairement aux exports de vrais modules ES).
+- Datepicker (js/datepicker.js) volontairement REPORTÉ : contrairement au
+  Tableau de bord/Paramètres/Calendrier (un seul point de montage), c'est
+  un widget réutilisé tel quel dans plusieurs formulaires pas encore
+  convertis (activities-form.js, activities-reservations.js...). Le
+  convertir maintenant forcerait soit à toucher ces fichiers en avance de
+  leur tour, soit à faire cohabiter deux implémentations. Sera fait avec
+  la Phase 4 étape 4 (Activités), qui touche justement ces formulaires.
+- Validé : 98/98 tests, tsc propre, lint 13 warnings (0 erreur — 3 de
+  moins qu'avant, les fonctions inutilisées de calendar.js ont disparu
+  avec le fichier), vite build (31 modules, dist/ complet, aucun 404),
+  vite dev (calendar-view.tsx résout en 200).
+[ ] Validation manuelle restante (à faire par vous, `npm run dev`) :
+    ouverture depuis le bouton du haut, vues jour/semaine/mois, navigation
+    précédent/suivant, aperçu au survol d'un événement (position/clamp),
+    création rapide "+" sur une date, clic sur un événement (ouvre la
+    fiche), clic sur le fond (ferme), bouton "retour au calendrier" depuis
+    une fiche d'activité ouverte via le calendrier, bouton "voir dans le
+    calendrier" à côté d'un champ date.
 
 Phase 5 — Nettoyage
 -----------------------------------------------------------------

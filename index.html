@@ -1047,55 +1047,8 @@
       </div>
     </div>
 
-    <!-- 7. Activities Calendar Modal -->
-    <div
-      id="calendar-modal"
-      class="modal"
-      style="width: 980px; max-width: 96vw"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="calendar-modal-title"
-    >
-      <div class="modal-header">
-        <h3 class="modal-title" id="calendar-modal-title">Calendrier des activités</h3>
-        <button id="calendar-modal-close" class="btn-icon" aria-label="Fermer">
-          <svg viewBox="0 0 24 24">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg>
-        </button>
-      </div>
-      <div class="modal-content">
-        <div class="event-calendar-toolbar">
-          <div class="event-calendar-header">
-            <button type="button" id="event-calendar-prev-btn" class="calendar-nav-btn">&lt;</button>
-            <span id="event-calendar-month-label" class="event-calendar-month-label"></span>
-            <button type="button" id="event-calendar-next-btn" class="calendar-nav-btn">&gt;</button>
-          </div>
-          <div class="event-calendar-view-switch">
-            <button type="button" class="event-calendar-view-btn" data-view="day">Jour</button>
-            <button type="button" class="event-calendar-view-btn" data-view="week">Semaine</button>
-            <button type="button" class="event-calendar-view-btn active" data-view="month">Mois</button>
-          </div>
-        </div>
-        <details class="event-calendar-legend-details" open>
-          <summary class="event-calendar-legend-summary">
-            <span class="legend-summary-title">Légende des salles</span>
-            <span id="event-calendar-legend-preview" class="legend-summary-preview"></span>
-            <span class="legend-chevron">
-              <svg viewBox="0 0 24 24" width="16" height="16">
-                <path fill="currentColor" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
-              </svg>
-            </span>
-          </summary>
-          <div id="event-calendar-legend" class="event-calendar-legend"></div>
-        </details>
-        <div id="event-calendar-grid" class="event-calendar-grid"></div>
-      </div>
-      <div class="modal-footer">
-        <button id="calendar-modal-close-btn" class="btn btn-secondary">Fermer</button>
-      </div>
-      <div id="event-calendar-hover-preview" class="event-calendar-hover-preview"></div>
-    </div>
+    <!-- 7. Activities Calendar Modal (rendered by React — see js/calendar-view.tsx) -->
+    <div id="calendar-modal-root"></div>
 
     <!-- Printable / PDF export sheet for a single activity (populated on demand, hidden on
          screen, only shown by the @media print rule when window.print() is triggered) -->
@@ -1123,7 +1076,7 @@
     <script type="module" src="js/backup.js"></script>
     <script src="js/account-report.js" defer></script>
     <script src="js/datepicker.js" defer></script>
-    <script src="js/calendar.js" defer></script>
+    <script type="module" src="js/calendar-view.tsx"></script>
     <script src="js/main.js" defer></script>
   </body>
 </html>

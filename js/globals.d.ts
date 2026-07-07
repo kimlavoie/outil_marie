@@ -20,6 +20,7 @@ import type {
 import type { logError, logWarn, logInfo, getLogHistory } from "./logger.ts";
 import type { renderDashboard, renderDashboardCharts } from "./dashboard-view.tsx";
 import type { renderSettings, openSettingsPanel, openAccountModal, openDeptModal } from "./settings-view.tsx";
+import type { initCalendarModal, initViewCalendarButtons, openCalendarModal, openCalendarAtDate, reopenCalendarModal } from "./calendar-view.tsx";
 import type {
   formatCurrency,
   escapeHtml,
@@ -110,6 +111,11 @@ declare global {
     openSettingsPanel: typeof openSettingsPanel;
     openAccountModal: typeof openAccountModal;
     openDeptModal: typeof openDeptModal;
+    initCalendarModal: typeof initCalendarModal;
+    initViewCalendarButtons: typeof initViewCalendarButtons;
+    openCalendarModal: typeof openCalendarModal;
+    openCalendarAtDate: typeof openCalendarAtDate;
+    reopenCalendarModal: typeof reopenCalendarModal;
   }
 
   // populateDropdowns is a plain top-level function declaration in navigation.js (a non-module
