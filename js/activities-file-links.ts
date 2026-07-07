@@ -3,13 +3,13 @@
  * the File System Access API (Chrome/Edge only), and the resulting status UI.
  *
  * Renders into #submission-file-status/#contract-file-status, containers that live inside the
- * not-yet-converted activity form/drawer (js/activities-form.js) — so like js/datepicker.ts, this
- * stays a plain TS module (Phase 2 style) rather than a React component until that form gets its
- * own turn in Phase 4.
+ * activity form/drawer — so like js/datepicker.ts and js/activities-form.ts, this stays a plain
+ * TS module (Phase 2 style) rather than a React component until Réservations gets its own turn.
  */
 import { appState } from "./state.js";
 import { openVersionedDb } from "./db-utils.ts";
 import { generateUid, showToast } from "./utils.ts";
+import { commitActivityPatch } from "./activities-form.ts";
 
 const FILE_LINKS_DB_NAME = "outil_marie_file_links";
 const FILE_LINKS_STORE_NAME = "links";

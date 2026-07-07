@@ -187,7 +187,7 @@ Ordre suggéré :
        c. Historique — TERMINÉ (js/activities-history.ts)
        d. Financier — TERMINÉ (js/activities-financials.ts)
        e. Rendu/liste — TERMINÉ (js/activities-render.ts)
-       f. Formulaire (672 lignes)
+       f. Formulaire — TERMINÉ (js/activities-form.ts)
        g. Réservations (1063 lignes, le plus gros, en dernier)
   5. Rapprochement GL (le plus complexe, migré en dernier, avec le plus
      de tests)
@@ -389,6 +389,42 @@ Activités e. Rendu/liste (js/activities-render.ts) — détails
   document.getElementById(...) du fichier.
 - Validé : 98/98 tests, tsc propre, lint 9 warnings (inchangé), vite
   build (33 modules, dist/ complet, aucun 404), vite dev (résout en 200).
+
+Activités f. Formulaire (js/activities-form.ts) — détails
+- Le plus gros et le plus interconnecté des 5 premiers fichiers Activités
+  (drawer complet : onglets Soumission/Planification/Facturation/
+  Historique, barre d'état, bascule Estimation/Soumission, raccourcis
+  clavier, modale "Nouvelle activité", tâches de planification, lignes de
+  facturation auto-générées). Quasiment toutes les fonctions du fichier
+  sont consommées ailleurs (duplicateActivityAndOpen par
+  activities-render.ts, fillActivityFormFields/renderActivityStateBar/
+  getActivityFormMode/switchActivityTab par activities-financials.ts et
+  activities-history.ts, commitActivityPatch par activities-file-links.ts,
+  WEEKDAY_PILL_OPTIONS par activities-reservations.js, createDraftActivity
+  par calendar-view.tsx) — tous convertis en vrais imports, créant un
+  réseau d'imports circulaires (déjà 2 avant celui-ci) mais toujours sans
+  problème à l'exécution.
+- Bug de régression trouvé et corrigé (introduit par la conversion de
+  Paramètres en React, pas par cette étape) : le raccourci Échap essayait
+  d'appeler l'ancien closeSettingsModal(type), qui n'existe plus depuis
+  que les 6 modales de Paramètres sont des états React — le garde
+  `typeof closeSettingsModal === "function"` avalait l'erreur
+  silencieusement, donc Échap ne fermait plus les modales de Paramètres
+  (et ne couvrait que 4 des 6 modales même avant). Corrigé en ajoutant
+  closeAllSettingsModals() à settings-view.tsx (ferme les 6, via la même
+  file de commandes que les autres entrées externes) et en l'appelant ici.
+- Piège découvert et corrigé avant validation : reopenCalendarModal avait
+  d'abord été importé réellement depuis calendar-view.tsx (un .tsx/JSX),
+  ce qui cassait `node --test` pour toute la chaîne de tests import ant
+  transitivement ce fichier (Node ne sait exécuter que .ts, pas .tsx) —
+  même contrainte que dashboard-view.tsx/settings-view.tsx. Revenu à un
+  appel window.reopenCalendarModal(...), déjà ponté.
+- Validé : 98/98 tests, tsc propre, lint 3 warnings (0 erreur — 6 de
+  moins, les fonctions "inutilisées" d'activities-form.js ont disparu
+  avec le fichier), vite build (34 modules, dist/ complet, aucun 404),
+  vite dev (résout en 200).
+[ ] Validation manuelle à prioriser (à faire par vous, `npm run dev`) :
+    le raccourci Échap doit à nouveau fermer les modales de Paramètres.
 
 Phase 5 — Nettoyage
 -----------------------------------------------------------------

@@ -3,9 +3,9 @@
  * init, room-conflict detection, and version history/diff.
  * Part 5/5 of the activities module (see activities-render.js for context).
  *
- * Renders/manipulates the not-yet-converted activity drawer/form (js/activities-form.js) directly
- * — like js/datepicker.ts and js/activities-file-links.ts, this stays a plain TS module rather
- * than a React component until that form gets its own turn in Phase 4.
+ * Renders/manipulates the activity drawer/form directly — like js/datepicker.ts,
+ * js/activities-file-links.ts, js/activities-render.ts and js/activities-form.ts, this stays a
+ * plain TS module rather than a React component until Réservations gets its own turn in Phase 4.
  */
 import { appState, parseLocalDateStr, EVENT_TYPES, saveDatabase, getActivityVersionsFromDb, addActivityVersionToDb, pruneActivityVersions } from "./state.js";
 import { showToast, escapeHtml, formatCurrency, OTHER_ROOM_VALUE } from "./utils.ts";
@@ -27,6 +27,7 @@ import {
   ACTIVITY_UNDO_DEBOUNCE_MS,
   setActivityUndoSnapshotTimer
 } from "./activities-financials.ts";
+import { fillActivityFormFields, renderActivityStateBar } from "./activities-form.ts";
 
 // Groups every autosave from one continuous edit into a single undo step (see
 // activities-financials.js's ACTIVITY_UNDO_DEBOUNCE_MS doc comment for why).

@@ -4,6 +4,7 @@
  * Part 3/5 of the activities module (see activities-render.js for context).
  */
 import { initDatepickerWrapper } from "./datepicker.ts";
+import { WEEKDAY_PILL_OPTIONS } from "./activities-form.ts";
 
 // Items for the salle searchable-select: every configured room, plus a virtual "Autre" entry
 function buildRoomSelectItems() {

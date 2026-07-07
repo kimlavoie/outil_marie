@@ -19,7 +19,7 @@ import type {
 } from "./validation.ts";
 import type { logError, logWarn, logInfo, getLogHistory } from "./logger.ts";
 import type { renderDashboard, renderDashboardCharts } from "./dashboard-view.tsx";
-import type { renderSettings, openSettingsPanel, openAccountModal, openDeptModal } from "./settings-view.tsx";
+import type { renderSettings, openSettingsPanel, openAccountModal, openDeptModal, closeAllSettingsModals } from "./settings-view.tsx";
 import type { initCalendarModal, initViewCalendarButtons, openCalendarModal, openCalendarAtDate, reopenCalendarModal } from "./calendar-view.tsx";
 import type {
   validateDateFieldFiscalYear,
@@ -75,6 +75,19 @@ import type {
   updateBulkActionsBar,
   initBulkActionsHandlers
 } from "./activities-render.ts";
+import type {
+  initFormHandlers,
+  initNewActivityModal,
+  createActivity,
+  createDraftActivity,
+  duplicateActivityAndOpen,
+  getActivityFormMode,
+  switchActivityTab,
+  renderActivityStateBar,
+  commitActivityPatch,
+  fillActivityFormFields,
+  WEEKDAY_PILL_OPTIONS
+} from "./activities-form.ts";
 import type {
   formatCurrency,
   escapeHtml,
@@ -165,6 +178,7 @@ declare global {
     openSettingsPanel: typeof openSettingsPanel;
     openAccountModal: typeof openAccountModal;
     openDeptModal: typeof openDeptModal;
+    closeAllSettingsModals: typeof closeAllSettingsModals;
     initCalendarModal: typeof initCalendarModal;
     initViewCalendarButtons: typeof initViewCalendarButtons;
     openCalendarModal: typeof openCalendarModal;
@@ -220,6 +234,17 @@ declare global {
     renderActivities: typeof renderActivities;
     updateBulkActionsBar: typeof updateBulkActionsBar;
     initBulkActionsHandlers: typeof initBulkActionsHandlers;
+    initFormHandlers: typeof initFormHandlers;
+    initNewActivityModal: typeof initNewActivityModal;
+    createActivity: typeof createActivity;
+    createDraftActivity: typeof createDraftActivity;
+    duplicateActivityAndOpen: typeof duplicateActivityAndOpen;
+    getActivityFormMode: typeof getActivityFormMode;
+    switchActivityTab: typeof switchActivityTab;
+    renderActivityStateBar: typeof renderActivityStateBar;
+    commitActivityPatch: typeof commitActivityPatch;
+    fillActivityFormFields: typeof fillActivityFormFields;
+    WEEKDAY_PILL_OPTIONS: typeof WEEKDAY_PILL_OPTIONS;
   }
 
   // populateDropdowns is a plain top-level function declaration in navigation.js (a non-module

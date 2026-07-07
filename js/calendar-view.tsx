@@ -14,6 +14,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { appState, parseLocalDateStr } from "./state.js";
 import { escapeHtml, getRoomColor, getReservationRoomLabel } from "./utils.ts";
 import { openActivityDrawer, openActivityDetailModal } from "./activities-financials.ts";
+import { createDraftActivity } from "./activities-form.ts";
 
 const MONTH_NAMES_FR = [
   "Janvier",
@@ -251,7 +252,7 @@ function CalendarModal({ command }: { command: Command | null }) {
   };
 
   const quickAdd = (dateStr: string) => {
-    const id = window.createDraftActivity("");
+    const id = createDraftActivity("");
     close();
     openActivityDrawer(id);
 

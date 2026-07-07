@@ -1672,6 +1672,7 @@ type Command =
   | { type: "openPanel"; panel: string; seq: number }
   | { type: "openAccountModal"; code: string; seq: number }
   | { type: "openDeptModal"; name: string; seq: number }
+  | { type: "closeAll"; seq: number }
   | null;
 
 function SettingsView({ command }: { command: Command }) {
@@ -1698,6 +1699,13 @@ function SettingsView({ command }: { command: Command }) {
     } else if (command.type === "openDeptModal") {
       setActiveTab("departments");
       setDeptModalName(command.name);
+    } else if (command.type === "closeAll") {
+      setAccountModalCode(undefined);
+      setRoomModalName(undefined);
+      setDeptModalName(undefined);
+      setSalaryModalId(undefined);
+      setServiceModalId(undefined);
+      setGlobalTaskModalId(undefined);
     }
   }, [command]);
 
@@ -1784,10 +1792,21 @@ function openDeptModal(name: string) {
   mount();
 }
 
-export { renderSettings, openSettingsPanel, openAccountModal, openDeptModal };
+// Closes all 6 settings modals — bridges the Escape-key handler in activities-form.ts, which
+// used to call the old vanilla closeSettingsModal(type) for 4 of the 6 modals before they became
+// React state here (see TODO.txt: this had silently stopped working since the Settings
+// conversion, since `typeof closeSettingsModal === "function"` was false and the check just
+// no-op'd — fixed while converting the Formulaire step, and extended to all 6 modals).
+function closeAllSettingsModals() {
+  pendingCommand = { type: "closeAll", seq: ++seqCounter };
+  mount();
+}
+
+export { renderSettings, openSettingsPanel, openAccountModal, openDeptModal, closeAllSettingsModals };
 if (typeof window !== "undefined") {
   window.renderSettings = renderSettings;
   window.openSettingsPanel = openSettingsPanel;
   window.openAccountModal = openAccountModal;
   window.openDeptModal = openDeptModal;
+  window.closeAllSettingsModals = closeAllSettingsModals;
 }

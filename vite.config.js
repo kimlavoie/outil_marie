@@ -3,14 +3,14 @@ import react from "@vitejs/plugin-react";
 import { cpSync, mkdirSync } from "node:fs";
 import path from "node:path";
 
-// The 4 files below are loaded as plain <script defer> (not type="module") in index.html because
+// The 3 files below are loaded as plain <script defer> (not type="module") in index.html because
 // they rely on being in the same global scope as each other and as the window.X globals the
 // module scripts export (see js/state.js bottom). Vite only bundles type="module" scripts — it
 // intentionally leaves these untouched, so `vite build` never copies them into dist on its own.
 // This plugin copies them (and the vendored lib/ scripts loaded the same way) verbatim so the
 // production build serves byte-for-byte the same files as the dev server, preserving Phase 1's
 // zero-behavior-change goal.
-const NONMODULE_SCRIPTS = ["navigation.js", "activities-form.js", "account-report.js", "main.js"];
+const NONMODULE_SCRIPTS = ["navigation.js", "account-report.js", "main.js"];
 
 function copyLegacyStaticScripts() {
   return {

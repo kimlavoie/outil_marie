@@ -1,26 +1,83 @@
 /**
- * activities-form.js - Activity drawer form wiring: modal/drawer lifecycle,
+ * activities-form.ts - Activity drawer form wiring: modal/drawer lifecycle,
  * file link tabs, planning tab, and drawer field population.
- * Part 2/5 of the activities module (see activities-render.js for context).
+ * Part 2/5 of the activities module (see activities-render.ts for context).
+ *
+ * The activity drawer/form itself isn't yet React (that's Réservations, the last Phase 4 step —
+ * addReservationCard/addSlotRow live there and this file calls into them), so like
+ * js/datepicker.ts, js/activities-file-links.ts, js/activities-history.ts,
+ * js/activities-financials.ts and js/activities-render.ts, this stays a plain TS module.
  */
+import { appState, saveDatabase } from "./state.js";
+import { debounce, generateUid, maskPhoneInput, escapeHtml, showToast, getReservationRoomLabel, OTHER_ROOM_VALUE } from "./utils.ts";
+import { requireNonEmpty } from "./validation.ts";
+import {
+  activitiesState,
+  getPlanningProgress,
+  buildProgressBarHtml,
+  getActivityStateBadgeClass,
+  getActivityStateLabel,
+  renderActivities,
+  initBulkActionsHandlers
+} from "./activities-render.ts";
+import {
+  generateNextActivityId,
+  openActivityDrawer,
+  printActivitySheet,
+  autoSaveActivityForm,
+  cancelActivityDrawer,
+  addDistributionRow,
+  updateDistributionTotal,
+  showAutoSaveStatus,
+  updateSubmissionFinancialSummary
+} from "./activities-financials.ts";
+import {
+  undoActivityFormChange,
+  redoActivityFormChange,
+  loadAndRenderActivityHistory,
+  updateFormDatesHelper,
+  submitActivityForm,
+  saveActivityVersion
+} from "./activities-history.ts";
+import { renderFileLinkStatus } from "./activities-file-links.ts";
+import {
+  collectReservationsFromForm,
+  getAggregateEventDates,
+  addReservationCard,
+  addSlotRow,
+  initReservationsSection
+} from "./activities-reservations.js";
+import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "./state.js";
+
+// Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
+// comment for why this cast is needed/safe.
+function el<T extends Element = HTMLInputElement>(id: string): T {
+  return document.getElementById(id) as unknown as T;
+}
+
+// activities-render.ts also declares/bridges a `newActivityModalIntent`, but nothing outside this
+// file actually reads its live value (checked: only globals.d.ts references the type) — so rather
+// than deal with import-binding read-only semantics for a value only this file ever consumes,
+// it just keeps its own copy, matching the original's default.
+let newActivityModalIntent = "soumission";
 
 function initFormHandlers() {
   initBulkActionsHandlers();
-  const backdrop = document.getElementById("drawer-backdrop");
-  const drawer = document.getElementById("activity-drawer");
+  const backdrop = el("drawer-backdrop");
+  const drawer = el("activity-drawer");
 
   // Open drawers buttons: creating a "soumission" activity only asks for a name first (see
   // initNewActivityModal); "estimation" skips that step and opens the drawer directly on a
   // blank draft, since the drawer's own name field already handles an empty name (see
   // openActivityDrawer()).
-  document.getElementById("add-activity-btn-quick").addEventListener("click", () => openNewActivityModal("soumission"));
-  document.getElementById("add-estimation-btn-quick").addEventListener("click", () => openActivityDrawer(createDraftActivity("")));
+  el("add-activity-btn-quick").addEventListener("click", () => openNewActivityModal("soumission"));
+  el("add-estimation-btn-quick").addEventListener("click", () => openActivityDrawer(createDraftActivity("")));
 
   // Close buttons: discard the activity if it was only an in-memory draft (Estimation flow)
   // that was never actually saved via "Enregistrer".
-  document.getElementById("activity-drawer-close").addEventListener("click", cancelActivityDrawer);
+  el("activity-drawer-close").addEventListener("click", cancelActivityDrawer);
   backdrop.addEventListener("click", cancelActivityDrawer);
-  document.getElementById("activity-print-btn").addEventListener("click", printActivitySheet);
+  el("activity-print-btn").addEventListener("click", printActivitySheet);
 
   // Undo/Redo (Ctrl+Z / Ctrl+Y, or Ctrl+Shift+Z for redo) while the activity drawer is open
   document.addEventListener("keydown", e => {
@@ -44,7 +101,7 @@ function initFormHandlers() {
       const tabName = btn.getAttribute("data-activity-tab");
       switchActivityTab(tabName);
       if (tabName === "history") {
-        const id = document.getElementById("form-activity-internal-id").value;
+        const id = el("form-activity-internal-id").value;
         if (id) {
           loadAndRenderActivityHistory(id);
         }
@@ -53,10 +110,13 @@ function initFormHandlers() {
   });
 
   // Back to calendar button (only visible when opened from the calendar view)
-  document.getElementById("activity-drawer-back-to-calendar-btn").addEventListener("click", () => {
+  el("activity-drawer-back-to-calendar-btn").addEventListener("click", () => {
     const calendarReturn = activitiesState.calendarReturn;
     cancelActivityDrawer();
-    if (calendarReturn) reopenCalendarModal(calendarReturn);
+    // calendar-view.tsx isn't imported directly: it's a .tsx (JSX) file, and this module needs to
+    // stay importable by plain `node --test` (see js/dashboard-view.tsx's/js/settings-view.tsx's
+    // same constraint) — Node can't load .tsx. Already bridged to window + declared in globals.d.ts.
+    if (calendarReturn) window.reopenCalendarModal(calendarReturn);
   });
 
   // Inputs search
@@ -68,25 +128,25 @@ function initFormHandlers() {
   // Debounced on the free-text search box only: typing fires an "input" event per
   // keystroke, and each one re-filters/re-sorts/re-renders the whole table.
   // Filter selects fire one discrete "change" event per interaction, so they stay immediate.
-  document.getElementById("activity-search").addEventListener("input", debounce(resetActivitiesPageAndRender, 250));
-  document.getElementById("filter-salle").addEventListener("change", resetActivitiesPageAndRender);
-  document.getElementById("filter-client-type").addEventListener("change", resetActivitiesPageAndRender);
-  document.getElementById("filter-status").addEventListener("change", resetActivitiesPageAndRender);
+  el("activity-search").addEventListener("input", debounce(resetActivitiesPageAndRender, 250));
+  el("filter-salle").addEventListener("change", resetActivitiesPageAndRender);
+  el("filter-client-type").addEventListener("change", resetActivitiesPageAndRender);
+  el("filter-status").addEventListener("change", resetActivitiesPageAndRender);
 
   // Account distributions buttons
-  document.getElementById("form-add-distribution-btn").addEventListener("click", () => {
+  el("form-add-distribution-btn").addEventListener("click", () => {
     addDistributionRow("", 0);
     autoSaveActivityForm();
   });
 
   // Submit Button (only for draft activities/estimations)
-  const submitBtn = document.getElementById("activity-drawer-submit");
+  const submitBtn = el("activity-drawer-submit");
   if (submitBtn) {
     submitBtn.addEventListener("click", submitActivityForm);
   }
 
   // Auto-save form-level inputs and changes
-  const activityForm = document.getElementById("activity-form");
+  const activityForm = el("activity-form");
   if (activityForm) {
     activityForm.addEventListener("input", () => {
       showAutoSaveStatus("saving");
@@ -103,7 +163,7 @@ function initFormHandlers() {
   // these input/change events already bubble up to the listeners registered on activityForm
   // above; calling autoSaveActivityForm() again here would double-save (and double-push an undo
   // snapshot) for every keystroke in a reservation field.
-  const reservationsContainer = document.getElementById("form-activity-reservations");
+  const reservationsContainer = el("form-activity-reservations");
   reservationsContainer.addEventListener("input", () => {
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();
@@ -117,25 +177,25 @@ function initFormHandlers() {
   // addReservationCard(), since each réservation has its own set of rows.
 
   // Planification tab buttons
-  document.getElementById("generate-planning-tasks-btn").addEventListener("click", () => {
-    const id = document.getElementById("form-activity-internal-id").value;
+  el("generate-planning-tasks-btn").addEventListener("click", () => {
+    const id = el("form-activity-internal-id").value;
     const act = appState.activities.find(a => a.id === id);
     if (act) generatePlanningTasks(act);
   });
-  document.getElementById("add-planning-task-btn").addEventListener("click", () => {
+  el("add-planning-task-btn").addEventListener("click", () => {
     addPlanningTaskRow({ id: generateUid("task"), description: "", done: false, auto_generated: false });
   });
 
   // Facturation tab button
-  document.getElementById("generate-billing-lines-btn").addEventListener("click", () => {
-    const id = document.getElementById("form-activity-internal-id").value;
+  el("generate-billing-lines-btn").addEventListener("click", () => {
+    const id = el("form-activity-internal-id").value;
     const act = appState.activities.find(a => a.id === id);
     if (act) generateBillingLines(act);
   });
 
   // Phone number masks
-  maskPhoneInput(document.getElementById("form-activity-manager-phone"));
-  maskPhoneInput(document.getElementById("form-activity-client-phone"));
+  maskPhoneInput(el("form-activity-manager-phone"));
+  maskPhoneInput(el("form-activity-client-phone"));
 
   // Estimation / Soumission mode toggle
   initActivityModeToggle();
@@ -147,9 +207,9 @@ function initFormHandlers() {
   // per reservation card in addReservationCard(), since each réservation has its own set of fields.
 
   // Event type "Autre" reveals a free-text field
-  document.getElementById("form-activity-event-type").addEventListener("change", e => {
-    const otherGroup = document.getElementById("form-activity-event-type-other-group");
-    otherGroup.style.display = e.target.value === "autre" ? "flex" : "none";
+  el("form-activity-event-type").addEventListener("change", e => {
+    const otherGroup = el("form-activity-event-type-other-group");
+    otherGroup.style.display = (e.target as HTMLInputElement).value === "autre" ? "flex" : "none";
   });
 
   // Keyboard Shortcuts: Navigation, Add, and Escape
@@ -160,7 +220,7 @@ function initFormHandlers() {
       const views = ["dashboard", "activities", "validation", "account-report", "settings", "backup"];
       const targetView = views[parseInt(e.key) - 1];
       if (targetView) {
-        const navBtn = document.querySelector(`.nav-item[data-view="${targetView}"] button`);
+        const navBtn = document.querySelector<HTMLButtonElement>(`.nav-item[data-view="${targetView}"] button`);
         if (navBtn) navBtn.click();
       }
     }
@@ -175,11 +235,12 @@ function initFormHandlers() {
     if (e.key === "Escape") {
       cancelActivityDrawer();
       closeNewActivityModal();
-      if (typeof closeSettingsModal === "function") {
-        closeSettingsModal("account");
-        closeSettingsModal("room");
-        closeSettingsModal("dept");
-        closeSettingsModal("salary");
+      // Settings' 6 modals became React state (see js/settings-view.tsx) when that view was
+      // converted; this bridge replaces the old vanilla closeSettingsModal(type) calls, which had
+      // silently stopped doing anything (closeSettingsModal no longer existed, so the `typeof`
+      // guard just no-op'd) and only ever covered 4 of the 6 modals anyway.
+      if (typeof window.closeAllSettingsModals === "function") {
+        window.closeAllSettingsModals();
       }
     }
   });
@@ -190,29 +251,29 @@ function initFormHandlers() {
    ========================================================================== */
 
 function initNewActivityModal() {
-  document.getElementById("new-activity-modal-close").addEventListener("click", closeNewActivityModal);
-  document.getElementById("new-activity-modal-cancel").addEventListener("click", closeNewActivityModal);
-  document.getElementById("new-activity-modal-submit").addEventListener("click", submitNewActivityForm);
+  el("new-activity-modal-close").addEventListener("click", closeNewActivityModal);
+  el("new-activity-modal-cancel").addEventListener("click", closeNewActivityModal);
+  el("new-activity-modal-submit").addEventListener("click", submitNewActivityForm);
 }
 
 function openNewActivityModal(intent = "soumission") {
   newActivityModalIntent = intent;
-  const form = document.getElementById("new-activity-form");
+  const form = el<HTMLFormElement>("new-activity-form");
   form.reset();
-  document.getElementById("new-activity-modal-title").textContent = intent === "estimation" ? "Nouvelle estimation" : "Nouvelle activité";
-  document.getElementById("new-activity-modal").classList.add("active");
-  document.getElementById("modal-backdrop").classList.add("active");
-  setTimeout(() => document.getElementById("form-new-activity-name").focus(), 150);
+  el("new-activity-modal-title").textContent = intent === "estimation" ? "Nouvelle estimation" : "Nouvelle activité";
+  el("new-activity-modal").classList.add("active");
+  el("modal-backdrop").classList.add("active");
+  setTimeout(() => el("form-new-activity-name").focus(), 150);
 }
 
 function closeNewActivityModal() {
-  document.getElementById("new-activity-modal").classList.remove("active");
-  document.getElementById("modal-backdrop").classList.remove("active");
+  el("new-activity-modal").classList.remove("active");
+  el("modal-backdrop").classList.remove("active");
 }
 
 function submitNewActivityForm(e) {
   e.preventDefault();
-  const name = document.getElementById("form-new-activity-name").value.trim();
+  const name = el("form-new-activity-name").value.trim();
   const nameError = requireNonEmpty(name, "Veuillez saisir le nom de l'activité.");
   if (nameError) {
     showToast(nameError, "warning");
@@ -312,25 +373,25 @@ function duplicateActivityAndOpen(sourceId) {
 // `locked` disables switching back to estimation once the activity has moved
 // past Brouillon (a submitted/approved activity always needs its full data).
 function applyActivityFormMode(mode, locked) {
-  const toggle = document.getElementById("activity-mode-toggle");
-  const panel = document.getElementById("activity-tab-panel-submission");
-  toggle.querySelectorAll(".pill-toggle").forEach(btn => {
+  const toggle = el("activity-mode-toggle");
+  const panel = el("activity-tab-panel-submission");
+  toggle.querySelectorAll<HTMLButtonElement>(".pill-toggle").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.mode === mode);
     btn.disabled = locked;
   });
   toggle.classList.toggle("locked", locked);
   panel.classList.toggle("mode-estimation", mode === "estimation");
-  document.getElementById("activity-mode-locked-hint").style.display = locked ? "block" : "none";
+  el("activity-mode-locked-hint").style.display = locked ? "block" : "none";
 }
 
 function getActivityFormMode() {
-  const activeBtn = document.querySelector("#activity-mode-toggle .pill-toggle.active");
+  const activeBtn = document.querySelector<HTMLElement>("#activity-mode-toggle .pill-toggle.active");
   return activeBtn ? activeBtn.dataset.mode : "estimation";
 }
 
 function initActivityModeToggle() {
-  document.getElementById("activity-mode-toggle").addEventListener("click", e => {
-    const btn = e.target.closest(".pill-toggle");
+  el("activity-mode-toggle").addEventListener("click", e => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".pill-toggle");
     if (!btn || btn.disabled) return;
     applyActivityFormMode(btn.dataset.mode, false);
   });
@@ -349,7 +410,7 @@ function switchActivityTab(tabName) {
 // (Marquer comme Soumise/Approuvée/Facturée/Terminée) are added by the Soumission/Facturation
 // tabs once their gating logic exists.
 function renderActivityStateBar(act) {
-  const bar = document.getElementById("activity-state-bar");
+  const bar = el("activity-state-bar");
   const progress = getPlanningProgress(act);
   bar.innerHTML = `
     <span class="badge ${getActivityStateBadgeClass(act.state)}">${getActivityStateLabel(act.state)}</span>
@@ -381,7 +442,7 @@ function commitActivityPatch(id, patchFn) {
   const updatedAct = appState.activities[idx];
   saveActivityVersion(updatedAct).then(() => {
     // If the drawer is currently open on this activity, update the initial snapshot to match this new state
-    const currentOpenId = document.getElementById("form-activity-internal-id").value;
+    const currentOpenId = el("form-activity-internal-id").value;
     if (currentOpenId === id) {
       activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(updatedAct));
     }
@@ -393,14 +454,14 @@ function commitActivityPatch(id, patchFn) {
    ========================================================================== */
 
 function renderPlanningTab(act) {
-  document.getElementById("planning-tasks-list").innerHTML = "";
+  el("planning-tasks-list").innerHTML = "";
   (act.planning_tasks || []).forEach(t => addPlanningTaskRow(t));
   updatePlanningProgressDisplay(act);
-  document.getElementById("generate-planning-tasks-btn").disabled = (act.planning_tasks || []).length > 0;
+  el("generate-planning-tasks-btn").disabled = (act.planning_tasks || []).length > 0;
 }
 
 function addPlanningTaskRow(task) {
-  const container = document.getElementById("planning-tasks-list");
+  const container = el("planning-tasks-list");
   const rowId = generateUid("task-row");
   const doneStyle = task.done ? "text-decoration: line-through; color: var(--text-muted);" : "";
 
@@ -417,9 +478,9 @@ function addPlanningTaskRow(task) {
   `
   );
 
-  const row = document.getElementById(rowId);
-  const descInput = row.querySelector(".task-desc-input");
-  const checkbox = row.querySelector(".task-done-checkbox");
+  const row = el(rowId);
+  const descInput = row.querySelector<HTMLInputElement>(".task-desc-input");
+  const checkbox = row.querySelector<HTMLInputElement>(".task-done-checkbox");
 
   row.querySelector(".delete-task-row-btn").addEventListener("click", () => {
     row.remove();
@@ -434,11 +495,11 @@ function addPlanningTaskRow(task) {
 }
 
 function collectPlanningTasksFromForm() {
-  return Array.from(document.querySelectorAll("#planning-tasks-list .distribution-row"))
+  return Array.from(document.querySelectorAll<HTMLElement>("#planning-tasks-list .distribution-row"))
     .map(row => ({
       id: row.dataset.taskId || generateUid("task"),
-      description: row.querySelector(".task-desc-input").value.trim(),
-      done: row.querySelector(".task-done-checkbox").checked,
+      description: row.querySelector<HTMLInputElement>(".task-desc-input").value.trim(),
+      done: row.querySelector<HTMLInputElement>(".task-done-checkbox").checked,
       auto_generated: row.dataset.autoGenerated === "1"
     }))
     .filter(t => t.description);
@@ -446,8 +507,8 @@ function collectPlanningTasksFromForm() {
 
 function updatePlanningProgressDisplay(act) {
   const progress = getPlanningProgress(act);
-  document.getElementById("planning-progress-bar-container").innerHTML = buildProgressBarHtml(progress.percent);
-  document.getElementById("planning-progress-label").textContent =
+  el("planning-progress-bar-container").innerHTML = buildProgressBarHtml(progress.percent);
+  el("planning-progress-label").textContent =
     progress.total > 0 ? `${progress.done}/${progress.total} tâches (${progress.percent}%)` : "Aucune tâche";
 }
 
@@ -455,7 +516,7 @@ function updatePlanningProgressDisplay(act) {
 // the main "Enregistrer" button) and auto-advances the state to Planifiée once every task is
 // done — but never downgrades a state that has already moved past Planifiée.
 function persistPlanningTasks() {
-  const id = document.getElementById("form-activity-internal-id").value;
+  const id = el("form-activity-internal-id").value;
   if (!id) return;
   const tasks = collectPlanningTasksFromForm();
 
@@ -469,7 +530,7 @@ function persistPlanningTasks() {
 
   const updated = appState.activities.find(a => a.id === id);
   updatePlanningProgressDisplay(updated);
-  document.getElementById("generate-planning-tasks-btn").disabled = (updated.planning_tasks || []).length > 0;
+  el("generate-planning-tasks-btn").disabled = (updated.planning_tasks || []).length > 0;
 }
 
 // Derives the planning checklist from the Soumission tab's data: one room-reservation task per
@@ -525,7 +586,7 @@ function generateBillingLines(act) {
     return;
   }
 
-  document.getElementById("form-distribution-list").innerHTML = "";
+  el("form-distribution-list").innerHTML = "";
 
   const reservations = collectReservationsFromForm();
   const eventDateStart = getAggregateEventDates(reservations).date_start;
@@ -536,33 +597,33 @@ function generateBillingLines(act) {
     }
   });
 
-  document.querySelectorAll("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
-    const salaryId = row.querySelector(".staff-salary-select").value;
-    const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
+    const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select").value;
+    const salary = (appState.settings.salaries as any[] || []).find(s => s.id === salaryId);
     if (!salary || !salary.gl_account_code) return;
-    const count = parseInt(row.querySelector(".staff-count-input").value, 10) || 0;
-    const hours = parseFloat(row.querySelector(".staff-hours-input").value) || 0;
-    const overtimeHours = parseFloat(row.querySelector(".staff-overtime-hours-input").value) || 0;
+    const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input").value, 10) || 0;
+    const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input").value) || 0;
+    const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input").value) || 0;
     const amount =
       getActiveSalaryRate(salary, eventDateStart) * hours * count +
       getActiveSalaryOvertimeRate(salary, eventDateStart) * overtimeHours * count;
     if (amount > 0) addDistributionRow(salary.gl_account_code, amount, "");
   });
 
-  document.querySelectorAll("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
-    const serviceId = row.querySelector(".service-select").value;
-    const service = (appState.settings.services || []).find(s => s.id === serviceId);
+  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
+    const serviceId = row.querySelector<HTMLInputElement>(".service-select").value;
+    const service = (appState.settings.services as any[] || []).find(s => s.id === serviceId);
     if (!service || !service.gl_account_code) return;
-    const count = parseInt(row.querySelector(".service-count-input").value, 10) || 0;
-    const hours = parseFloat(row.querySelector(".service-hours-input").value) || 0;
+    const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input").value, 10) || 0;
+    const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input").value) || 0;
     const rate = getActiveServiceRate(service, eventDateStart);
     const amount = service.type === "hourly" ? rate * hours * count : rate * count;
     if (amount > 0) addDistributionRow(service.gl_account_code, amount, "");
   });
 
-  document.querySelectorAll("#form-activity-reservations .room-fees-list .distribution-row").forEach(row => {
-    const glCode = row.querySelector(".fee-gl-select").value;
-    const amount = parseFloat(row.querySelector(".fee-amount-input").value) || 0;
+  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-fees-list .distribution-row").forEach(row => {
+    const glCode = row.querySelector<HTMLInputElement>(".fee-gl-select").value;
+    const amount = parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input").value) || 0;
     if (glCode && amount > 0) addDistributionRow(glCode, amount, "");
   });
 
@@ -574,7 +635,7 @@ function generateBillingLines(act) {
 
 // Renders the Facturée/Terminée billing dates and gated transition buttons
 function renderBillingStateStatus(act) {
-  const container = document.getElementById("billing-state-status");
+  const container = el("billing-state-status");
   if (!container) return;
 
   const canBill = act.state === "planifiee";
@@ -587,7 +648,7 @@ function renderBillingStateStatus(act) {
     <button type="button" id="mark-completed-btn" class="btn btn-primary" ${canComplete ? "" : "disabled"}>Marquer comme Terminée</button>
   `;
 
-  const billBtn = container.querySelector("#mark-billed-btn");
+  const billBtn = container.querySelector<HTMLButtonElement>("#mark-billed-btn");
   if (!billBtn.disabled) {
     billBtn.addEventListener("click", () => {
       commitActivityPatch(act.id, a => {
@@ -598,7 +659,7 @@ function renderBillingStateStatus(act) {
     });
   }
 
-  const completeBtn = container.querySelector("#mark-completed-btn");
+  const completeBtn = container.querySelector<HTMLButtonElement>("#mark-completed-btn");
   if (!completeBtn.disabled) {
     completeBtn.addEventListener("click", () => {
       commitActivityPatch(act.id, a => {
@@ -614,22 +675,22 @@ function renderBillingStateStatus(act) {
 // from an existing activity object. Used by both Edit Mode and Duplicate Mode.
 function fillActivityFormFields(act) {
   applyActivityFormMode(act.mode || "estimation", act.state !== "brouillon");
-  document.getElementById("form-activity-coba").value = act.coba || "";
-  document.getElementById("form-activity-name").value = act.name;
-  document.getElementById("form-activity-attendees").value = act.attendees_count || "";
-  document.getElementById("form-activity-client-firstname").value = act.client?.first_name || "";
-  document.getElementById("form-activity-client-lastname").value = act.client?.last_name || "";
-  document.getElementById("form-activity-client-phone").value = act.client?.phone || "";
-  document.getElementById("form-activity-client-email").value = act.client?.email || "";
-  document.getElementById("form-activity-responsable").value = act.responsable;
-  document.getElementById("form-activity-client-type").value = act.client_type;
-  document.getElementById("form-activity-description").value = act.description || "";
-  document.getElementById("form-activity-manager-firstname").value = act.activity_manager?.first_name || "";
-  document.getElementById("form-activity-manager-lastname").value = act.activity_manager?.last_name || "";
-  document.getElementById("form-activity-manager-type").value = act.activity_manager?.type || "employe";
-  document.getElementById("form-activity-manager-phone").value = act.activity_manager?.phone || "";
-  document.getElementById("form-activity-manager-email").value = act.activity_manager?.email || "";
-  document.getElementById("form-activity-reservations").innerHTML = "";
+  el("form-activity-coba").value = act.coba || "";
+  el("form-activity-name").value = act.name;
+  el("form-activity-attendees").value = act.attendees_count || "";
+  el("form-activity-client-firstname").value = act.client?.first_name || "";
+  el("form-activity-client-lastname").value = act.client?.last_name || "";
+  el("form-activity-client-phone").value = act.client?.phone || "";
+  el("form-activity-client-email").value = act.client?.email || "";
+  el("form-activity-responsable").value = act.responsable;
+  el("form-activity-client-type").value = act.client_type;
+  el("form-activity-description").value = act.description || "";
+  el("form-activity-manager-firstname").value = act.activity_manager?.first_name || "";
+  el("form-activity-manager-lastname").value = act.activity_manager?.last_name || "";
+  el("form-activity-manager-type").value = act.activity_manager?.type || "employe";
+  el("form-activity-manager-phone").value = act.activity_manager?.phone || "";
+  el("form-activity-manager-email").value = act.activity_manager?.email || "";
+  el("form-activity-reservations").innerHTML = "";
   (act.reservations || []).forEach(r => addReservationCard(r));
   // A brand-new activity starts with one réservation and one créneau pre-filled, so the user
   // doesn't have to click "+ Ajouter une réservation" just to get going.
@@ -638,10 +699,10 @@ function fillActivityFormFields(act) {
     addSlotRow(card.querySelector(".reservation-slots-list"));
   }
   updateFormDatesHelper();
-  document.getElementById("form-activity-dept").value = act.department;
-  document.getElementById("form-activity-event-type").value = act.event_type || "";
-  document.getElementById("form-activity-event-type-other").value = act.event_type_other || "";
-  document.getElementById("form-activity-event-type-other-group").style.display = act.event_type === "autre" ? "flex" : "none";
+  el("form-activity-dept").value = act.department;
+  el("form-activity-event-type").value = act.event_type || "";
+  el("form-activity-event-type-other").value = act.event_type_other || "";
+  el("form-activity-event-type-other-group").style.display = act.event_type === "autre" ? "flex" : "none";
 
   // Load distributions
   (act.distributions || []).forEach(d => {
@@ -670,3 +731,30 @@ const WEEKDAY_PILL_OPTIONS = [
   { value: 6, label: "Sam" },
   { value: 0, label: "Dim" }
 ];
+
+export {
+  initFormHandlers,
+  initNewActivityModal,
+  createActivity,
+  createDraftActivity,
+  duplicateActivityAndOpen,
+  getActivityFormMode,
+  switchActivityTab,
+  renderActivityStateBar,
+  commitActivityPatch,
+  fillActivityFormFields,
+  WEEKDAY_PILL_OPTIONS
+};
+if (typeof window !== "undefined") {
+  window.initFormHandlers = initFormHandlers;
+  window.initNewActivityModal = initNewActivityModal;
+  window.createActivity = createActivity;
+  window.createDraftActivity = createDraftActivity;
+  window.duplicateActivityAndOpen = duplicateActivityAndOpen;
+  window.getActivityFormMode = getActivityFormMode;
+  window.switchActivityTab = switchActivityTab;
+  window.renderActivityStateBar = renderActivityStateBar;
+  window.commitActivityPatch = commitActivityPatch;
+  window.fillActivityFormFields = fillActivityFormFields;
+  window.WEEKDAY_PILL_OPTIONS = WEEKDAY_PILL_OPTIONS;
+}

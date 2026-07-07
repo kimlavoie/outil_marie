@@ -24,6 +24,7 @@ import {
 } from "./utils.ts";
 import { reconciliationState, reconcileLedger } from "./reconciliation.js";
 import { openActivityDrawer } from "./activities-financials.ts";
+import { duplicateActivityAndOpen } from "./activities-form.ts";
 
 // Typed shorthand for document.getElementById in this file's DOM-manipulation code — see
 // activities-financials.ts's `el` helper doc comment for why this cast is needed/safe.

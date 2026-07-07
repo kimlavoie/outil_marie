@@ -3,9 +3,10 @@
  * drawer open/close/cancel lifecycle, and revenue distribution rows.
  * Part 4/5 of the activities module (see activities-render.js for context).
  *
- * Manipulates the not-yet-converted activity drawer/form (js/activities-form.js) directly — like
- * js/datepicker.ts, js/activities-file-links.ts and js/activities-history.ts, this stays a plain
- * TS module rather than a React component until that form gets its own turn in Phase 4.
+ * Manipulates the activity drawer/form directly — like js/datepicker.ts, js/activities-file-links.ts,
+ * js/activities-history.ts, js/activities-render.ts and js/activities-form.ts, this stays a plain
+ * TS module rather than a React component until Réservations (activities-reservations.js) gets
+ * its own turn in Phase 4 and the drawer becomes React.
  *
  * updateFormDatesHelper/scheduleActivityUndoSnapshot/saveActivityVersion (all defined in
  * activities-history.ts, which itself imports several things from this file) are called as bare
@@ -24,6 +25,7 @@ import {
   updateServiceRowSubtotal
 } from "./activities-reservations.js";
 import { reconciliationState, reconcileLedger } from "./reconciliation.js";
+import { fillActivityFormFields, renderActivityStateBar, switchActivityTab, getActivityFormMode } from "./activities-form.ts";
 
 // Typed shorthand for document.getElementById in this file's heavy DOM-manipulation code:
 // getElementById returns plain Element, which lacks .value/.disabled/.style/.focus() etc. Since
