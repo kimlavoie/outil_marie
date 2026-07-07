@@ -23,7 +23,7 @@ import {
   getAggregateEventDates,
   updateStaffRowSubtotal,
   updateServiceRowSubtotal
-} from "./activities-reservations.js";
+} from "./activities-reservations.ts";
 import { reconciliationState, reconcileLedger } from "./reconciliation.js";
 import { fillActivityFormFields, renderActivityStateBar, switchActivityTab, getActivityFormMode } from "./activities-form.ts";
 
@@ -46,7 +46,7 @@ function updateSubmissionFinancialSummary() {
   const eventDateStart = getAggregateEventDates(reservations).date_start;
 
   let staffTotal = 0;
-  document.querySelectorAll("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
+  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
     updateStaffRowSubtotal(row);
     const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select").value;
     const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input").value, 10) || 0;
@@ -59,7 +59,7 @@ function updateSubmissionFinancialSummary() {
   });
 
   let servicesTotal = 0;
-  document.querySelectorAll("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
+  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
     updateServiceRowSubtotal(row);
     const serviceId = row.querySelector<HTMLInputElement>(".service-select").value;
     const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input").value, 10) || 0;

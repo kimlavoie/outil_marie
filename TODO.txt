@@ -180,7 +180,7 @@ Ordre suggéré :
   1. Tableau de bord — TERMINÉ (Phase 3)
   2. Paramètres — TERMINÉ
   3. Calendrier (modal) — TERMINÉ. Datepicker — REPORTÉ (voir note plus bas)
-  4. Activités — EN COURS, fichier par fichier (choix utilisateur, vu la
+  4. Activités — TERMINÉ, fichier par fichier (choix utilisateur, vu la
      taille : 3792 lignes sur 7 fichiers, l'entité centrale de l'app) :
        a. Datepicker — TERMINÉ (js/datepicker.ts)
        b. Liens de fichiers — TERMINÉ (js/activities-file-links.ts)
@@ -188,7 +188,7 @@ Ordre suggéré :
        d. Financier — TERMINÉ (js/activities-financials.ts)
        e. Rendu/liste — TERMINÉ (js/activities-render.ts)
        f. Formulaire — TERMINÉ (js/activities-form.ts)
-       g. Réservations (1063 lignes, le plus gros, en dernier)
+       g. Réservations — TERMINÉ (js/activities-reservations.ts)
   5. Rapprochement GL (le plus complexe, migré en dernier, avec le plus
      de tests)
 [x] Pour chaque vue : convertir en React + TS, garder la logique partagée
@@ -425,6 +425,40 @@ Activités f. Formulaire (js/activities-form.ts) — détails
   vite dev (résout en 200).
 [ ] Validation manuelle à prioriser (à faire par vous, `npm run dev`) :
     le raccourci Échap doit à nouveau fermer les modales de Paramètres.
+
+Activités g. Réservations (js/activities-reservations.ts) — détails — DERNIER FICHIER DE PHASE 4
+- Le plus gros fichier de la vue Activités (cartes de réservation : salle,
+  grille tarifaire, créneaux/plages de jours, montage/démontage, services
+  techniques/bar/hôtesses, personnel/services/frais liés à la salle).
+  Même traitement "module TS classique" que les 6 précédents.
+- BUG DE RÉGRESSION TROUVÉ ET CORRIGÉ (introduit par la conversion de
+  Paramètres en React, pas par cette étape) : buildGlAccountOptionsHtml()
+  n'existait plus nulle part — je l'avais remplacée par un composant React
+  interne à settings-view.tsx sans fournir d'équivalent pour les
+  consommateurs externes. Résultat concret : ajouter une ligne "Autre
+  frais" à une réservation plantait (ReferenceError) depuis la conversion
+  de Paramètres. Restaurée comme fonction utilitaire dans utils.ts
+  (renvoie une chaîne HTML d'<option>, pour les consommateurs qui
+  construisent un <select> en chaîne plutôt qu'en JSX).
+- Beaucoup de document.querySelectorAll<T>(...)/.querySelector<T>(...)
+  échouaient avec "Untyped function calls may not accept type arguments" :
+  les paramètres de fonction (card, container, row, generatorEl...)
+  n'avaient pas de type, donc appeler .querySelectorAll<T> dessus (un
+  `any` implicite) est rejeté par TypeScript. Corrigé en annotant les
+  paramètres DOM concernés en HTMLElement plutôt qu'en castant chaque
+  résultat individuellement.
+- Toute la vue Activités (7 fichiers, 3792 lignes) est maintenant en
+  TypeScript. Seuls 3 scripts non-module restent dans toute l'app
+  (navigation.js, account-report.js, main.js), hors du périmètre
+  Activités.
+- Validé : 98/98 tests, tsc propre, lint 3 warnings (inchangé), vite
+  build (34 modules, dist/ complet, aucun 404 — plus aucun fichier
+  Activités copié tel quel), vite dev (résout en 200).
+[ ] Validation manuelle à prioriser (à faire par vous, `npm run dev`) :
+    ajouter une réservation, une ligne "Autre frais" avec un compte GL
+    (c'était cassé), une plage de jours, du personnel/services liés,
+    montage/démontage, service de bar — bref, l'ensemble du formulaire
+    d'activité de bout en bout.
 
 Phase 5 — Nettoyage
 -----------------------------------------------------------------

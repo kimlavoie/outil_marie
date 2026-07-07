@@ -75,6 +75,18 @@ function getRoomColor(name) {
   return FALLBACK_ROOM_COLORS[Math.abs(hash) % FALLBACK_ROOM_COLORS.length];
 }
 
+// Fills a <select> with every configured GL account, keeping `selectedCode` selected if given.
+// Used by plain-HTML consumers (activities-reservations.ts's "autre frais" row) that build a
+// <select> as a markup string rather than JSX — js/settings-view.tsx has its own React
+// <GlAccountOptions> equivalent for its own forms, since it doesn't need an HTML string.
+function buildGlAccountOptionsHtml(selectedCode = "") {
+  let html = '<option value="">Aucun</option>';
+  appState.settings.accounts.forEach(acc => {
+    html += `<option value="${acc.code}" ${acc.code === selectedCode ? "selected" : ""}>${acc.code} (${escapeHtml(acc.description)})</option>`;
+  });
+  return html;
+}
+
 /* ==========================================================================
    GENERIC TABLE PAGINATION HELPER
    ========================================================================== */
@@ -486,6 +498,7 @@ export {
   getReservationRoomLabel,
   getRoomColor,
   FALLBACK_ROOM_COLORS,
+  buildGlAccountOptionsHtml,
   buildPaginationBarHtml,
   renderPaginationBar,
   setPillGroupActiveEl,
@@ -518,6 +531,7 @@ if (typeof window !== "undefined") {
   window.OTHER_ROOM_VALUE = OTHER_ROOM_VALUE;
   window.getReservationRoomLabel = getReservationRoomLabel;
   window.getRoomColor = getRoomColor;
+  window.buildGlAccountOptionsHtml = buildGlAccountOptionsHtml;
   window.buildPaginationBarHtml = buildPaginationBarHtml;
   window.renderPaginationBar = renderPaginationBar;
   window.setPillGroupActiveEl = setPillGroupActiveEl;

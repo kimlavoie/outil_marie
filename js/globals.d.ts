@@ -89,6 +89,33 @@ import type {
   WEEKDAY_PILL_OPTIONS
 } from "./activities-form.ts";
 import type {
+  getAggregateEventDates,
+  buildRoomSelectItems,
+  initReservationsSection,
+  buildRoomDateTimeFieldHtml,
+  buildDatePeriodFieldHtml,
+  buildTariffParameterOptionsHtml,
+  buildTariffClientTypeOptionsHtml,
+  updateResolvedPriceDisplay,
+  refreshReservationTariffSelect,
+  addSlotRow,
+  collectSlotsFromCard,
+  addNextSlotRow,
+  buildSlotRangeGeneratorHtml,
+  wireSlotRangeGenerator,
+  addReservationCard,
+  collectReservationsFromForm,
+  addStaffRow,
+  updateStaffRowSubtotal,
+  addServiceRow,
+  updateServiceRowSubtotal,
+  addFeeRow,
+  autoAddLinkedStaffAndFees,
+  collectStaffFromForm,
+  collectServicesFromForm,
+  collectFeesFromForm
+} from "./activities-reservations.ts";
+import type {
   formatCurrency,
   escapeHtml,
   generateUid,
@@ -99,6 +126,7 @@ import type {
   OTHER_ROOM_VALUE,
   getReservationRoomLabel,
   getRoomColor,
+  buildGlAccountOptionsHtml,
   buildPaginationBarHtml,
   renderPaginationBar,
   setPillGroupActiveEl,
@@ -153,6 +181,7 @@ declare global {
     OTHER_ROOM_VALUE: typeof OTHER_ROOM_VALUE;
     getReservationRoomLabel: typeof getReservationRoomLabel;
     getRoomColor: typeof getRoomColor;
+    buildGlAccountOptionsHtml: typeof buildGlAccountOptionsHtml;
     buildPaginationBarHtml: typeof buildPaginationBarHtml;
     renderPaginationBar: typeof renderPaginationBar;
     setPillGroupActiveEl: typeof setPillGroupActiveEl;
@@ -245,6 +274,31 @@ declare global {
     commitActivityPatch: typeof commitActivityPatch;
     fillActivityFormFields: typeof fillActivityFormFields;
     WEEKDAY_PILL_OPTIONS: typeof WEEKDAY_PILL_OPTIONS;
+    getAggregateEventDates: typeof getAggregateEventDates;
+    buildRoomSelectItems: typeof buildRoomSelectItems;
+    initReservationsSection: typeof initReservationsSection;
+    buildRoomDateTimeFieldHtml: typeof buildRoomDateTimeFieldHtml;
+    buildDatePeriodFieldHtml: typeof buildDatePeriodFieldHtml;
+    buildTariffParameterOptionsHtml: typeof buildTariffParameterOptionsHtml;
+    buildTariffClientTypeOptionsHtml: typeof buildTariffClientTypeOptionsHtml;
+    updateResolvedPriceDisplay: typeof updateResolvedPriceDisplay;
+    refreshReservationTariffSelect: typeof refreshReservationTariffSelect;
+    addSlotRow: typeof addSlotRow;
+    collectSlotsFromCard: typeof collectSlotsFromCard;
+    addNextSlotRow: typeof addNextSlotRow;
+    buildSlotRangeGeneratorHtml: typeof buildSlotRangeGeneratorHtml;
+    wireSlotRangeGenerator: typeof wireSlotRangeGenerator;
+    addReservationCard: typeof addReservationCard;
+    collectReservationsFromForm: typeof collectReservationsFromForm;
+    addStaffRow: typeof addStaffRow;
+    updateStaffRowSubtotal: typeof updateStaffRowSubtotal;
+    addServiceRow: typeof addServiceRow;
+    updateServiceRowSubtotal: typeof updateServiceRowSubtotal;
+    addFeeRow: typeof addFeeRow;
+    autoAddLinkedStaffAndFees: typeof autoAddLinkedStaffAndFees;
+    collectStaffFromForm: typeof collectStaffFromForm;
+    collectServicesFromForm: typeof collectServicesFromForm;
+    collectFeesFromForm: typeof collectFeesFromForm;
   }
 
   // populateDropdowns is a plain top-level function declaration in navigation.js (a non-module

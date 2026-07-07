@@ -46,7 +46,7 @@ import {
   addReservationCard,
   addSlotRow,
   initReservationsSection
-} from "./activities-reservations.js";
+} from "./activities-reservations.ts";
 import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "./state.js";
 
 // Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc

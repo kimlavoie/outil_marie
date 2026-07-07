@@ -12,7 +12,7 @@ import { showToast, escapeHtml, formatCurrency, OTHER_ROOM_VALUE } from "./utils
 import { requireNonEmpty } from "./validation.ts";
 import { logError } from "./logger.ts";
 import { reconciliationState, reconcileLedger } from "./reconciliation.js";
-import { collectReservationsFromForm, getAggregateEventDates } from "./activities-reservations.js";
+import { collectReservationsFromForm, getAggregateEventDates } from "./activities-reservations.ts";
 import {
   activitiesState,
   ACTIVITY_UNDO_HISTORY_LIMIT,
