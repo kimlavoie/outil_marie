@@ -2269,6 +2269,45 @@ input[type="checkbox"] {
   fill: currentColor;
 }
 
+/* Full-screen overlay shown during longer operations (import/export, calcul de rapprochement)
+   so the app never looks frozen while it works. */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition-smooth);
+}
+
+.loading-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.loading-overlay-spinner {
+  width: 36px;
+  height: 36px;
+  animation: spin 1s linear infinite;
+  fill: #fff;
+}
+
+.loading-overlay-text {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);

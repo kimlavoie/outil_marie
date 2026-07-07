@@ -2,6 +2,9 @@
  * reconciliation.js - Ledger import and the reconciliation ("Rapprochement
  * Comptable") engine and view
  */
+import { validateRules } from "./validation.js";
+import { logError } from "./logger.js";
+import { tokenizeForMatch, textSimilarity } from "./fuzzy-match.js";
 
 // Reconciliation view/engine state, grouped so ledger data and UI state live together
 let reconciliationState = {
@@ -25,7 +28,7 @@ async function loadReconDecisions() {
       reconciliationState.decisions[d.key] = d;
     });
   } catch (e) {
-    console.error("Error loading reconciliation decisions", e);
+    logError("reconciliation", "chargement des décisions de rapprochement", e);
   }
 }
 
@@ -37,7 +40,7 @@ async function setReconDecision(key, status, note = "") {
     try {
       await deleteReconDecisionFromDb(key);
     } catch (e) {
-      console.error("Error deleting reconciliation decision", e);
+      logError("reconciliation", "suppression d'une décision de rapprochement", e);
     }
   } else {
     const decision = { key, status, note, timestamp: new Date().toISOString() };
@@ -45,7 +48,7 @@ async function setReconDecision(key, status, note = "") {
     try {
       await saveReconDecisionToDb(decision);
     } catch (e) {
-      console.error("Error saving reconciliation decision", e);
+      logError("reconciliation", "sauvegarde d'une décision de rapprochement", e);
     }
   }
   reconcileLedger();
@@ -146,6 +149,12 @@ function exportReconciliationToExcel() {
     return;
   }
 
+  showLoadingOverlay("Génération de l'export du rapprochement...");
+  // Deferred so the overlay actually paints before this synchronous work blocks the main thread.
+  setTimeout(runReconciliationExcelExport, 20);
+}
+
+function runReconciliationExcelExport() {
   try {
     const header = [
       "Compte",
@@ -177,17 +186,7 @@ function exportReconciliationToExcel() {
     });
 
     const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-    ws["!cols"] = [
-      { wch: 18 },
-      { wch: 20 },
-      { wch: 35 },
-      { wch: 14 },
-      { wch: 14 },
-      { wch: 14 },
-      { wch: 14 },
-      { wch: 20 },
-      { wch: 20 }
-    ];
+    ws["!cols"] = [{ wch: 18 }, { wch: 20 }, { wch: 35 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 20 }];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "RAPPROCHEMENT");
@@ -200,29 +199,25 @@ function exportReconciliationToExcel() {
     XLSX.writeFile(wb, filename);
     showToast("Export du rapprochement terminé.", "success");
   } catch (err) {
-    console.error(err);
+    logError("reconciliation", "export du rapprochement", err);
     showToast("Erreur lors de l'export du rapprochement : " + err.message, "error");
+  } finally {
+    hideLoadingOverlay();
   }
 }
 
 function validateLedgerStructure(rawRows) {
-  if (!Array.isArray(rawRows) || rawRows.length === 0) {
-    return { valid: false, error: "Le fichier Excel est vide ou ne contient aucune ligne de données." };
-  }
-
-  // Check the first row to see if the required columns are present
-  const firstRow = rawRows[0];
+  const firstRow = Array.isArray(rawRows) && rawRows.length > 0 ? rawRows[0] : null;
   const requiredColumns = ["Poste budgétaire", "Date versée", "Montant courant"];
-  const missingColumns = requiredColumns.filter(col => !(col in firstRow));
+  const missingColumns = firstRow ? requiredColumns.filter(col => !(col in firstRow)) : [];
 
-  if (missingColumns.length > 0) {
-    return {
-      valid: false,
-      error: `Colonnes obligatoires manquantes dans le fichier Excel : ${missingColumns.join(", ")}. Veuillez vérifier que le fichier provient bien du Grand Livre.`
-    };
-  }
-
-  return { valid: true };
+  return validateRules([
+    [!!firstRow, "Le fichier Excel est vide ou ne contient aucune ligne de données."],
+    [
+      missingColumns.length === 0,
+      `Colonnes obligatoires manquantes dans le fichier Excel : ${missingColumns.join(", ")}. Veuillez vérifier que le fichier provient bien du Grand Livre.`
+    ]
+  ]);
 }
 
 let pendingLedgerRows = [];
@@ -230,8 +225,16 @@ let pendingLedgerRows = [];
 function findBestColumnMatch(headers, possibleNames) {
   for (const name of possibleNames) {
     const matched = headers.find(h => {
-      const cleanH = h.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-      const cleanName = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      const cleanH = h
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+      const cleanName = name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
       return cleanH === cleanName || cleanH.includes(cleanName) || cleanName.includes(cleanH);
     });
     if (matched) return matched;
@@ -258,14 +261,14 @@ function openLedgerMappingModal(headers) {
     const raw = localStorage.getItem("outil_marie_ledger_col_mapping");
     if (raw) savedMapping = JSON.parse(raw);
   } catch (e) {
-    console.error(e);
+    logError("reconciliation", "lecture du mapping de colonnes sauvegardé", e);
   }
 
   selectIds.forEach(selectConfig => {
     const select = document.getElementById(selectConfig.id);
     if (!select) return;
     select.innerHTML = selectConfig.required ? "" : '<option value="">(Non associé)</option>';
-    
+
     headers.forEach(h => {
       const opt = document.createElement("option");
       opt.value = h;
@@ -324,7 +327,7 @@ function applyColumnMappingAndImport() {
   try {
     localStorage.setItem("outil_marie_ledger_col_mapping", JSON.stringify(mapping));
   } catch (e) {
-    console.error(e);
+    logError("reconciliation", "sauvegarde du mapping de colonnes", e);
   }
 
   // Map pending ledger rows to target shape
@@ -348,12 +351,7 @@ function applyColumnMappingAndImport() {
     const montant = row["Montant courant"];
 
     return (
-      poste !== "" &&
-      poste !== "Total" &&
-      dateVersee !== "" &&
-      dateVersee !== "Total" &&
-      dateVersee !== "Grand Total" &&
-      !isNaN(montant)
+      poste !== "" && poste !== "Total" && dateVersee !== "" && dateVersee !== "Total" && dateVersee !== "Grand Total" && !isNaN(montant)
     );
   });
 
@@ -382,6 +380,13 @@ function applyColumnMappingAndImport() {
 // Read ledger spreadsheet via SheetJS
 function handleLedgerFile(file) {
   const reader = new FileReader();
+  showLoadingOverlay("Lecture du fichier du Grand Livre...");
+
+  reader.onerror = function () {
+    hideLoadingOverlay();
+    logError("reconciliation", "lecture du fichier grand livre", reader.error);
+    showToast("Erreur lors de la lecture du fichier.", "error");
+  };
 
   reader.onload = function (e) {
     try {
@@ -436,8 +441,10 @@ function handleLedgerFile(file) {
 
       renderReconciliation();
     } catch (err) {
-      console.error(err);
+      logError("reconciliation", "lecture du fichier grand livre", err);
       showToast("Erreur lors de la lecture du fichier : " + err.message, "error");
+    } finally {
+      hideLoadingOverlay();
     }
   };
 
@@ -620,53 +627,6 @@ function daysBetweenDateStrs(dateStrA, dateStrB) {
   const b = parseLocalDateStr(dateStrB);
   if (isNaN(a.getTime()) || isNaN(b.getTime())) return Infinity;
   return Math.abs((a.getTime() - b.getTime()) / 86400000);
-}
-
-// Common French connector words, excluded from tokenization so two unrelated descriptions
-// sharing only "de"/"la"/"et" don't register as textually similar.
-const FUZZY_TEXT_STOPWORDS = new Set([
-  "de",
-  "des",
-  "du",
-  "le",
-  "la",
-  "les",
-  "l",
-  "un",
-  "une",
-  "et",
-  "en",
-  "sur",
-  "au",
-  "aux",
-  "pour",
-  "avec",
-  "sans",
-  "dans"
-]);
-
-// Splits text into lowercased, accent-stripped word tokens for similarity comparison
-function tokenizeForMatch(text) {
-  return (text || "")
-    .toString()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter(t => t && !FUZZY_TEXT_STOPWORDS.has(t));
-}
-
-// Dice coefficient (2 * |A∩B| / (|A|+|B|)) between the token sets of two strings, 0..1
-function textSimilarity(a, b) {
-  const tokensA = new Set(tokenizeForMatch(a));
-  const tokensB = new Set(tokenizeForMatch(b));
-  if (tokensA.size === 0 || tokensB.size === 0) return 0;
-  let common = 0;
-  tokensA.forEach(t => {
-    if (tokensB.has(t)) common++;
-  });
-  return (2 * common) / (tokensA.size + tokensB.size);
 }
 
 // For every "unlogged" (saisi dans l'app, absent du GL) result, looks for "unentered" (présent

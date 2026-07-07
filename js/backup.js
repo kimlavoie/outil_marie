@@ -1,6 +1,9 @@
 /**
  * backup.js - Backup/restore (JSON) and Excel export controllers
  */
+import { isPlainObject, validateRules } from "./validation.js";
+import { logError } from "./logger.js";
+import { openVersionedDb } from "./db-utils.js";
 
 // --- Automatic file backup (File System Access API) ---
 // Keeps the localStorage database as the single source of truth; this only
@@ -10,18 +13,20 @@
 const AUTO_BACKUP_DB_NAME = "outil_marie_autobackup";
 const AUTO_BACKUP_STORE = "handles";
 const AUTO_BACKUP_KEY = "backup_file";
+const AUTO_BACKUP_DB_VERSION = 1;
 
 let autoBackupHandle = null;
 let autoBackupLastWrite = null;
 let autoBackupWriteTimer = null;
 
+function upgradeAutoBackupDb(db, oldVersion) {
+  if (oldVersion < 1 && !db.objectStoreNames.contains(AUTO_BACKUP_STORE)) {
+    db.createObjectStore(AUTO_BACKUP_STORE);
+  }
+}
+
 function openAutoBackupDb() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(AUTO_BACKUP_DB_NAME, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(AUTO_BACKUP_STORE);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
+  return openVersionedDb(AUTO_BACKUP_DB_NAME, AUTO_BACKUP_DB_VERSION, upgradeAutoBackupDb);
 }
 
 async function idbGetAutoBackupHandle() {
@@ -137,7 +142,7 @@ async function initAutoBackup() {
     const perm = await stored.queryPermission({ mode: "readwrite" });
     renderAutoBackupStatus(perm === "granted" ? "connected" : "needs-permission", stored.name);
   } catch (e) {
-    console.error("Erreur d'initialisation de la sauvegarde automatique", e);
+    logError("backup", "initialisation de la sauvegarde automatique", e);
     renderAutoBackupStatus("disconnected");
   }
 }
@@ -159,7 +164,7 @@ async function connectAutoBackupFile() {
     await writeAutoBackupNow();
   } catch (e) {
     if (e.name !== "AbortError") {
-      console.error(e);
+      logError("backup", "sélection du fichier de sauvegarde automatique", e);
       showToast("Erreur lors de la sélection du fichier : " + e.message, "error");
     }
   }
@@ -176,7 +181,7 @@ async function reconnectAutoBackupPermission() {
       showToast("Permission refusée.", "error");
     }
   } catch (e) {
-    console.error(e);
+    logError("backup", "reconnexion de la permission de sauvegarde automatique", e);
     showToast("Erreur lors de la reconnexion : " + e.message, "error");
   }
 }
@@ -222,7 +227,7 @@ async function writeAutoBackupNow() {
       renderBackupView();
     }
   } catch (e) {
-    console.error("Échec de l'écriture de la sauvegarde automatique", e);
+    logError("backup", "écriture de la sauvegarde automatique", e);
   }
 }
 
@@ -323,36 +328,24 @@ function initBackupHandlers() {
 }
 
 function validateBackupSchema(parsed) {
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return { valid: false, error: "Le contenu du fichier n'est pas un objet JSON valide." };
-  }
-  if (!parsed.activities || !Array.isArray(parsed.activities)) {
-    return { valid: false, error: "Le fichier de sauvegarde doit contenir une liste d'activités ('activities')." };
-  }
-  if (parsed.settings) {
-    if (typeof parsed.settings !== "object" || Array.isArray(parsed.settings)) {
-      return { valid: false, error: "La section de configuration ('settings') est invalide." };
-    }
-    if (parsed.settings.rooms && !Array.isArray(parsed.settings.rooms)) {
-      return { valid: false, error: "La configuration des salles ('settings.rooms') doit être une liste." };
-    }
-    if (parsed.settings.salaries && !Array.isArray(parsed.settings.salaries)) {
-      return { valid: false, error: "La configuration des salaires ('settings.salaries') doit être une liste." };
-    }
-    if (parsed.settings.services && !Array.isArray(parsed.settings.services)) {
-      return { valid: false, error: "La configuration des services ('settings.services') doit être une liste." };
-    }
-    if (parsed.settings.accounts && !Array.isArray(parsed.settings.accounts)) {
-      return { valid: false, error: "La configuration des comptes ('settings.accounts') doit être une liste." };
-    }
-  }
-  if (parsed.favorites && !Array.isArray(parsed.favorites)) {
-    return { valid: false, error: "La section des favoris ('favorites') doit être une liste." };
-  }
-  if (parsed.selected_quarters && !Array.isArray(parsed.selected_quarters)) {
-    return { valid: false, error: "La section des trimestres sélectionnés ('selected_quarters') doit être une liste." };
-  }
-  return { valid: true };
+  const settings = isPlainObject(parsed) ? parsed.settings : undefined;
+  return validateRules([
+    [isPlainObject(parsed), "Le contenu du fichier n'est pas un objet JSON valide."],
+    [
+      isPlainObject(parsed) && Array.isArray(parsed.activities),
+      "Le fichier de sauvegarde doit contenir une liste d'activités ('activities')."
+    ],
+    [!settings || isPlainObject(settings), "La section de configuration ('settings') est invalide."],
+    [!settings?.rooms || Array.isArray(settings.rooms), "La configuration des salles ('settings.rooms') doit être une liste."],
+    [!settings?.salaries || Array.isArray(settings.salaries), "La configuration des salaires ('settings.salaries') doit être une liste."],
+    [!settings?.services || Array.isArray(settings.services), "La configuration des services ('settings.services') doit être une liste."],
+    [!settings?.accounts || Array.isArray(settings.accounts), "La configuration des comptes ('settings.accounts') doit être une liste."],
+    [!parsed?.favorites || Array.isArray(parsed.favorites), "La section des favoris ('favorites') doit être une liste."],
+    [
+      !parsed?.selected_quarters || Array.isArray(parsed.selected_quarters),
+      "La section des trimestres sélectionnés ('selected_quarters') doit être une liste."
+    ]
+  ]);
 }
 
 function handleJsonBackupFile(file) {
@@ -398,7 +391,7 @@ function handleJsonBackupFile(file) {
             await clearAllActivityVersionsFromDb();
           }
         } catch (e) {
-          console.error("Error clearing versions during restore", e);
+          logError("backup", "suppression des versions lors de la restauration", e);
         }
         await saveDatabase();
         applyTheme(appState.settings.theme || "dark");
@@ -527,6 +520,13 @@ function exportToExcel() {
     return letter;
   }
 
+  showLoadingOverlay("Génération de l'export Excel...");
+  // Deferred so the overlay actually paints before this synchronous, potentially long-running
+  // workbook generation blocks the main thread.
+  setTimeout(() => runExportToExcel(getExcelColName), 20);
+}
+
+function runExportToExcel(getExcelColName) {
   try {
     const wb = XLSX.utils.book_new();
 
@@ -680,8 +680,10 @@ function exportToExcel() {
     XLSX.writeFile(wb, filename);
     showToast("Export Excel terminé.", "success");
   } catch (err) {
-    console.error(err);
+    logError("backup", "export Excel", err);
     showToast("Erreur lors de l'export Excel : " + err.message, "error");
+  } finally {
+    hideLoadingOverlay();
   }
 }
 

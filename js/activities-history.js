@@ -73,8 +73,9 @@ function submitActivityForm(e) {
 
   const internalId = document.getElementById("form-activity-internal-id").value;
   const name = document.getElementById("form-activity-name").value.trim();
-  if (!name) {
-    showToast("Le nom de l'activité ne peut pas être vide.", "warning");
+  const nameError = requireNonEmpty(name, "Le nom de l'activité ne peut pas être vide.");
+  if (nameError) {
+    showToast(nameError, "warning");
     return;
   }
 
@@ -154,14 +155,16 @@ function timeRangesOverlap(startA, endA, startB, endB) {
 // Flattens a reservation into a list of {date, start_time, end_time} occupied ranges: its
 // créneaux plus its montage/démontage windows (a room is unavailable during setup/teardown too).
 function getReservationOccupiedRanges(reservation) {
-  const ranges = (reservation.slots || [])
-    .filter(s => s.date)
-    .map(s => ({ date: s.date, start_time: s.start_time, end_time: s.end_time }));
+  const ranges = (reservation.slots || []).filter(s => s.date).map(s => ({ date: s.date, start_time: s.start_time, end_time: s.end_time }));
   if (reservation.install && reservation.install.enabled && reservation.install.date) {
     ranges.push({ date: reservation.install.date, start_time: reservation.install.start_time, end_time: reservation.install.end_time });
   }
   if (reservation.dismantle && reservation.dismantle.enabled && reservation.dismantle.date) {
-    ranges.push({ date: reservation.dismantle.date, start_time: reservation.dismantle.start_time, end_time: reservation.dismantle.end_time });
+    ranges.push({
+      date: reservation.dismantle.date,
+      start_time: reservation.dismantle.start_time,
+      end_time: reservation.dismantle.end_time
+    });
   }
   return ranges;
 }
@@ -187,7 +190,9 @@ function checkRoomReservationConflicts(reservations) {
       (other.reservations || []).forEach(otherRes => {
         if (otherRes.room_name !== res.room_name) return;
         const otherRanges = getReservationOccupiedRanges(otherRes);
-        const overlaps = myRanges.some(mr => otherRanges.some(or => mr.date === or.date && timeRangesOverlap(mr.start_time, mr.end_time, or.start_time, or.end_time)));
+        const overlaps = myRanges.some(mr =>
+          otherRanges.some(or => mr.date === or.date && timeRangesOverlap(mr.start_time, mr.end_time, or.start_time, or.end_time))
+        );
         if (overlaps && !conflicts.some(c => c.roomName === res.room_name && c.otherActivityName === other.name)) {
           conflicts.push({ roomName: res.room_name, otherActivityName: other.name || "(sans nom)" });
         }
@@ -294,7 +299,7 @@ async function saveActivityVersion(act) {
     await addActivityVersionToDb(versionRecord);
     await pruneActivityVersions(act.id, 20); // Maintain a limit of 20 versions
   } catch (e) {
-    console.error("Error saving activity version", e);
+    logError("activities-history", "sauvegarde d'une version d'activité", e);
   }
 }
 
@@ -498,7 +503,7 @@ async function loadAndRenderActivityHistory(activityId) {
       }
     });
   } catch (e) {
-    console.error("Error loading versions", e);
+    logError("activities-history", "chargement de l'historique des versions", e);
     container.innerHTML = `<div style="color: var(--danger-text); font-size: 0.85rem; padding: 4px;">Erreur lors du chargement de l'historique : ${e.message}</div>`;
   }
 }

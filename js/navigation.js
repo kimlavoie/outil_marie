@@ -112,6 +112,15 @@ function initNavigation() {
    ========================================================================== */
 
 const GLOBAL_SEARCH_MAX_PER_CATEGORY = 5;
+const GLOBAL_SEARCH_FUZZY_MIN_SCORE = 0.5;
+
+// True if `query` is a substring of `text`, or fuzzy-similar enough to it (typo/word-order
+// tolerant) using the same Dice-coefficient scoring as the reconciliation engine's suggestions.
+function globalSearchMatches(text, query) {
+  const value = (text || "").toLowerCase();
+  if (value.includes(query)) return true;
+  return textSimilarity(value, query) >= GLOBAL_SEARCH_FUZZY_MIN_SCORE;
+}
 
 function initGlobalSearch() {
   const input = document.getElementById("global-search-input");
@@ -190,19 +199,16 @@ function renderGlobalSearchResults(query) {
   const matchingActivities = appState.activities
     .filter(act => !act.deleted && act.name.trim() !== "")
     .filter(
-      act =>
-        act.id.toLowerCase().includes(query) ||
-        act.name.toLowerCase().includes(query) ||
-        (act.responsable || "").toLowerCase().includes(query)
+      act => globalSearchMatches(act.id, query) || globalSearchMatches(act.name, query) || globalSearchMatches(act.responsable, query)
     )
     .slice(0, GLOBAL_SEARCH_MAX_PER_CATEGORY);
 
   const matchingAccounts = appState.settings.accounts
-    .filter(acc => acc.code.toLowerCase().includes(query) || acc.description.toLowerCase().includes(query))
+    .filter(acc => globalSearchMatches(acc.code, query) || globalSearchMatches(acc.description, query))
     .slice(0, GLOBAL_SEARCH_MAX_PER_CATEGORY);
 
   const matchingDepartments = appState.settings.departments
-    .filter(dept => dept.toLowerCase().includes(query))
+    .filter(dept => globalSearchMatches(dept, query))
     .slice(0, GLOBAL_SEARCH_MAX_PER_CATEGORY);
 
   const totalCount = matchingActivities.length + matchingAccounts.length + matchingDepartments.length;

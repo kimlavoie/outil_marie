@@ -11,6 +11,12 @@
   </head>
   <body>
     <div id="toast-container" class="toast-container" aria-live="polite"></div>
+    <div id="loading-overlay" class="loading-overlay" role="status" aria-live="polite">
+      <svg class="loading-overlay-spinner" viewBox="0 0 24 24">
+        <path d="M12 4V2C6.48 2 2 6.48 2 12h2c0-4.41 3.59-8 8-8z" />
+      </svg>
+      <div class="loading-overlay-text"></div>
+    </div>
     <div class="app-container">
       <!-- Sidebar Navigation -->
       <aside class="sidebar">
@@ -432,7 +438,7 @@
                       Non saisis (<span id="count-recon-unentered">0</span>)
                     </button>
                   </div>
-                  <div style="display: flex; gap: 8px;">
+                  <div style="display: flex; gap: 8px">
                     <button id="export-reconciliation-btn" class="btn btn-secondary">Exporter le rapprochement</button>
                     <button id="clear-ledger-btn" class="btn btn-secondary btn-danger">Effacer l'import</button>
                   </div>
@@ -731,10 +737,10 @@
     <!-- DRAWERS & MODALS -->
 
     <!-- Drawer Container Backdrop -->
-    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <div id="drawer-backdrop" class="drawer-backdrop" role="presentation"></div>
 
     <!-- 1. Activity Record Drawer (3-tab lifecycle view: Soumission et contrat / Planification / Facturation) -->
-    <div id="activity-drawer" class="drawer">
+    <div id="activity-drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="activity-drawer-title">
       <div class="drawer-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%">
         <div style="display: flex; align-items: center; gap: 8px">
           <h2 id="activity-drawer-title" class="drawer-title">Activité</h2>
@@ -1060,7 +1066,7 @@
     </div>
 
     <!-- New Activity (name-only) Modal -->
-    <div id="new-activity-modal" class="modal">
+    <div id="new-activity-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="new-activity-modal-title">
       <div class="modal-header">
         <h3 class="modal-title" id="new-activity-modal-title">Nouvelle activité</h3>
         <button id="new-activity-modal-close" class="btn-icon" aria-label="Fermer">
@@ -1084,9 +1090,16 @@
     </div>
 
     <!-- Ledger Column Mapping Modal -->
-    <div id="ledger-mapping-modal" class="modal" style="width: 500px; max-width: 95vw;">
+    <div
+      id="ledger-mapping-modal"
+      class="modal"
+      style="width: 500px; max-width: 95vw"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ledger-mapping-modal-title"
+    >
       <div class="modal-header">
-        <h3 class="modal-title">Associer les colonnes du Grand Livre</h3>
+        <h3 class="modal-title" id="ledger-mapping-modal-title">Associer les colonnes du Grand Livre</h3>
         <button id="ledger-mapping-modal-close" class="btn-icon" aria-label="Fermer">
           <svg viewBox="0 0 24 24">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -1094,8 +1107,9 @@
         </button>
       </div>
       <div class="modal-content">
-        <p style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-secondary);">
-          Certaines colonnes obligatoires n'ont pas été détectées automatiquement. Veuillez associer les champs requis aux colonnes de votre fichier Excel.
+        <p style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-secondary)">
+          Certaines colonnes obligatoires n'ont pas été détectées automatiquement. Veuillez associer les champs requis aux colonnes de votre
+          fichier Excel.
         </p>
         <form id="ledger-mapping-form">
           <div class="form-group">
@@ -1131,10 +1145,10 @@
     </div>
 
     <!-- Modal Container Backdrop -->
-    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div id="modal-backdrop" class="modal-backdrop" role="presentation"></div>
 
     <!-- 2. Account Add/Edit Modal -->
-    <div id="account-modal" class="modal">
+    <div id="account-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="account-modal-title">
       <div class="modal-header">
         <h3 id="account-modal-title" class="modal-title">Ajouter un compte</h3>
         <button id="account-modal-close" class="btn-icon" aria-label="Fermer">
@@ -1163,7 +1177,14 @@
     </div>
 
     <!-- 3. Room Add/Edit Modal -->
-    <div id="room-modal" class="modal" style="width: 760px; max-width: 95vw">
+    <div
+      id="room-modal"
+      class="modal"
+      style="width: 760px; max-width: 95vw"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="room-modal-title"
+    >
       <div class="modal-header">
         <h3 id="room-modal-title" class="modal-title">Ajouter une salle</h3>
         <button id="room-modal-close" class="btn-icon" aria-label="Fermer">
@@ -1297,7 +1318,7 @@
     </div>
 
     <!-- 4. Department Add/Edit Modal -->
-    <div id="dept-modal" class="modal">
+    <div id="dept-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="dept-modal-title">
       <div class="modal-header">
         <h3 id="dept-modal-title" class="modal-title">Ajouter un département</h3>
         <button id="dept-modal-close" class="btn-icon" aria-label="Fermer">
@@ -1322,7 +1343,7 @@
     </div>
 
     <!-- Global Task Add/Edit Modal -->
-    <div id="global-task-modal" class="modal">
+    <div id="global-task-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="global-task-modal-title">
       <div class="modal-header">
         <h3 id="global-task-modal-title" class="modal-title">Ajouter une tâche globale</h3>
         <button id="global-task-modal-close" class="btn-icon" aria-label="Fermer">
@@ -1347,7 +1368,7 @@
     </div>
 
     <!-- Salary Add/Edit Modal -->
-    <div id="salary-modal" class="modal">
+    <div id="salary-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="salary-modal-title">
       <div class="modal-header">
         <h3 id="salary-modal-title" class="modal-title">Ajouter un emploi</h3>
         <button id="salary-modal-close" class="btn-icon" aria-label="Fermer">
@@ -1389,7 +1410,7 @@
     </div>
 
     <!-- Service Add/Edit Modal -->
-    <div id="service-modal" class="modal">
+    <div id="service-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="service-modal-title">
       <div class="modal-header">
         <h3 id="service-modal-title" class="modal-title">Ajouter un service</h3>
         <button id="service-modal-close" class="btn-icon" aria-label="Fermer">
@@ -1438,9 +1459,16 @@
     </div>
 
     <!-- 5. Reconciliation Details Modal -->
-    <div id="recon-detail-modal" class="modal" style="width: 800px; max-width: 95vw">
+    <div
+      id="recon-detail-modal"
+      class="modal"
+      style="width: 800px; max-width: 95vw"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="recon-detail-modal-title"
+    >
       <div class="modal-header">
-        <h3 class="modal-title">Lignes de Grand Livre détaillées</h3>
+        <h3 class="modal-title" id="recon-detail-modal-title">Lignes de Grand Livre détaillées</h3>
         <button id="recon-detail-modal-close" class="btn-icon" aria-label="Fermer">
           <svg viewBox="0 0 24 24">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -1476,9 +1504,16 @@
     </div>
 
     <!-- 7. Activities Calendar Modal -->
-    <div id="calendar-modal" class="modal" style="width: 980px; max-width: 96vw">
+    <div
+      id="calendar-modal"
+      class="modal"
+      style="width: 980px; max-width: 96vw"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="calendar-modal-title"
+    >
       <div class="modal-header">
-        <h3 class="modal-title">Calendrier des activités</h3>
+        <h3 class="modal-title" id="calendar-modal-title">Calendrier des activités</h3>
         <button id="calendar-modal-close" class="btn-icon" aria-label="Fermer">
           <svg viewBox="0 0 24 24">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -1523,11 +1558,17 @@
     <div id="print-activity-sheet"></div>
 
     <!-- Application Logic (order matters: each file depends on the ones before it) -->
+    <script type="module" src="js/logger.js"></script>
+    <script type="module" src="js/validation.js"></script>
+    <script type="module" src="js/db-utils.js"></script>
+    <script type="module" src="js/fuzzy-match.js"></script>
+    <script type="module" src="js/config-defaults.js"></script>
     <script type="module" src="js/state.js"></script>
     <script type="module" src="js/utils.js"></script>
     <script src="js/navigation.js" defer></script>
     <script type="module" src="js/dashboard.js"></script>
     <script type="module" src="js/activities-render.js"></script>
+    <script src="js/activities-file-links.js" defer></script>
     <script src="js/activities-form.js" defer></script>
     <script type="module" src="js/activities-reservations.js"></script>
     <script type="module" src="js/activities-financials.js"></script>

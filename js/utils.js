@@ -416,6 +416,26 @@ function maskPhoneInput(input) {
 }
 
 /* ==========================================================================
+   LOADING OVERLAY (visual feedback for operations users would notice as slow:
+   import/export Excel, export PDF, calcul de rapprochement)
+   ========================================================================== */
+
+// Shows the full-screen loading overlay with an optional message (e.g. "Import en cours...").
+function showLoadingOverlay(message = "Veuillez patienter...") {
+  const overlay = document.getElementById("loading-overlay");
+  if (!overlay) return;
+  overlay.querySelector(".loading-overlay-text").textContent = message;
+  overlay.classList.add("active");
+}
+
+// Hides the full-screen loading overlay shown by showLoadingOverlay().
+function hideLoadingOverlay() {
+  const overlay = document.getElementById("loading-overlay");
+  if (!overlay) return;
+  overlay.classList.remove("active");
+}
+
+/* ==========================================================================
    TOASTS (non-blocking notifications, replaces alert() for info/success/error)
    ========================================================================== */
 
@@ -481,7 +501,9 @@ export {
   initSearchableSelectEl,
   maskDateInput,
   maskPhoneInput,
-  showToast
+  showToast,
+  showLoadingOverlay,
+  hideLoadingOverlay
 };
 
 if (typeof window !== "undefined") {
@@ -512,4 +534,6 @@ if (typeof window !== "undefined") {
   window.maskDateInput = maskDateInput;
   window.maskPhoneInput = maskPhoneInput;
   window.showToast = showToast;
+  window.showLoadingOverlay = showLoadingOverlay;
+  window.hideLoadingOverlay = hideLoadingOverlay;
 }

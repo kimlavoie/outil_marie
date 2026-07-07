@@ -107,7 +107,8 @@ function buildPrintActivitySheetHtml(act) {
     .map(r => {
       const days = (r.slots || []).length;
       const slotsText =
-        (r.slots || []).map(s => `${s.date}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`).join(", ") || "-";
+        (r.slots || []).map(s => `${s.date}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`).join(", ") ||
+        "-";
       return `
         <tr>
           <td>${escapeHtml(getReservationRoomLabel(r))}</td>
@@ -181,8 +182,14 @@ function printActivitySheet() {
   const id = document.getElementById("form-activity-internal-id").value;
   const act = appState.activities.find(a => a.id === id);
   if (!act) return;
-  document.getElementById("print-activity-sheet").innerHTML = buildPrintActivitySheetHtml(act);
-  window.print();
+  showLoadingOverlay("Préparation du document...");
+  // Deferred so the overlay actually paints before building the sheet and opening the (blocking)
+  // browser print dialog.
+  setTimeout(() => {
+    document.getElementById("print-activity-sheet").innerHTML = buildPrintActivitySheetHtml(act);
+    hideLoadingOverlay();
+    window.print();
+  }, 20);
 }
 
 // Generates the next available activity id (XXYY-ZZZ) for the selected fiscal year
@@ -407,7 +414,7 @@ function autoSaveActivityForm() {
   const name = document.getElementById("form-activity-name").value.trim();
 
   // The activity name cannot be empty. If it is, we don't save.
-  if (!name) {
+  if (!isNonEmptyString(name)) {
     return;
   }
 
@@ -536,4 +543,3 @@ if (typeof window !== "undefined") {
   window.showAutoSaveStatus = showAutoSaveStatus;
   window.autoSaveActivityForm = autoSaveActivityForm;
 }
-

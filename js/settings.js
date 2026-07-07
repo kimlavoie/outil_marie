@@ -775,8 +775,9 @@ function submitDeptForm(e) {
   const originalName = document.getElementById("form-dept-original-name").value;
   const name = document.getElementById("form-dept-name").value.trim();
 
-  if (!name) {
-    showToast("Le nom du département est obligatoire.", "warning");
+  const nameError = requireNonEmpty(name, "Le nom du département est obligatoire.");
+  if (nameError) {
+    showToast(nameError, "warning");
     return;
   }
 
@@ -1091,8 +1092,9 @@ function submitServiceForm(e) {
   const type = document.getElementById("form-service-type").value;
   const glAccountCode = document.getElementById("form-service-gl-account").value;
 
-  if (!name) {
-    showToast("Le nom du service est obligatoire.", "warning");
+  const nameError = requireNonEmpty(name, "Le nom du service est obligatoire.");
+  if (nameError) {
+    showToast(nameError, "warning");
     return;
   }
 

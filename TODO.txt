@@ -1,0 +1,6 @@
+TODO - Idées d'amélioration
+
+Fonctionnalités métier
+- Tableau de bord statistiques (taux d'occupation des salles, revenus par période, activités récurrentes) en s'appuyant sur Chart.js déjà présent
+- Sauvegarde automatique périodique en plus de l'export manuel Excel
+- Journal d'audit global (qui a modifié quoi, quand), en complément de l'historique de versions des activités
