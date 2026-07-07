@@ -18,6 +18,7 @@ import type {
   validateRules
 } from "./validation.ts";
 import type { logError, logWarn, logInfo, getLogHistory } from "./logger.ts";
+import type { renderDashboard, renderDashboardCharts } from "./dashboard-view.tsx";
 import type {
   formatCurrency,
   escapeHtml,
@@ -102,7 +103,14 @@ declare global {
     showToast: typeof showToast;
     showLoadingOverlay: typeof showLoadingOverlay;
     hideLoadingOverlay: typeof hideLoadingOverlay;
+    renderDashboard: typeof renderDashboard;
+    renderDashboardCharts: typeof renderDashboardCharts;
   }
+
+  // Third-party vendored globals, loaded as plain <script> from lib/ (see index.html) — not our
+  // bridges to clean up, just ambient so TS recognizes them where used (e.g. js/dashboard-view.tsx).
+  const Chart: any;
+  const XLSX: any;
 }
 
 export {};

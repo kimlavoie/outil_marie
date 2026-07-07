@@ -133,15 +133,46 @@ Phase 2 — TypeScript en mode permissif, aucune réécriture — TERMINÉ
     Centralisés dans js/globals.d.ts (déclarations `declare global`), qui
     sert aussi de manifeste de tout ce qui reste à éliminer en Phase 4-5.
 
-Phase 3 — React pour une seule vue isolée
+Phase 3 — React pour une seule vue isolée (Tableau de bord) — TERMINÉ
 -----------------------------------------------------------------
-[ ] Ajouter react, react-dom, @vitejs/plugin-react.
-[ ] Convertir la vue la plus isolée et la moins risquée en premier :
-    Tableau de bord (surtout affichage, peu d'écriture).
-[ ] React lit l'état existant via les fonctions déjà exportées de
-    state.js/db-utils.js — pas de duplication d'état.
-[ ] Supprimer l'ancien dashboard.js seulement après vérification manuelle
-    que le rendu React est équivalent.
+[x] Ajouté react, react-dom, @vitejs/plugin-react (+ @types/react,
+    @types/react-dom). tsconfig.json : jsx: "react-jsx".
+[x] Tableau de bord converti (surtout affichage, peu d'écriture — la vue la
+    moins risquée, comme prévu). Nouveau fichier js/dashboard-view.tsx :
+    composant React portant les 4 cartes de stats + les 3 graphiques
+    Chart.js (mêmes configs Chart.js qu'avant, un canvas par <canvas ref>,
+    créé/détruit via useEffect sans tableau de dépendances — le composant
+    ne se re-rend que quand renderDashboardReact() est appelé
+    explicitement par navigation.js, donc chaque appel doit tout
+    recalculer/redessiner, comme l'ancien code impératif).
+[x] React lit l'état existant via de vrais imports ES (appState,
+    getFiscalYear, getQuarterNumber, getQuarter depuis state.js ;
+    formatCurrency, getReservationRoomLabel depuis utils.ts) — aucune
+    duplication d'état, mieux même que l'ancien pont window.X.
+[x] index.html : la section #view-dashboard ne contient plus que
+    <div id="dashboard-root">, remplaçant les span/canvas à id individuels.
+[x] Suppression de l'ancien rendu DOM de dashboard.js faite dans la même
+    passe (les deux ne peuvent pas coexister sur le même DOM) ; la
+    vérification manuelle reste à faire par vous avant de merger (voir
+    plus bas).
+    Piège découvert : j'avais nommé le fichier React "Dashboard.tsx"
+    (majuscule) — collision de casse avec "dashboard.js" sur un système
+    de fichiers insensible à la casse (Windows), causant une confusion de
+    résolution de module TypeScript. Renommé en dashboard-view.tsx
+    (kebab-case, cohérent avec le reste du projet).
+    Piège découvert : Node sait exécuter du .ts nativement (type-stripping)
+    mais PAS du .tsx (JSX exige une vraie transformation, pas juste un
+    effacement de types) — donc rien d'accessible depuis le graphe
+    d'import d'un fichier de test ne peut être un .tsx. dashboard.js a été
+    séparé en deux : dashboard.js garde uniquement computeDashboardStats
+    (pur, testé via node --test), dashboard-view.tsx porte le rendu React
+    ET le pont window.renderDashboard/renderDashboardCharts (au lieu de
+    faire transiter ce pont par dashboard.js, qui aurait réintroduit une
+    dépendance transitive vers le .tsx dans le graphe de test).
+[ ] Validation manuelle restante (à faire par vous, `npm run dev`) :
+    checklist de smoke-test sur le Tableau de bord — chiffres corrects,
+    3 graphiques s'affichent, bascule de thème redessine les graphiques
+    avec les bonnes couleurs.
 
 Phase 4 — Vue par vue, du moins risqué au plus risqué
 -----------------------------------------------------------------

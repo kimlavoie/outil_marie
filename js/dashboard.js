@@ -1,13 +1,14 @@
 /**
- * dashboard.js - Dashboard view: KPI stats and Chart.js visualizations
+ * dashboard.js - Dashboard view KPI computation (pure, no DOM, unit-tested directly).
+ * The rendering (stat cards, Chart.js visualizations) and the window.renderDashboard()/
+ * window.renderDashboardCharts() bridge navigation.js calls live in js/dashboard-view.tsx
+ * (React, since Phase 3 of the Vite/React/TS migration — see TODO.txt).
+ *
+ * Kept as a separate plain .js module (rather than folded into dashboard-view.tsx) so the test
+ * suite can still import computeDashboardStats through plain `node --test`: Node's built-in
+ * TypeScript support strips .ts but can't execute .tsx (JSX needs a real transform, not just
+ * type erasure), so nothing reachable from a test file's import graph can be a .tsx module.
  */
-
-// Chart.js instances, grouped so they're easy to find/destroy together on re-render
-let dashboardCharts = {
-  quarterly: null,
-  salle: null,
-  accounts: null
-};
 
 // Pure KPI computation (no DOM) so it can be unit tested directly.
 function computeDashboardStats(activities, selectedYear, selectedQuarters, reconciliationResults) {
@@ -54,196 +55,7 @@ function computeDashboardStats(activities, selectedYear, selectedQuarters, recon
   return { totalRevenue, totalInternalFree, filledCount, reconciliationRate };
 }
 
-function renderDashboard() {
-  const stats = computeDashboardStats(appState.activities, appState.selected_year, appState.selected_quarters, reconciliationState.results);
-
-  document.getElementById("stat-revenue-total").textContent = formatCurrency(stats.totalRevenue);
-  document.getElementById("stat-revenue-internal-free").textContent = formatCurrency(stats.totalInternalFree);
-  document.getElementById("stat-activities-count").textContent = stats.filledCount;
-  document.getElementById("stat-reconciled-percent").textContent = `${stats.reconciliationRate}%`;
-
-  // Render charts
-  renderDashboardCharts();
-}
-
-function renderDashboardCharts() {
-  const isDark = appState.settings.theme === "dark";
-  const gridColor = isDark ? "#1f2937" : "#e2e8f0";
-  const textColor = isDark ? "#9ca3af" : "#475569";
-
-  // 1. Quarterly Revenues
-  const quarterlySums = {
-    "T1 (Jul-Sep)": 0,
-    "T2 (Oct-Dec)": 0,
-    "T3 (Jan-Mar)": 0,
-    "T4 (Apr-Jun)": 0
-  };
-
-  appState.activities.forEach(act => {
-    if (act.deleted) return;
-    if (act.name.trim() === "") return;
-
-    // Period filter (check fiscal year only for quarters breakdown)
-    if (getFiscalYear(act.date_start) !== appState.selected_year) return;
-
-    const q = getQuarter(act.date_start);
-    if (q && quarterlySums.hasOwnProperty(q)) {
-      const sumDist = act.distributions.reduce((sum, dist) => sum + dist.amount, 0);
-      quarterlySums[q] += sumDist;
-    }
-  });
-
-  if (dashboardCharts.quarterly) dashboardCharts.quarterly.destroy();
-  const ctxQ = document.getElementById("chart-quarterly-revenues").getContext("2d");
-  dashboardCharts.quarterly = new Chart(ctxQ, {
-    type: "bar",
-    data: {
-      labels: Object.keys(quarterlySums),
-      datasets: [
-        {
-          label: "Revenus réels ($)",
-          data: Object.values(quarterlySums),
-          backgroundColor: "rgba(59, 130, 246, 0.75)",
-          borderColor: "#3b82f6",
-          borderWidth: 2,
-          borderRadius: 6
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { color: textColor } },
-        y: { grid: { color: gridColor }, ticks: { color: textColor } }
-      }
-    }
-  });
-
-  // 2. Revenue share by Room (salle)
-  const roomSums = {};
-  appState.activities.forEach(act => {
-    if (act.deleted) return;
-    if (act.name.trim() === "") return;
-
-    // Period filter
-    const actYear = getFiscalYear(act.date_start);
-    const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
-      return;
-    }
-
-    const rName = act.reservations && act.reservations.length ? act.reservations.map(getReservationRoomLabel).join(", ") : "Inconnue";
-    const sumDist = act.distributions.reduce((sum, dist) => sum + dist.amount, 0);
-    roomSums[rName] = (roomSums[rName] || 0) + sumDist;
-  });
-
-  const roomLabels = Object.keys(roomSums);
-  const roomData = Object.values(roomSums);
-
-  if (dashboardCharts.salle) dashboardCharts.salle.destroy();
-  const ctxS = document.getElementById("chart-salle-share").getContext("2d");
-
-  if (roomLabels.length === 0) {
-    roomLabels.push("Aucune donnée");
-    roomData.push(1);
-  }
-
-  dashboardCharts.salle = new Chart(ctxS, {
-    type: "doughnut",
-    data: {
-      labels: roomLabels,
-      datasets: [
-        {
-          data: roomData,
-          backgroundColor: [
-            "#3b82f6", // Blue
-            "#10b981", // Green
-            "#8b5cf6", // Purple
-            "#f59e0b", // Yellow/Orange
-            "#f43f5e", // Pink/Red
-            "#14b8a6" // Teal
-          ],
-          borderWidth: isDark ? 2 : 1,
-          borderColor: isDark ? "#111827" : "#ffffff"
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: "bottom",
-          labels: { color: textColor, boxWidth: 12, padding: 16 }
-        }
-      }
-    }
-  });
-
-  // 3. Revenues by Account
-  const accountSums = {};
-  appState.activities.forEach(act => {
-    if (act.deleted) return;
-    if (act.name.trim() === "") return;
-
-    // Period filter
-    const actYear = getFiscalYear(act.date_start);
-    const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
-      return;
-    }
-
-    act.distributions.forEach(dist => {
-      if (dist.amount > 0) {
-        accountSums[dist.account_code] = (accountSums[dist.account_code] || 0) + dist.amount;
-      }
-    });
-  });
-
-  // Sort accounts by amount descending
-  const sortedAccounts = Object.entries(accountSums)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8); // Top 8 accounts
-
-  const accLabels = sortedAccounts.map(item => item[0]);
-  const accData = sortedAccounts.map(item => item[1]);
-
-  if (dashboardCharts.accounts) dashboardCharts.accounts.destroy();
-  const ctxA = document.getElementById("chart-accounts-volume").getContext("2d");
-  dashboardCharts.accounts = new Chart(ctxA, {
-    type: "bar",
-    data: {
-      labels: accLabels,
-      datasets: [
-        {
-          label: "Revenus ($)",
-          data: accData,
-          backgroundColor: "rgba(139, 92, 246, 0.75)",
-          borderColor: "#8b5cf6",
-          borderWidth: 2,
-          borderRadius: 4
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { display: false }, ticks: { color: textColor } },
-        y: { grid: { color: gridColor }, ticks: { color: textColor } }
-      }
-    }
-  });
-}
-
-export { computeDashboardStats, renderDashboard, renderDashboardCharts };
+export { computeDashboardStats };
 if (typeof window !== "undefined") {
   window.computeDashboardStats = computeDashboardStats;
-  window.renderDashboard = renderDashboard;
-  window.renderDashboardCharts = renderDashboardCharts;
 }

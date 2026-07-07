@@ -221,60 +221,9 @@
 
         <!-- View Containers -->
         <div class="view-container">
-          <!-- 1. DASHBOARD VIEW -->
+          <!-- 1. DASHBOARD VIEW (rendered by React — see js/dashboard-view.tsx, mounted by dashboard.js) -->
           <section id="view-dashboard" class="view-section active">
-            <div class="stats-grid">
-              <div class="stat-card">
-                <span class="stat-label">Revenus totaux saisis</span>
-                <span id="stat-revenue-total" class="stat-value">0,00 $</span>
-                <span class="stat-desc">Calculés sur toutes les activités</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">Revenus internes (sans frais)</span>
-                <span id="stat-revenue-internal-free" class="stat-value">0,00 $</span>
-                <span class="stat-desc">Valeur théorique estimée</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">Nombre d'activités</span>
-                <span id="stat-activities-count" class="stat-value">0</span>
-                <span class="stat-desc">Activités au trimestre courant</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">Taux de rapprochement</span>
-                <span id="stat-reconciled-percent" class="stat-value">0%</span>
-                <span class="stat-desc">Conformité avec le Grand Livre</span>
-              </div>
-            </div>
-
-            <div class="charts-grid">
-              <div class="chart-card">
-                <div class="chart-header">
-                  <span class="chart-title">Revenus trimestriels réels</span>
-                </div>
-                <div class="chart-container">
-                  <canvas id="chart-quarterly-revenues"></canvas>
-                </div>
-              </div>
-              <div class="chart-card">
-                <div class="chart-header">
-                  <span class="chart-title">Répartition par salle</span>
-                </div>
-                <div class="chart-container">
-                  <canvas id="chart-salle-share"></canvas>
-                </div>
-              </div>
-            </div>
-
-            <div class="charts-grid" style="grid-template-columns: 1fr">
-              <div class="chart-card" style="min-height: 320px">
-                <div class="chart-header">
-                  <span class="chart-title">Volume des revenus par compte de Grand Livre (Top Comptes)</span>
-                </div>
-                <div class="chart-container">
-                  <canvas id="chart-accounts-volume"></canvas>
-                </div>
-              </div>
-            </div>
+            <div id="dashboard-root"></div>
           </section>
 
           <!-- 2. ACTIVITIES VIEW -->
@@ -1567,6 +1516,7 @@
     <script type="module" src="js/utils.ts"></script>
     <script src="js/navigation.js" defer></script>
     <script type="module" src="js/dashboard.js"></script>
+    <script type="module" src="js/dashboard-view.tsx"></script>
     <script type="module" src="js/activities-render.js"></script>
     <script src="js/activities-file-links.js" defer></script>
     <script src="js/activities-form.js" defer></script>

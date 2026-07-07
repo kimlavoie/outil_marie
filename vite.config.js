@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 import { cpSync, mkdirSync } from "node:fs";
 import path from "node:path";
 
@@ -44,5 +45,5 @@ function copyLegacyStaticScripts() {
 // go back to "/".
 export default defineConfig({
   base: "/outil_marie/",
-  plugins: [copyLegacyStaticScripts()]
+  plugins: [react(), copyLegacyStaticScripts()]
 });
