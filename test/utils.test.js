@@ -1,6 +1,6 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const { calculateDaysCount, getRoomsTariffTotal, getActivityReferences } = require("../js/utils.js");
+import test from "node:test";
+import assert from "node:assert/strict";
+import { calculateDaysCount, getRoomsTariffTotal, getActivityReferences } from "../js/utils.js";
 
 test("calculateDaysCount counts both endpoints inclusively", () => {
   assert.equal(calculateDaysCount("2025-01-01", "2025-01-05"), 5);

@@ -106,7 +106,25 @@ function initReconciliationHandlers() {
   // Close details modal
   document.getElementById("recon-detail-modal-close").addEventListener("click", closeReconDetailModal);
   document.getElementById("recon-detail-modal-close-btn").addEventListener("click", closeReconDetailModal);
-  document.getElementById("modal-backdrop").addEventListener("click", closeReconDetailModal);
+  document.getElementById("modal-backdrop").addEventListener("click", () => {
+    closeReconDetailModal();
+    closeLedgerMappingModal();
+  });
+
+  // Close mapping modal
+  const mapClose = document.getElementById("ledger-mapping-modal-close");
+  if (mapClose) mapClose.addEventListener("click", closeLedgerMappingModal);
+
+  const mapCancel = document.getElementById("ledger-mapping-modal-cancel");
+  if (mapCancel) mapCancel.addEventListener("click", closeLedgerMappingModal);
+
+  const mappingForm = document.getElementById("ledger-mapping-form");
+  if (mappingForm) {
+    mappingForm.addEventListener("submit", e => {
+      e.preventDefault();
+      applyColumnMappingAndImport();
+    });
+  }
 
   // Export the reconciliation table to Excel
   document.getElementById("export-reconciliation-btn").addEventListener("click", exportReconciliationToExcel);
@@ -187,6 +205,180 @@ function exportReconciliationToExcel() {
   }
 }
 
+function validateLedgerStructure(rawRows) {
+  if (!Array.isArray(rawRows) || rawRows.length === 0) {
+    return { valid: false, error: "Le fichier Excel est vide ou ne contient aucune ligne de données." };
+  }
+
+  // Check the first row to see if the required columns are present
+  const firstRow = rawRows[0];
+  const requiredColumns = ["Poste budgétaire", "Date versée", "Montant courant"];
+  const missingColumns = requiredColumns.filter(col => !(col in firstRow));
+
+  if (missingColumns.length > 0) {
+    return {
+      valid: false,
+      error: `Colonnes obligatoires manquantes dans le fichier Excel : ${missingColumns.join(", ")}. Veuillez vérifier que le fichier provient bien du Grand Livre.`
+    };
+  }
+
+  return { valid: true };
+}
+
+let pendingLedgerRows = [];
+
+function findBestColumnMatch(headers, possibleNames) {
+  for (const name of possibleNames) {
+    const matched = headers.find(h => {
+      const cleanH = h.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      const cleanName = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      return cleanH === cleanName || cleanH.includes(cleanName) || cleanName.includes(cleanH);
+    });
+    if (matched) return matched;
+  }
+  return "";
+}
+
+function openLedgerMappingModal(headers) {
+  const modal = document.getElementById("ledger-mapping-modal");
+  const backdrop = document.getElementById("modal-backdrop");
+  if (!modal || !backdrop) return;
+
+  const selectIds = [
+    { id: "map-poste-budgetaire", required: true, names: ["poste", "compte", "gl", "budget", "account"] },
+    { id: "map-date-versee", required: true, names: ["date versée", "date versee", "date", "versement", "transaction"] },
+    { id: "map-montant-courant", required: true, names: ["montant courant", "montant", "courant", "valeur", "amount", "solde"] },
+    { id: "map-no-reference", required: false, names: ["référence", "reference", "ref", "numéro de référence", "no reference", "no doc"] },
+    { id: "map-nom", required: false, names: ["nom", "auxiliaire", "client", "fournisseur", "name"] },
+    { id: "map-description", required: false, names: ["description", "libellé", "libelle", "details", "détails", "memo", "texte"] }
+  ];
+
+  let savedMapping = null;
+  try {
+    const raw = localStorage.getItem("outil_marie_ledger_col_mapping");
+    if (raw) savedMapping = JSON.parse(raw);
+  } catch (e) {
+    console.error(e);
+  }
+
+  selectIds.forEach(selectConfig => {
+    const select = document.getElementById(selectConfig.id);
+    if (!select) return;
+    select.innerHTML = selectConfig.required ? "" : '<option value="">(Non associé)</option>';
+    
+    headers.forEach(h => {
+      const opt = document.createElement("option");
+      opt.value = h;
+      opt.textContent = h;
+      select.appendChild(opt);
+    });
+
+    // Heuristics or saved mapping
+    if (savedMapping && savedMapping[selectConfig.id] && headers.includes(savedMapping[selectConfig.id])) {
+      select.value = savedMapping[selectConfig.id];
+    } else {
+      const matched = findBestColumnMatch(headers, selectConfig.names);
+      if (matched) {
+        select.value = matched;
+      } else if (!selectConfig.required) {
+        select.value = "";
+      }
+    }
+  });
+
+  modal.classList.add("active");
+  backdrop.classList.add("active");
+}
+
+function closeLedgerMappingModal() {
+  const modal = document.getElementById("ledger-mapping-modal");
+  const backdrop = document.getElementById("modal-backdrop");
+  if (modal) modal.classList.remove("active");
+  if (backdrop) backdrop.classList.remove("active");
+  pendingLedgerRows = [];
+  document.getElementById("ledger-file-input").value = "";
+}
+
+function applyColumnMappingAndImport() {
+  const posteKey = document.getElementById("map-poste-budgetaire").value;
+  const dateKey = document.getElementById("map-date-versee").value;
+  const montantKey = document.getElementById("map-montant-courant").value;
+  const refKey = document.getElementById("map-no-reference").value;
+  const nomKey = document.getElementById("map-nom").value;
+  const descKey = document.getElementById("map-description").value;
+
+  if (posteKey === dateKey || posteKey === montantKey || dateKey === montantKey) {
+    showToast("Veuillez sélectionner des colonnes distinctes pour les champs obligatoires.", "warning");
+    return;
+  }
+
+  // Save to localStorage
+  const mapping = {
+    "map-poste-budgetaire": posteKey,
+    "map-date-versee": dateKey,
+    "map-montant-courant": montantKey,
+    "map-no-reference": refKey,
+    "map-nom": nomKey,
+    "map-description": descKey
+  };
+  try {
+    localStorage.setItem("outil_marie_ledger_col_mapping", JSON.stringify(mapping));
+  } catch (e) {
+    console.error(e);
+  }
+
+  // Map pending ledger rows to target shape
+  const mappedTransactions = pendingLedgerRows.map(row => {
+    const mapped = {};
+    mapped["Poste budgétaire"] = String(row[posteKey] || "").trim();
+    mapped["Date versée"] = String(row[dateKey] || "").trim();
+    mapped["Montant courant"] = parseFloat(row[montantKey]) || 0.0;
+    mapped["No référence"] = refKey ? String(row[refKey] || "").trim() : "";
+    mapped["Nom"] = nomKey ? String(row[nomKey] || "").trim() : "";
+    mapped["Description"] = descKey ? String(row[descKey] || "").trim() : "";
+    mapped["Auxiliaire"] = nomKey ? String(row[nomKey] || "").trim() : "";
+    mapped["Tr. type"] = String(row["Tr. type"] || "").trim();
+    mapped["No doc. GL"] = String(row["No doc. GL"] || "").trim();
+    return mapped;
+  });
+
+  reconciliationState.ledgerTransactions = mappedTransactions.filter(row => {
+    const poste = row["Poste budgétaire"];
+    const dateVersee = row["Date versée"];
+    const montant = row["Montant courant"];
+
+    return (
+      poste !== "" &&
+      poste !== "Total" &&
+      dateVersee !== "" &&
+      dateVersee !== "Total" &&
+      dateVersee !== "Grand Total" &&
+      !isNaN(montant)
+    );
+  });
+
+  if (reconciliationState.ledgerTransactions.length === 0) {
+    showToast("Aucune transaction valide n'a été trouvée après application du mappage.", "warning");
+    closeLedgerMappingModal();
+    return;
+  }
+
+  // Perform reconciliation and close modal
+  reconcileLedger();
+
+  document.getElementById("drop-zone").style.display = "none";
+  document.getElementById("reconciliation-panel").style.display = "grid";
+
+  renderReconciliation();
+
+  // Close modal
+  const modal = document.getElementById("ledger-mapping-modal");
+  const backdrop = document.getElementById("modal-backdrop");
+  if (modal) modal.classList.remove("active");
+  if (backdrop) backdrop.classList.remove("active");
+  showToast("Importation réussie avec mappage de colonnes.", "success");
+}
+
 // Read ledger spreadsheet via SheetJS
 function handleLedgerFile(file) {
   const reader = new FileReader();
@@ -198,6 +390,19 @@ function handleLedgerFile(file) {
       const firstSheet = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheet];
       const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+      if (!Array.isArray(rawRows) || rawRows.length === 0) {
+        showToast("Échec de l'importation : Le fichier Excel est vide ou invalide.", "error");
+        return;
+      }
+
+      const validation = validateLedgerStructure(rawRows);
+      if (!validation.valid) {
+        // If not valid, prompt for column mapping
+        pendingLedgerRows = rawRows;
+        openLedgerMappingModal(Object.keys(rawRows[0]));
+        return;
+      }
 
       // Map columns based on French ledger format
       // Standard headers: Poste budgétaire, Description, Période, Date versée, Tr. type, Nom, No référence, Montant courant, etc.
@@ -806,7 +1011,54 @@ function closeReconDetailModal() {
   document.getElementById("modal-backdrop").classList.remove("active");
 }
 
-// Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
-if (typeof module !== "undefined") {
-  module.exports = { matchDistributionsToLedger, cleanRef };
+export {
+  matchDistributionsToLedger,
+  cleanRef,
+  validateLedgerStructure,
+  reconciliationState,
+  loadReconDecisions,
+  setReconDecision,
+  initReconciliationHandlers,
+  exportReconciliationToExcel,
+  findBestColumnMatch,
+  openLedgerMappingModal,
+  closeLedgerMappingModal,
+  applyColumnMappingAndImport,
+  handleLedgerFile,
+  daysBetweenDateStrs,
+  tokenizeForMatch,
+  textSimilarity,
+  attachFuzzyMatchSuggestions,
+  reconcileLedger,
+  renderReconciliation,
+  renderReconciliationTable,
+  applyReconSuggestion,
+  openReconDetailModal,
+  closeReconDetailModal
+};
+
+if (typeof window !== "undefined") {
+  window.matchDistributionsToLedger = matchDistributionsToLedger;
+  window.cleanRef = cleanRef;
+  window.validateLedgerStructure = validateLedgerStructure;
+  window.reconciliationState = reconciliationState;
+  window.loadReconDecisions = loadReconDecisions;
+  window.setReconDecision = setReconDecision;
+  window.initReconciliationHandlers = initReconciliationHandlers;
+  window.exportReconciliationToExcel = exportReconciliationToExcel;
+  window.findBestColumnMatch = findBestColumnMatch;
+  window.openLedgerMappingModal = openLedgerMappingModal;
+  window.closeLedgerMappingModal = closeLedgerMappingModal;
+  window.applyColumnMappingAndImport = applyColumnMappingAndImport;
+  window.handleLedgerFile = handleLedgerFile;
+  window.daysBetweenDateStrs = daysBetweenDateStrs;
+  window.tokenizeForMatch = tokenizeForMatch;
+  window.textSimilarity = textSimilarity;
+  window.attachFuzzyMatchSuggestions = attachFuzzyMatchSuggestions;
+  window.reconcileLedger = reconcileLedger;
+  window.renderReconciliation = renderReconciliation;
+  window.renderReconciliationTable = renderReconciliationTable;
+  window.applyReconSuggestion = applyReconSuggestion;
+  window.openReconDetailModal = openReconDetailModal;
+  window.closeReconDetailModal = closeReconDetailModal;
 }

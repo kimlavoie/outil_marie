@@ -454,16 +454,62 @@ function showToast(message, type = "info", duration = 4000) {
   if (duration > 0) setTimeout(dismiss, duration);
 }
 
-// Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
-if (typeof module !== "undefined") {
-  module.exports = {
-    formatCurrency,
-    generateUid,
-    debounce,
-    calculateDaysCount,
-    getActivityReferences,
-    getRoomsTariffTotal,
-    getReservationRoomLabel,
-    OTHER_ROOM_VALUE
-  };
+export {
+  formatCurrency,
+  escapeHtml,
+  generateUid,
+  debounce,
+  calculateDaysCount,
+  getActivityReferences,
+  getRoomsTariffTotal,
+  OTHER_ROOM_VALUE,
+  getReservationRoomLabel,
+  getRoomColor,
+  buildPaginationBarHtml,
+  renderPaginationBar,
+  setPillGroupActiveEl,
+  setPillGroupActive,
+  initPillToggleEl,
+  initPillToggle,
+  initExclusivePillToggleEl,
+  initExclusivePillToggle,
+  getExclusivePillValueEl,
+  getExclusivePillValue,
+  setExclusivePillValueEl,
+  setExclusivePillValue,
+  buildSearchableSelectHtml,
+  initSearchableSelectEl,
+  maskDateInput,
+  maskPhoneInput,
+  showToast
+};
+
+if (typeof window !== "undefined") {
+  window.formatCurrency = formatCurrency;
+  window.escapeHtml = escapeHtml;
+  window.generateUid = generateUid;
+  window.debounce = debounce;
+  window.calculateDaysCount = calculateDaysCount;
+  window.getActivityReferences = getActivityReferences;
+  window.getRoomsTariffTotal = getRoomsTariffTotal;
+  window.OTHER_ROOM_VALUE = OTHER_ROOM_VALUE;
+  window.getReservationRoomLabel = getReservationRoomLabel;
+  window.getRoomColor = getRoomColor;
+  window.buildPaginationBarHtml = buildPaginationBarHtml;
+  window.renderPaginationBar = renderPaginationBar;
+  window.setPillGroupActiveEl = setPillGroupActiveEl;
+  window.setPillGroupActive = setPillGroupActive;
+  window.initPillToggleEl = initPillToggleEl;
+  window.initPillToggle = initPillToggle;
+  window.initExclusivePillToggleEl = initExclusivePillToggleEl;
+  window.initExclusivePillToggle = initExclusivePillToggle;
+  window.getExclusivePillValueEl = getExclusivePillValueEl;
+  window.getExclusivePillValue = getExclusivePillValue;
+  window.setExclusivePillValueEl = setExclusivePillValueEl;
+  window.setExclusivePillValue = setExclusivePillValue;
+  window.buildSearchableSelectHtml = buildSearchableSelectHtml;
+  window.initSearchableSelectEl = initSearchableSelectEl;
+  window.maskDateInput = maskDateInput;
+  window.maskPhoneInput = maskPhoneInput;
+  window.showToast = showToast;
 }

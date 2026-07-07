@@ -549,8 +549,29 @@ function initBulkActionsHandlers() {
   });
 }
 
-// Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
-if (typeof module !== "undefined") {
-  module.exports = { getActivityStateLabel, getPlanningProgress, ACTIVITY_STATES };
+export {
+  activitiesState,
+  ACTIVITY_STATES,
+  newActivityModalIntent,
+  getActivityStateLabel,
+  getActivityStateBadgeClass,
+  getPlanningProgress,
+  buildProgressBarHtml,
+  renderActivities,
+  updateBulkActionsBar,
+  initBulkActionsHandlers
+};
+
+if (typeof window !== "undefined") {
+  window.activitiesState = activitiesState;
+  window.ACTIVITY_STATES = ACTIVITY_STATES;
+  window.newActivityModalIntent = newActivityModalIntent;
+  window.getActivityStateLabel = getActivityStateLabel;
+  window.getActivityStateBadgeClass = getActivityStateBadgeClass;
+  window.getPlanningProgress = getPlanningProgress;
+  window.buildProgressBarHtml = buildProgressBarHtml;
+  window.renderActivities = renderActivities;
+  window.updateBulkActionsBar = updateBulkActionsBar;
+  window.initBulkActionsHandlers = initBulkActionsHandlers;
 }
 

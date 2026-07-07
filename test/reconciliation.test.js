@@ -1,13 +1,13 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
+import test from "node:test";
+import assert from "node:assert/strict";
 
 // reconciliation.js's matchDistributionsToLedger() calls getFiscalYear/getQuarterNumber as
-// globals (they're plain <script> globals in the browser); wire them up before requiring it.
-const { getFiscalYear, getQuarterNumber, parseLocalDateStr } = require("../js/state.js");
+// globals (they're plain <script> globals in the browser); wire them up before importing it.
+import { getFiscalYear, getQuarterNumber, parseLocalDateStr } from "../js/state.js";
 global.getFiscalYear = getFiscalYear;
 global.getQuarterNumber = getQuarterNumber;
 global.parseLocalDateStr = parseLocalDateStr;
-const { matchDistributionsToLedger } = require("../js/reconciliation.js");
+import { matchDistributionsToLedger, validateLedgerStructure } from "../js/reconciliation.js";
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];
@@ -143,4 +143,26 @@ test("does not suggest a match when neither amount/date nor text are close", () 
   const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
   const unlogged = results.find(r => r.status === "unlogged");
   assert.equal(unlogged.suggestions, undefined);
+});
+
+test("validateLedgerStructure returns valid=true for correct ledger rows", () => {
+  const correctRows = [
+    { "Poste budgétaire": "892-123", "Date versée": "2025-08-01", "Montant courant": -100, "No référence": "RI001" }
+  ];
+  const validation = validateLedgerStructure(correctRows);
+  assert.equal(validation.valid, true);
+});
+
+test("validateLedgerStructure returns valid=false and error details for missing columns", () => {
+  const incorrectRows = [
+    { "Poste budgétaire": "892-123", "Montant courant": -100 } // Missing Date versée
+  ];
+  const validation = validateLedgerStructure(incorrectRows);
+  assert.equal(validation.valid, false);
+  assert.match(validation.error, /Date versée/);
+});
+
+test("validateLedgerStructure returns valid=false for empty ledger file", () => {
+  assert.equal(validateLedgerStructure([]).valid, false);
+  assert.equal(validateLedgerStructure(null).valid, false);
 });

@@ -1,16 +1,16 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
+import test from "node:test";
+import assert from "node:assert/strict";
 
 // computeActivityDiff calls getActivityStateLabel, formatCurrency and EVENT_TYPES as globals
-// (they're plain <script> globals in the browser); wire them up before requiring it.
-const { getActivityStateLabel } = require("../js/activities-render.js");
-const { formatCurrency } = require("../js/utils.js");
-const { EVENT_TYPES } = require("../js/state.js");
+// (they're plain <script> globals in the browser); wire them up before importing it.
+import { getActivityStateLabel } from "../js/activities-render.js";
+import { formatCurrency } from "../js/utils.js";
+import { EVENT_TYPES } from "../js/state.js";
 global.getActivityStateLabel = getActivityStateLabel;
 global.formatCurrency = formatCurrency;
 global.EVENT_TYPES = EVENT_TYPES;
 
-const { timeRangesOverlap, getReservationOccupiedRanges, computeActivityDiff } = require("../js/activities-history.js");
+import { timeRangesOverlap, getReservationOccupiedRanges, computeActivityDiff } from "../js/activities-history.js";
 
 test("timeRangesOverlap detects overlapping windows on the same day", () => {
   assert.equal(timeRangesOverlap("09:00", "12:00", "11:00", "14:00"), true);

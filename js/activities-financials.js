@@ -505,8 +505,35 @@ function autoSaveActivityForm() {
 let activityUndoSnapshotTimer = null;
 const ACTIVITY_UNDO_DEBOUNCE_MS = 800;
 
-// Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
-if (typeof module !== "undefined") {
-  module.exports = { computeActivityFinancials };
+export {
+  computeActivityFinancials,
+  updateSubmissionFinancialSummary,
+  buildPrintActivitySheetHtml,
+  printActivitySheet,
+  generateNextActivityId,
+  openActivityDrawer,
+  openActivityDetailModal,
+  closeActivityDrawer,
+  cancelActivityDrawer,
+  addDistributionRow,
+  updateDistributionTotal,
+  showAutoSaveStatus,
+  autoSaveActivityForm
+};
+
+if (typeof window !== "undefined") {
+  window.computeActivityFinancials = computeActivityFinancials;
+  window.updateSubmissionFinancialSummary = updateSubmissionFinancialSummary;
+  window.buildPrintActivitySheetHtml = buildPrintActivitySheetHtml;
+  window.printActivitySheet = printActivitySheet;
+  window.generateNextActivityId = generateNextActivityId;
+  window.openActivityDrawer = openActivityDrawer;
+  window.openActivityDetailModal = openActivityDetailModal;
+  window.closeActivityDrawer = closeActivityDrawer;
+  window.cancelActivityDrawer = cancelActivityDrawer;
+  window.addDistributionRow = addDistributionRow;
+  window.updateDistributionTotal = updateDistributionTotal;
+  window.showAutoSaveStatus = showAutoSaveStatus;
+  window.autoSaveActivityForm = autoSaveActivityForm;
 }
 

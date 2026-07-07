@@ -1,12 +1,12 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
+import test from "node:test";
+import assert from "node:assert/strict";
 
 // computeActivityFinancials calls appState, getRoomsTariffTotal, getAggregateEventDates,
 // getActiveSalaryRate and getActiveServiceRate as globals (plain <script> globals in the
-// browser); wire them up before requiring it.
-const { getRoomsTariffTotal } = require("../js/utils.js");
-const { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } = require("../js/state.js");
-const { getAggregateEventDates } = require("../js/activities-reservations.js");
+// browser); wire them up before importing it.
+import { getRoomsTariffTotal } from "../js/utils.js";
+import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../js/state.js";
+import { getAggregateEventDates } from "../js/activities-reservations.js";
 global.getRoomsTariffTotal = getRoomsTariffTotal;
 global.getActiveSalaryRate = getActiveSalaryRate;
 global.getActiveSalaryOvertimeRate = getActiveSalaryOvertimeRate;
@@ -22,7 +22,7 @@ global.appState = {
   }
 };
 
-const { computeActivityFinancials } = require("../js/activities-financials.js");
+import { computeActivityFinancials } from "../js/activities-financials.js";
 
 function makeActivity(reservationOverrides) {
   return {

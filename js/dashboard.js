@@ -241,7 +241,9 @@ function renderDashboardCharts() {
   });
 }
 
-// Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
-if (typeof module !== "undefined") {
-  module.exports = { computeDashboardStats };
+export { computeDashboardStats, renderDashboard, renderDashboardCharts };
+if (typeof window !== "undefined") {
+  window.computeDashboardStats = computeDashboardStats;
+  window.renderDashboard = renderDashboard;
+  window.renderDashboardCharts = renderDashboardCharts;
 }

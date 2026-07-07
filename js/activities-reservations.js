@@ -1005,8 +1005,59 @@ function collectFeesFromForm(card) {
     .filter(f => f.description);
 }
 
-// Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
-if (typeof module !== "undefined") {
-  module.exports = { getAggregateEventDates };
+export {
+  getAggregateEventDates,
+  buildRoomSelectItems,
+  initReservationsSection,
+  buildRoomDateTimeFieldHtml,
+  buildDatePeriodFieldHtml,
+  buildTariffParameterOptionsHtml,
+  buildTariffClientTypeOptionsHtml,
+  updateResolvedPriceDisplay,
+  refreshReservationTariffSelect,
+  addSlotRow,
+  collectSlotsFromCard,
+  addNextSlotRow,
+  buildSlotRangeGeneratorHtml,
+  wireSlotRangeGenerator,
+  addReservationCard,
+  collectReservationsFromForm,
+  addStaffRow,
+  updateStaffRowSubtotal,
+  addServiceRow,
+  updateServiceRowSubtotal,
+  addFeeRow,
+  autoAddLinkedStaffAndFees,
+  collectStaffFromForm,
+  collectServicesFromForm,
+  collectFeesFromForm
+};
+
+if (typeof window !== "undefined") {
+  window.getAggregateEventDates = getAggregateEventDates;
+  window.buildRoomSelectItems = buildRoomSelectItems;
+  window.initReservationsSection = initReservationsSection;
+  window.buildRoomDateTimeFieldHtml = buildRoomDateTimeFieldHtml;
+  window.buildDatePeriodFieldHtml = buildDatePeriodFieldHtml;
+  window.buildTariffParameterOptionsHtml = buildTariffParameterOptionsHtml;
+  window.buildTariffClientTypeOptionsHtml = buildTariffClientTypeOptionsHtml;
+  window.updateResolvedPriceDisplay = updateResolvedPriceDisplay;
+  window.refreshReservationTariffSelect = refreshReservationTariffSelect;
+  window.addSlotRow = addSlotRow;
+  window.collectSlotsFromCard = collectSlotsFromCard;
+  window.addNextSlotRow = addNextSlotRow;
+  window.buildSlotRangeGeneratorHtml = buildSlotRangeGeneratorHtml;
+  window.wireSlotRangeGenerator = wireSlotRangeGenerator;
+  window.addReservationCard = addReservationCard;
+  window.collectReservationsFromForm = collectReservationsFromForm;
+  window.addStaffRow = addStaffRow;
+  window.updateStaffRowSubtotal = updateStaffRowSubtotal;
+  window.addServiceRow = addServiceRow;
+  window.updateServiceRowSubtotal = updateServiceRowSubtotal;
+  window.addFeeRow = addFeeRow;
+  window.autoAddLinkedStaffAndFees = autoAddLinkedStaffAndFees;
+  window.collectStaffFromForm = collectStaffFromForm;
+  window.collectServicesFromForm = collectServicesFromForm;
+  window.collectFeesFromForm = collectFeesFromForm;
 }
 

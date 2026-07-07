@@ -1,6 +1,6 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const {
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
   getFiscalYear,
   getQuarterNumber,
   getQuarter,
@@ -10,7 +10,7 @@ const {
   getActiveSalaryOvertimeRate,
   getActiveServiceRate,
   getFlattenedRoomTarifs
-} = require("../js/state.js");
+} from "../js/state.js";
 
 test("getFiscalYear: July onward belongs to the year that just started", () => {
   assert.equal(getFiscalYear("2025-07-01"), "2025-2026");

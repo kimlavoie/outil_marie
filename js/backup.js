@@ -322,54 +322,89 @@ function initBackupHandlers() {
   }
 }
 
+function validateBackupSchema(parsed) {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return { valid: false, error: "Le contenu du fichier n'est pas un objet JSON valide." };
+  }
+  if (!parsed.activities || !Array.isArray(parsed.activities)) {
+    return { valid: false, error: "Le fichier de sauvegarde doit contenir une liste d'activités ('activities')." };
+  }
+  if (parsed.settings) {
+    if (typeof parsed.settings !== "object" || Array.isArray(parsed.settings)) {
+      return { valid: false, error: "La section de configuration ('settings') est invalide." };
+    }
+    if (parsed.settings.rooms && !Array.isArray(parsed.settings.rooms)) {
+      return { valid: false, error: "La configuration des salles ('settings.rooms') doit être une liste." };
+    }
+    if (parsed.settings.salaries && !Array.isArray(parsed.settings.salaries)) {
+      return { valid: false, error: "La configuration des salaires ('settings.salaries') doit être une liste." };
+    }
+    if (parsed.settings.services && !Array.isArray(parsed.settings.services)) {
+      return { valid: false, error: "La configuration des services ('settings.services') doit être une liste." };
+    }
+    if (parsed.settings.accounts && !Array.isArray(parsed.settings.accounts)) {
+      return { valid: false, error: "La configuration des comptes ('settings.accounts') doit être une liste." };
+    }
+  }
+  if (parsed.favorites && !Array.isArray(parsed.favorites)) {
+    return { valid: false, error: "La section des favoris ('favorites') doit être une liste." };
+  }
+  if (parsed.selected_quarters && !Array.isArray(parsed.selected_quarters)) {
+    return { valid: false, error: "La section des trimestres sélectionnés ('selected_quarters') doit être une liste." };
+  }
+  return { valid: true };
+}
+
 function handleJsonBackupFile(file) {
   const reader = new FileReader();
 
   reader.onload = async function (e) {
     try {
       const parsed = JSON.parse(e.target.result);
-      if (parsed.settings && parsed.activities) {
-        if (confirm("La restauration va écraser la base de données actuelle. Continuer ?")) {
-          appState = parsed;
+      const validation = validateBackupSchema(parsed);
+      if (!validation.valid) {
+        showToast("Échec de la validation : " + validation.error, "error", 6000);
+        return;
+      }
 
-          // Sanitize settings on restoration
-          if (!appState.favorites) appState.favorites = [];
-          if (!appState.settings) appState.settings = {};
-          if (!appState.settings.rooms) appState.settings.rooms = [];
-          if (!appState.settings.salaries) appState.settings.salaries = [];
-          if (!appState.settings.services) appState.settings.services = [];
-          if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
-          appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
-          if (isNaN(appState.settings.backup_reminder_days)) {
-            appState.settings.backup_reminder_days = 7;
-          }
+      if (confirm("La restauration va écraser la base de données actuelle. Continuer ?")) {
+        appState = parsed;
 
-          // Sort accounts on restoration
-          if (appState.settings && appState.settings.accounts) {
-            appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
-          }
-
-          // Restored files may predate the pricing-grid/rate-versioning/activity migrations —
-          // run the same migrations loadDatabase() applies on normal startup.
-          migrateRoomsConfig();
-          migrateSalariesConfig();
-          migrateActivities();
-
-          try {
-            if (typeof clearAllActivityVersionsFromDb === "function") {
-              await clearAllActivityVersionsFromDb();
-            }
-          } catch (e) {
-            console.error("Error clearing versions during restore", e);
-          }
-          await saveDatabase();
-          applyTheme(appState.settings.theme || "dark");
-          renderAll();
-          checkBackupReminder();
-          showToast("Base de données restaurée avec succès !", "success");
+        // Sanitize settings on restoration
+        if (!appState.favorites) appState.favorites = [];
+        if (!appState.settings) appState.settings = {};
+        if (!appState.settings.rooms) appState.settings.rooms = [];
+        if (!appState.settings.salaries) appState.settings.salaries = [];
+        if (!appState.settings.services) appState.settings.services = [];
+        if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
+        appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
+        if (isNaN(appState.settings.backup_reminder_days)) {
+          appState.settings.backup_reminder_days = 7;
         }
-      } else {
-        showToast("Fichier de sauvegarde invalide (champs requis manquants).", "error");
+
+        // Sort accounts on restoration
+        if (appState.settings && appState.settings.accounts) {
+          appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
+        }
+
+        // Restored files may predate the pricing-grid/rate-versioning/activity migrations —
+        // run the same migrations loadDatabase() applies on normal startup.
+        migrateRoomsConfig();
+        migrateSalariesConfig();
+        migrateActivities();
+
+        try {
+          if (typeof clearAllActivityVersionsFromDb === "function") {
+            await clearAllActivityVersionsFromDb();
+          }
+        } catch (e) {
+          console.error("Error clearing versions during restore", e);
+        }
+        await saveDatabase();
+        applyTheme(appState.settings.theme || "dark");
+        renderAll();
+        checkBackupReminder();
+        showToast("Base de données restaurée avec succès !", "success");
       }
     } catch (err) {
       showToast("Erreur lors de la lecture du fichier JSON : " + err.message, "error");
@@ -648,4 +683,50 @@ function exportToExcel() {
     console.error(err);
     showToast("Erreur lors de l'export Excel : " + err.message, "error");
   }
+}
+
+export {
+  validateBackupSchema,
+  exportToExcel,
+  openAutoBackupDb,
+  idbGetAutoBackupHandle,
+  idbSetAutoBackupHandle,
+  idbClearAutoBackupHandle,
+  renderAutoBackupStatus,
+  updateAutoBackupBanner,
+  initAutoBackup,
+  connectAutoBackupFile,
+  reconnectAutoBackupPermission,
+  disconnectAutoBackup,
+  scheduleAutoBackupWrite,
+  writeAutoBackupNow,
+  initBackupHandlers,
+  handleJsonBackupFile,
+  getDaysSinceLastBackup,
+  formatLocalDateToFrench,
+  checkBackupReminder,
+  renderBackupView
+};
+
+if (typeof window !== "undefined") {
+  window.validateBackupSchema = validateBackupSchema;
+  window.exportToExcel = exportToExcel;
+  window.openAutoBackupDb = openAutoBackupDb;
+  window.idbGetAutoBackupHandle = idbGetAutoBackupHandle;
+  window.idbSetAutoBackupHandle = idbSetAutoBackupHandle;
+  window.idbClearAutoBackupHandle = idbClearAutoBackupHandle;
+  window.renderAutoBackupStatus = renderAutoBackupStatus;
+  window.updateAutoBackupBanner = updateAutoBackupBanner;
+  window.initAutoBackup = initAutoBackup;
+  window.connectAutoBackupFile = connectAutoBackupFile;
+  window.reconnectAutoBackupPermission = reconnectAutoBackupPermission;
+  window.disconnectAutoBackup = disconnectAutoBackup;
+  window.scheduleAutoBackupWrite = scheduleAutoBackupWrite;
+  window.writeAutoBackupNow = writeAutoBackupNow;
+  window.initBackupHandlers = initBackupHandlers;
+  window.handleJsonBackupFile = handleJsonBackupFile;
+  window.getDaysSinceLastBackup = getDaysSinceLastBackup;
+  window.formatLocalDateToFrench = formatLocalDateToFrench;
+  window.checkBackupReminder = checkBackupReminder;
+  window.renderBackupView = renderBackupView;
 }

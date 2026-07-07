@@ -3,13 +3,13 @@
 // it would otherwise flag every cross-file function/variable reference as an error. Rules here
 // focus on catching real mistakes (typos, unreachable code, unused locals) rather than
 // enforcing a module boundary the app doesn't have.
-module.exports = [
+export default [
   {
     files: ["js/**/*.js"],
     ignores: ["js/lib/**", "**/*.min.js", "**/*.umd.js"],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: "script",
+      sourceType: "module",
       globals: {
         window: "readonly",
         document: "readonly",

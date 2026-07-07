@@ -1083,6 +1083,53 @@
       </div>
     </div>
 
+    <!-- Ledger Column Mapping Modal -->
+    <div id="ledger-mapping-modal" class="modal" style="width: 500px; max-width: 95vw;">
+      <div class="modal-header">
+        <h3 class="modal-title">Associer les colonnes du Grand Livre</h3>
+        <button id="ledger-mapping-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <p style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-secondary);">
+          Certaines colonnes obligatoires n'ont pas été détectées automatiquement. Veuillez associer les champs requis aux colonnes de votre fichier Excel.
+        </p>
+        <form id="ledger-mapping-form">
+          <div class="form-group">
+            <label for="map-poste-budgetaire">Poste budgétaire (Compte) *</label>
+            <select id="map-poste-budgetaire" class="form-input select-input" required></select>
+          </div>
+          <div class="form-group">
+            <label for="map-date-versee">Date versée *</label>
+            <select id="map-date-versee" class="form-input select-input" required></select>
+          </div>
+          <div class="form-group">
+            <label for="map-montant-courant">Montant courant *</label>
+            <select id="map-montant-courant" class="form-input select-input" required></select>
+          </div>
+          <div class="form-group">
+            <label for="map-no-reference">Numéro de référence (optionnel)</label>
+            <select id="map-no-reference" class="form-input select-input"></select>
+          </div>
+          <div class="form-group">
+            <label for="map-nom">Nom de l'auxiliaire (optionnel)</label>
+            <select id="map-nom" class="form-input select-input"></select>
+          </div>
+          <div class="form-group">
+            <label for="map-description">Description (optionnel)</label>
+            <select id="map-description" class="form-input select-input"></select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="ledger-mapping-modal-cancel" class="btn btn-secondary">Annuler</button>
+        <button id="ledger-mapping-modal-submit" class="btn btn-primary">Valider et Importer</button>
+      </div>
+    </div>
+
     <!-- Modal Container Backdrop -->
     <div id="modal-backdrop" class="modal-backdrop"></div>
 
@@ -1476,21 +1523,21 @@
     <div id="print-activity-sheet"></div>
 
     <!-- Application Logic (order matters: each file depends on the ones before it) -->
-    <script src="js/state.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/navigation.js"></script>
-    <script src="js/dashboard.js"></script>
-    <script src="js/activities-render.js"></script>
-    <script src="js/activities-form.js"></script>
-    <script src="js/activities-reservations.js"></script>
-    <script src="js/activities-financials.js"></script>
-    <script src="js/activities-history.js"></script>
-    <script src="js/reconciliation.js"></script>
-    <script src="js/settings.js"></script>
-    <script src="js/backup.js"></script>
-    <script src="js/account-report.js"></script>
-    <script src="js/datepicker.js"></script>
-    <script src="js/calendar.js"></script>
-    <script src="js/main.js"></script>
+    <script type="module" src="js/state.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script src="js/navigation.js" defer></script>
+    <script type="module" src="js/dashboard.js"></script>
+    <script type="module" src="js/activities-render.js"></script>
+    <script src="js/activities-form.js" defer></script>
+    <script type="module" src="js/activities-reservations.js"></script>
+    <script type="module" src="js/activities-financials.js"></script>
+    <script type="module" src="js/activities-history.js"></script>
+    <script type="module" src="js/reconciliation.js"></script>
+    <script src="js/settings.js" defer></script>
+    <script type="module" src="js/backup.js"></script>
+    <script src="js/account-report.js" defer></script>
+    <script src="js/datepicker.js" defer></script>
+    <script src="js/calendar.js" defer></script>
+    <script src="js/main.js" defer></script>
   </body>
 </html>

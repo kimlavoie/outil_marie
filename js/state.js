@@ -1,7 +1,4 @@
-/**
- * state.js - Configuration, global application state, and persistence
- * (loaded first: other modules depend on appState and the period helpers)
- */
+import { calculateDaysCount, generateUid } from './utils.js';
 
 // Embedded default configurations (Seed Data)
 // Builds a single-parameter pricing grid (one row "Tarif" x one column per client type) from
@@ -1245,19 +1242,96 @@ function restoreUiState() {
   if (report.pages) accountReportState.pages = report.pages;
 }
 
-// Exposed to Node's test runner (test/*.test.js); no-op in the browser, where `module` is undefined.
-if (typeof module !== "undefined") {
-  module.exports = {
-    getFiscalYear,
-    getQuarterNumber,
-    getQuarter,
-    getFiscalYearRange,
-    parseLocalDateStr,
-    getActivePricingGrid,
-    getActiveSalaryRate,
-    getActiveSalaryOvertimeRate,
-    getActiveServiceRate,
-    getFlattenedRoomTarifs,
-    EVENT_TYPES
-  };
+export {
+  DEFAULT_CONFIG,
+  TECHNICAL_SERVICES,
+  BAR_DRINK_TYPES,
+  BAR_SERVICE_TYPES,
+  HOST_DUTY_OPTIONS,
+  EVENT_TYPES,
+  appState,
+  isFavoriteActivity,
+  toggleFavoriteActivity,
+  getRecentlyViewedActivityIds,
+  recordActivityView,
+  getFiscalYear,
+  getQuarterNumber,
+  getDefaultFiscalYear,
+  getFiscalYearRange,
+  getQuarter,
+  parseLocalDateStr,
+  formatDateStrLocal,
+  openAppDb,
+  getReconDecisionsFromDb,
+  saveReconDecisionToDb,
+  deleteReconDecisionFromDb,
+  addActivityVersionToDb,
+  getActivityVersionsFromDb,
+  pruneActivityVersions,
+  clearAllActivityVersionsFromDb,
+  getAppStateFromDb,
+  saveAppStateToDb,
+  sanitizeActivitiesList,
+  loadDatabase,
+  migrateRoomsConfig,
+  migrateSalariesConfig,
+  migrateServicesConfig,
+  getActivePricingGrid,
+  getActiveRateVersionField,
+  getActiveSalaryRate,
+  getActiveSalaryOvertimeRate,
+  getActiveServiceRate,
+  getFlattenedRoomTarifs,
+  migrateActivities,
+  seedDatabase,
+  saveDatabase,
+  saveUiState,
+  restoreUiState
+};
+
+if (typeof window !== "undefined") {
+  window.DEFAULT_CONFIG = DEFAULT_CONFIG;
+  window.TECHNICAL_SERVICES = TECHNICAL_SERVICES;
+  window.BAR_DRINK_TYPES = BAR_DRINK_TYPES;
+  window.BAR_SERVICE_TYPES = BAR_SERVICE_TYPES;
+  window.HOST_DUTY_OPTIONS = HOST_DUTY_OPTIONS;
+  window.EVENT_TYPES = EVENT_TYPES;
+  window.appState = appState;
+  window.isFavoriteActivity = isFavoriteActivity;
+  window.toggleFavoriteActivity = toggleFavoriteActivity;
+  window.getRecentlyViewedActivityIds = getRecentlyViewedActivityIds;
+  window.recordActivityView = recordActivityView;
+  window.getFiscalYear = getFiscalYear;
+  window.getQuarterNumber = getQuarterNumber;
+  window.getDefaultFiscalYear = getDefaultFiscalYear;
+  window.getFiscalYearRange = getFiscalYearRange;
+  window.getQuarter = getQuarter;
+  window.parseLocalDateStr = parseLocalDateStr;
+  window.formatDateStrLocal = formatDateStrLocal;
+  window.openAppDb = openAppDb;
+  window.getReconDecisionsFromDb = getReconDecisionsFromDb;
+  window.saveReconDecisionToDb = saveReconDecisionToDb;
+  window.deleteReconDecisionFromDb = deleteReconDecisionFromDb;
+  window.addActivityVersionToDb = addActivityVersionToDb;
+  window.getActivityVersionsFromDb = getActivityVersionsFromDb;
+  window.pruneActivityVersions = pruneActivityVersions;
+  window.clearAllActivityVersionsFromDb = clearAllActivityVersionsFromDb;
+  window.getAppStateFromDb = getAppStateFromDb;
+  window.saveAppStateToDb = saveAppStateToDb;
+  window.sanitizeActivitiesList = sanitizeActivitiesList;
+  window.loadDatabase = loadDatabase;
+  window.migrateRoomsConfig = migrateRoomsConfig;
+  window.migrateSalariesConfig = migrateSalariesConfig;
+  window.migrateServicesConfig = migrateServicesConfig;
+  window.getActivePricingGrid = getActivePricingGrid;
+  window.getActiveRateVersionField = getActiveRateVersionField;
+  window.getActiveSalaryRate = getActiveSalaryRate;
+  window.getActiveSalaryOvertimeRate = getActiveSalaryOvertimeRate;
+  window.getActiveServiceRate = getActiveServiceRate;
+  window.getFlattenedRoomTarifs = getFlattenedRoomTarifs;
+  window.migrateActivities = migrateActivities;
+  window.seedDatabase = seedDatabase;
+  window.saveDatabase = saveDatabase;
+  window.saveUiState = saveUiState;
+  window.restoreUiState = restoreUiState;
 }

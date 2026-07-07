@@ -1,14 +1,14 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
+import test from "node:test";
+import assert from "node:assert/strict";
 
 // dashboard.js's computeDashboardStats() calls getFiscalYear/getQuarterNumber/getRoomsTariffTotal
-// as globals (they're plain <script> globals in the browser); wire them up before requiring it.
-const { getFiscalYear, getQuarterNumber } = require("../js/state.js");
-const { getRoomsTariffTotal } = require("../js/utils.js");
+// as globals (they're plain <script> globals in the browser); wire them up before importing it.
+import { getFiscalYear, getQuarterNumber } from "../js/state.js";
+import { getRoomsTariffTotal } from "../js/utils.js";
 global.getFiscalYear = getFiscalYear;
 global.getQuarterNumber = getQuarterNumber;
 global.getRoomsTariffTotal = getRoomsTariffTotal;
-const { computeDashboardStats } = require("../js/dashboard.js");
+import { computeDashboardStats } from "../js/dashboard.js";
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];
