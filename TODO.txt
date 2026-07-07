@@ -184,7 +184,7 @@ Ordre suggéré :
      taille : 3792 lignes sur 7 fichiers, l'entité centrale de l'app) :
        a. Datepicker — TERMINÉ (js/datepicker.ts)
        b. Liens de fichiers — TERMINÉ (js/activities-file-links.ts)
-       c. Historique (581 lignes)
+       c. Historique — TERMINÉ (js/activities-history.ts)
        d. Financier (545 lignes)
        e. Rendu/liste (577 lignes)
        f. Formulaire (672 lignes)
@@ -302,6 +302,41 @@ Activités b. Liens de fichiers (js/activities-file-links.ts) — détails
   défaut de TypeScript.
 - Validé : 98/98 tests, tsc propre, lint 11 warnings, vite build (33
   modules, dist/ complet, aucun 404), vite dev (résout en 200).
+
+Activités c. Historique (js/activities-history.ts) — détails
+- Même raisonnement que Datepicker/Liens de fichiers pour le choix
+  "module TS classique, pas de vue React" : manipule directement le
+  formulaire/tiroir d'activité pas encore converti.
+- BUG PRÉ-EXISTANT DÉCOUVERT ET CORRIGÉ (indépendant de la migration,
+  révélé par le passage en vrais imports ES) : trois variables
+  (activityUndoSnapshotTimer, ACTIVITY_UNDO_DEBOUNCE_MS dans
+  activities-financials.js ; ACTIVITY_UNDO_HISTORY_LIMIT dans
+  activities-render.js) étaient référencées comme globals bruts depuis
+  activities-history.js sans jamais être exportées ni pontées sur window.
+  Vérifié empiriquement (reproduction Node) : une référence à un
+  identifiant module-scope d'un AUTRE module ES, sans import ni pont
+  window, lève une vraie ReferenceError — contrairement aux fonctions
+  déjà pontées (ex. scheduleActivityUndoSnapshot), qui elles fonctionnent
+  parce que `window.X = X` rend X résolvable comme global brut depuis
+  n'importe où. Concrètement : le mécanisme de debounce de l'historique
+  Ctrl+Z/Ctrl+Y plantait probablement à chaque autosauvegarde d'activité,
+  et la limite de 50 versions d'annulation n'était jamais appliquée.
+  Corrigé en exportant ces trois valeurs (+ un setter pour
+  activityUndoSnapshotTimer, puisqu'un import ES ne donne qu'une vue en
+  lecture seule d'un `let` exporté — on ne peut pas réassigner directement
+  le binding importé) et en important proprement dans activities-history.ts.
+- Tous les autres imports (appState, activitiesState, reconciliationState,
+  collectReservationsFromForm, etc.) convertis en vrais imports ES plutôt
+  que des globals bruts, pour les modules qui les exportaient déjà.
+- test/activities-history.test.js simplifié : les faux globals
+  (global.getActivityStateLabel = ...) ne sont plus nécessaires puisque
+  le fichier importe maintenant directement ce dont il a besoin.
+- Validé : 98/98 tests (7 sur ce fichier), tsc propre, lint 9 warnings,
+  vite build (33 modules, dist/ complet, aucun 404), vite dev (résout en
+  200).
+[ ] Validation manuelle à prioriser (à faire par vous, `npm run dev`) :
+    éditer une activité plusieurs fois de suite et vérifier Ctrl+Z/Ctrl+Y
+    (annuler/rétablir) — c'est le chemin qui était cassé.
 
 Phase 5 — Nettoyage
 -----------------------------------------------------------------

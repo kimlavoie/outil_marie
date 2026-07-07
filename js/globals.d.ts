@@ -29,6 +29,25 @@ import type {
 } from "./datepicker.ts";
 import type { renderFileLinkStatus, pickAndLinkFile, openLinkedFile } from "./activities-file-links.ts";
 import type {
+  timeRangesOverlap,
+  getReservationOccupiedRanges,
+  computeActivityDiff,
+  scheduleActivityUndoSnapshot,
+  pushActivityUndoSnapshot,
+  restoreActivitySnapshot,
+  undoActivityFormChange,
+  redoActivityFormChange,
+  submitActivityForm,
+  initActivitiesSort,
+  updateFormDatesHelper,
+  checkRoomReservationConflicts,
+  getDaysOfWeekInRange,
+  formatTimestampToFrench,
+  saveActivityVersion,
+  loadAndRenderActivityHistory,
+  restoreActivityVersion
+} from "./activities-history.ts";
+import type {
   formatCurrency,
   escapeHtml,
   generateUid,
@@ -132,6 +151,23 @@ declare global {
     openLinkedFile: typeof openLinkedFile;
     // File System Access API (Chrome/Edge only) — not yet in TS's default DOM lib types.
     showOpenFilePicker?: () => Promise<any[]>;
+    timeRangesOverlap: typeof timeRangesOverlap;
+    getReservationOccupiedRanges: typeof getReservationOccupiedRanges;
+    computeActivityDiff: typeof computeActivityDiff;
+    scheduleActivityUndoSnapshot: typeof scheduleActivityUndoSnapshot;
+    pushActivityUndoSnapshot: typeof pushActivityUndoSnapshot;
+    restoreActivitySnapshot: typeof restoreActivitySnapshot;
+    undoActivityFormChange: typeof undoActivityFormChange;
+    redoActivityFormChange: typeof redoActivityFormChange;
+    submitActivityForm: typeof submitActivityForm;
+    initActivitiesSort: typeof initActivitiesSort;
+    updateFormDatesHelper: typeof updateFormDatesHelper;
+    checkRoomReservationConflicts: typeof checkRoomReservationConflicts;
+    getDaysOfWeekInRange: typeof getDaysOfWeekInRange;
+    formatTimestampToFrench: typeof formatTimestampToFrench;
+    saveActivityVersion: typeof saveActivityVersion;
+    loadAndRenderActivityHistory: typeof loadAndRenderActivityHistory;
+    restoreActivityVersion: typeof restoreActivityVersion;
   }
 
   // populateDropdowns is a plain top-level function declaration in navigation.js (a non-module

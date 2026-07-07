@@ -513,6 +513,13 @@ function autoSaveActivityForm() {
 let activityUndoSnapshotTimer = null;
 const ACTIVITY_UNDO_DEBOUNCE_MS = 800;
 
+// ES modules only give importers a read-only live view of an exported `let` — activities-history.js
+// needs to actually reassign activityUndoSnapshotTimer (see scheduleActivityUndoSnapshot), so it
+// goes through this setter instead of assigning the imported binding directly.
+function setActivityUndoSnapshotTimer(timer) {
+  activityUndoSnapshotTimer = timer;
+}
+
 export {
   computeActivityFinancials,
   updateSubmissionFinancialSummary,
@@ -526,7 +533,10 @@ export {
   addDistributionRow,
   updateDistributionTotal,
   showAutoSaveStatus,
-  autoSaveActivityForm
+  autoSaveActivityForm,
+  activityUndoSnapshotTimer,
+  ACTIVITY_UNDO_DEBOUNCE_MS,
+  setActivityUndoSnapshotTimer
 };
 
 if (typeof window !== "undefined") {

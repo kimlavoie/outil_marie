@@ -552,6 +552,7 @@ function initBulkActionsHandlers() {
 export {
   activitiesState,
   ACTIVITY_STATES,
+  ACTIVITY_UNDO_HISTORY_LIMIT,
   newActivityModalIntent,
   getActivityStateLabel,
   getActivityStateBadgeClass,
@@ -565,6 +566,7 @@ export {
 if (typeof window !== "undefined") {
   window.activitiesState = activitiesState;
   window.ACTIVITY_STATES = ACTIVITY_STATES;
+  window.ACTIVITY_UNDO_HISTORY_LIMIT = ACTIVITY_UNDO_HISTORY_LIMIT;
   window.newActivityModalIntent = newActivityModalIntent;
   window.getActivityStateLabel = getActivityStateLabel;
   window.getActivityStateBadgeClass = getActivityStateBadgeClass;

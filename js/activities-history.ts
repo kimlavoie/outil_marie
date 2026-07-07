@@ -1,17 +1,45 @@
 /**
- * activities-history.js - Undo/redo snapshot stack, form submission, sort
+ * activities-history.ts - Undo/redo snapshot stack, form submission, sort
  * init, room-conflict detection, and version history/diff.
  * Part 5/5 of the activities module (see activities-render.js for context).
+ *
+ * Renders/manipulates the not-yet-converted activity drawer/form (js/activities-form.js) directly
+ * — like js/datepicker.ts and js/activities-file-links.ts, this stays a plain TS module rather
+ * than a React component until that form gets its own turn in Phase 4.
  */
+import { appState, parseLocalDateStr, EVENT_TYPES, saveDatabase, getActivityVersionsFromDb, addActivityVersionToDb, pruneActivityVersions } from "./state.js";
+import { showToast, escapeHtml, formatCurrency, OTHER_ROOM_VALUE } from "./utils.ts";
+import { requireNonEmpty } from "./validation.ts";
+import { logError } from "./logger.ts";
+import { reconciliationState, reconcileLedger } from "./reconciliation.js";
+import { collectReservationsFromForm, getAggregateEventDates } from "./activities-reservations.js";
+import {
+  activitiesState,
+  ACTIVITY_UNDO_HISTORY_LIMIT,
+  renderActivities,
+  getActivityStateLabel,
+  getActivityStateBadgeClass
+} from "./activities-render.js";
+import {
+  autoSaveActivityForm,
+  closeActivityDrawer,
+  activityUndoSnapshotTimer,
+  ACTIVITY_UNDO_DEBOUNCE_MS,
+  setActivityUndoSnapshotTimer
+} from "./activities-financials.js";
 
+// Groups every autosave from one continuous edit into a single undo step (see
+// activities-financials.js's ACTIVITY_UNDO_DEBOUNCE_MS doc comment for why).
 function scheduleActivityUndoSnapshot(idx) {
   clearTimeout(activityUndoSnapshotTimer);
-  activityUndoSnapshotTimer = setTimeout(() => {
-    const act = appState.activities[idx];
-    // Skip if the drawer has since closed or moved on to a different activity.
-    if (!act || document.getElementById("form-activity-internal-id").value !== act.id) return;
-    pushActivityUndoSnapshot(act);
-  }, ACTIVITY_UNDO_DEBOUNCE_MS);
+  setActivityUndoSnapshotTimer(
+    setTimeout(() => {
+      const act = appState.activities[idx];
+      // Skip if the drawer has since closed or moved on to a different activity.
+      if (!act || (document.getElementById("form-activity-internal-id") as HTMLInputElement).value !== act.id) return;
+      pushActivityUndoSnapshot(act);
+    }, ACTIVITY_UNDO_DEBOUNCE_MS)
+  );
 }
 
 // Records the activity's current state onto the undo stack (Ctrl+Z).
@@ -71,8 +99,8 @@ function redoActivityFormChange() {
 function submitActivityForm(e) {
   if (e) e.preventDefault();
 
-  const internalId = document.getElementById("form-activity-internal-id").value;
-  const name = document.getElementById("form-activity-name").value.trim();
+  const internalId = (document.getElementById("form-activity-internal-id") as HTMLInputElement).value;
+  const name = (document.getElementById("form-activity-name") as HTMLInputElement).value.trim();
   const nameError = requireNonEmpty(name, "Le nom de l'activité ne peut pas être vide.");
   if (nameError) {
     showToast(nameError, "warning");
@@ -177,7 +205,7 @@ function checkRoomReservationConflicts(reservations) {
   const bannerEl = document.getElementById("form-activity-room-conflicts");
   if (!bannerEl) return;
 
-  const currentId = document.getElementById("form-activity-internal-id").value;
+  const currentId = (document.getElementById("form-activity-internal-id") as HTMLInputElement).value;
   const conflicts = []; // {roomName, otherActivityName}
 
   reservations.forEach(res => {
@@ -233,7 +261,7 @@ function getDaysOfWeekInRange(startDateStr, endDateStr) {
   // French day names
   const dayNames = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
-  const uniqueDays = new Set();
+  const uniqueDays = new Set<number>();
   let current = new Date(start);
 
   // Limit loop to prevent freezing if dates are extremely far apart (e.g. max 31 days)
@@ -402,7 +430,7 @@ async function loadAndRenderActivityHistory(activityId) {
   try {
     const versions = await getActivityVersionsFromDb(activityId);
     // Sort versions by timestamp descending (most recent first)
-    versions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    versions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     if (versions.length === 0) {
       container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 4px;">Aucune version enregistrée pour cette activité.</div>`;
@@ -509,7 +537,7 @@ async function loadAndRenderActivityHistory(activityId) {
 }
 
 function restoreActivityVersion(versionRecord) {
-  const currentId = document.getElementById("form-activity-internal-id").value;
+  const currentId = (document.getElementById("form-activity-internal-id") as HTMLInputElement).value;
   if (!currentId) return;
 
   const idx = appState.activities.findIndex(a => a.id === currentId);
