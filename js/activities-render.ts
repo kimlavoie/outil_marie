@@ -1,10 +1,35 @@
 /**
- * activities-render.js - Activities list view: table state, filtering/sorting,
+ * activities-render.ts - Activities list view: table state, filtering/sorting,
  * row rendering, and bulk selection actions.
  * Part 1/5 of the activities module (split from a single 3400-line file for
  * maintainability); see activities-form.js, activities-reservations.js,
  * activities-financials.js, activities-history.js for the rest.
+ *
+ * Looks like a self-contained view at first glance, but its search/filter inputs are actually
+ * wired from the not-yet-converted js/activities-form.js (resetActivitiesPageAndRender), and their
+ * values are read directly by js/state.js's saveUiState()/restoreUiState() for persistence. A real
+ * React conversion here would need to touch both of those before their own turn in Phase 4, so —
+ * like js/datepicker.ts, js/activities-file-links.ts, js/activities-history.ts and
+ * js/activities-financials.ts — this stays a plain TS module for now.
  */
+import { appState, getFiscalYear, getQuarterNumber, parseLocalDateStr, saveDatabase, saveUiState, isFavoriteActivity, toggleFavoriteActivity } from "./state.js";
+import {
+  getReservationRoomLabel,
+  getActivityReferences,
+  getRoomsTariffTotal,
+  escapeHtml,
+  formatCurrency,
+  calculateDaysCount,
+  renderPaginationBar
+} from "./utils.ts";
+import { reconciliationState, reconcileLedger } from "./reconciliation.js";
+import { openActivityDrawer } from "./activities-financials.ts";
+
+// Typed shorthand for document.getElementById in this file's DOM-manipulation code — see
+// activities-financials.ts's `el` helper doc comment for why this cast is needed/safe.
+function el<T extends Element = HTMLInputElement>(id: string): T {
+  return document.getElementById(id) as unknown as T;
+}
 
 // Activities view UI state, grouped so the module's moving parts live in one place
 let activitiesState = {
@@ -22,7 +47,11 @@ let activitiesState = {
   // deep snapshot of the activity record taken right after a successful auto-save. Reset whenever
   // the drawer opens/closes so history never leaks between activities.
   undoStack: [],
-  redoStack: []
+  redoStack: [],
+  // {refDate, viewMode} snapshot of the calendar the drawer was opened from (see
+  // activities-financials.ts's openActivityDrawer), so the "back to calendar" button can restore
+  // it. Not in the initial shape at declaration time in the original .js — TS needs it upfront.
+  calendarReturn: null
 };
 
 const ACTIVITY_UNDO_HISTORY_LIMIT = 50;
@@ -82,11 +111,11 @@ function buildProgressBarHtml(percent) {
 
 function renderActivities() {
   saveUiState();
-  const tbody = document.getElementById("activities-table-body");
-  const searchQuery = document.getElementById("activity-search").value.toLowerCase();
-  const filterSalle = document.getElementById("filter-salle").value;
-  const filterClientType = document.getElementById("filter-client-type").value;
-  const filterStatus = document.getElementById("filter-status")?.value || "";
+  const tbody = el("activities-table-body");
+  const searchQuery = el("activity-search").value.toLowerCase();
+  const filterSalle = el("filter-salle").value;
+  const filterClientType = el("filter-client-type").value;
+  const filterStatus = el("filter-status")?.value || "";
 
   tbody.innerHTML = "";
 
@@ -169,13 +198,13 @@ function renderActivities() {
     if (typeof valA === "string" && typeof valB === "string") {
       return activitiesState.sortOrder === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
     } else {
-      return activitiesState.sortOrder === "asc" ? valA - valB : valB - valA;
+      return activitiesState.sortOrder === "asc" ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
     }
   });
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="11" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucune activité trouvée. Cliquez sur "+ Nouvelle Activité" pour en créer une.</td></tr>`;
-    renderPaginationBar(document.getElementById("activities-pagination"), {
+    renderPaginationBar(el("activities-pagination"), {
       page: activitiesState.page,
       pageSize: activitiesState.pageSize,
       totalItems: 0,
@@ -185,7 +214,7 @@ function renderActivities() {
     return;
   }
 
-  activitiesState.page = renderPaginationBar(document.getElementById("activities-pagination"), {
+  activitiesState.page = renderPaginationBar(el("activities-pagination"), {
     page: activitiesState.page,
     pageSize: activitiesState.pageSize,
     totalItems: filtered.length,
@@ -335,7 +364,7 @@ function renderActivities() {
   });
 
   // Attach checkbox change event listeners
-  document.querySelectorAll(".activity-select-checkbox").forEach(cb => {
+  document.querySelectorAll<HTMLInputElement>(".activity-select-checkbox").forEach(cb => {
     cb.addEventListener("change", e => {
       const id = cb.getAttribute("data-id");
       if (cb.checked) {
@@ -410,9 +439,9 @@ function renderActivities() {
 }
 
 function updateBulkActionsBar() {
-  const bar = document.getElementById("bulk-actions-bar");
-  const countSpan = document.getElementById("bulk-selected-count");
-  const selectAllCheckbox = document.getElementById("activities-select-all");
+  const bar = el("bulk-actions-bar");
+  const countSpan = el("bulk-selected-count");
+  const selectAllCheckbox = el("activities-select-all");
 
   const selectedCount = activitiesState.selectedIds.size;
 
@@ -431,7 +460,7 @@ function updateBulkActionsBar() {
 
   // Update the select-all checkbox state based on visible rows
   if (selectAllCheckbox) {
-    const checkboxes = document.querySelectorAll(".activity-select-checkbox");
+    const checkboxes = document.querySelectorAll<HTMLInputElement>(".activity-select-checkbox");
     if (checkboxes.length > 0) {
       const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
       if (checkedCount === 0) {
@@ -452,11 +481,11 @@ function updateBulkActionsBar() {
 }
 
 function initBulkActionsHandlers() {
-  const selectAllCheckbox = document.getElementById("activities-select-all");
+  const selectAllCheckbox = el("activities-select-all");
   if (selectAllCheckbox) {
     selectAllCheckbox.addEventListener("change", e => {
-      const checkboxes = document.querySelectorAll(".activity-select-checkbox");
-      const isChecked = e.target.checked;
+      const checkboxes = document.querySelectorAll<HTMLInputElement>(".activity-select-checkbox");
+      const isChecked = (e.target as HTMLInputElement).checked;
       checkboxes.forEach(cb => {
         const id = cb.getAttribute("data-id");
         cb.checked = isChecked;
@@ -473,7 +502,7 @@ function initBulkActionsHandlers() {
   }
 
   // Clear selections button
-  const clearBtn = document.getElementById("bulk-clear-btn");
+  const clearBtn = el("bulk-clear-btn");
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
       activitiesState.selectedIds.clear();
@@ -482,7 +511,7 @@ function initBulkActionsHandlers() {
   }
 
   // Delete bulk button
-  const deleteBtn = document.getElementById("bulk-delete-btn");
+  const deleteBtn = el("bulk-delete-btn");
   if (deleteBtn) {
     deleteBtn.addEventListener("click", () => {
       const count = activitiesState.selectedIds.size;
@@ -506,8 +535,8 @@ function initBulkActionsHandlers() {
   }
 
   // State bulk dropdown toggle
-  const stateBtn = document.getElementById("bulk-state-btn");
-  const stateMenu = document.getElementById("bulk-state-menu");
+  const stateBtn = el("bulk-state-btn");
+  const stateMenu = el("bulk-state-menu");
   if (stateBtn && stateMenu) {
     stateBtn.addEventListener("click", e => {
       e.stopPropagation();
@@ -541,9 +570,9 @@ function initBulkActionsHandlers() {
 
   // Close dropdown on click outside
   document.addEventListener("click", e => {
-    const stateMenu = document.getElementById("bulk-state-menu");
-    const stateBtn = document.getElementById("bulk-state-btn");
-    if (stateMenu && stateBtn && !stateBtn.contains(e.target) && !stateMenu.contains(e.target)) {
+    const stateMenu = el("bulk-state-menu");
+    const stateBtn = el("bulk-state-btn");
+    if (stateMenu && stateBtn && !stateBtn.contains(e.target as Node) && !stateMenu.contains(e.target as Node)) {
       stateMenu.classList.add("hidden");
     }
   });

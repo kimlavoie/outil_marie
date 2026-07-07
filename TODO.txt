@@ -186,7 +186,7 @@ Ordre suggéré :
        b. Liens de fichiers — TERMINÉ (js/activities-file-links.ts)
        c. Historique — TERMINÉ (js/activities-history.ts)
        d. Financier — TERMINÉ (js/activities-financials.ts)
-       e. Rendu/liste (577 lignes)
+       e. Rendu/liste — TERMINÉ (js/activities-render.ts)
        f. Formulaire (672 lignes)
        g. Réservations (1063 lignes, le plus gros, en dernier)
   5. Rapprochement GL (le plus complexe, migré en dernier, avec le plus
@@ -363,6 +363,32 @@ Activités d. Financier (js/activities-financials.ts) — détails
 - Validé : 98/98 tests (8 sur ce fichier), tsc propre, lint 9 warnings,
   vite build (33 modules, dist/ complet, aucun 404), vite dev (résout en
   200).
+
+Activités e. Rendu/liste (js/activities-render.ts) — détails
+- Ce fichier ressemblait à une vue autonome (table + barre d'outils +
+  pagination + actions groupées, comme Tableau de bord/Paramètres/
+  Calendrier), mais ses champs de recherche/filtres sont câblés depuis
+  activities-form.js (pas encore converti, resetActivitiesPageAndRender)
+  et leurs valeurs sont lues directement par state.js
+  (saveUiState/restoreUiState) pour la persistance. Une vraie conversion
+  React ici aurait dû toucher ces deux fichiers avant leur tour — donc
+  même choix que les 4 précédents : module TS classique, pas de vue React.
+- Deuxième import circulaire du projet (le premier étant
+  activities-financials.ts <-> activities-history.ts) :
+  activities-render.ts importe openActivityDrawer depuis
+  activities-financials.ts, qui importe lui-même activitiesState/
+  renderActivities depuis activities-render.ts. Revérifié sans problème
+  à l'exécution (98/98 tests, build, dev).
+- ACTIVITY_UNDO_HISTORY_LIMIT (déjà exporté lors du correctif du bug de
+  la Phase Historique) réutilisé tel quel.
+- Ajout d'un champ calendarReturn: null manquant dans l'état initial de
+  activitiesState (assigné dynamiquement par activities-financials.ts
+  mais absent du literal d'origine — invisible en JS pur, mais
+  TypeScript exige que la forme soit déclarée d'avance).
+- Même helper typé el<T>(id) que activities-financials.ts pour les ~17
+  document.getElementById(...) du fichier.
+- Validé : 98/98 tests, tsc propre, lint 9 warnings (inchangé), vite
+  build (33 modules, dist/ complet, aucun 404), vite dev (résout en 200).
 
 Phase 5 — Nettoyage
 -----------------------------------------------------------------

@@ -19,7 +19,7 @@ import {
   renderActivities,
   getActivityStateLabel,
   getActivityStateBadgeClass
-} from "./activities-render.js";
+} from "./activities-render.ts";
 import {
   autoSaveActivityForm,
   closeActivityDrawer,

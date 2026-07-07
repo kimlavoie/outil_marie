@@ -16,7 +16,7 @@ import { clearDateFieldErrors } from "./datepicker.ts";
 import { appState, saveDatabase, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate, recordActivityView } from "./state.js";
 import { formatCurrency, escapeHtml, getReservationRoomLabel, getRoomsTariffTotal, showLoadingOverlay, hideLoadingOverlay, showToast } from "./utils.ts";
 import { isNonEmptyString } from "./validation.ts";
-import { activitiesState, renderActivities } from "./activities-render.js";
+import { activitiesState, renderActivities } from "./activities-render.ts";
 import {
   collectReservationsFromForm,
   getAggregateEventDates,
