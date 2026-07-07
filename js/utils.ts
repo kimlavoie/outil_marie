@@ -1,5 +1,5 @@
 /**
- * utils.js - Generic, stateless helpers shared across views
+ * utils.ts - Generic, stateless helpers shared across views
  * (depends on state.js for appState/parseLocalDateStr)
  */
 
@@ -36,8 +36,8 @@ function calculateDaysCount(startStr, endStr) {
   if (!startStr || !endStr) return 1;
   const start = new Date(startStr);
   const end = new Date(endStr);
-  if (isNaN(start) || isNaN(end)) return 1;
-  const diffTime = end - start;
+  if (isNaN(Number(start)) || isNaN(Number(end))) return 1;
+  const diffTime = end.getTime() - start.getTime();
   if (diffTime < 0) return 1;
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 }
@@ -317,7 +317,7 @@ function initSearchableSelectEl(wrapper, items, onChange, initialValue = "") {
   );
 
   input.addEventListener("keydown", e => {
-    const options = Array.from(resultsPanel.querySelectorAll(".searchable-select-option"));
+    const options = Array.from(resultsPanel.querySelectorAll(".searchable-select-option")) as HTMLElement[];
     if (!resultsPanel.classList.contains("active") || options.length === 0) return;
 
     if (e.key === "ArrowDown") {

@@ -1,5 +1,5 @@
 /**
- * db-utils.js - Shared helper for opening a versioned IndexedDB database.
+ * db-utils.ts - Shared helper for opening a versioned IndexedDB database.
  *
  * All local IndexedDB stores previously opened with a hardcoded version (1) and no upgrade
  * path beyond "create the store if missing". That works for the very first schema, but the
@@ -8,7 +8,7 @@
  * `event.oldVersion`, so future schema changes can be added as `if (oldVersion < N)` blocks
  * without disturbing data written under earlier versions.
  */
-import { logError } from "./logger.js";
+import { logError } from "./logger.ts";
 
 // Opens `name` at `version`, calling `upgrade(db, oldVersion, newVersion)` inside the
 // browser-managed upgrade transaction whenever the stored version is behind. `upgrade` should

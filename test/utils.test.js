@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateDaysCount, getRoomsTariffTotal, getActivityReferences } from "../js/utils.js";
+import { calculateDaysCount, getRoomsTariffTotal, getActivityReferences } from "../js/utils.ts";
 
 test("calculateDaysCount counts both endpoints inclusively", () => {
   assert.equal(calculateDaysCount("2025-01-01", "2025-01-05"), 5);

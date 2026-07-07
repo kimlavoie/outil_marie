@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 // Mock the required globals before importing/executing state migrations
-import { generateUid, calculateDaysCount } from "../js/utils.js";
+import { generateUid, calculateDaysCount } from "../js/utils.ts";
 global.generateUid = generateUid;
 global.calculateDaysCount = calculateDaysCount;
 

@@ -2,9 +2,9 @@
  * reconciliation.js - Ledger import and the reconciliation ("Rapprochement
  * Comptable") engine and view
  */
-import { validateRules } from "./validation.js";
-import { logError } from "./logger.js";
-import { tokenizeForMatch, textSimilarity } from "./fuzzy-match.js";
+import { validateRules } from "./validation.ts";
+import { logError } from "./logger.ts";
+import { tokenizeForMatch, textSimilarity } from "./fuzzy-match.ts";
 
 // Reconciliation view/engine state, grouped so ledger data and UI state live together
 let reconciliationState = {

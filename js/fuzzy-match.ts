@@ -1,5 +1,5 @@
 ﻿/**
- * fuzzy-match.js - Lightweight fuzzy text matching shared by the reconciliation engine and the
+ * fuzzy-match.ts - Lightweight fuzzy text matching shared by the reconciliation engine and the
  * global search bar, so both tolerate typos/word order instead of requiring an exact substring.
  */
 

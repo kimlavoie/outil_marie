@@ -1,5 +1,5 @@
 /**
- * logger.js - Structured logging helper shared across modules.
+ * logger.ts - Structured logging helper shared across modules.
  *
  * Every entry carries a module name, an action, and optional contextual data so
  * that a bug report ("ça a planté pendant l'export") can be traced back to

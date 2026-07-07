@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 // computeActivityDiff calls getActivityStateLabel, formatCurrency and EVENT_TYPES as globals
 // (they're plain <script> globals in the browser); wire them up before importing it.
 import { getActivityStateLabel } from "../js/activities-render.js";
-import { formatCurrency } from "../js/utils.js";
+import { formatCurrency } from "../js/utils.ts";
 import { EVENT_TYPES } from "../js/state.js";
 global.getActivityStateLabel = getActivityStateLabel;
 global.formatCurrency = formatCurrency;

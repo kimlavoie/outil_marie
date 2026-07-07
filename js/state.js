@@ -1,8 +1,8 @@
-import { calculateDaysCount, generateUid } from "./utils.js";
-import { openVersionedDb } from "./db-utils.js";
-import { logError } from "./logger.js";
+import { calculateDaysCount, generateUid } from "./utils.ts";
+import { openVersionedDb } from "./db-utils.ts";
+import { logError } from "./logger.ts";
 
-import { DEFAULT_CONFIG } from "./config-defaults.js";
+import { DEFAULT_CONFIG } from "./config-defaults.ts";
 
 // Free technical services (no fee): paid technical items (location de projecteur, piano à
 // queue, projecteur / équipement informatique) live in appState.settings.services instead, so

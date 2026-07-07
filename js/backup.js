@@ -1,9 +1,9 @@
 /**
  * backup.js - Backup/restore (JSON) and Excel export controllers
  */
-import { isPlainObject, validateRules } from "./validation.js";
-import { logError } from "./logger.js";
-import { openVersionedDb } from "./db-utils.js";
+import { isPlainObject, validateRules } from "./validation.ts";
+import { logError } from "./logger.ts";
+import { openVersionedDb } from "./db-utils.ts";
 
 // --- Automatic file backup (File System Access API) ---
 // Keeps the localStorage database as the single source of truth; this only

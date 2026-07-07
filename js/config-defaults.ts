@@ -1,5 +1,5 @@
 /**
- * config-defaults.js - Embedded default configuration (seed data) used the first time the
+ * config-defaults.ts - Embedded default configuration (seed data) used the first time the
  * app runs, before any settings have been customized.
  */
 

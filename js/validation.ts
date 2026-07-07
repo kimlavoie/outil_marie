@@ -1,5 +1,5 @@
 /**
- * validation.js - Shared, generic validation primitives used by forms and
+ * validation.ts - Shared, generic validation primitives used by forms and
  * import/export shape checks across the app, so every module doesn't have to
  * reinvent "is this a non-empty string" or "is this a valid amount".
  */

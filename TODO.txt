@@ -4,7 +4,38 @@ MIGRATION VITE + REACT + TYPESCRIPT — PLAN PAR ÉTAPES
 Contexte : une tentative précédente de migration "big bang" (tout réécrit
 d'un coup) a échoué. Ce plan est conçu pour qu'à CHAQUE commit sur main,
 l'app reste 100% fonctionnelle. L'app doit continuer d'être servie depuis
-la racine (hébergement type GitHub Pages / Netlify, pas de sous-dossier).
+la racine (hébergement type GitHub Pages / Netlify).
+Précision (voir "Déploiement" plus bas) : hébergée sur l'URL par défaut
+GitHub Pages (kimlavoie.github.io/outil_marie/), donc dans le sous-dossier
+/outil_marie/, pas la racine du domaine — `base` dans vite.config.js est
+réglé en conséquence.
+
+Notes opérationnelles
+---------------------
+- Un serveur statique générique (Live Server ou équivalent) ne peut plus
+  être pointé sur la racine du projet source une fois du vrai TypeScript
+  introduit (Phase 2) : il ne transpile rien et ne connaît pas le bon type
+  MIME pour .ts (souvent mappé à video/mp2t). Pour un aperçu "sans build
+  step", pointez-le sur dist/ après `npm run build`. Pour le développement
+  courant, `npm run dev` (Vite) reste la bonne option — il fait déjà du
+  rechargement à chaud.
+
+Déploiement — GitHub Pages via GitHub Actions — TERMINÉ
+-----------------------------------------------------------------
+[x] Workflow .github/workflows/deploy-pages.yml : à chaque push sur main,
+    installe (npm ci), fait tourner les tests (npm test), build
+    (npm run build), puis publie dist/ via actions/upload-pages-artifact
+    + actions/deploy-pages.
+[x] vite.config.js : base réglé à "/outil_marie/" (URL par défaut GitHub
+    Pages, confirmée par l'utilisateur — pas de domaine personnalisé pour
+    l'instant). Si un domaine personnalisé (CNAME) est ajouté plus tard,
+    remettre base à "/".
+[x] Vérifié localement : `npm run build` + `vite preview` simulant le
+    sous-chemin /outil_marie/ — tous les assets (bundle JS, CSS, libs
+    vendues, scripts non-module) résolvent en 200.
+[ ] Reste à faire côté GitHub (hors de portée pour moi) : dans les
+    Settings > Pages du dépôt, régler "Source" sur "GitHub Actions" pour
+    que ce workflow soit bien celui qui publie le site.
 
 Principes directeurs
 ---------------------
@@ -70,13 +101,37 @@ Phase 1 — Vite comme simple outil de build, comportement identique — TERMIN�
     `npm run build && npm run preview` avant de merger, comme prévu au plan.
 [x] npm scripts ajoutés : `npm run dev`, `npm run build`, `npm run preview`.
 
-Phase 2 — TypeScript en mode permissif, aucune réécriture
+Phase 2 — TypeScript en mode permissif, aucune réécriture — TERMINÉ
 -----------------------------------------------------------------
-[ ] tsconfig.json avec allowJs activé, checkJs désactivé au départ.
-[ ] Renommer en .ts les modules les plus "feuilles" (peu de dépendants)
-    en premier : utils.js, logger.js, fuzzy-match.js, validation.js,
-    config-defaults.js, db-utils.js.
-[ ] Un fichier renommé = une PR, tests verts, comportement inchangé.
+[x] tsconfig.json avec allowJs activé, checkJs désactivé. noEmit: true
+    (tsc sert uniquement au type-check ; Vite/esbuild continue de gérer la
+    transpilation runtime). moduleResolution: "bundler",
+    allowImportingTsExtensions: true (les imports gardent l'extension
+    explicite, ex. "./utils.ts", requis car Node ne résout pas .js -> .ts
+    tout seul quand les tests s'exécutent nativement avec `node --test`).
+    Script `npm run typecheck` ajouté (tsc).
+[x] Renommer en .ts les modules les plus "feuilles" (peu de dépendants) en
+    premier — ordre affiné par nombre réel de dépendants (grep) plutôt que
+    l'ordre initial pressenti : config-defaults.js (1 dépendant),
+    fuzzy-match.js (2), db-utils.js (2), validation.js (3), logger.js (5),
+    utils.js (6, avec 29 exports bridgés sur window — le plus gros morceau).
+    Pour chaque fichier : renommage (git mv), mise à jour de l'extension
+    dans le <script type="module"> d'index.html, et mise à jour de chaque
+    import qui le référence (source + tests) de ".js" vers ".ts" — mécanique,
+    aucune logique touchée.
+[x] Un fichier renommé = un point de validation : npx tsc, node --test,
+    npm run lint, vite build (diff dist/ + vérif 200 sur chaque asset),
+    vite dev, à chaque étape avant de passer au fichier suivant.
+    Piège découvert : renommer en .ts active le type-check *complet* du
+    fichier (contrairement aux .js où checkJs:false s'applique) — a exigé
+    quelques correctifs typés minimes et sans changement de comportement
+    dans utils.ts (isNaN(x) -> isNaN(Number(x)), soustraction de Date via
+    .getTime(), un cast `as HTMLElement[]` localisé sur un
+    querySelectorAll issu d'un paramètre non typé).
+    Piège découvert : les ponts `window.X = X` (pour les scripts non-module
+    qui lisent ces exports comme globals) ne sont pas connus de TypeScript.
+    Centralisés dans js/globals.d.ts (déclarations `declare global`), qui
+    sert aussi de manifeste de tout ce qui reste à éliminer en Phase 4-5.
 
 Phase 3 — React pour une seule vue isolée
 -----------------------------------------------------------------

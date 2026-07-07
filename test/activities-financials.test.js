@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 // computeActivityFinancials calls appState, getRoomsTariffTotal, getAggregateEventDates,
 // getActiveSalaryRate and getActiveServiceRate as globals (plain <script> globals in the
 // browser); wire them up before importing it.
-import { getRoomsTariffTotal } from "../js/utils.js";
+import { getRoomsTariffTotal } from "../js/utils.ts";
 import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../js/state.js";
 import { getAggregateEventDates } from "../js/activities-reservations.js";
 global.getRoomsTariffTotal = getRoomsTariffTotal;

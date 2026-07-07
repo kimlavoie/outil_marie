@@ -36,9 +36,13 @@ function copyLegacyStaticScripts() {
 
 // Phase 1 of the Vite/React/TS migration (see TODO.txt): Vite is introduced purely as a build
 // tool here. No app code, imports, or globals are touched — index.html and every js/*.js file
-// keep working exactly as they did with the plain static server. `base: "/"` matches the app
-// being served from the domain root (no subpath), as it is today.
+// keep working exactly as they did with the plain static server.
+//
+// `base` matches where GitHub Pages actually serves the site: the default
+// https://<user>.github.io/outil_marie/ URL, which puts the app under the /outil_marie/
+// subpath rather than the domain root. If a custom domain is set up later (CNAME), this must
+// go back to "/".
 export default defineConfig({
-  base: "/",
+  base: "/outil_marie/",
   plugins: [copyLegacyStaticScripts()]
 });

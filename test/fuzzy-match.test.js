@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { tokenizeForMatch, textSimilarity } from "../js/fuzzy-match.js";
+import { tokenizeForMatch, textSimilarity } from "../js/fuzzy-match.ts";
 
 test("tokenizeForMatch lowercases, strips accents and drops French stopwords", () => {
   assert.deepEqual(tokenizeForMatch("Location de la Salle Éléphant"), ["location", "salle", "elephant"]);
