@@ -19,6 +19,7 @@ import type {
 } from "./validation.ts";
 import type { logError, logWarn, logInfo, getLogHistory } from "./logger.ts";
 import type { renderDashboard, renderDashboardCharts } from "./dashboard-view.tsx";
+import type { renderSettings, openSettingsPanel, openAccountModal, openDeptModal } from "./settings-view.tsx";
 import type {
   formatCurrency,
   escapeHtml,
@@ -105,7 +106,16 @@ declare global {
     hideLoadingOverlay: typeof hideLoadingOverlay;
     renderDashboard: typeof renderDashboard;
     renderDashboardCharts: typeof renderDashboardCharts;
+    renderSettings: typeof renderSettings;
+    openSettingsPanel: typeof openSettingsPanel;
+    openAccountModal: typeof openAccountModal;
+    openDeptModal: typeof openDeptModal;
   }
+
+  // populateDropdowns is a plain top-level function declaration in navigation.js (a non-module
+  // <script>, not one of our window.X = X bridges), so it's a bare global rather than a
+  // Window property — declared the same way as Chart/XLSX below.
+  function populateDropdowns(): void;
 
   // Third-party vendored globals, loaded as plain <script> from lib/ (see index.html) — not our
   // bridges to clean up, just ambient so TS recognizes them where used (e.g. js/dashboard-view.tsx).

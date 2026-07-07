@@ -485,6 +485,7 @@ export {
   OTHER_ROOM_VALUE,
   getReservationRoomLabel,
   getRoomColor,
+  FALLBACK_ROOM_COLORS,
   buildPaginationBarHtml,
   renderPaginationBar,
   setPillGroupActiveEl,

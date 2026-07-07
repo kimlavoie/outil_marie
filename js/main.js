@@ -27,7 +27,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   initNavigation();
   initFormHandlers();
   initNewActivityModal();
-  initSettingsHandlers();
   initReconciliationHandlers();
   initBackupHandlers();
   initCustomDatepickers();

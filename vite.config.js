@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import { cpSync, mkdirSync } from "node:fs";
 import path from "node:path";
 
-// The 8 files below are loaded as plain <script defer> (not type="module") in index.html because
+// The 7 files below are loaded as plain <script defer> (not type="module") in index.html because
 // they rely on being in the same global scope as each other and as the window.X globals the
 // module scripts export (see js/state.js bottom). Vite only bundles type="module" scripts — it
 // intentionally leaves these untouched, so `vite build` never copies them into dist on its own.
@@ -14,7 +14,6 @@ const NONMODULE_SCRIPTS = [
   "navigation.js",
   "activities-file-links.js",
   "activities-form.js",
-  "settings.js",
   "account-report.js",
   "datepicker.js",
   "calendar.js",

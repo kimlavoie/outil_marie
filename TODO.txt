@@ -177,18 +177,56 @@ Phase 3 — React pour une seule vue isolée (Tableau de bord) — TERMINÉ
 Phase 4 — Vue par vue, du moins risqué au plus risqué
 -----------------------------------------------------------------
 Ordre suggéré :
-  1. Tableau de bord
-  2. Paramètres
+  1. Tableau de bord — TERMINÉ (Phase 3)
+  2. Paramètres — TERMINÉ
   3. Calendrier / Datepicker (widgets autonomes)
   4. Activités (formulaire / rendu / réservations / financier / historique
      / liens de fichiers)
   5. Rapprochement GL (le plus complexe, migré en dernier, avec le plus
      de tests)
-[ ] Pour chaque vue : convertir en React + TS, garder la logique partagée
+[x] Pour chaque vue : convertir en React + TS, garder la logique partagée
     en modules TS simples importés par les composants — ne pas réécrire
     la logique métier, seulement la couche de rendu.
-[ ] Retirer les globals window.X d'un module seulement une fois vérifié
+[x] Retirer les globals window.X d'un module seulement une fois vérifié
     par grep qu'ils ne sont plus référencés nulle part.
+
+Paramètres (js/settings-view.tsx) — détails
+- Converti en un seul passage (choix explicite de l'utilisateur, malgré le
+  risque plus élevé qu'un découpage section par section — 1252 lignes,
+  6 sections CRUD : Comptes GL, Salles & Tarifs (grille tarifaire
+  imbriquée + salles/personnel/frais/tâches liés), Départements, Salaires
+  (taux versionnés), Services (taux versionnés), Tâches globales).
+- js/settings.js supprimé entièrement (pas de logique pure à en extraire,
+  contrairement à dashboard.js — aucun test ne l'importait).
+- appState.settings.* reste l'unique source de vérité ; le composant lit/
+  mute directement dessus et déclenche un re-render local (bump), dans le
+  même esprit que l'ancien renderSettings()/renderXxxList().
+- navigation.js (recherche globale "aller à cette fiche") appelle encore
+  renderSettings()/openSettingsPanel(panel)/openAccountModal(code)/
+  openDeptModal(name) comme globals bruts — pontés via une petite file de
+  commandes (command + numéro de séquence) que le composant applique dans
+  un useEffect, plutôt que de réécrire ce flux de navigation.
+- FALLBACK_ROOM_COLORS exporté depuis utils.ts (était privé) : nécessaire
+  pour reproduire fidèlement la couleur par défaut d'une nouvelle salle.
+- Bug trouvé et corrigé en auto-relecture avant validation : ma première
+  version utilisait un hack de "bump externe" partagé (une seule variable
+  de module réécrite par le dernier composant monté) pour que les panneaux
+  Départements/Salles/Salaires/Services/Tâches globales déclenchent un
+  re-render après une mutation. Ça ne fonctionnait pas de façon fiable :
+  le panneau qui déclenchait la mutation n'était pas forcément celui qui
+  se re-rendait. Corrigé en remontant `bump` dans SettingsView et en le
+  passant explicitement en prop à chaque panneau/modale (comme c'était
+  déjà fait pour Comptes GL depuis le début).
+- Validé : 98/98 tests, tsc propre, lint inchangé (0 erreur, 16 warnings
+  au lieu de 17 — le warning "initSettingsHandlers inutilisé" a disparu
+  avec la suppression du fichier), vite build (30 modules, dist/ complet,
+  aucun 404), vite dev (settings-view.tsx résout en 200).
+[ ] Validation manuelle restante (à faire par vous, `npm run dev`) :
+    checklist sur les 6 sections — CRUD complet (ajouter/modifier/
+    supprimer) sur chaque section, éditeur de grille tarifaire (versions,
+    paramètres, types de client, cellules), salles/personnel/frais/tâches
+    liés, et la recherche globale qui doit encore ouvrir le bon onglet +
+    la bonne modale pré-remplie pour un compte ou un département.
 
 Phase 5 — Nettoyage
 -----------------------------------------------------------------
