@@ -13,7 +13,7 @@
     "lint:fix": "eslint js --fix",
     "format": "prettier --write \"js/**/*.js\" \"*.html\" \"*.css\"",
     "format:check": "prettier --check \"js/**/*.js\" \"*.html\" \"*.css\"",
-    "test": "node --test test/"
+    "test": "node --test test/*.test.js"
   },
   "devDependencies": {
     "eslint": "^9.39.4",
