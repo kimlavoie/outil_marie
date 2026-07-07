@@ -1,7 +1,15 @@
 /**
- * datepicker.js - Custom calendar popover for date inputs, plus fiscal-year
- * date validation used by the activity form
+ * datepicker.ts - Custom calendar popover for date inputs, plus fiscal-year
+ * date validation used by the activity form.
+ *
+ * A reusable multi-instance widget (attached to every .datepicker-wrapper in the DOM, including
+ * ones created dynamically later), not a single view — so unlike Dashboard/Settings/Calendar it
+ * stays a plain TS module (Phase 2 style: renamed + typed, behavior unchanged) rather than a
+ * React component. Its call sites (activities-form.js, activities-reservations.js) are still
+ * vanilla and haven't had their turn in Phase 4 yet.
  */
+import { appState, parseLocalDateStr, getFiscalYearRange } from "./state.js";
+import { maskDateInput } from "./utils.ts";
 
 // Validates a date input's value against the active fiscal year and shows/hides
 // the associated .field-error-msg (id: "<input-id>-fy-error") in real time.
@@ -48,7 +56,7 @@ function initCustomDatepickers() {
   document.addEventListener("click", e => {
     document.querySelectorAll(".calendar-popover.active").forEach(popover => {
       const wrapper = popover.closest(".datepicker-wrapper");
-      if (wrapper && !wrapper.contains(e.target)) {
+      if (wrapper && !wrapper.contains(e.target as Node)) {
         popover.classList.remove("active");
       }
     });
@@ -202,4 +210,12 @@ function renderCalendar(popover, input, displayDate) {
       }
     });
   });
+}
+
+export { validateDateFieldFiscalYear, clearDateFieldErrors, initCustomDatepickers, initDatepickerWrapper };
+if (typeof window !== "undefined") {
+  window.validateDateFieldFiscalYear = validateDateFieldFiscalYear;
+  window.clearDateFieldErrors = clearDateFieldErrors;
+  window.initCustomDatepickers = initCustomDatepickers;
+  window.initDatepickerWrapper = initDatepickerWrapper;
 }

@@ -3,6 +3,7 @@
  * drawer open/close/cancel lifecycle, and revenue distribution rows.
  * Part 4/5 of the activities module (see activities-render.js for context).
  */
+import { clearDateFieldErrors } from "./datepicker.ts";
 
 // Recomputes and displays the room/personnel/frais subtotal, TPS (5%), TVQ (9.975%), and total
 function updateSubmissionFinancialSummary() {

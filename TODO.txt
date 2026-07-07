@@ -180,8 +180,15 @@ Ordre suggéré :
   1. Tableau de bord — TERMINÉ (Phase 3)
   2. Paramètres — TERMINÉ
   3. Calendrier (modal) — TERMINÉ. Datepicker — REPORTÉ (voir note plus bas)
-  4. Activités (formulaire / rendu / réservations / financier / historique
-     / liens de fichiers)
+  4. Activités — EN COURS, fichier par fichier (choix utilisateur, vu la
+     taille : 3792 lignes sur 7 fichiers, l'entité centrale de l'app) :
+       a. Datepicker — TERMINÉ (js/datepicker.ts)
+       b. Liens de fichiers — TERMINÉ (js/activities-file-links.ts)
+       c. Historique (581 lignes)
+       d. Financier (545 lignes)
+       e. Rendu/liste (577 lignes)
+       f. Formulaire (672 lignes)
+       g. Réservations (1063 lignes, le plus gros, en dernier)
   5. Rapprochement GL (le plus complexe, migré en dernier, avec le plus
      de tests)
 [x] Pour chaque vue : convertir en React + TS, garder la logique partagée
@@ -268,6 +275,33 @@ Calendrier (js/calendar-view.tsx) — détails
     fiche), clic sur le fond (ferme), bouton "retour au calendrier" depuis
     une fiche d'activité ouverte via le calendrier, bouton "voir dans le
     calendrier" à côté d'un champ date.
+
+Activités a. Datepicker (js/datepicker.ts) — détails
+- Contrairement au Calendrier, pas de "vue" à monter — widget multi-instance
+  attaché à chaque .datepicker-wrapper du DOM. Reste un module TS classique
+  (esprit Phase 2 : renommage + typage, comportement inchangé), pas un
+  composant React, tant que ses points d'appel (activities-form.js,
+  activities-reservations.js) ne sont pas eux-mêmes convertis.
+- activities-financials.js et activities-reservations.js (déjà de vrais
+  modules ES) importent maintenant clearDateFieldErrors/initDatepickerWrapper
+  directement plutôt que via window — amélioration mineure de passage.
+- Piège découvert : `new Promise((resolve, reject) => {...})` où resolve()
+  est appelé depuis un callback imbriqué (ex. req.onsuccess = () => ...)
+  plutôt que directement dans le corps de l'executor fait échouer
+  l'inférence de type de TypeScript (Promise<unknown> au lieu du type
+  réel). Corrigé par un generic explicite `new Promise<T>(...)` — touche
+  aussi js/db-utils.ts (openVersionedDb) et js/activities-file-links.ts.
+- Validé : 98/98 tests, tsc propre, lint 11 warnings, vite build/dev OK.
+
+Activités b. Liens de fichiers (js/activities-file-links.ts) — détails
+- Même raisonnement que le Datepicker (widget rendu dans des containers
+  situés dans le formulaire d'activité pas encore converti) : module TS
+  classique, pas de composant React pour l'instant.
+- window.showOpenFilePicker (File System Access API, Chrome/Edge
+  seulement) ambiant-déclaré dans globals.d.ts, absent des types DOM par
+  défaut de TypeScript.
+- Validé : 98/98 tests, tsc propre, lint 11 warnings, vite build (33
+  modules, dist/ complet, aucun 404), vite dev (résout en 200).
 
 Phase 5 — Nettoyage
 -----------------------------------------------------------------

@@ -22,6 +22,13 @@ import type { renderDashboard, renderDashboardCharts } from "./dashboard-view.ts
 import type { renderSettings, openSettingsPanel, openAccountModal, openDeptModal } from "./settings-view.tsx";
 import type { initCalendarModal, initViewCalendarButtons, openCalendarModal, openCalendarAtDate, reopenCalendarModal } from "./calendar-view.tsx";
 import type {
+  validateDateFieldFiscalYear,
+  clearDateFieldErrors,
+  initCustomDatepickers,
+  initDatepickerWrapper
+} from "./datepicker.ts";
+import type { renderFileLinkStatus, pickAndLinkFile, openLinkedFile } from "./activities-file-links.ts";
+import type {
   formatCurrency,
   escapeHtml,
   generateUid,
@@ -116,6 +123,15 @@ declare global {
     openCalendarModal: typeof openCalendarModal;
     openCalendarAtDate: typeof openCalendarAtDate;
     reopenCalendarModal: typeof reopenCalendarModal;
+    validateDateFieldFiscalYear: typeof validateDateFieldFiscalYear;
+    clearDateFieldErrors: typeof clearDateFieldErrors;
+    initCustomDatepickers: typeof initCustomDatepickers;
+    initDatepickerWrapper: typeof initDatepickerWrapper;
+    renderFileLinkStatus: typeof renderFileLinkStatus;
+    pickAndLinkFile: typeof pickAndLinkFile;
+    openLinkedFile: typeof openLinkedFile;
+    // File System Access API (Chrome/Edge only) — not yet in TS's default DOM lib types.
+    showOpenFilePicker?: () => Promise<any[]>;
   }
 
   // populateDropdowns is a plain top-level function declaration in navigation.js (a non-module

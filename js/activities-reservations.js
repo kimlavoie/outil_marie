@@ -3,6 +3,7 @@
  * tariff resolution, staff/service/fee sub-rows, and form collection helpers.
  * Part 3/5 of the activities module (see activities-render.js for context).
  */
+import { initDatepickerWrapper } from "./datepicker.ts";
 
 // Items for the salle searchable-select: every configured room, plus a virtual "Autre" entry
 function buildRoomSelectItems() {

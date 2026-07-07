@@ -1,7 +1,15 @@
 /**
- * activities-file-links.js - Linking an activity submission/contract to a file on disk via
+ * activities-file-links.ts - Linking an activity submission/contract to a file on disk via
  * the File System Access API (Chrome/Edge only), and the resulting status UI.
+ *
+ * Renders into #submission-file-status/#contract-file-status, containers that live inside the
+ * not-yet-converted activity form/drawer (js/activities-form.js) — so like js/datepicker.ts, this
+ * stays a plain TS module (Phase 2 style) rather than a React component until that form gets its
+ * own turn in Phase 4.
  */
+import { appState } from "./state.js";
+import { openVersionedDb } from "./db-utils.ts";
+import { generateUid, showToast } from "./utils.ts";
 
 const FILE_LINKS_DB_NAME = "outil_marie_file_links";
 const FILE_LINKS_STORE_NAME = "links";
@@ -19,7 +27,7 @@ function openFileLinksDb() {
 
 async function idbSetFileLink(id, record) {
   const db = await openFileLinksDb();
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(FILE_LINKS_STORE_NAME, "readwrite");
     tx.objectStore(FILE_LINKS_STORE_NAME).put(record, id);
     tx.oncomplete = () => resolve();
@@ -27,7 +35,7 @@ async function idbSetFileLink(id, record) {
   });
 }
 
-async function idbGetFileLink(id) {
+async function idbGetFileLink(id): Promise<{ handle: any; name: string } | null> {
   const db = await openFileLinksDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(FILE_LINKS_STORE_NAME, "readonly");
@@ -119,7 +127,7 @@ function renderFileLinkStatus(kind, act) {
   if (openBtn) openBtn.addEventListener("click", () => openLinkedFile(linkId));
 
   if (kind === "submission") {
-    const btn = container.querySelector("#mark-submitted-btn");
+    const btn = container.querySelector<HTMLButtonElement>("#mark-submitted-btn");
     if (btn && !btn.disabled) {
       btn.addEventListener("click", () => {
         commitActivityPatch(act.id, a => {
@@ -133,7 +141,7 @@ function renderFileLinkStatus(kind, act) {
       });
     }
   } else {
-    const btn = container.querySelector("#mark-approved-btn");
+    const btn = container.querySelector<HTMLButtonElement>("#mark-approved-btn");
     if (btn && !btn.disabled) {
       btn.addEventListener("click", () => {
         commitActivityPatch(act.id, a => {
@@ -146,4 +154,11 @@ function renderFileLinkStatus(kind, act) {
       });
     }
   }
+}
+
+export { renderFileLinkStatus, pickAndLinkFile, openLinkedFile };
+if (typeof window !== "undefined") {
+  window.renderFileLinkStatus = renderFileLinkStatus;
+  window.pickAndLinkFile = pickAndLinkFile;
+  window.openLinkedFile = openLinkedFile;
 }
