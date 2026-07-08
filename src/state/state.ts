@@ -539,7 +539,7 @@ function getFlattenedRoomTarifs(room: any, dateStr: string): any[] {
         id: `${param.id}::${ct.id}`,
         description: desc,
         amount: cell ? cell.amount : 0,
-        gl_account_code: param.gl_account_code || ""
+        gl_account_code: ct.gl_account_code || ""
       });
     });
   });

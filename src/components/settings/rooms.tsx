@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { appState, saveDatabase, getFlattenedRoomTarifs } from "../../state/state.ts";
-import { generateUid, formatCurrency, getRoomColor, FALLBACK_ROOM_COLORS, showToast } from "../../utils/utils.ts";
+import { generateUid, formatCurrency, formatDateMask, getRoomColor, FALLBACK_ROOM_COLORS, showToast } from "../../utils/utils.ts";
 import { populateDropdowns } from "../../navigation.ts";
 import { EditIcon, DeleteIcon, Modal, GlAccountOptions } from "./common.tsx";
 
 interface GridParam {
   id: string;
   name: string;
-  gl_account_code?: string;
 }
 interface GridClientType {
   id: string;
   name: string;
+  gl_account_code?: string;
 }
 interface GridCell {
   parameter_id: string;
@@ -404,7 +404,11 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
             className="form-input"
             placeholder="AAAA-MM-JJ (vide = depuis toujours)"
             value={activeGrid.effective_date}
-            onChange={e => updateActiveGrid({ effective_date: e.target.value.trim() })}
+            onChange={e => {
+              const inputType = (e.nativeEvent as InputEvent).inputType;
+              const value = inputType === "deleteContentBackward" ? e.target.value : formatDateMask(e.target.value);
+              updateActiveGrid({ effective_date: value });
+            }}
           />
         </div>
         <div className="form-group-row">
@@ -424,7 +428,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
             </div>
             <div className="distribution-list">
               {activeGrid.parameters.map((p, i) => (
-                <div key={p.id} className="distribution-row room-tarif-row" style={{ gridTemplateColumns: "1fr 1fr auto" }}>
+                <div key={p.id} className="distribution-row room-tarif-row" style={{ gridTemplateColumns: "1fr auto" }}>
                   <input
                     type="text"
                     name={`${p.id}-name`}
@@ -434,17 +438,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
                     style={{ padding: "8px 12px", fontSize: "0.85rem" }}
                     onChange={e => updateParameter(i, { name: e.target.value })}
                   />
-                  <select
-                    name={`${p.id}-gl-account`}
-                    className="select-input"
-                    style={{ padding: "8px 12px", fontSize: "0.85rem" }}
-                    title="Compte GL pour la facturation (optionnel)"
-                    value={p.gl_account_code || ""}
-                    onChange={e => updateParameter(i, { gl_account_code: e.target.value })}
-                  >
-                    <GlAccountOptions selectedCode={p.gl_account_code || ""} />
-                  </select>
-                  <button type="button" className="btn-icon" style={{ width: 14, height: 14 }} onClick={() => deleteParameter(i)}>
+                  <button type="button" className="btn-icon" onClick={() => deleteParameter(i)}>
                     <DeleteIcon />
                   </button>
                 </div>
@@ -467,7 +461,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
             </div>
             <div className="distribution-list">
               {activeGrid.client_types.map((ct, i) => (
-                <div key={ct.id} className="distribution-row room-tarif-row" style={{ gridTemplateColumns: "1fr auto" }}>
+                <div key={ct.id} className="distribution-row room-tarif-row" style={{ gridTemplateColumns: "1fr 1fr auto" }}>
                   <input
                     type="text"
                     name={`${ct.id}-name`}
@@ -477,7 +471,17 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
                     style={{ padding: "8px 12px", fontSize: "0.85rem" }}
                     onChange={e => updateClientType(i, { name: e.target.value })}
                   />
-                  <button type="button" className="btn-icon" style={{ width: 14, height: 14 }} onClick={() => deleteClientType(i)}>
+                  <select
+                    name={`${ct.id}-gl-account`}
+                    className="select-input"
+                    style={{ padding: "8px 12px", fontSize: "0.85rem" }}
+                    title="Compte GL pour la facturation (optionnel)"
+                    value={ct.gl_account_code || ""}
+                    onChange={e => updateClientType(i, { gl_account_code: e.target.value })}
+                  >
+                    <GlAccountOptions selectedCode={ct.gl_account_code || ""} />
+                  </select>
+                  <button type="button" className="btn-icon" onClick={() => deleteClientType(i)}>
                     <DeleteIcon />
                   </button>
                 </div>
@@ -595,7 +599,6 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
               <button
                 type="button"
                 className="btn-icon"
-                style={{ width: 14, height: 14 }}
                 onClick={() => setLinkedStaff(linkedStaff.filter((_, idx) => idx !== i))}
               >
                 <DeleteIcon />
@@ -652,7 +655,6 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
               <button
                 type="button"
                 className="btn-icon"
-                style={{ width: 14, height: 14 }}
                 onClick={() => setLinkedFees(linkedFees.filter((_, idx) => idx !== i))}
               >
                 <DeleteIcon />
@@ -689,7 +691,6 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
               <button
                 type="button"
                 className="btn-icon"
-                style={{ width: 14, height: 14 }}
                 onClick={() => setLinkedTasks(linkedTasks.filter((_, idx) => idx !== i))}
               >
                 <DeleteIcon />

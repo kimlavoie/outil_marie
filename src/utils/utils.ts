@@ -404,6 +404,26 @@ function initSearchableSelectEl(
    INPUT MASKS
    ========================================================================== */
 
+function formatDateMask(rawValue: string): string {
+  let value = rawValue.replace(/\D/g, ""); // Keep only digits
+  if (value.length > 8) {
+    value = value.substring(0, 8);
+  }
+
+  let formatted = "";
+  if (value.length > 0) {
+    formatted += value.substring(0, 4); // YYYY
+  }
+  if (value.length > 4) {
+    formatted += "-" + value.substring(4, 6); // -MM
+  }
+  if (value.length > 6) {
+    formatted += "-" + value.substring(6, 8); // -DD
+  }
+
+  return formatted;
+}
+
 function maskDateInput(input: HTMLInputElement | null) {
   if (!input) return;
   input.addEventListener("input", (e: Event) => {
@@ -412,23 +432,7 @@ function maskDateInput(input: HTMLInputElement | null) {
       return;
     }
 
-    let value = input.value.replace(/\D/g, ""); // Keep only digits
-    if (value.length > 8) {
-      value = value.substring(0, 8);
-    }
-
-    let formatted = "";
-    if (value.length > 0) {
-      formatted += value.substring(0, 4); // YYYY
-    }
-    if (value.length > 4) {
-      formatted += "-" + value.substring(4, 6); // -MM
-    }
-    if (value.length > 6) {
-      formatted += "-" + value.substring(6, 8); // -DD
-    }
-
-    input.value = formatted;
+    input.value = formatDateMask(input.value);
   });
 }
 
@@ -546,6 +550,7 @@ export {
   setExclusivePillValue,
   buildSearchableSelectHtml,
   initSearchableSelectEl,
+  formatDateMask,
   maskDateInput,
   maskPhoneInput,
   showToast,

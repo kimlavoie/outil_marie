@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { appState } from "../../state/state.ts";
-import { generateUid } from "../../utils/utils.ts";
+import { formatDateMask, generateUid } from "../../utils/utils.ts";
 
 export interface RateVersionRow {
   key: string;
@@ -142,7 +142,11 @@ export function RateVersionsEditor({
             value={row.effective_date}
             placeholder="AAAA-MM-JJ (vide = depuis toujours)"
             style={{ padding: "8px 12px", fontSize: "0.85rem" }}
-            onChange={e => update(i, { effective_date: e.target.value })}
+            onChange={e => {
+              const inputType = (e.nativeEvent as InputEvent).inputType;
+              const value = inputType === "deleteContentBackward" ? e.target.value : formatDateMask(e.target.value);
+              update(i, { effective_date: value });
+            }}
           />
           <input
             type="number"

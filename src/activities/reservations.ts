@@ -754,7 +754,7 @@ function collectReservationsFromForm() {
           tariffId = `${paramVal}::${clientTypeVal}`;
           tariffDescription = grid.parameters.length > 1 ? `${param.name} - ${ct.name}` : ct.name;
           tariffAmount = cell ? cell.amount : 0;
-          tariffGlAccountCode = param.gl_account_code || "";
+          tariffGlAccountCode = ct.gl_account_code || "";
         }
       }
     }
