@@ -559,6 +559,7 @@
         <button type="button" class="activity-tab-btn" data-activity-tab="planning">Planification</button>
         <button type="button" class="activity-tab-btn" data-activity-tab="billing">Facturation</button>
         <button type="button" class="activity-tab-btn" data-activity-tab="history">Historique</button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="notes">Notes</button>
       </div>
 
       <div class="drawer-content">
@@ -845,6 +846,14 @@
             </div>
             <div id="activity-history-list" class="history-list">
               <!-- Dynamically populated list of versions -->
+            </div>
+          </div>
+
+          <!-- ============ TAB: Notes ============ -->
+          <div id="activity-tab-panel-notes" class="activity-tab-panel">
+            <div class="form-group">
+              <label for="form-activity-notes">Notes</label>
+              <textarea id="form-activity-notes" class="form-input" rows="12" placeholder="Notes concernant cette activité..."></textarea>
             </div>
           </div>
         </form>

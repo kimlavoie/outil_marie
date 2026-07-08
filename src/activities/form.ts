@@ -323,7 +323,8 @@ function buildNewActivityRecord(id: string, name: string, mode: string) {
     form: { file_link_id: "", linked_at: "" },
     planning_tasks: [],
     billed_at: "",
-    completed_at: ""
+    completed_at: "",
+    notes: ""
   };
 }
 
@@ -697,6 +698,7 @@ function fillActivityFormFields(act: any) {
   el("form-activity-responsable").value = act.responsable;
   el("form-activity-client-type").value = act.client_type;
   el("form-activity-description").value = act.description || "";
+  el("form-activity-notes").value = act.notes || "";
   el("form-activity-manager-firstname").value = act.activity_manager?.first_name || "";
   el("form-activity-manager-lastname").value = act.activity_manager?.last_name || "";
   el("form-activity-manager-type").value = act.activity_manager?.type || "employe";

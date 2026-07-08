@@ -728,6 +728,7 @@ function migrateActivities() {
     if (!act.planning_tasks) act.planning_tasks = [];
     if (act.billed_at === undefined) act.billed_at = "";
     if (act.completed_at === undefined) act.completed_at = "";
+    if (act.notes === undefined) act.notes = "";
 
     // Legacy: a booked room used to carry a single continuous date_start -> date_end
     // event span plus a single optional install/dismantle pair. A room can now be

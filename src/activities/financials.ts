@@ -476,6 +476,7 @@ function autoSaveActivityForm() {
   const responsable = el("form-activity-responsable").value.trim();
   const clientType = el("form-activity-client-type").value;
   const description = el("form-activity-description").value.trim();
+  const notes = el("form-activity-notes").value.trim();
   const coba = el("form-activity-coba").value.trim();
   const managerFirstName = el("form-activity-manager-firstname").value.trim();
   const managerLastName = el("form-activity-manager-lastname").value.trim();
@@ -512,6 +513,7 @@ function autoSaveActivityForm() {
     date_start: start,
     date_end: end,
     description,
+    notes,
     activity_manager: {
       first_name: managerFirstName,
       last_name: managerLastName,
