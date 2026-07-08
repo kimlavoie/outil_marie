@@ -110,6 +110,28 @@ function getPlanningProgress(act: any) {
   return { done, total, percent };
 }
 
+// Recomputes the lifecycle state from whichever stage markers are still established (submission
+// sent, contract approved, planning complete, billed, completed) instead of trusting a stored
+// value — so unchecking a later marker falls back to the highest earlier one still standing,
+// rather than clearing the state outright.
+function deriveActivityState(act: any) {
+  const progress = getPlanningProgress(act);
+  const established = new Set(["brouillon"]);
+  if (act.submission?.sent_at) established.add("soumise");
+  if (act.contract?.approved_at) established.add("approuvee");
+  if (progress.total > 0 && progress.done === progress.total && (act.submission?.sent_at || act.contract?.approved_at)) {
+    established.add("planifiee");
+  }
+  if (act.billed_at) established.add("facturee");
+  if (act.completed_at) established.add("terminee");
+
+  let result = ACTIVITY_STATES[0].value;
+  ACTIVITY_STATES.forEach(s => {
+    if (established.has(s.value)) result = s.value;
+  });
+  return result;
+}
+
 // Small progress-bar HTML snippet reused in the activities list and the Planification tab
 function buildProgressBarHtml(percent: number) {
   return `
@@ -618,6 +640,7 @@ export {
   getActivityStateLabel,
   getActivityStateBadgeClass,
   getPlanningProgress,
+  deriveActivityState,
   buildProgressBarHtml,
   renderActivities,
   updateBulkActionsBar,

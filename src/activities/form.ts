@@ -23,6 +23,7 @@ import { requireNonEmpty } from "../utils/validation.ts";
 import {
   activitiesState,
   getPlanningProgress,
+  deriveActivityState,
   buildProgressBarHtml,
   getActivityStateBadgeClass,
   getActivityStateLabel,
@@ -544,10 +545,7 @@ function persistPlanningTasks() {
 
   commitActivityPatch(id, (act: any) => {
     act.planning_tasks = tasks;
-    const progress = getPlanningProgress(act);
-    if (progress.total > 0 && progress.done === progress.total && (act.state === "soumise" || act.state === "approuvee")) {
-      act.state = "planifiee";
-    }
+    act.state = deriveActivityState(act);
   });
 
   const updated = appState.activities.find((a: any) => a.id === id);
@@ -684,15 +682,15 @@ function renderBillingStateStatus(act: any) {
   container.innerHTML = `
     ${act.billed_at ? `<span style="color: var(--text-muted);">Facturée le ${act.billed_at}</span>` : ""}
     ${act.completed_at ? `<span style="color: var(--text-muted);">Terminée le ${act.completed_at}</span>` : ""}
-    <button type="button" id="mark-billed-btn" class="btn btn-primary">Marquer comme Facturée</button>
-    <button type="button" id="mark-completed-btn" class="btn btn-primary">Marquer comme Terminée</button>
+    <button type="button" id="mark-billed-btn" class="btn ${act.billed_at ? "btn-secondary" : "btn-primary"}">${act.billed_at ? "Annuler Facturée" : "Marquer comme Facturée"}</button>
+    <button type="button" id="mark-completed-btn" class="btn ${act.completed_at ? "btn-secondary" : "btn-primary"}">${act.completed_at ? "Annuler Terminée" : "Marquer comme Terminée"}</button>
   `;
 
   const billBtn = container.querySelector<HTMLButtonElement>("#mark-billed-btn")!;
   billBtn.addEventListener("click", () => {
     commitActivityPatch(act.id, (a: any) => {
-      a.state = "facturee";
-      a.billed_at = new Date().toISOString().split("T")[0];
+      a.billed_at = a.billed_at ? "" : new Date().toISOString().split("T")[0];
+      a.state = deriveActivityState(a);
     });
     renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
   });
@@ -700,8 +698,8 @@ function renderBillingStateStatus(act: any) {
   const completeBtn = container.querySelector<HTMLButtonElement>("#mark-completed-btn")!;
   completeBtn.addEventListener("click", () => {
     commitActivityPatch(act.id, (a: any) => {
-      a.state = "terminee";
-      a.completed_at = new Date().toISOString().split("T")[0];
+      a.completed_at = a.completed_at ? "" : new Date().toISOString().split("T")[0];
+      a.state = deriveActivityState(a);
     });
     renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
   });

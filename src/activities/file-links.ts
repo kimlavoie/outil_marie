@@ -11,6 +11,7 @@ import { appState } from "../state/state.ts";
 import { openVersionedDb } from "../state/db-utils.ts";
 import { generateUid, showToast } from "../utils/utils.ts";
 import { commitActivityPatch } from "./form.ts";
+import { deriveActivityState } from "./render.ts";
 
 const FILE_LINKS_DB_NAME = "outil_marie_file_links";
 const FILE_LINKS_STORE_NAME = "links";
@@ -118,9 +119,11 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
 
   let transitionBtnHtml = "";
   if (kind === "submission") {
-    transitionBtnHtml = `<button type="button" id="mark-submitted-btn" class="btn btn-primary">Marquer comme Soumise au client</button>`;
+    const sent = act.submission.sent_at;
+    transitionBtnHtml = `<button type="button" id="mark-submitted-btn" class="btn ${sent ? "btn-secondary" : "btn-primary"}">${sent ? "Annuler Soumise au client" : "Marquer comme Soumise au client"}</button>`;
   } else if (kind === "contract") {
-    transitionBtnHtml = `<button type="button" id="mark-approved-btn" class="btn btn-primary">Marquer comme Approuvée</button>`;
+    const approved = act.contract.approved_at;
+    transitionBtnHtml = `<button type="button" id="mark-approved-btn" class="btn ${approved ? "btn-secondary" : "btn-primary"}">${approved ? "Annuler Approuvée" : "Marquer comme Approuvée"}</button>`;
   }
 
   container.innerHTML = `
@@ -139,9 +142,13 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
     if (btn) {
       btn.addEventListener("click", () => {
         commitActivityPatch(act.id, (a: any) => {
-          a.state = "soumise";
-          a.mode = "soumission";
-          a.submission.sent_at = new Date().toISOString().split("T")[0];
+          if (a.submission.sent_at) {
+            a.submission.sent_at = "";
+          } else {
+            a.mode = "soumission";
+            a.submission.sent_at = new Date().toISOString().split("T")[0];
+          }
+          a.state = deriveActivityState(a);
         });
         const updated = appState.activities.find((a: any) => a.id === act.id);
         renderFileLinkStatus("submission", updated);
@@ -153,8 +160,8 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
     if (btn) {
       btn.addEventListener("click", () => {
         commitActivityPatch(act.id, (a: any) => {
-          a.state = "approuvee";
-          a.contract.approved_at = new Date().toISOString().split("T")[0];
+          a.contract.approved_at = a.contract.approved_at ? "" : new Date().toISOString().split("T")[0];
+          a.state = deriveActivityState(a);
         });
         const updated = appState.activities.find((a: any) => a.id === act.id);
         renderFileLinkStatus("submission", updated);
