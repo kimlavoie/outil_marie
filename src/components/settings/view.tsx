@@ -63,7 +63,7 @@ function SettingsView({ command }: { command: Command }) {
     { key: "rooms", label: "Salles & Tarifs" },
     { key: "departments", label: "Départements" },
     { key: "salaries", label: "Salaires" },
-    { key: "services", label: "Services" },
+    { key: "services", label: "Équipements" },
     { key: "global-tasks", label: "Tâches globales" }
   ];
 

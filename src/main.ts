@@ -12,7 +12,7 @@ import { initBackupHandlers } from "./services/backup.ts";
 import { initCustomDatepickers } from "./activities/datepicker.ts";
 import { initCalendarModal, initViewCalendarButtons } from "./components/calendar-view.tsx";
 import { initActivitiesSort } from "./activities/history.ts";
-import { openActivityDrawer } from "./activities/financials.ts";
+import { openActivityDrawer, initActivityDetailsModal } from "./activities/financials.ts";
 
 // Global safety net: an uncaught exception or rejected promise anywhere in the app would
 // otherwise fail silently (no console visible to the user, no indication a feature broke).
@@ -34,6 +34,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initNavigation();
   initFormHandlers();
   initNewActivityModal();
+  initActivityDetailsModal();
   initReconciliationHandlers();
   initBackupHandlers();
   initCustomDatepickers();

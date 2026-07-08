@@ -118,11 +118,9 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
 
   let transitionBtnHtml = "";
   if (kind === "submission") {
-    const canSubmit = !!linkId && act.state === "brouillon";
-    transitionBtnHtml = `<button type="button" id="mark-submitted-btn" class="btn btn-primary" ${canSubmit ? "" : "disabled"}>Marquer comme Soumise au client</button>`;
+    transitionBtnHtml = `<button type="button" id="mark-submitted-btn" class="btn btn-primary">Marquer comme Soumise au client</button>`;
   } else if (kind === "contract") {
-    const canApprove = !!linkId && act.state === "soumise";
-    transitionBtnHtml = `<button type="button" id="mark-approved-btn" class="btn btn-primary" ${canApprove ? "" : "disabled"}>Marquer comme Approuvée</button>`;
+    transitionBtnHtml = `<button type="button" id="mark-approved-btn" class="btn btn-primary">Marquer comme Approuvée</button>`;
   }
 
   container.innerHTML = `
@@ -138,7 +136,7 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
 
   if (kind === "submission") {
     const btn = container.querySelector<HTMLButtonElement>("#mark-submitted-btn");
-    if (btn && !btn.disabled) {
+    if (btn) {
       btn.addEventListener("click", () => {
         commitActivityPatch(act.id, (a: any) => {
           a.state = "soumise";
@@ -152,7 +150,7 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
     }
   } else if (kind === "contract") {
     const btn = container.querySelector<HTMLButtonElement>("#mark-approved-btn");
-    if (btn && !btn.disabled) {
+    if (btn) {
       btn.addEventListener("click", () => {
         commitActivityPatch(act.id, (a: any) => {
           a.state = "approuvee";

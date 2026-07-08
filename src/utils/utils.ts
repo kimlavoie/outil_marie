@@ -438,8 +438,9 @@ function formatDateMask(rawValue: string): string {
 function maskDateInput(input: HTMLInputElement | null) {
   if (!input) return;
   input.addEventListener("input", (e: Event) => {
-    // Let the user delete normally with backspace
-    if ((e as InputEvent).inputType === "deleteContentBackward") {
+    // Let the user delete normally with backspace or delete key
+    const inputType = (e as InputEvent).inputType;
+    if (inputType === "deleteContentBackward" || inputType === "deleteContentForward") {
       return;
     }
 

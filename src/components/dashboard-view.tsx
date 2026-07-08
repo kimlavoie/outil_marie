@@ -227,7 +227,7 @@ function DashboardView() {
         </div>
         <div className="chart-card">
           <div className="chart-header">
-            <span className="chart-title">Répartition par salle</span>
+            <span className="chart-title">Répartition des revenus par salle</span>
           </div>
           <div className="chart-container">
             <canvas ref={salleRef} />

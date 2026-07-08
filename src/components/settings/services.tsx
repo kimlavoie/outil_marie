@@ -9,7 +9,7 @@ export function ServicesPanel({ active, openModal, bump }: { active: boolean; op
   const deleteService = (id: string) => {
     const svc = services.find((s: { id: string }) => s.id === id);
     const serviceName = svc ? svc.name : "";
-    if (!confirm(`Voulez-vous vraiment supprimer le service "${serviceName}" ?`)) return;
+    if (!confirm(`Voulez-vous vraiment supprimer l'équipement "${serviceName}" ?`)) return;
     appState.settings.services = services.filter((s: { id: string }) => s.id !== id);
     saveDatabase();
     bump();
@@ -18,13 +18,13 @@ export function ServicesPanel({ active, openModal, bump }: { active: boolean; op
   return (
     <div id="panel-services" className={`settings-panel${active ? " active" : ""}`}>
       <div className="settings-panel-header">
-        <h3 className="settings-panel-title">Gestion des Services</h3>
+        <h3 className="settings-panel-title">Gestion des Équipements</h3>
         <button
           className="btn btn-primary btn-secondary"
           style={{ padding: "6px 12px", fontSize: "0.8rem" }}
           onClick={() => openModal(null)}
         >
-          + Ajouter un service
+          + Ajouter un équipement
         </button>
       </div>
       <div className="settings-list">
@@ -95,7 +95,7 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
 
   const submit = () => {
     const serviceName = name.trim();
-    const nameError = requireNonEmpty(serviceName, "Le nom du service est obligatoire.");
+    const nameError = requireNonEmpty(serviceName, "Le nom de l'équipement est obligatoire.");
     if (nameError) {
       showToast(nameError, "warning");
       return;
@@ -135,7 +135,7 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
       (s: { name: string; id: string }) => s.name.toUpperCase() === serviceName.toUpperCase() && s.id !== originalId
     );
     if (duplicate) {
-      showToast("Ce service existe déjà.", "warning");
+      showToast("Cet équipement existe déjà.", "warning");
       return;
     }
 
@@ -165,13 +165,13 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
     <Modal
       id="service-modal"
       titleId="service-modal-title"
-      title={originalId ? "Modifier le service" : "Ajouter un service"}
+      title={originalId ? "Modifier l'équipement" : "Ajouter un équipement"}
       isOpen={isOpen}
       onClose={onClose}
       onSubmit={submit}
     >
       <div className="form-group">
-        <label htmlFor="form-service-name">Nom du service</label>
+        <label htmlFor="form-service-name">Nom de l'équipement</label>
         <input
           type="text"
           id="form-service-name"

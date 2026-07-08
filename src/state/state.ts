@@ -10,7 +10,7 @@ import { checkBackupReminder, scheduleAutoBackupWrite } from "../services/backup
 
 // Free technical services (no fee): paid technical items (location de projecteur, piano à
 // queue, projecteur / équipement informatique) live in appState.settings.services instead, so
-// their amounts stay modifiable from the Services settings tab.
+// their amounts stay modifiable from the Équipements settings tab.
 const TECHNICAL_SERVICES: string[] = ["Microphone", "Éclairage de scène", "Musique d'ambiance", "Fichier audio, vidéo ou présentation PowerPoint"];
 const BAR_DRINK_TYPES: string[] = ["Avec alcool", "Sans alcool"];
 const BAR_SERVICE_TYPES: string[] = ["Service autonome", "Service d'hôtesses", "Distribution de breuvages et nettoyage de coupes"];

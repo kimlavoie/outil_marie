@@ -532,11 +532,11 @@ function addReservationCard(reservationData: any = null) {
 
       <div class="distribution-section">
         <div class="distribution-header">
-          <span class="field-label">Services</span>
+          <span class="field-label">Équipements</span>
           <button type="button" class="btn btn-secondary room-add-service-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
         <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.3fr 0.6fr 0.6fr 1fr 1fr auto; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; padding: 0 12px; margin-bottom: 4px;">
-          <span>Service</span><span>Qté</span><span title="Utilisé seulement pour les services facturés à l'heure">Heures</span><span>Compte à facturer</span><span>Sous-total</span><span></span>
+          <span>Équipement</span><span>Qté</span><span title="Utilisé seulement pour les équipements facturés à l'heure">Heures</span><span>Compte à facturer</span><span>Sous-total</span><span></span>
         </div>
         <div class="distribution-list room-services-list"></div>
       </div>

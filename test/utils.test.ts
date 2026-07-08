@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateDaysCount, getRoomsTariffTotal, getActivityReferences, formatCurrency, escapeHtml, generateUid, getReservationRoomLabel, getRoomColor, buildGlAccountOptionsHtml, buildPaginationBarHtml, debounce } from "../src/utils/utils.ts";
+import { calculateDaysCount, getRoomsTariffTotal, getActivityReferences, formatCurrency, escapeHtml, generateUid, getReservationRoomLabel, getRoomColor, buildGlAccountOptionsHtml, buildPaginationBarHtml, debounce, formatDateMask } from "../src/utils/utils.ts";
 import { appState } from "../src/state/state.ts";
 
 test("calculateDaysCount counts both endpoints inclusively", () => {
@@ -153,4 +153,15 @@ test("debounce delays execution and only runs the last call in the delay period"
   await new Promise(resolve => setTimeout(resolve, 80));
   assert.equal(called, 1);
 });
+
+test("formatDateMask formats digits to YYYY-MM-DD", () => {
+  assert.equal(formatDateMask("2026"), "2026");
+  assert.equal(formatDateMask("20260"), "2026-0");
+  assert.equal(formatDateMask("202607"), "2026-07");
+  assert.equal(formatDateMask("2026071"), "2026-07-1");
+  assert.equal(formatDateMask("20260715"), "2026-07-15");
+  assert.equal(formatDateMask("20260715999"), "2026-07-15");
+  assert.equal(formatDateMask("abc2026def07ghi15"), "2026-07-15");
+});
+
 export {};

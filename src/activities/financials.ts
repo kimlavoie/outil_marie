@@ -20,7 +20,8 @@ import {
   getActiveSalaryRate,
   getActiveSalaryOvertimeRate,
   getActiveServiceRate,
-  recordActivityView
+  recordActivityView,
+  EVENT_TYPES
 } from "../state/state.ts";
 import {
   formatCurrency,
@@ -32,7 +33,7 @@ import {
   showToast
 } from "../utils/utils.ts";
 import { isNonEmptyString } from "../utils/validation.ts";
-import { activitiesState, renderActivities } from "./render.ts";
+import { activitiesState, renderActivities, getActivityStateLabel } from "./render.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations.ts";
 import { updateStaffRowSubtotal, updateServiceRowSubtotal } from "./reservation-subrows.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
@@ -94,7 +95,7 @@ function updateSubmissionFinancialSummary() {
   container.innerHTML = `
     <div class="financial-summary-row"><span>Location des salles</span><span>${formatCurrency(roomsTotal)}</span></div>
     <div class="financial-summary-row"><span>Personnel</span><span>${formatCurrency(staffTotal)}</span></div>
-    <div class="financial-summary-row"><span>Services</span><span>${formatCurrency(servicesTotal)}</span></div>
+    <div class="financial-summary-row"><span>Équipements</span><span>${formatCurrency(servicesTotal)}</span></div>
     <div class="financial-summary-row"><span>Autres frais</span><span>${formatCurrency(feesTotal)}</span></div>
     <div class="financial-summary-row"><span>Sous-total</span><span>${formatCurrency(subtotal)}</span></div>
     <div class="financial-summary-row"><span>TPS (5%)</span><span>${formatCurrency(tps)}</span></div>
@@ -210,7 +211,7 @@ function buildPrintActivitySheetHtml(act: any) {
       <table class="print-sheet-total-table">
         <tr><td>Location des salles</td><td>${formatCurrency(fin.roomsTotal)}</td></tr>
         <tr><td>Personnel</td><td>${formatCurrency(fin.staffTotal)}</td></tr>
-        <tr><td>Services</td><td>${formatCurrency(fin.servicesTotal)}</td></tr>
+        <tr><td>Équipements</td><td>${formatCurrency(fin.servicesTotal)}</td></tr>
         <tr><td>Autres frais</td><td>${formatCurrency(fin.feesTotal)}</td></tr>
         <tr><td>Sous-total</td><td>${formatCurrency(fin.subtotal)}</td></tr>
         <tr><td>TPS (5%)</td><td>${formatCurrency(fin.tps)}</td></tr>
@@ -219,6 +220,189 @@ function buildPrintActivitySheetHtml(act: any) {
       </table>
     </div>
   `;
+}
+
+// Builds the read-only "view details" modal content for an activity. Unlike
+// buildPrintActivitySheetHtml, every section/field is only rendered when it was actually filled
+// in on the form — an activity with no client contact info, no notes, etc. simply omits those
+// rows instead of showing empty placeholders.
+function buildActivityDetailsHtml(act: any) {
+  const client = act.client || {};
+  const manager = act.activity_manager || {};
+  const eventTypeLabel = (() => {
+    if (!act.event_type) return "";
+    if (act.event_type === "autre") return act.event_type_other || "Autre";
+    const found = EVENT_TYPES.find((t: any) => t.value === act.event_type);
+    return found ? found.label : act.event_type;
+  })();
+
+  const infoRows = [
+    ["Statut", getActivityStateLabel(act.state)],
+    ["Références COBA", act.coba],
+    ["Département", act.department],
+    ["Nombre de personnes", act.attendees_count ? String(act.attendees_count) : ""],
+    ["Type d'événement", eventTypeLabel],
+    ["Responsable facturation", act.responsable],
+    ["Type de client", act.client_type === "interne" ? "Interne" : act.client_type === "externe" ? "Externe" : ""]
+  ].filter(([, value]) => isNonEmptyString(value));
+
+  const clientRows = [
+    ["Nom", [client.first_name, client.last_name].filter(Boolean).join(" ")],
+    ["Téléphone", client.phone],
+    ["Courriel", client.email]
+  ].filter(([, value]) => isNonEmptyString(value));
+
+  const managerRows = [
+    ["Nom", [manager.first_name, manager.last_name].filter(Boolean).join(" ")],
+    ["Téléphone", manager.phone],
+    ["Courriel", manager.email]
+  ].filter(([, value]) => isNonEmptyString(value));
+
+  const reservations = act.reservations || [];
+  const roomsRows = reservations
+    .map((r: any) => {
+      const days = (r.slots || []).length;
+      const slotsText =
+        (r.slots || [])
+          .map((s: any) => `${s.date}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
+          .join(", ") || "-";
+      return `
+        <tr>
+          <td>${escapeHtml(getReservationRoomLabel(r))}</td>
+          <td>${slotsText}</td>
+          <td>${days}</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  const fin = reservations.length > 0 ? computeActivityFinancials(act) : null;
+
+  return `
+    <div class="print-sheet-header">
+      <div>
+        <h1>${escapeHtml(act.name) || `Activité ${act.id}`}</h1>
+        <div class="print-sheet-subtitle">Activité ${act.id}</div>
+      </div>
+    </div>
+
+    ${
+      infoRows.length > 0
+        ? `
+    <div class="print-sheet-section">
+      <h2>Informations générales</h2>
+      <div class="print-sheet-grid">
+        ${infoRows.map(([label, value]) => `<div><strong>${label} :</strong> ${escapeHtml(value)}</div>`).join("")}
+      </div>
+    </div>
+    `
+        : ""
+    }
+
+    ${
+      clientRows.length > 0
+        ? `
+    <div class="print-sheet-section">
+      <h2>Informations client</h2>
+      <div class="print-sheet-grid">
+        ${clientRows.map(([label, value]) => `<div><strong>${label} :</strong> ${escapeHtml(value)}</div>`).join("")}
+      </div>
+    </div>
+    `
+        : ""
+    }
+
+    ${
+      managerRows.length > 0
+        ? `
+    <div class="print-sheet-section">
+      <h2>Gestionnaire responsable</h2>
+      <div class="print-sheet-grid">
+        ${managerRows.map(([label, value]) => `<div><strong>${label} :</strong> ${escapeHtml(value)}</div>`).join("")}
+      </div>
+    </div>
+    `
+        : ""
+    }
+
+    ${
+      isNonEmptyString(act.description)
+        ? `
+    <div class="print-sheet-section">
+      <h2>Description</h2>
+      <div>${escapeHtml(act.description)}</div>
+    </div>
+    `
+        : ""
+    }
+
+    ${
+      isNonEmptyString(act.notes)
+        ? `
+    <div class="print-sheet-section">
+      <h2>Notes</h2>
+      <div>${escapeHtml(act.notes)}</div>
+    </div>
+    `
+        : ""
+    }
+
+    ${
+      reservations.length > 0
+        ? `
+    <div class="print-sheet-section">
+      <h2>Réservations de salle</h2>
+      <table class="print-sheet-table">
+        <thead>
+          <tr><th>Salle</th><th>Créneaux</th><th>Jours</th></tr>
+        </thead>
+        <tbody>${roomsRows}</tbody>
+      </table>
+    </div>
+    `
+        : ""
+    }
+
+    ${
+      fin
+        ? `
+    <div class="print-sheet-section">
+      <h2>Sommaire financier</h2>
+      <table class="print-sheet-total-table">
+        <tr><td>Location des salles</td><td>${formatCurrency(fin.roomsTotal)}</td></tr>
+        <tr><td>Personnel</td><td>${formatCurrency(fin.staffTotal)}</td></tr>
+        <tr><td>Équipements</td><td>${formatCurrency(fin.servicesTotal)}</td></tr>
+        <tr><td>Autres frais</td><td>${formatCurrency(fin.feesTotal)}</td></tr>
+        <tr><td>Sous-total</td><td>${formatCurrency(fin.subtotal)}</td></tr>
+        <tr><td>TPS (5%)</td><td>${formatCurrency(fin.tps)}</td></tr>
+        <tr><td>TVQ (9,975%)</td><td>${formatCurrency(fin.tvq)}</td></tr>
+        <tr class="print-sheet-grand-total"><td>Total</td><td>${formatCurrency(fin.total)}</td></tr>
+      </table>
+    </div>
+    `
+        : ""
+    }
+  `;
+}
+
+// Opens the read-only activity details modal for the given activity id (used by the "Voir les
+// détails" row action — unlike the drawer, this never mutates the activity).
+function openActivityDetailsModal(id: string) {
+  const act = appState.activities.find((a: any) => a.id === id);
+  if (!act) return;
+  el("activity-details-content").innerHTML = buildActivityDetailsHtml(act);
+  el("activity-details-modal").classList.add("active");
+  el("modal-backdrop").classList.add("active");
+}
+
+function closeActivityDetailsModal() {
+  el("activity-details-modal").classList.remove("active");
+  el("modal-backdrop").classList.remove("active");
+}
+
+function initActivityDetailsModal() {
+  el("activity-details-modal-close").addEventListener("click", closeActivityDetailsModal);
+  el("activity-details-modal-close-btn").addEventListener("click", closeActivityDetailsModal);
 }
 
 // Populates the hidden print sheet with the currently-open activity and triggers the browser's
@@ -575,6 +759,10 @@ export {
   updateSubmissionFinancialSummary,
   buildPrintActivitySheetHtml,
   printActivitySheet,
+  buildActivityDetailsHtml,
+  openActivityDetailsModal,
+  closeActivityDetailsModal,
+  initActivityDetailsModal,
   generateNextActivityId,
   openActivityDrawer,
   openActivityDetailModal,

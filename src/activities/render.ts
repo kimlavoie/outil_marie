@@ -32,7 +32,7 @@ import {
   renderPaginationBar
 } from "../utils/utils.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
-import { openActivityDrawer } from "./financials.ts";
+import { openActivityDrawer, openActivityDetailsModal } from "./financials.ts";
 import { duplicateActivityAndOpen } from "./form.ts";
 
 // Typed shorthand for document.getElementById in this file's DOM-manipulation code — see
@@ -362,6 +362,15 @@ function renderActivities() {
           ${
             isFilled
               ? `
+          <button class="btn-icon view-act-btn" data-id="${act.id}" title="Voir les détails" style="margin-right: 4px;">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+          </button>
+          `
+              : ""
+          }
+          ${
+            isFilled
+              ? `
           <button class="btn-icon duplicate-act-btn" data-id="${act.id}" title="Dupliquer" style="margin-right: 4px;">
             <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
           </button>
@@ -418,6 +427,14 @@ function renderActivities() {
       const url = new URL(window.location.href);
       url.search = `?activity=${encodeURIComponent(id)}`;
       window.open(url.toString(), "_blank");
+    });
+  });
+
+  // Attach "view details" (read-only) buttons event listeners
+  document.querySelectorAll(".view-act-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      openActivityDetailsModal(btn.getAttribute("data-id") || "");
     });
   });
 

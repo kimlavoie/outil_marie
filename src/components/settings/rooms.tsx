@@ -222,10 +222,13 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
 
     let gridErrorMsg = "";
     grids.forEach(g => {
+      const dateStr = (g.effective_date || "").trim();
       if (g.parameters.length === 0 || g.client_types.length === 0) {
         gridErrorMsg = "Chaque version de la grille tarifaire doit avoir au moins un paramètre et un type de client.";
       } else if (g.parameters.some(p => !p.name.trim()) || g.client_types.some(ct => !ct.name.trim())) {
         gridErrorMsg = "Veuillez nommer chaque paramètre et chaque type de client de la grille tarifaire.";
+      } else if (dateStr && !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        gridErrorMsg = "La date d'entrée en vigueur de chaque version doit être au format AAAA-MM-JJ, ou vide.";
       }
     });
     if (gridErrorMsg) {
@@ -406,7 +409,10 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
             value={activeGrid.effective_date}
             onChange={e => {
               const inputType = (e.nativeEvent as InputEvent).inputType;
-              const value = inputType === "deleteContentBackward" ? e.target.value : formatDateMask(e.target.value);
+              const value =
+                inputType === "deleteContentBackward" || inputType === "deleteContentForward"
+                  ? e.target.value
+                  : formatDateMask(e.target.value);
               updateActiveGrid({ effective_date: value });
             }}
           />

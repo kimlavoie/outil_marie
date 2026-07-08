@@ -676,37 +676,30 @@ function renderBillingStateStatus(act: any) {
   const container = el("billing-state-status");
   if (!container) return;
 
-  const canBill = act.state === "planifiee";
-  const canComplete = act.state === "facturee";
-
   container.innerHTML = `
     ${act.billed_at ? `<span style="color: var(--text-muted);">Facturée le ${act.billed_at}</span>` : ""}
     ${act.completed_at ? `<span style="color: var(--text-muted);">Terminée le ${act.completed_at}</span>` : ""}
-    <button type="button" id="mark-billed-btn" class="btn btn-primary" ${canBill ? "" : "disabled"}>Marquer comme Facturée</button>
-    <button type="button" id="mark-completed-btn" class="btn btn-primary" ${canComplete ? "" : "disabled"}>Marquer comme Terminée</button>
+    <button type="button" id="mark-billed-btn" class="btn btn-primary">Marquer comme Facturée</button>
+    <button type="button" id="mark-completed-btn" class="btn btn-primary">Marquer comme Terminée</button>
   `;
 
   const billBtn = container.querySelector<HTMLButtonElement>("#mark-billed-btn")!;
-  if (!billBtn.disabled) {
-    billBtn.addEventListener("click", () => {
-      commitActivityPatch(act.id, (a: any) => {
-        a.state = "facturee";
-        a.billed_at = new Date().toISOString().split("T")[0];
-      });
-      renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
+  billBtn.addEventListener("click", () => {
+    commitActivityPatch(act.id, (a: any) => {
+      a.state = "facturee";
+      a.billed_at = new Date().toISOString().split("T")[0];
     });
-  }
+    renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
+  });
 
   const completeBtn = container.querySelector<HTMLButtonElement>("#mark-completed-btn")!;
-  if (!completeBtn.disabled) {
-    completeBtn.addEventListener("click", () => {
-      commitActivityPatch(act.id, (a: any) => {
-        a.state = "terminee";
-        a.completed_at = new Date().toISOString().split("T")[0];
-      });
-      renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
+  completeBtn.addEventListener("click", () => {
+    commitActivityPatch(act.id, (a: any) => {
+      a.state = "terminee";
+      a.completed_at = new Date().toISOString().split("T")[0];
     });
-  }
+    renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
+  });
 }
 
 // Fills the activity form fields (everything except the id/internal-id keys)

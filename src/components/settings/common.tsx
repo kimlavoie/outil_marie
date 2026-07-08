@@ -133,7 +133,10 @@ export function RateVersionsEditor({
             style={{ padding: "8px 12px", fontSize: "0.85rem" }}
             onChange={e => {
               const inputType = (e.nativeEvent as InputEvent).inputType;
-              const value = inputType === "deleteContentBackward" ? e.target.value : formatDateMask(e.target.value);
+              const value =
+                inputType === "deleteContentBackward" || inputType === "deleteContentForward"
+                  ? e.target.value
+                  : formatDateMask(e.target.value);
               update(i, { effective_date: value });
             }}
           />
