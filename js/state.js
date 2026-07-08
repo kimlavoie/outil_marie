@@ -1,8 +1,12 @@
-import { calculateDaysCount, generateUid } from "./utils.ts";
+import { calculateDaysCount, generateUid, showToast } from "./utils.ts";
 import { openVersionedDb } from "./db-utils.ts";
 import { logError } from "./logger.ts";
 
 import { DEFAULT_CONFIG } from "./config-defaults.ts";
+import { activitiesState } from "./activities-render.ts";
+import { reconciliationState } from "./reconciliation.ts";
+import { accountReportState } from "./account-report.js";
+import { checkBackupReminder, scheduleAutoBackupWrite } from "./backup.js";
 
 // Free technical services (no fee): paid technical items (location de projecteur, piano à
 // queue, projecteur / équipement informatique) live in appState.settings.services instead, so
@@ -40,6 +44,14 @@ let appState = {
   selected_year: "",
   selected_quarters: [1, 2, 3, 4]
 };
+
+// ES modules only give importers a read-only live view of an exported `let` — backup.js's JSON
+// restore needs to actually replace the whole object (not just mutate fields), so it goes
+// through this setter instead of assigning the imported binding directly (same pattern as
+// activities-financials.ts's setActivityUndoSnapshotTimer).
+function setAppState(newState) {
+  appState = newState;
+}
 
 // Quick access (favorites) helpers
 function isFavoriteActivity(id) {
@@ -813,19 +825,19 @@ let lastSaveFailed = false;
 async function saveDatabase() {
   try {
     await saveAppStateToDb(appState);
-    if (lastSaveFailed && typeof showToast === "function") {
+    if (lastSaveFailed) {
       showToast("La sauvegarde a repris normalement.", "success");
     }
     lastSaveFailed = false;
   } catch (e) {
     logError("state", "sauvegarde de la base IndexedDB", e);
-    if (!lastSaveFailed && typeof showToast === "function") {
+    if (!lastSaveFailed) {
       showToast("Échec de la sauvegarde des données. Vos dernières modifications pourraient être perdues.", "error", 8000);
     }
     lastSaveFailed = true;
   }
   checkBackupReminder();
-  if (typeof scheduleAutoBackupWrite === "function") scheduleAutoBackupWrite();
+  scheduleAutoBackupWrite();
 }
 
 // Persist search/filter/sort/pagination state per view, so reloading the
@@ -917,6 +929,7 @@ export {
   HOST_DUTY_OPTIONS,
   EVENT_TYPES,
   appState,
+  setAppState,
   isFavoriteActivity,
   toggleFavoriteActivity,
   getRecentlyViewedActivityIds,
@@ -955,50 +968,3 @@ export {
   saveUiState,
   restoreUiState
 };
-
-if (typeof window !== "undefined") {
-  window.DEFAULT_CONFIG = DEFAULT_CONFIG;
-  window.TECHNICAL_SERVICES = TECHNICAL_SERVICES;
-  window.BAR_DRINK_TYPES = BAR_DRINK_TYPES;
-  window.BAR_SERVICE_TYPES = BAR_SERVICE_TYPES;
-  window.HOST_DUTY_OPTIONS = HOST_DUTY_OPTIONS;
-  window.EVENT_TYPES = EVENT_TYPES;
-  window.appState = appState;
-  window.isFavoriteActivity = isFavoriteActivity;
-  window.toggleFavoriteActivity = toggleFavoriteActivity;
-  window.getRecentlyViewedActivityIds = getRecentlyViewedActivityIds;
-  window.recordActivityView = recordActivityView;
-  window.getFiscalYear = getFiscalYear;
-  window.getQuarterNumber = getQuarterNumber;
-  window.getDefaultFiscalYear = getDefaultFiscalYear;
-  window.getFiscalYearRange = getFiscalYearRange;
-  window.getQuarter = getQuarter;
-  window.parseLocalDateStr = parseLocalDateStr;
-  window.formatDateStrLocal = formatDateStrLocal;
-  window.openAppDb = openAppDb;
-  window.getReconDecisionsFromDb = getReconDecisionsFromDb;
-  window.saveReconDecisionToDb = saveReconDecisionToDb;
-  window.deleteReconDecisionFromDb = deleteReconDecisionFromDb;
-  window.addActivityVersionToDb = addActivityVersionToDb;
-  window.getActivityVersionsFromDb = getActivityVersionsFromDb;
-  window.pruneActivityVersions = pruneActivityVersions;
-  window.clearAllActivityVersionsFromDb = clearAllActivityVersionsFromDb;
-  window.getAppStateFromDb = getAppStateFromDb;
-  window.saveAppStateToDb = saveAppStateToDb;
-  window.sanitizeActivitiesList = sanitizeActivitiesList;
-  window.loadDatabase = loadDatabase;
-  window.migrateRoomsConfig = migrateRoomsConfig;
-  window.migrateSalariesConfig = migrateSalariesConfig;
-  window.migrateServicesConfig = migrateServicesConfig;
-  window.getActivePricingGrid = getActivePricingGrid;
-  window.getActiveRateVersionField = getActiveRateVersionField;
-  window.getActiveSalaryRate = getActiveSalaryRate;
-  window.getActiveSalaryOvertimeRate = getActiveSalaryOvertimeRate;
-  window.getActiveServiceRate = getActiveServiceRate;
-  window.getFlattenedRoomTarifs = getFlattenedRoomTarifs;
-  window.migrateActivities = migrateActivities;
-  window.seedDatabase = seedDatabase;
-  window.saveDatabase = saveDatabase;
-  window.saveUiState = saveUiState;
-  window.restoreUiState = restoreUiState;
-}

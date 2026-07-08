@@ -51,9 +51,3 @@ function textSimilarity(a: any, b: any) {
 }
 
 export { FUZZY_TEXT_STOPWORDS, tokenizeForMatch, textSimilarity };
-
-if (typeof window !== "undefined") {
-  window.FUZZY_TEXT_STOPWORDS = FUZZY_TEXT_STOPWORDS;
-  window.tokenizeForMatch = tokenizeForMatch;
-  window.textSimilarity = textSimilarity;
-}

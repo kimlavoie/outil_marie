@@ -1,7 +1,10 @@
 /**
  * utils.ts - Generic, stateless helpers shared across views
- * (depends on state.js for appState/parseLocalDateStr)
+ * (depends on state.js for appState — a real circular import, since state.js itself imports
+ * calculateDaysCount/generateUid from here; safe since nothing runs during either module's
+ * top-level evaluation, same as the other circular imports already in this codebase)
  */
+import { appState } from "./state.js";
 
 // Helper: Format currencies in standard FR-CA format
 function formatCurrency(val: any) {
@@ -549,36 +552,3 @@ export {
   showLoadingOverlay,
   hideLoadingOverlay
 };
-
-if (typeof window !== "undefined") {
-  window.formatCurrency = formatCurrency;
-  window.escapeHtml = escapeHtml;
-  window.generateUid = generateUid;
-  window.debounce = debounce;
-  window.calculateDaysCount = calculateDaysCount;
-  window.getActivityReferences = getActivityReferences;
-  window.getRoomsTariffTotal = getRoomsTariffTotal;
-  window.OTHER_ROOM_VALUE = OTHER_ROOM_VALUE;
-  window.getReservationRoomLabel = getReservationRoomLabel;
-  window.getRoomColor = getRoomColor;
-  window.buildGlAccountOptionsHtml = buildGlAccountOptionsHtml;
-  window.buildPaginationBarHtml = buildPaginationBarHtml;
-  window.renderPaginationBar = renderPaginationBar;
-  window.setPillGroupActiveEl = setPillGroupActiveEl;
-  window.setPillGroupActive = setPillGroupActive;
-  window.initPillToggleEl = initPillToggleEl;
-  window.initPillToggle = initPillToggle;
-  window.initExclusivePillToggleEl = initExclusivePillToggleEl;
-  window.initExclusivePillToggle = initExclusivePillToggle;
-  window.getExclusivePillValueEl = getExclusivePillValueEl;
-  window.getExclusivePillValue = getExclusivePillValue;
-  window.setExclusivePillValueEl = setExclusivePillValueEl;
-  window.setExclusivePillValue = setExclusivePillValue;
-  window.buildSearchableSelectHtml = buildSearchableSelectHtml;
-  window.initSearchableSelectEl = initSearchableSelectEl;
-  window.maskDateInput = maskDateInput;
-  window.maskPhoneInput = maskPhoneInput;
-  window.showToast = showToast;
-  window.showLoadingOverlay = showLoadingOverlay;
-  window.hideLoadingOverlay = hideLoadingOverlay;
-}

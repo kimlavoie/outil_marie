@@ -863,7 +863,3 @@ function renderReconciliation() {
 }
 
 export { initReconciliationHandlers, renderReconciliation };
-if (typeof window !== "undefined") {
-  window.initReconciliationHandlers = initReconciliationHandlers;
-  window.renderReconciliation = renderReconciliation;
-}

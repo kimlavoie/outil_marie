@@ -1,11 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Mock the required globals before importing/executing state migrations
-import { generateUid, calculateDaysCount } from "../js/utils.ts";
-global.generateUid = generateUid;
-global.calculateDaysCount = calculateDaysCount;
-
 import { migrateActivities, migrateRoomsConfig, appState } from "../js/state.js";
 
 test("migrateActivities correctly migrates legacy room_name to reservations format", () => {

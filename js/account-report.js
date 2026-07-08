@@ -2,10 +2,12 @@
  * account-report.js - "Grand Livre local" view: per-account ledger cards
  * built from activity distributions
  */
+import { appState, getFiscalYear, getQuarterNumber, saveUiState } from "./state.js";
+import { escapeHtml, formatCurrency, buildPaginationBarHtml } from "./utils.ts";
 
 // Account report view state, grouped (sort/pagination are per-account since
 // each account renders its own independently-paginated card)
-let accountReportState = {
+const accountReportState = {
   sortKey: "id",
   sortOrder: "asc",
   pageSize: 10,
@@ -251,3 +253,5 @@ function renderAccountReport() {
     }
   };
 }
+
+export { accountReportState, renderAccountReport };

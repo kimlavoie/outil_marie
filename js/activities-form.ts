@@ -113,10 +113,11 @@ function initFormHandlers() {
   el("activity-drawer-back-to-calendar-btn").addEventListener("click", () => {
     const calendarReturn = activitiesState.calendarReturn;
     cancelActivityDrawer();
-    // calendar-view.tsx isn't imported directly: it's a .tsx (JSX) file, and this module needs to
-    // stay importable by plain `node --test` (see js/dashboard-view.tsx's/js/settings-view.tsx's
-    // same constraint) — Node can't load .tsx. Already bridged to window + declared in globals.d.ts.
-    if (calendarReturn) window.reopenCalendarModal(calendarReturn);
+    // calendar-view.tsx isn't imported statically: it's a .tsx (JSX) file, and this module needs
+    // to stay importable by plain `node --test` (see js/dashboard-view.tsx's/js/settings-view.tsx's
+    // same constraint) — Node can't load .tsx. A dynamic import is only ever resolved when this
+    // handler actually runs, so it doesn't affect the test suite's static import graph.
+    if (calendarReturn) import("./calendar-view.tsx").then(m => m.reopenCalendarModal(calendarReturn));
   });
 
   // Inputs search
@@ -236,12 +237,11 @@ function initFormHandlers() {
       cancelActivityDrawer();
       closeNewActivityModal();
       // Settings' 6 modals became React state (see js/settings-view.tsx) when that view was
-      // converted; this bridge replaces the old vanilla closeSettingsModal(type) calls, which had
-      // silently stopped doing anything (closeSettingsModal no longer existed, so the `typeof`
-      // guard just no-op'd) and only ever covered 4 of the 6 modals anyway.
-      if (typeof window.closeAllSettingsModals === "function") {
-        window.closeAllSettingsModals();
-      }
+      // converted; this replaces the old vanilla closeSettingsModal(type) calls, which had
+      // silently stopped doing anything (closeSettingsModal no longer existed) and only ever
+      // covered 4 of the 6 modals anyway. Dynamic import for the same .tsx/node --test reason as
+      // reopenCalendarModal above.
+      import("./settings-view.tsx").then(m => m.closeAllSettingsModals());
     }
   });
 }
@@ -745,16 +745,3 @@ export {
   fillActivityFormFields,
   WEEKDAY_PILL_OPTIONS
 };
-if (typeof window !== "undefined") {
-  window.initFormHandlers = initFormHandlers;
-  window.initNewActivityModal = initNewActivityModal;
-  window.createActivity = createActivity;
-  window.createDraftActivity = createDraftActivity;
-  window.duplicateActivityAndOpen = duplicateActivityAndOpen;
-  window.getActivityFormMode = getActivityFormMode;
-  window.switchActivityTab = switchActivityTab;
-  window.renderActivityStateBar = renderActivityStateBar;
-  window.commitActivityPatch = commitActivityPatch;
-  window.fillActivityFormFields = fillActivityFormFields;
-  window.WEEKDAY_PILL_OPTIONS = WEEKDAY_PILL_OPTIONS;
-}

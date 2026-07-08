@@ -29,7 +29,3 @@ function openVersionedDb(name: string, version: number, upgrade: (db: IDBDatabas
 }
 
 export { openVersionedDb };
-
-if (typeof window !== "undefined") {
-  window.openVersionedDb = openVersionedDb;
-}

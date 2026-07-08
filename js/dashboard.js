@@ -1,7 +1,7 @@
 /**
  * dashboard.js - Dashboard view KPI computation (pure, no DOM, unit-tested directly).
- * The rendering (stat cards, Chart.js visualizations) and the window.renderDashboard()/
- * window.renderDashboardCharts() bridge navigation.js calls live in js/dashboard-view.tsx
+ * The rendering (stat cards, Chart.js visualizations) and the renderDashboard()/
+ * renderDashboardCharts() functions navigation.js imports and calls live in js/dashboard-view.tsx
  * (React, since Phase 3 of the Vite/React/TS migration — see TODO.txt).
  *
  * Kept as a separate plain .js module (rather than folded into dashboard-view.tsx) so the test
@@ -9,6 +9,8 @@
  * TypeScript support strips .ts but can't execute .tsx (JSX needs a real transform, not just
  * type erasure), so nothing reachable from a test file's import graph can be a .tsx module.
  */
+import { getFiscalYear, getQuarterNumber } from "./state.js";
+import { getRoomsTariffTotal } from "./utils.ts";
 
 // Pure KPI computation (no DOM) so it can be unit tested directly.
 function computeDashboardStats(activities, selectedYear, selectedQuarters, reconciliationResults) {
@@ -56,6 +58,3 @@ function computeDashboardStats(activities, selectedYear, selectedQuarters, recon
 }
 
 export { computeDashboardStats };
-if (typeof window !== "undefined") {
-  window.computeDashboardStats = computeDashboardStats;
-}

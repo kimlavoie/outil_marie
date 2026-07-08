@@ -213,9 +213,3 @@ function renderCalendar(popover: any, input: any, displayDate: Date) {
 }
 
 export { validateDateFieldFiscalYear, clearDateFieldErrors, initCustomDatepickers, initDatepickerWrapper };
-if (typeof window !== "undefined") {
-  window.validateDateFieldFiscalYear = validateDateFieldFiscalYear;
-  window.clearDateFieldErrors = clearDateFieldErrors;
-  window.initCustomDatepickers = initCustomDatepickers;
-  window.initDatepickerWrapper = initDatepickerWrapper;
-}

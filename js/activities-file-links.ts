@@ -157,8 +157,3 @@ function renderFileLinkStatus(kind: "submission" | "contract", act: any) {
 }
 
 export { renderFileLinkStatus, pickAndLinkFile, openLinkedFile };
-if (typeof window !== "undefined") {
-  window.renderFileLinkStatus = renderFileLinkStatus;
-  window.pickAndLinkFile = pickAndLinkFile;
-  window.openLinkedFile = openLinkedFile;
-}

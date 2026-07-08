@@ -2,6 +2,25 @@
  * navigation.js - Theme, top-level view switching, shared dropdowns, and the
  * fiscal year / quarter period selector.
  */
+import {
+  appState,
+  saveDatabase,
+  getFiscalYear,
+  parseLocalDateStr,
+  EVENT_TYPES,
+  toggleFavoriteActivity,
+  getRecentlyViewedActivityIds
+} from "./state.js";
+import { escapeHtml, debounce } from "./utils.ts";
+import { textSimilarity } from "./fuzzy-match.ts";
+import { activitiesState, renderActivities } from "./activities-render.ts";
+import { openActivityDrawer } from "./activities-financials.ts";
+import { renderSettings, openSettingsPanel, openAccountModal, openDeptModal } from "./settings-view.tsx";
+import { renderDashboard, renderDashboardCharts } from "./dashboard-view.tsx";
+import { renderReconciliation } from "./reconciliation-view.tsx";
+import { reconciliationState, reconcileLedger } from "./reconciliation.ts";
+import { renderAccountReport } from "./account-report.js";
+import { exportToExcel, renderBackupView, checkBackupReminder } from "./backup.js";
 
 // Theme management
 function applyTheme(theme) {
@@ -32,7 +51,7 @@ function switchToView(view) {
   if (!targetSection) return;
 
   // Clear activity selections if we leave the activities view
-  if (view !== "activities" && typeof activitiesState !== "undefined" && activitiesState.selectedIds) {
+  if (view !== "activities" && activitiesState.selectedIds) {
     activitiesState.selectedIds.clear();
     const selectAllCheckbox = document.getElementById("activities-select-all");
     if (selectAllCheckbox) {
@@ -575,3 +594,5 @@ function populateFiscalYears() {
     select.innerHTML += `<option value="${fy}" ${isSelected}>${fy}</option>`;
   });
 }
+
+export { applyTheme, switchToView, initNavigation, renderView, renderAll, populateDropdowns, initPeriodSelector, renderQuickAccessAll };

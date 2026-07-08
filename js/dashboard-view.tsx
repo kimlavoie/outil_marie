@@ -262,7 +262,7 @@ function renderDashboardReact() {
 
 // Both re-render the same React tree: the split only mattered for the old imperative DOM code
 // (stats vs. charts were separate DOM writes), React recomputes everything together either way.
-// navigation.js calls these as bare globals on every view switch to "dashboard" and on theme
+// navigation.js imports and calls these on every view switch to "dashboard" and on theme
 // toggle — see js/navigation.js.
 function renderDashboard() {
   renderDashboardReact();
@@ -273,7 +273,3 @@ function renderDashboardCharts() {
 }
 
 export { renderDashboardReact, renderDashboard, renderDashboardCharts };
-if (typeof window !== "undefined") {
-  window.renderDashboard = renderDashboard;
-  window.renderDashboardCharts = renderDashboardCharts;
-}

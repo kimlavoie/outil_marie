@@ -174,7 +174,7 @@ Phase 3 — React pour une seule vue isolée (Tableau de bord) — TERMINÉ
     3 graphiques s'affichent, bascule de thème redessine les graphiques
     avec les bonnes couleurs.
 
-Phase 4 — Vue par vue, du moins risqué au plus risqué
+Phase 4 — Vue par vue, du moins risqué au plus risqué — TERMINÉ
 -----------------------------------------------------------------
 Ordre suggéré :
   1. Tableau de bord — TERMINÉ (Phase 3)
@@ -517,11 +517,96 @@ Rapprochement GL (js/reconciliation.ts + js/reconciliation-view.tsx) — détail
     (accepter une suggestion), export Excel, modale de détail des lignes
     GL, "+ Créer activité" depuis une ligne non saisie, "Effacer l'import".
 
-Phase 5 — Nettoyage
+Phase 5 — Nettoyage — TERMINÉ
 -----------------------------------------------------------------
-[ ] Retirer les scripts non-module restants (defer) et le bridging window.
+[x] Retirer les scripts non-module restants (defer) et le bridging window — TERMINÉ.
 [x] Activer strict: true dans tsconfig — TERMINÉ.
 [x] Adapter la config eslint pour TypeScript — TERMINÉ.
+
+Retirer les scripts non-module restants et le bridging window — détails
+- navigation.js, account-report.js et main.js (les 3 derniers scripts `<script defer>`, non
+  `type="module"`) convertis en vrais modules ES avec de vrais imports/exports — gardés en .js
+  (pas renommés .ts, cohérent avec state.js/backup.js/dashboard.js qui restent aussi .js).
+  account-report.js exporte maintenant `accountReportState` en plus de `renderAccountReport`
+  (utilisé par state.js, voir plus bas).
+- Tous les blocs `if (typeof window !== "undefined") { window.X = X; ... }` retirés des ~20
+  fichiers qui en avaient un (script Python ciblant le bloc final de chaque fichier, puis
+  vérification manuelle que la fin de chaque fichier restait intacte).
+- js/globals.d.ts réduit à l'essentiel : seuls Chart/XLSX (vendored, chargés en <script> non-
+  module depuis lib/, pas notre code) et showOpenFilePicker/showSaveFilePicker (File System
+  Access API, absente des types DOM par défaut) restent déclarés en ambiant. Tout le reste
+  (~300 lignes d'imports de type + membres Window) supprimé : plus aucun code applicatif ne
+  passe par `window.X`, donc plus besoin de le typer comme tel.
+- Cause racine à gérer avant de pouvoir retirer les bridges : plusieurs fichiers lisaient
+  `appState` (et d'autres exports de state.js) comme global ambiant sans jamais l'importer
+  (utils.ts, navigation.js, account-report.js, backup.js, main.js) — ça ne fonctionnait que
+  parce que state.js faisait `window.appState = appState`. Corrigé en ajoutant un vrai import
+  partout. De même, state.js lisait lui-même `activitiesState`/`reconciliationState`/
+  `accountReportState` (déclarés dans activities-render.ts/reconciliation.ts/account-report.js)
+  sans les importer — corrigé par de vrais imports (imports circulaires réels entre state.js et
+  ces 3 fichiers, sans problème puisque rien ne s'exécute à l'évaluation du module).
+- backup.js réassignait `appState = parsed` en entier lors d'une restauration JSON — impossible
+  via un import ES (vue en lecture seule). Ajout d'un `setAppState(newState)` dans state.js (même
+  pattern que `setActivityUndoSnapshotTimer`), exporté et appelé par backup.js à la place.
+- Contrainte centrale à respecter partout : plusieurs fichiers testés directement par
+  `node --test` (activities-financials.ts, activities-render.ts, backup.js, state.js, utils.ts...)
+  ne doivent jamais importer statiquement navigation.js, ni un fichier .tsx (settings-view.tsx,
+  calendar-view.tsx, dashboard-view.tsx, reconciliation-view.tsx) — directement ou
+  transitivement — sous peine de casser `node --test` (Node exécute le TS mais pas le JSX).
+  Vérifié systématiquement avant chaque import ajouté (qui importe quoi, qui est testé).
+  Résolu par `import(...)` dynamique (jamais résolu avant l'appel réel, donc invisible pour
+  `node --test` qui ne déclenche jamais ces handlers) aux points de jonction suivants :
+    - activities-form.ts -> calendar-view.tsx (reopenCalendarModal) et -> settings-view.tsx
+      (closeAllSettingsModals), déjà en pont window auparavant pour la même raison ;
+    - activities-financials.ts / activities-render.ts -> navigation.js (renderQuickAccessAll,
+      renderAll) ;
+    - backup.js -> navigation.js (applyTheme, renderAll, switchToView).
+  navigation.js lui-même importe librement les vues .tsx (renderDashboard, renderSettings,
+  renderReconciliation, openSettingsPanel/openAccountModal/openDeptModal) en imports statiques
+  réels, puisque rien ne l'importe jamais (ni les tests, ni aucun autre fichier applicatif à part
+  main.js et, via import circulaire réel, settings-view.tsx pour populateDropdowns).
+- test/backup.test.js mis à jour : utilisait `global.appState = {...}` pour simuler l'état avant
+  d'appeler getDaysSinceLastBackup() — ça ne fonctionnait que parce que backup.js lisait
+  `appState` comme global ambiant. Maintenant que backup.js importe vraiment `appState` depuis
+  state.js, le test doit passer par le vrai `setAppState(...)` exporté pour que la valeur soit
+  visible côté backup.js (liaison ES vivante, pas une simple variable globale).
+- vite.config.js : le plugin `copyLegacyStaticScripts` (copiait navigation.js/account-report.js/
+  main.js tels quels dans dist/ car Vite ne bundle que `type="module"`) simplifié en
+  `copyVendoredLibs`, qui ne copie plus que lib/ (XLSX/Chart, vraiment non-module) — les 3
+  anciens scripts sont maintenant bundlés normalement avec le reste.
+- Validé : tsc propre (0 erreur), 98/98 tests, lint 0 erreur/0 warning (les 3 anciens warnings
+  "fonction non utilisée" sur initNavigation/initPeriodSelector/renderAccountReport ont disparu :
+  ce sont maintenant de vrais exports utilisés via import, plus des déclarations de script
+  isolées qui semblaient inutilisées), vite build (39 modules, dist/ complet, plus aucun fichier
+  copié à la main dans dist/js/), vite dev (les 3 fichiers résolvent en 200 et leurs imports se
+  résolvent correctement à travers Vite).
+[ ] Validation manuelle recommandée (à faire par vous, `npm run dev`) : parcourir l'app de bout
+    en bout une fois (recherche globale, accès rapide, changement de thème, sélecteur d'année/
+    trimestres, sauvegarde/restauration JSON, export Excel, sauvegarde automatique) — ce
+    changement touche la façon dont presque tous les fichiers communiquent entre eux, donc c'est
+    la meilleure garantie derrière tsc/tests/lint/build qui ont tous validé.
+- BUGS TROUVÉS EN PRODUCTION APRÈS VALIDATION (signalés par l'utilisateur, erreurs console au
+  premier chargement) : `state.js` et `dashboard.js` appelaient encore plusieurs fonctions
+  d'autres fichiers comme globals bruts sans jamais les importer (`checkBackupReminder`/
+  `scheduleAutoBackupWrite` de backup.js et `showToast` de utils.ts dans `saveDatabase()` ;
+  `getFiscalYear`/`getQuarterNumber` de state.js et `getRoomsTariffTotal` de utils.ts dans
+  `computeDashboardStats()`). Ça fonctionnait avant uniquement parce que navigation.js/
+  account-report.js/main.js étaient des scripts non-module : leurs déclarations de haut niveau
+  (et par extension tout ce que les modules bridgeaient sur `window`) devenaient des globals
+  `window` implicites visibles de partout, sans jamais nécessiter d'import réel. Une fois ces 3
+  fichiers convertis en modules (voir plus haut), ces appels bruts sont devenus des
+  `ReferenceError` — mais invisibles par les tests, qui simulaient déjà ces globals via
+  `global.X = ...` (voir test/dashboard.test.js, test/reconciliation.test.js,
+  test/migration.test.js) plutôt que d'importer réellement, masquant le problème.
+  Corrigé : imports réels ajoutés dans state.js (backup.js, utils.ts) et dashboard.js (state.js,
+  utils.ts) ; les 3 shims `global.X = ...` devenus redondants retirés des tests concernés
+  (reconciliation.test.js et migration.test.js avaient le même shim mort — leurs fichiers
+  importaient déjà réellement, seul le commentaire/shim était périmé). Balayage statique
+  supplémentaire fait sur les 6 fichiers .js restants (state.js, navigation.js,
+  account-report.js, main.js, backup.js, dashboard.js — les seuls où `tsc` ne peut pas détecter
+  un identifiant non résolu, puisque `checkJs: false`) pour confirmer qu'aucun autre appel de ce
+  genre ne subsiste. Retesté : tsc propre, 98/98 tests, lint propre, build/dev OK, et vérifié
+  manuellement via `vite dev` + curl que le code servi contient bien les nouveaux imports.
 
 Adapter la config eslint pour TypeScript — détails
 - Ajout de typescript-eslint (parseur + regroupement recommended, non type-aware — rapide,

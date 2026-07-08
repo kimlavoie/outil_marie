@@ -9,9 +9,9 @@
  * its own turn in Phase 4 and the drawer becomes React.
  *
  * updateFormDatesHelper/scheduleActivityUndoSnapshot/saveActivityVersion (all defined in
- * activities-history.ts, which itself imports several things from this file) are called as bare
- * globals rather than real imports, to avoid a circular import between the two — they're already
- * bridged to window by activities-history.ts and declared in globals.d.ts.
+ * activities-history.ts, which itself imports several things from this file) are real imports —
+ * a circular import between the two, same as the several others already in this codebase (see
+ * TODO.txt): safe since nothing runs during either module's top-level evaluation.
  */
 import { clearDateFieldErrors } from "./datepicker.ts";
 import { appState, saveDatabase, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate, recordActivityView } from "./state.js";
@@ -26,6 +26,7 @@ import {
 } from "./activities-reservations.ts";
 import { reconciliationState, reconcileLedger } from "./reconciliation.ts";
 import { fillActivityFormFields, renderActivityStateBar, switchActivityTab, getActivityFormMode } from "./activities-form.ts";
+import { updateFormDatesHelper, saveActivityVersion, scheduleActivityUndoSnapshot } from "./activities-history.ts";
 
 // Typed shorthand for document.getElementById in this file's heavy DOM-manipulation code:
 // getElementById returns plain Element, which lacks .value/.disabled/.style/.focus() etc. Since
@@ -267,7 +268,9 @@ function openActivityDrawer(id: string, calendarReturn: any = null) {
 
   if (act.name.trim() !== "") {
     recordActivityView(act.id);
-    renderQuickAccessAll();
+    // Dynamic import: navigation.js pulls in the .tsx views, and this module must stay
+    // importable by plain `node --test` (Node can't load .tsx).
+    import("./navigation.js").then(m => m.renderQuickAccessAll());
   }
 
   form.reset();
@@ -291,7 +294,7 @@ function openActivityDrawer(id: string, calendarReturn: any = null) {
   el("activity-drawer-back-to-calendar-btn").style.display = calendarReturn ? "inline-flex" : "none";
 
   switchActivityTab("submission");
-  window.updateFormDatesHelper();
+  updateFormDatesHelper();
   clearDateFieldErrors();
 
   drawer.classList.add("active");
@@ -315,7 +318,7 @@ function closeActivityDrawer() {
     const snapshot = activitiesState.openedActivitySnapshot;
     if (currentAct && snapshot && currentAct.id === snapshot.id) {
       if (JSON.stringify(currentAct) !== JSON.stringify(snapshot)) {
-        window.saveActivityVersion(currentAct);
+        saveActivityVersion(currentAct);
       }
     }
   }
@@ -535,7 +538,7 @@ function autoSaveActivityForm() {
   // (keystrokes, a field's "input" then its "change" on blur, etc.) collapses into a single undo
   // step instead of one step per underlying save.
   activitiesState.redoStack = [];
-  window.scheduleActivityUndoSnapshot(idx);
+  scheduleActivityUndoSnapshot(idx);
 }
 
 // Groups every autosave from one continuous edit into a single undo step: each call postpones
@@ -570,19 +573,3 @@ export {
   ACTIVITY_UNDO_DEBOUNCE_MS,
   setActivityUndoSnapshotTimer
 };
-
-if (typeof window !== "undefined") {
-  window.computeActivityFinancials = computeActivityFinancials;
-  window.updateSubmissionFinancialSummary = updateSubmissionFinancialSummary;
-  window.buildPrintActivitySheetHtml = buildPrintActivitySheetHtml;
-  window.printActivitySheet = printActivitySheet;
-  window.generateNextActivityId = generateNextActivityId;
-  window.openActivityDrawer = openActivityDrawer;
-  window.openActivityDetailModal = openActivityDetailModal;
-  window.closeActivityDrawer = closeActivityDrawer;
-  window.cancelActivityDrawer = cancelActivityDrawer;
-  window.addDistributionRow = addDistributionRow;
-  window.updateDistributionTotal = updateDistributionTotal;
-  window.showAutoSaveStatus = showAutoSaveStatus;
-  window.autoSaveActivityForm = autoSaveActivityForm;
-}

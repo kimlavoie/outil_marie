@@ -1,13 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// dashboard.js's computeDashboardStats() calls getFiscalYear/getQuarterNumber/getRoomsTariffTotal
-// as globals (they're plain <script> globals in the browser); wire them up before importing it.
-import { getFiscalYear, getQuarterNumber } from "../js/state.js";
-import { getRoomsTariffTotal } from "../js/utils.ts";
-global.getFiscalYear = getFiscalYear;
-global.getQuarterNumber = getQuarterNumber;
-global.getRoomsTariffTotal = getRoomsTariffTotal;
 import { computeDashboardStats } from "../js/dashboard.js";
 
 const YEAR = "2025-2026";

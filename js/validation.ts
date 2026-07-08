@@ -39,12 +39,3 @@ function validateRules(rules: [boolean, string][]): { valid: boolean; error?: st
 }
 
 export { isNonEmptyString, isPlainObject, isFiniteNumber, isValidAmount, requireNonEmpty, validateRules };
-
-if (typeof window !== "undefined") {
-  window.isNonEmptyString = isNonEmptyString;
-  window.isPlainObject = isPlainObject;
-  window.isFiniteNumber = isFiniteNumber;
-  window.isValidAmount = isValidAmount;
-  window.requireNonEmpty = requireNonEmpty;
-  window.validateRules = validateRules;
-}

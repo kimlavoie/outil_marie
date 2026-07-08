@@ -1,9 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { validateBackupSchema, getDaysSinceLastBackup, formatLocalDateToFrench } from "../js/backup.js";
-
-// getDaysSinceLastBackup reads appState as a plain <script> global; wire it up before calling it.
-global.appState = { settings: {} };
+import { setAppState } from "../js/state.js";
 
 test("validateBackupSchema returns valid=true for correct backup structures", () => {
   const correctBackup = {
@@ -80,22 +78,22 @@ test("validateBackupSchema does not validate the shape of individual activity en
 });
 
 test("getDaysSinceLastBackup returns null when there is no last_backup_date", () => {
-  global.appState = { settings: { last_backup_date: "" } };
+  setAppState({ settings: { last_backup_date: "" } });
   assert.equal(getDaysSinceLastBackup(), null);
 });
 
 test("getDaysSinceLastBackup returns null for a malformed date (wrong separator)", () => {
-  global.appState = { settings: { last_backup_date: "2025/08/01" } };
+  setAppState({ settings: { last_backup_date: "2025/08/01" } });
   assert.equal(getDaysSinceLastBackup(), null);
 });
 
 test("getDaysSinceLastBackup returns 0 for today and a negative count for a future date", () => {
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  global.appState = { settings: { last_backup_date: todayStr } };
+  setAppState({ settings: { last_backup_date: todayStr } });
   assert.equal(getDaysSinceLastBackup(), 0);
 
-  global.appState = { settings: { last_backup_date: "2999-01-01" } };
+  setAppState({ settings: { last_backup_date: "2999-01-01" } });
   assert.ok(getDaysSinceLastBackup() < 0);
 });
 

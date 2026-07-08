@@ -348,16 +348,3 @@ export {
   attachFuzzyMatchSuggestions,
   reconcileLedger
 };
-
-if (typeof window !== "undefined") {
-  window.reconciliationState = reconciliationState;
-  window.loadReconDecisions = loadReconDecisions;
-  window.setReconDecision = setReconDecision;
-  window.cleanRef = cleanRef;
-  window.validateLedgerStructure = validateLedgerStructure;
-  window.findBestColumnMatch = findBestColumnMatch;
-  window.matchDistributionsToLedger = matchDistributionsToLedger;
-  window.daysBetweenDateStrs = daysBetweenDateStrs;
-  window.attachFuzzyMatchSuggestions = attachFuzzyMatchSuggestions;
-  window.reconcileLedger = reconcileLedger;
-}

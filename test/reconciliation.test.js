@@ -1,12 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// reconciliation.js's matchDistributionsToLedger() calls getFiscalYear/getQuarterNumber as
-// globals (they're plain <script> globals in the browser); wire them up before importing it.
-import { getFiscalYear, getQuarterNumber, parseLocalDateStr } from "../js/state.js";
-global.getFiscalYear = getFiscalYear;
-global.getQuarterNumber = getQuarterNumber;
-global.parseLocalDateStr = parseLocalDateStr;
 import { matchDistributionsToLedger, validateLedgerStructure, findBestColumnMatch } from "../js/reconciliation.ts";
 
 const YEAR = "2025-2026";

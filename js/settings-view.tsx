@@ -9,10 +9,10 @@
  * introducing a separate reactive state layer for data that already has one owner.
  *
  * navigation.js's global search ("jump to this record") calls openSettingsPanel(panel),
- * openAccountModal(code) and openDeptModal(name) as bare globals, and renderSettings() on every
- * view switch to "settings" — see js/navigation.js. Since those are imperative calls from
- * outside React, they're bridged through a small command/sequence-number queue that the mounted
- * component applies via useEffect (see `pendingCommand`/`mount()` at the bottom).
+ * openAccountModal(code) and openDeptModal(name), and renderSettings() on every view switch to
+ * "settings" — see js/navigation.js. Since those are imperative calls from outside React, they're
+ * relayed through a small command/sequence-number queue that the mounted component applies via
+ * useEffect (see `pendingCommand`/`mount()` at the bottom).
  */
 import { useEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -26,6 +26,7 @@ import {
 } from "./state.js";
 import { generateUid, formatCurrency, getRoomColor, FALLBACK_ROOM_COLORS, showToast } from "./utils.ts";
 import { requireNonEmpty } from "./validation.ts";
+import { populateDropdowns } from "./navigation.js";
 
 // ---------------------------------------------------------------------------
 // Shared bits: icons, GL account <select> options, modal wrapper, rate-versions editor
@@ -228,7 +229,7 @@ function AccountsPanel({
       act.distributions = act.distributions.filter((d: { account_code: string }) => d.account_code !== code);
     });
     saveDatabase();
-    window.populateDropdowns();
+    populateDropdowns();
     bump();
   };
 
@@ -313,7 +314,7 @@ function AccountModal({ code, onClose, bump }: { code: string | null | undefined
     appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
     saveDatabase();
     onClose();
-    window.populateDropdowns();
+    populateDropdowns();
     bump();
   };
 
@@ -371,7 +372,7 @@ function DepartmentsPanel({
     if (!confirm(`Voulez-vous vraiment supprimer le département "${name}" ?`)) return;
     appState.settings.departments = appState.settings.departments.filter((d: string) => d !== name);
     saveDatabase();
-    window.populateDropdowns();
+    populateDropdowns();
     bump();
   };
 
@@ -447,7 +448,7 @@ function DeptModal({ name, onClose, bump }: { name: string | null | undefined; o
     appState.settings.departments.sort();
     saveDatabase();
     onClose();
-    window.populateDropdowns();
+    populateDropdowns();
     bump();
   };
 
@@ -1036,7 +1037,7 @@ function RoomsPanel({
       r.linked_rooms = (r.linked_rooms || []).filter((n: string) => n !== name);
     });
     saveDatabase();
-    window.populateDropdowns();
+    populateDropdowns();
     bump();
   };
 
@@ -1291,7 +1292,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
 
     saveDatabase();
     onClose();
-    window.populateDropdowns();
+    populateDropdowns();
     bump();
   };
 
@@ -1798,10 +1799,3 @@ function closeAllSettingsModals() {
 }
 
 export { renderSettings, openSettingsPanel, openAccountModal, openDeptModal, closeAllSettingsModals };
-if (typeof window !== "undefined") {
-  window.renderSettings = renderSettings;
-  window.openSettingsPanel = openSettingsPanel;
-  window.openAccountModal = openAccountModal;
-  window.openDeptModal = openDeptModal;
-  window.closeAllSettingsModals = closeAllSettingsModals;
-}

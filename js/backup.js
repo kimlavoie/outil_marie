@@ -4,6 +4,22 @@
 import { isPlainObject, validateRules } from "./validation.ts";
 import { logError } from "./logger.ts";
 import { openVersionedDb } from "./db-utils.ts";
+import {
+  appState,
+  setAppState,
+  saveDatabase,
+  saveAppStateToDb,
+  seedDatabase,
+  migrateRoomsConfig,
+  migrateSalariesConfig,
+  migrateActivities,
+  clearAllActivityVersionsFromDb,
+  getFiscalYear,
+  getQuarterNumber,
+  getActivePricingGrid,
+  getFlattenedRoomTarifs
+} from "./state.js";
+import { showToast, showLoadingOverlay, hideLoadingOverlay, getRoomsTariffTotal, getActivityReferences, getReservationRoomLabel } from "./utils.ts";
 
 // --- Automatic file backup (File System Access API) ---
 // Keeps the localStorage database as the single source of truth; this only
@@ -276,6 +292,7 @@ function initBackupHandlers() {
       )
     ) {
       await seedDatabase();
+      const { applyTheme, renderAll } = await import("./navigation.js");
       applyTheme("dark");
       renderAll();
       checkBackupReminder();
@@ -303,7 +320,7 @@ function initBackupHandlers() {
   const bannerActionBtn = document.getElementById("backup-banner-action-btn");
   if (bannerActionBtn) {
     bannerActionBtn.addEventListener("click", () => {
-      switchToView("backup");
+      import("./navigation.js").then(m => m.switchToView("backup"));
     });
   }
 
@@ -361,7 +378,7 @@ function handleJsonBackupFile(file) {
       }
 
       if (confirm("La restauration va écraser la base de données actuelle. Continuer ?")) {
-        appState = parsed;
+        setAppState(parsed);
 
         // Sanitize settings on restoration
         if (!appState.favorites) appState.favorites = [];
@@ -387,13 +404,12 @@ function handleJsonBackupFile(file) {
         migrateActivities();
 
         try {
-          if (typeof clearAllActivityVersionsFromDb === "function") {
-            await clearAllActivityVersionsFromDb();
-          }
+          await clearAllActivityVersionsFromDb();
         } catch (e) {
           logError("backup", "suppression des versions lors de la restauration", e);
         }
         await saveDatabase();
+        const { applyTheme, renderAll } = await import("./navigation.js");
         applyTheme(appState.settings.theme || "dark");
         renderAll();
         checkBackupReminder();
@@ -709,26 +725,3 @@ export {
   checkBackupReminder,
   renderBackupView
 };
-
-if (typeof window !== "undefined") {
-  window.validateBackupSchema = validateBackupSchema;
-  window.exportToExcel = exportToExcel;
-  window.openAutoBackupDb = openAutoBackupDb;
-  window.idbGetAutoBackupHandle = idbGetAutoBackupHandle;
-  window.idbSetAutoBackupHandle = idbSetAutoBackupHandle;
-  window.idbClearAutoBackupHandle = idbClearAutoBackupHandle;
-  window.renderAutoBackupStatus = renderAutoBackupStatus;
-  window.updateAutoBackupBanner = updateAutoBackupBanner;
-  window.initAutoBackup = initAutoBackup;
-  window.connectAutoBackupFile = connectAutoBackupFile;
-  window.reconnectAutoBackupPermission = reconnectAutoBackupPermission;
-  window.disconnectAutoBackup = disconnectAutoBackup;
-  window.scheduleAutoBackupWrite = scheduleAutoBackupWrite;
-  window.writeAutoBackupNow = writeAutoBackupNow;
-  window.initBackupHandlers = initBackupHandlers;
-  window.handleJsonBackupFile = handleJsonBackupFile;
-  window.getDaysSinceLastBackup = getDaysSinceLastBackup;
-  window.formatLocalDateToFrench = formatLocalDateToFrench;
-  window.checkBackupReminder = checkBackupReminder;
-  window.renderBackupView = renderBackupView;
-}

@@ -343,7 +343,3 @@ const DEFAULT_CONFIG = {
 };
 
 export { DEFAULT_CONFIG };
-
-if (typeof window !== "undefined") {
-  window.DEFAULT_CONFIG = DEFAULT_CONFIG;
-}

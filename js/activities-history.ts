@@ -590,23 +590,3 @@ export {
   loadAndRenderActivityHistory,
   restoreActivityVersion
 };
-
-if (typeof window !== "undefined") {
-  window.timeRangesOverlap = timeRangesOverlap;
-  window.getReservationOccupiedRanges = getReservationOccupiedRanges;
-  window.computeActivityDiff = computeActivityDiff;
-  window.scheduleActivityUndoSnapshot = scheduleActivityUndoSnapshot;
-  window.pushActivityUndoSnapshot = pushActivityUndoSnapshot;
-  window.restoreActivitySnapshot = restoreActivitySnapshot;
-  window.undoActivityFormChange = undoActivityFormChange;
-  window.redoActivityFormChange = redoActivityFormChange;
-  window.submitActivityForm = submitActivityForm;
-  window.initActivitiesSort = initActivitiesSort;
-  window.updateFormDatesHelper = updateFormDatesHelper;
-  window.checkRoomReservationConflicts = checkRoomReservationConflicts;
-  window.getDaysOfWeekInRange = getDaysOfWeekInRange;
-  window.formatTimestampToFrench = formatTimestampToFrench;
-  window.saveActivityVersion = saveActivityVersion;
-  window.loadAndRenderActivityHistory = loadAndRenderActivityHistory;
-  window.restoreActivityVersion = restoreActivityVersion;
-}

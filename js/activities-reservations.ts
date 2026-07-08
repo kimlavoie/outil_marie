@@ -1079,32 +1079,3 @@ export {
   collectServicesFromForm,
   collectFeesFromForm
 };
-
-if (typeof window !== "undefined") {
-  window.getAggregateEventDates = getAggregateEventDates;
-  window.buildRoomSelectItems = buildRoomSelectItems;
-  window.initReservationsSection = initReservationsSection;
-  window.buildRoomDateTimeFieldHtml = buildRoomDateTimeFieldHtml;
-  window.buildDatePeriodFieldHtml = buildDatePeriodFieldHtml;
-  window.buildTariffParameterOptionsHtml = buildTariffParameterOptionsHtml;
-  window.buildTariffClientTypeOptionsHtml = buildTariffClientTypeOptionsHtml;
-  window.updateResolvedPriceDisplay = updateResolvedPriceDisplay;
-  window.refreshReservationTariffSelect = refreshReservationTariffSelect;
-  window.addSlotRow = addSlotRow;
-  window.collectSlotsFromCard = collectSlotsFromCard;
-  window.addNextSlotRow = addNextSlotRow;
-  window.buildSlotRangeGeneratorHtml = buildSlotRangeGeneratorHtml;
-  window.wireSlotRangeGenerator = wireSlotRangeGenerator;
-  window.addReservationCard = addReservationCard;
-  window.collectReservationsFromForm = collectReservationsFromForm;
-  window.addStaffRow = addStaffRow;
-  window.updateStaffRowSubtotal = updateStaffRowSubtotal;
-  window.addServiceRow = addServiceRow;
-  window.updateServiceRowSubtotal = updateServiceRowSubtotal;
-  window.addFeeRow = addFeeRow;
-  window.autoAddLinkedStaffAndFees = autoAddLinkedStaffAndFees;
-  window.collectStaffFromForm = collectStaffFromForm;
-  window.collectServicesFromForm = collectServicesFromForm;
-  window.collectFeesFromForm = collectFeesFromForm;
-}
-

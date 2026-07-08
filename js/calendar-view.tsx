@@ -3,10 +3,12 @@
  * the room(s) they're booked in — see js/settings-view.tsx for room color CRUD), ported from
  * calendar.js to React as part of Phase 4 of the Vite/React/TS migration (see TODO.txt).
  *
- * Same external entry points as before, called as bare globals from outside this module:
+ * Same external entry points as before, called from outside this module:
  * - main.js's DOMContentLoaded bootstrap calls initCalendarModal()/initViewCalendarButtons() once
- * - js/activities-form.js calls reopenCalendarModal(calendarReturn) ("back to calendar" button)
- * These are bridged through a small command/sequence-number queue the mounted component applies
+ * - js/activities-form.ts calls reopenCalendarModal(calendarReturn) ("back to calendar" button),
+ *   via a dynamic import() since this is a .tsx file and that module must stay importable by
+ *   plain `node --test` (Node can't load .tsx)
+ * These are relayed through a small command/sequence-number queue the mounted component applies
  * via useEffect, same pattern as js/dashboard-view.tsx and js/settings-view.tsx.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -546,10 +548,3 @@ function initViewCalendarButtons() {
 }
 
 export { initCalendarModal, initViewCalendarButtons, openCalendarModal, openCalendarAtDate, reopenCalendarModal };
-if (typeof window !== "undefined") {
-  window.initCalendarModal = initCalendarModal;
-  window.initViewCalendarButtons = initViewCalendarButtons;
-  window.openCalendarModal = openCalendarModal;
-  window.openCalendarAtDate = openCalendarAtDate;
-  window.reopenCalendarModal = reopenCalendarModal;
-}

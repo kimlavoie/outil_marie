@@ -40,10 +40,3 @@ function getLogHistory() {
 }
 
 export { logError, logWarn, logInfo, getLogHistory };
-
-if (typeof window !== "undefined") {
-  window.logError = logError;
-  window.logWarn = logWarn;
-  window.logInfo = logInfo;
-  window.getLogHistory = getLogHistory;
-}

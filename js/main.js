@@ -2,22 +2,29 @@
  * main.js - App bootstrap. Loaded last: wires up every module's init
  * function once the DOM is ready.
  */
+import { logError } from "./logger.ts";
+import { showToast } from "./utils.ts";
+import { appState, loadDatabase, restoreUiState } from "./state.js";
+import { applyTheme, initPeriodSelector, initNavigation, populateDropdowns, renderAll, switchToView } from "./navigation.js";
+import { initFormHandlers, initNewActivityModal } from "./activities-form.ts";
+import { initReconciliationHandlers } from "./reconciliation-view.tsx";
+import { initBackupHandlers } from "./backup.js";
+import { initCustomDatepickers } from "./datepicker.ts";
+import { initCalendarModal, initViewCalendarButtons } from "./calendar-view.tsx";
+import { initActivitiesSort } from "./activities-history.ts";
+import { openActivityDrawer } from "./activities-financials.ts";
 
 // Global safety net: an uncaught exception or rejected promise anywhere in the app would
 // otherwise fail silently (no console visible to the user, no indication a feature broke).
 // Surface it as a toast so the user knows something went wrong instead of just "nothing happened".
 window.addEventListener("error", e => {
   logError("main", "erreur non gérée", e.error || e.message);
-  if (typeof showToast === "function") {
-    showToast("Une erreur inattendue est survenue. Voir la console pour les détails.", "error");
-  }
+  showToast("Une erreur inattendue est survenue. Voir la console pour les détails.", "error");
 });
 
 window.addEventListener("unhandledrejection", e => {
   logError("main", "promesse rejetée non gérée", e.reason);
-  if (typeof showToast === "function") {
-    showToast("Une erreur inattendue est survenue. Voir la console pour les détails.", "error");
-  }
+  showToast("Une erreur inattendue est survenue. Voir la console pour les détails.", "error");
 });
 
 document.addEventListener("DOMContentLoaded", async () => {

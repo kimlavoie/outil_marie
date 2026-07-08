@@ -392,7 +392,9 @@ function renderActivities() {
       e.stopPropagation();
       toggleFavoriteActivity(btn.getAttribute("data-id"));
       renderActivities();
-      renderQuickAccessAll();
+      // Dynamic import: navigation.js pulls in the .tsx views (Paramètres/Tableau de bord/...),
+      // and this module must stay importable by plain `node --test` (Node can't load .tsx).
+      import("./navigation.js").then(m => m.renderQuickAccessAll());
     });
   });
 
@@ -430,7 +432,7 @@ function renderActivities() {
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();
         }
-        renderAll();
+        import("./navigation.js").then(m => m.renderAll());
       }
     });
   });
@@ -530,7 +532,7 @@ function initBulkActionsHandlers() {
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();
         }
-        renderAll();
+        import("./navigation.js").then(m => m.renderAll());
       }
     });
   }
@@ -561,7 +563,7 @@ function initBulkActionsHandlers() {
 
       activitiesState.selectedIds.clear();
       saveDatabase();
-      renderAll();
+      import("./navigation.js").then(m => m.renderAll());
 
       if (stateMenu) {
         stateMenu.classList.add("hidden");
@@ -592,18 +594,3 @@ export {
   updateBulkActionsBar,
   initBulkActionsHandlers
 };
-
-if (typeof window !== "undefined") {
-  window.activitiesState = activitiesState;
-  window.ACTIVITY_STATES = ACTIVITY_STATES;
-  window.ACTIVITY_UNDO_HISTORY_LIMIT = ACTIVITY_UNDO_HISTORY_LIMIT;
-  window.newActivityModalIntent = newActivityModalIntent;
-  window.getActivityStateLabel = getActivityStateLabel;
-  window.getActivityStateBadgeClass = getActivityStateBadgeClass;
-  window.getPlanningProgress = getPlanningProgress;
-  window.buildProgressBarHtml = buildProgressBarHtml;
-  window.renderActivities = renderActivities;
-  window.updateBulkActionsBar = updateBulkActionsBar;
-  window.initBulkActionsHandlers = initBulkActionsHandlers;
-}
-
