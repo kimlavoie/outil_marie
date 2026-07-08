@@ -12,7 +12,16 @@
  * like js/datepicker.ts, js/activities-file-links.ts, js/activities-history.ts and
  * js/activities-financials.ts — this stays a plain TS module for now.
  */
-import { appState, getFiscalYear, getQuarterNumber, parseLocalDateStr, saveDatabase, saveUiState, isFavoriteActivity, toggleFavoriteActivity } from "./state.js";
+import {
+  appState,
+  getFiscalYear,
+  getQuarterNumber,
+  parseLocalDateStr,
+  saveDatabase,
+  saveUiState,
+  isFavoriteActivity,
+  toggleFavoriteActivity
+} from "../state/state.js";
 import {
   getReservationRoomLabel,
   getActivityReferences,
@@ -21,10 +30,10 @@ import {
   formatCurrency,
   calculateDaysCount,
   renderPaginationBar
-} from "./utils.ts";
-import { reconciliationState, reconcileLedger } from "./reconciliation.ts";
-import { openActivityDrawer } from "./activities-financials.ts";
-import { duplicateActivityAndOpen } from "./activities-form.ts";
+} from "../utils/utils.ts";
+import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
+import { openActivityDrawer } from "./financials.ts";
+import { duplicateActivityAndOpen } from "./form.ts";
 
 // Typed shorthand for document.getElementById in this file's DOM-manipulation code — see
 // activities-financials.ts's `el` helper doc comment for why this cast is needed/safe.
@@ -397,7 +406,7 @@ function renderActivities() {
       renderActivities();
       // Dynamic import: navigation.js pulls in the .tsx views (Paramètres/Tableau de bord/...),
       // and this module must stay importable by plain `node --test` (Node can't load .tsx).
-      import("./navigation.js").then(m => m.renderQuickAccessAll());
+      import("../navigation.js").then(m => m.renderQuickAccessAll());
     });
   });
 
@@ -435,7 +444,7 @@ function renderActivities() {
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();
         }
-        import("./navigation.js").then(m => m.renderAll());
+        import("../navigation.js").then(m => m.renderAll());
       }
     });
   });
@@ -535,7 +544,7 @@ function initBulkActionsHandlers() {
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();
         }
-        import("./navigation.js").then(m => m.renderAll());
+        import("../navigation.js").then(m => m.renderAll());
       }
     });
   }
@@ -566,7 +575,7 @@ function initBulkActionsHandlers() {
 
       activitiesState.selectedIds.clear();
       saveDatabase();
-      import("./navigation.js").then(m => m.renderAll());
+      import("../navigation.js").then(m => m.renderAll());
 
       if (stateMenu) {
         stateMenu.classList.add("hidden");

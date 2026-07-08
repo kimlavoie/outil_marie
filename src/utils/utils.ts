@@ -4,7 +4,7 @@
  * calculateDaysCount/generateUid from here; safe since nothing runs during either module's
  * top-level evaluation, same as the other circular imports already in this codebase)
  */
-import { appState } from "./state.js";
+import { appState } from "../state/state.js";
 
 // Helper: Format currencies in standard FR-CA format
 function formatCurrency(val: any) {

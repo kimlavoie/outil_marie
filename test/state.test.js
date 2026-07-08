@@ -27,7 +27,7 @@ import {
   toggleFavoriteActivity,
   getRecentlyViewedActivityIds,
   recordActivityView
-} from "../js/state.js";
+} from "../src/state/state.js";
 
 test("getFiscalYear: July onward belongs to the year that just started", () => {
   assert.equal(getFiscalYear("2025-07-01"), "2025-2026");

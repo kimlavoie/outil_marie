@@ -9,10 +9,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc",
-    "lint": "eslint js",
-    "lint:fix": "eslint js --fix",
-    "format": "prettier --write \"js/**/*.js\" \"*.html\" \"*.css\"",
-    "format:check": "prettier --check \"js/**/*.js\" \"*.html\" \"*.css\"",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.{js,ts,tsx}\" \"*.html\" \"*.css\"",
+    "format:check": "prettier --check \"src/**/*.{js,ts,tsx}\" \"*.html\" \"*.css\"",
     "test": "node --test test/*.test.js"
   },
   "devDependencies": {

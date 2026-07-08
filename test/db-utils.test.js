@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import "./indexeddb-mock.js";
-import { openVersionedDb } from "../js/db-utils.ts";
+import { openVersionedDb } from "../src/state/db-utils.ts";
 
 test("openVersionedDb opens a database and runs upgradeneeded callback", async () => {
   let upgradeCalled = false;

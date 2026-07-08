@@ -8,9 +8,9 @@
  * js/datepicker.ts, js/activities-file-links.ts, js/activities-history.ts,
  * js/activities-financials.ts and js/activities-render.ts, this stays a plain TS module.
  */
-import { appState, saveDatabase } from "./state.js";
-import { debounce, generateUid, maskPhoneInput, escapeHtml, showToast, getReservationRoomLabel, OTHER_ROOM_VALUE } from "./utils.ts";
-import { requireNonEmpty } from "./validation.ts";
+import { appState, saveDatabase } from "../state/state.js";
+import { debounce, generateUid, maskPhoneInput, escapeHtml, showToast, getReservationRoomLabel, OTHER_ROOM_VALUE } from "../utils/utils.ts";
+import { requireNonEmpty } from "../utils/validation.ts";
 import {
   activitiesState,
   getPlanningProgress,
@@ -19,7 +19,7 @@ import {
   getActivityStateLabel,
   renderActivities,
   initBulkActionsHandlers
-} from "./activities-render.ts";
+} from "./render.ts";
 import {
   generateNextActivityId,
   openActivityDrawer,
@@ -30,7 +30,7 @@ import {
   updateDistributionTotal,
   showAutoSaveStatus,
   updateSubmissionFinancialSummary
-} from "./activities-financials.ts";
+} from "./financials.ts";
 import {
   undoActivityFormChange,
   redoActivityFormChange,
@@ -38,16 +38,16 @@ import {
   updateFormDatesHelper,
   submitActivityForm,
   saveActivityVersion
-} from "./activities-history.ts";
-import { renderFileLinkStatus } from "./activities-file-links.ts";
+} from "./history.ts";
+import { renderFileLinkStatus } from "./file-links.ts";
 import {
   collectReservationsFromForm,
   getAggregateEventDates,
   addReservationCard,
   addSlotRow,
   initReservationsSection
-} from "./activities-reservations.ts";
-import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "./state.js";
+} from "./reservations.ts";
+import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.js";
 
 // Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
 // comment for why this cast is needed/safe.
@@ -117,7 +117,7 @@ function initFormHandlers() {
     // to stay importable by plain `node --test` (see js/dashboard-view.tsx's/js/settings-view.tsx's
     // same constraint) — Node can't load .tsx. A dynamic import is only ever resolved when this
     // handler actually runs, so it doesn't affect the test suite's static import graph.
-    if (calendarReturn) import("./calendar-view.tsx").then(m => m.reopenCalendarModal(calendarReturn));
+    if (calendarReturn) import("../components/calendar-view.tsx").then(m => m.reopenCalendarModal(calendarReturn));
   });
 
   // Inputs search
@@ -241,7 +241,7 @@ function initFormHandlers() {
       // silently stopped doing anything (closeSettingsModal no longer existed) and only ever
       // covered 4 of the 6 modals anyway. Dynamic import for the same .tsx/node --test reason as
       // reopenCalendarModal above.
-      import("./settings-view.tsx").then(m => m.closeAllSettingsModals());
+      import("../components/settings/view.tsx").then(m => m.closeAllSettingsModals());
     }
   });
 }

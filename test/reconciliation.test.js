@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { matchDistributionsToLedger, validateLedgerStructure, findBestColumnMatch, cleanRef, reconcileLedger, reconciliationState } from "../js/reconciliation.ts";
-import { appState } from "../js/state.js";
+import { matchDistributionsToLedger, validateLedgerStructure, findBestColumnMatch, cleanRef, reconcileLedger, reconciliationState } from "../src/services/reconciliation.ts";
+import { appState } from "../src/state/state.js";
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];

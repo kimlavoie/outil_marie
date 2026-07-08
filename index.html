@@ -221,7 +221,7 @@
 
         <!-- View Containers -->
         <div class="view-container">
-          <!-- 1. DASHBOARD VIEW (rendered by React — see js/dashboard-view.tsx, mounted by dashboard.js) -->
+          <!-- 1. DASHBOARD VIEW (rendered by React — see src/components/dashboard-view.tsx, mounted by src/dashboard.js) -->
           <section id="view-dashboard" class="view-section active">
             <div id="dashboard-root"></div>
           </section>
@@ -339,7 +339,7 @@
             </div>
           </section>
 
-          <!-- 3. RECONCILIATION VIEW (rendered by React — see js/reconciliation-view.tsx) -->
+          <!-- 3. RECONCILIATION VIEW (rendered by React — see src/components/reconciliation-view.tsx) -->
           <section id="view-validation" class="view-section">
             <div id="validation-root"></div>
           </section>
@@ -364,7 +364,7 @@
             </div>
           </section>
 
-          <!-- 4. CONFIGURATION VIEW (rendered by React — see js/settings-view.tsx) -->
+          <!-- 4. CONFIGURATION VIEW (rendered by React — see src/components/settings/view.tsx) -->
           <section id="view-settings" class="view-section">
             <div id="settings-root"></div>
           </section>
@@ -874,7 +874,7 @@
     <!-- Modal Container Backdrop -->
     <div id="modal-backdrop" class="modal-backdrop" role="presentation"></div>
 
-    <!-- 7. Activities Calendar Modal (rendered by React — see js/calendar-view.tsx) -->
+    <!-- 7. Activities Calendar Modal (rendered by React — see src/components/calendar-view.tsx) -->
     <div id="calendar-modal-root"></div>
 
     <!-- Printable / PDF export sheet for a single activity (populated on demand, hidden on
@@ -882,6 +882,6 @@
     <div id="print-activity-sheet"></div>
 
     <!-- Application Logic -->
-    <script type="module" src="js/main.js"></script>
+    <script type="module" src="src/main.js"></script>
   </body>
 </html>

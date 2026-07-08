@@ -8,8 +8,8 @@
  * React component. Its call sites (activities-form.js, activities-reservations.js) are still
  * vanilla and haven't had their turn in Phase 4 yet.
  */
-import { appState, parseLocalDateStr, getFiscalYearRange } from "./state.js";
-import { maskDateInput } from "./utils.ts";
+import { appState, parseLocalDateStr, getFiscalYearRange } from "../state/state.js";
+import { maskDateInput } from "../utils/utils.ts";
 
 // Validates a date input's value against the active fiscal year and shows/hides
 // the associated .field-error-msg (id: "<input-id>-fy-error") in real time.

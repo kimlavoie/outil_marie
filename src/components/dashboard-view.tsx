@@ -13,10 +13,10 @@
  */
 import { useEffect, useRef, type RefObject } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { appState, getFiscalYear, getQuarterNumber, getQuarter } from "./state.js";
-import { getReservationRoomLabel, formatCurrency } from "./utils.ts";
-import { computeDashboardStats } from "./dashboard.js";
-import { reconciliationState } from "./reconciliation.ts";
+import { appState, getFiscalYear, getQuarterNumber, getQuarter } from "../state/state.js";
+import { getReservationRoomLabel, formatCurrency } from "../utils/utils.ts";
+import { computeDashboardStats } from "../dashboard.js";
+import { reconciliationState } from "../services/reconciliation.ts";
 
 function buildQuarterlyRevenuesConfig(textColor: string, gridColor: string) {
   const quarterlySums: Record<string, number> = {
@@ -73,12 +73,11 @@ function buildSalleShareConfig(isDark: boolean, textColor: string) {
 
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || (actQuarter === null || !appState.selected_quarters.includes(actQuarter))) {
+    if (actYear !== appState.selected_year || actQuarter === null || !appState.selected_quarters.includes(actQuarter)) {
       return;
     }
 
-    const rName =
-      act.reservations && act.reservations.length ? act.reservations.map(getReservationRoomLabel).join(", ") : "Inconnue";
+    const rName = act.reservations && act.reservations.length ? act.reservations.map(getReservationRoomLabel).join(", ") : "Inconnue";
     const sumDist = act.distributions.reduce((sum: number, dist: { amount: number }) => sum + dist.amount, 0);
     roomSums[rName] = (roomSums[rName] || 0) + sumDist;
   });
@@ -121,7 +120,7 @@ function buildAccountsVolumeConfig(textColor: string, gridColor: string) {
 
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || (actQuarter === null || !appState.selected_quarters.includes(actQuarter))) {
+    if (actYear !== appState.selected_year || actQuarter === null || !appState.selected_quarters.includes(actQuarter)) {
       return;
     }
 

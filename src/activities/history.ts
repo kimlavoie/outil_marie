@@ -7,27 +7,35 @@
  * js/activities-file-links.ts, js/activities-render.ts and js/activities-form.ts, this stays a
  * plain TS module rather than a React component until Réservations gets its own turn in Phase 4.
  */
-import { appState, parseLocalDateStr, EVENT_TYPES, saveDatabase, getActivityVersionsFromDb, addActivityVersionToDb, pruneActivityVersions } from "./state.js";
-import { showToast, escapeHtml, formatCurrency, OTHER_ROOM_VALUE } from "./utils.ts";
-import { requireNonEmpty } from "./validation.ts";
-import { logError } from "./logger.ts";
-import { reconciliationState, reconcileLedger } from "./reconciliation.ts";
-import { collectReservationsFromForm, getAggregateEventDates } from "./activities-reservations.ts";
+import {
+  appState,
+  parseLocalDateStr,
+  EVENT_TYPES,
+  saveDatabase,
+  getActivityVersionsFromDb,
+  addActivityVersionToDb,
+  pruneActivityVersions
+} from "../state/state.js";
+import { showToast, escapeHtml, formatCurrency, OTHER_ROOM_VALUE } from "../utils/utils.ts";
+import { requireNonEmpty } from "../utils/validation.ts";
+import { logError } from "../utils/logger.ts";
+import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
+import { collectReservationsFromForm, getAggregateEventDates } from "./reservations.ts";
 import {
   activitiesState,
   ACTIVITY_UNDO_HISTORY_LIMIT,
   renderActivities,
   getActivityStateLabel,
   getActivityStateBadgeClass
-} from "./activities-render.ts";
+} from "./render.ts";
 import {
   autoSaveActivityForm,
   closeActivityDrawer,
   activityUndoSnapshotTimer,
   ACTIVITY_UNDO_DEBOUNCE_MS,
   setActivityUndoSnapshotTimer
-} from "./activities-financials.ts";
-import { fillActivityFormFields, renderActivityStateBar } from "./activities-form.ts";
+} from "./financials.ts";
+import { fillActivityFormFields, renderActivityStateBar } from "./form.ts";
 
 // Groups every autosave from one continuous edit into a single undo step (see
 // activities-financials.js's ACTIVITY_UNDO_DEBOUNCE_MS doc comment for why).

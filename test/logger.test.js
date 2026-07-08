@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { logError, logWarn, logInfo, getLogHistory } from "../js/logger.ts";
+import { logError, logWarn, logInfo, getLogHistory } from "../src/utils/logger.ts";
 
 test("logError/logWarn/logInfo append structured entries to the log history", () => {
   const before = getLogHistory().length;

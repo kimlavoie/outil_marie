@@ -9,8 +9,8 @@
  * TypeScript support strips .ts but can't execute .tsx (JSX needs a real transform, not just
  * type erasure), so nothing reachable from a test file's import graph can be a .tsx module.
  */
-import { getFiscalYear, getQuarterNumber } from "./state.js";
-import { getRoomsTariffTotal } from "./utils.ts";
+import { getFiscalYear, getQuarterNumber } from "./state/state.js";
+import { getRoomsTariffTotal } from "./utils/utils.ts";
 
 // Pure KPI computation (no DOM) so it can be unit tested directly.
 function computeDashboardStats(activities, selectedYear, selectedQuarters, reconciliationResults) {

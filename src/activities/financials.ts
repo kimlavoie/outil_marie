@@ -14,19 +14,30 @@
  * TODO.txt): safe since nothing runs during either module's top-level evaluation.
  */
 import { clearDateFieldErrors } from "./datepicker.ts";
-import { appState, saveDatabase, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate, recordActivityView } from "./state.js";
-import { formatCurrency, escapeHtml, getReservationRoomLabel, getRoomsTariffTotal, showLoadingOverlay, hideLoadingOverlay, showToast } from "./utils.ts";
-import { isNonEmptyString } from "./validation.ts";
-import { activitiesState, renderActivities } from "./activities-render.ts";
 import {
-  collectReservationsFromForm,
-  getAggregateEventDates,
-  updateStaffRowSubtotal,
-  updateServiceRowSubtotal
-} from "./activities-reservations.ts";
-import { reconciliationState, reconcileLedger } from "./reconciliation.ts";
-import { fillActivityFormFields, renderActivityStateBar, switchActivityTab, getActivityFormMode } from "./activities-form.ts";
-import { updateFormDatesHelper, saveActivityVersion, scheduleActivityUndoSnapshot } from "./activities-history.ts";
+  appState,
+  saveDatabase,
+  getActiveSalaryRate,
+  getActiveSalaryOvertimeRate,
+  getActiveServiceRate,
+  recordActivityView
+} from "../state/state.js";
+import {
+  formatCurrency,
+  escapeHtml,
+  getReservationRoomLabel,
+  getRoomsTariffTotal,
+  showLoadingOverlay,
+  hideLoadingOverlay,
+  showToast
+} from "../utils/utils.ts";
+import { isNonEmptyString } from "../utils/validation.ts";
+import { activitiesState, renderActivities } from "./render.ts";
+import { collectReservationsFromForm, getAggregateEventDates } from "./reservations.ts";
+import { updateStaffRowSubtotal, updateServiceRowSubtotal } from "./reservation-subrows.ts";
+import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
+import { fillActivityFormFields, renderActivityStateBar, switchActivityTab, getActivityFormMode } from "./form.ts";
+import { updateFormDatesHelper, saveActivityVersion, scheduleActivityUndoSnapshot } from "./history.ts";
 
 // Typed shorthand for document.getElementById in this file's heavy DOM-manipulation code:
 // getElementById returns plain Element, which lacks .value/.disabled/.style/.focus() etc. Since
@@ -270,7 +281,7 @@ function openActivityDrawer(id: string, calendarReturn: any = null) {
     recordActivityView(act.id);
     // Dynamic import: navigation.js pulls in the .tsx views, and this module must stay
     // importable by plain `node --test` (Node can't load .tsx).
-    import("./navigation.js").then(m => m.renderQuickAccessAll());
+    import("../navigation.js").then(m => m.renderQuickAccessAll());
   }
 
   form.reset();

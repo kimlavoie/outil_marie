@@ -7,10 +7,18 @@
  * see TODO.txt), which imports the engine from here rather than the other way around, same split
  * as js/dashboard.js/js/dashboard-view.tsx.
  */
-import { validateRules } from "./validation.ts";
-import { logError } from "./logger.ts";
-import { textSimilarity } from "./fuzzy-match.ts";
-import { appState, getFiscalYear, getQuarterNumber, parseLocalDateStr, getReconDecisionsFromDb, saveReconDecisionToDb, deleteReconDecisionFromDb } from "./state.js";
+import { validateRules } from "../utils/validation.ts";
+import { logError } from "../utils/logger.ts";
+import { textSimilarity } from "../utils/fuzzy-match.ts";
+import {
+  appState,
+  getFiscalYear,
+  getQuarterNumber,
+  parseLocalDateStr,
+  getReconDecisionsFromDb,
+  saveReconDecisionToDb,
+  deleteReconDecisionFromDb
+} from "../state/state.js";
 
 // Reconciliation view/engine state, grouped so ledger data and UI state live together
 const reconciliationState = {
@@ -123,7 +131,7 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
     const txYear = getFiscalYear(txDateStr);
     const txQuarter = getQuarterNumber(txDateStr);
 
-    if (txYear !== selectedYear || (txQuarter === null || !selectedQuarters.includes(txQuarter))) {
+    if (txYear !== selectedYear || txQuarter === null || !selectedQuarters.includes(txQuarter)) {
       return; // Skip transaction outside selected period
     }
 
@@ -167,7 +175,7 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
     // Period filter
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== selectedYear || (actQuarter === null || !selectedQuarters.includes(actQuarter))) {
+    if (actYear !== selectedYear || actQuarter === null || !selectedQuarters.includes(actQuarter)) {
       return; // Skip activity outside selected period
     }
 

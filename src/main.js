@@ -2,17 +2,17 @@
  * main.js - App bootstrap. Loaded last: wires up every module's init
  * function once the DOM is ready.
  */
-import { logError } from "./logger.ts";
-import { showToast } from "./utils.ts";
-import { appState, loadDatabase, restoreUiState } from "./state.js";
+import { logError } from "./utils/logger.ts";
+import { showToast } from "./utils/utils.ts";
+import { appState, loadDatabase, restoreUiState } from "./state/state.js";
 import { applyTheme, initPeriodSelector, initNavigation, populateDropdowns, renderAll, switchToView } from "./navigation.js";
-import { initFormHandlers, initNewActivityModal } from "./activities-form.ts";
-import { initReconciliationHandlers } from "./reconciliation-view.tsx";
-import { initBackupHandlers } from "./backup.js";
-import { initCustomDatepickers } from "./datepicker.ts";
-import { initCalendarModal, initViewCalendarButtons } from "./calendar-view.tsx";
-import { initActivitiesSort } from "./activities-history.ts";
-import { openActivityDrawer } from "./activities-financials.ts";
+import { initFormHandlers, initNewActivityModal } from "./activities/form.ts";
+import { initReconciliationHandlers } from "./components/reconciliation-view.tsx";
+import { initBackupHandlers } from "./services/backup.js";
+import { initCustomDatepickers } from "./activities/datepicker.ts";
+import { initCalendarModal, initViewCalendarButtons } from "./components/calendar-view.tsx";
+import { initActivitiesSort } from "./activities/history.ts";
+import { openActivityDrawer } from "./activities/financials.ts";
 
 // Global safety net: an uncaught exception or rejected promise anywhere in the app would
 // otherwise fail silently (no console visible to the user, no indication a feature broke).

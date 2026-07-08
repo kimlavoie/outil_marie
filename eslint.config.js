@@ -1,6 +1,6 @@
-// Flat ESLint config for the app: js/*.js are still plain <script> globals by design (see
+// Flat ESLint config for the app: src/*.js are still plain <script> globals by design (see
 // file banner below) so `no-undef` stays off there — it would otherwise flag every cross-file
-// function/variable reference as an error. js/*.ts(x) are real ES modules (Vite/TS, Phase 2-4 of
+// function/variable reference as an error. src/*.ts(x) are real ES modules (Vite/TS, Phase 2-4 of
 // the migration, see TODO.txt); type-checking is tsc's job, so typescript-eslint here is
 // non-type-aware (fast, syntax-only) and focused on the same "catch real mistakes" rules as the
 // JS block, not on enforcing style tsc already enforces.
@@ -9,7 +9,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 
 // Globals shared by both blocks: things the JS files reference as bare identifiers because
 // they're either browser/runtime built-ins or ambient `declare global` bridges from
-// js/globals.d.ts (Chart, XLSX) that plain ESLint (without type info) can't otherwise see.
+// src/utils/globals.d.ts (Chart, XLSX) that plain ESLint (without type info) can't otherwise see.
 const sharedGlobals = {
   window: "readonly",
   document: "readonly",
@@ -34,8 +34,8 @@ const sharedGlobals = {
 
 export default tseslint.config(
   {
-    files: ["js/**/*.js"],
-    ignores: ["js/lib/**", "**/*.min.js", "**/*.umd.js"],
+    files: ["src/**/*.js"],
+    ignores: ["src/lib/**", "**/*.min.js", "**/*.umd.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",
@@ -57,7 +57,7 @@ export default tseslint.config(
     }
   },
   {
-    files: ["js/**/*.ts", "js/**/*.tsx"],
+    files: ["src/**/*.ts", "src/**/*.tsx"],
     extends: [tseslint.configs.recommended],
     plugins: { "react-hooks": reactHooks },
     languageOptions: {

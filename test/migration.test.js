@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { migrateActivities, migrateRoomsConfig, appState } from "../js/state.js";
+import { migrateActivities, migrateRoomsConfig, appState } from "../src/state/state.js";
 
 test("migrateActivities correctly migrates legacy room_name to reservations format", () => {
   // Setup legacy settings

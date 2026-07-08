@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 // activities-financials.ts imports appState directly from state.js (a real, shared, mutable
 // object) rather than reading it as a global, so we set up its test fixture by mutating that same
 // imported object's .settings rather than replacing the binding.
-import { appState } from "../js/state.js";
-import { computeActivityFinancials, generateNextActivityId, buildPrintActivitySheetHtml } from "../js/activities-financials.ts";
+import { appState } from "../src/state/state.js";
+import { computeActivityFinancials, generateNextActivityId, buildPrintActivitySheetHtml } from "../src/activities/financials.ts";
 
 
 appState.settings = {

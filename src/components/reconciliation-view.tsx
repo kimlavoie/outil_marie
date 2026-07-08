@@ -14,9 +14,9 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { appState, saveDatabase } from "./state.js";
-import { showToast, showLoadingOverlay, hideLoadingOverlay, formatCurrency, renderPaginationBar } from "./utils.ts";
-import { logError } from "./logger.ts";
+import { appState, saveDatabase } from "../state/state.js";
+import { showToast, showLoadingOverlay, hideLoadingOverlay, formatCurrency, renderPaginationBar } from "../utils/utils.ts";
+import { logError } from "../utils/logger.ts";
 import {
   reconciliationState,
   loadReconDecisions,
@@ -24,10 +24,10 @@ import {
   validateLedgerStructure,
   findBestColumnMatch,
   reconcileLedger
-} from "./reconciliation.ts";
-import { createActivity, switchActivityTab } from "./activities-form.ts";
-import { renderActivities } from "./activities-render.ts";
-import { openActivityDrawer, addDistributionRow } from "./activities-financials.ts";
+} from "../services/reconciliation.ts";
+import { createActivity, switchActivityTab } from "../activities/form.ts";
+import { renderActivities } from "../activities/render.ts";
+import { openActivityDrawer, addDistributionRow } from "../activities/financials.ts";
 
 const RECON_STATUS_LABELS: Record<string, string> = {
   valid: "Conforme",
@@ -299,8 +299,8 @@ function LedgerMappingModal({
       </div>
       <div className="modal-content">
         <p style={{ marginBottom: 16, fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-          Certaines colonnes obligatoires n'ont pas été détectées automatiquement. Veuillez associer les champs requis aux colonnes de
-          votre fichier Excel.
+          Certaines colonnes obligatoires n'ont pas été détectées automatiquement. Veuillez associer les champs requis aux colonnes de votre
+          fichier Excel.
         </p>
         <form
           onSubmit={e => {
@@ -368,10 +368,17 @@ function ReconDetailModal({ record, onClose }: { record: any; onClose: () => voi
       </div>
       {isOpen && (
         <div className="modal-content" style={{ padding: 0 }}>
-          <div style={{ padding: "16px 24px", borderBottom: "1px solid var(--border-color)", backgroundColor: "var(--bg-main)", fontSize: "0.9rem" }}>
+          <div
+            style={{
+              padding: "16px 24px",
+              borderBottom: "1px solid var(--border-color)",
+              backgroundColor: "var(--bg-main)",
+              fontSize: "0.9rem"
+            }}
+          >
             <div>
-              <strong>Compte :</strong>{" "}
-              {record.account_code} ({appState.settings.accounts.find((a: any) => a.code === record.account_code)?.description || "Inconnu"})
+              <strong>Compte :</strong> {record.account_code} (
+              {appState.settings.accounts.find((a: any) => a.code === record.account_code)?.description || "Inconnu"})
             </div>
             <div style={{ marginTop: 4 }}>
               <strong>Référence :</strong> {record.reference}
@@ -496,7 +503,12 @@ function ReconciliationRow({
       </td>
       <td className="text-right">
         {r.status === "unentered" && (
-          <button className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "0.8rem" }} title="Enregistrer l'activité" onClick={() => onQuickAdd(r)}>
+          <button
+            className="btn btn-secondary"
+            style={{ padding: "6px 12px", fontSize: "0.8rem" }}
+            title="Enregistrer l'activité"
+            onClick={() => onQuickAdd(r)}
+          >
             + Créer activité
           </button>
         )}
@@ -585,7 +597,9 @@ function ReconciliationView() {
       const poste = String(row["Poste budgétaire"] || "").trim();
       const dateVersee = String(row["Date versée"] || "").trim();
       const montant = parseFloat(row["Montant courant"]);
-      return poste !== "" && poste !== "Total" && dateVersee !== "" && dateVersee !== "Total" && dateVersee !== "Grand Total" && !isNaN(montant);
+      return (
+        poste !== "" && poste !== "Total" && dateVersee !== "" && dateVersee !== "Total" && dateVersee !== "Grand Total" && !isNaN(montant)
+      );
     });
 
     if (reconciliationState.ledgerTransactions.length === 0) {
@@ -644,7 +658,9 @@ function ReconciliationView() {
       const poste = row["Poste budgétaire"];
       const dateVersee = row["Date versée"];
       const montant = row["Montant courant"];
-      return poste !== "" && poste !== "Total" && dateVersee !== "" && dateVersee !== "Total" && dateVersee !== "Grand Total" && !isNaN(montant);
+      return (
+        poste !== "" && poste !== "Total" && dateVersee !== "" && dateVersee !== "Total" && dateVersee !== "Grand Total" && !isNaN(montant)
+      );
     });
 
     setMappingHeaders(null);
@@ -738,7 +754,10 @@ function ReconciliationView() {
           <div className="table-card">
             <div className="table-toolbar">
               <div className="reconcile-tabs">
-                <button className={`reconcile-tab${reconciliationState.filter === "all" ? " active" : ""}`} onClick={() => setFilter("all")}>
+                <button
+                  className={`reconcile-tab${reconciliationState.filter === "all" ? " active" : ""}`}
+                  onClick={() => setFilter("all")}
+                >
                   Tous ({results.length})
                 </button>
                 <button

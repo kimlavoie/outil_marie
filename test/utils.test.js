@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateDaysCount, getRoomsTariffTotal, getActivityReferences, formatCurrency, escapeHtml, generateUid, getReservationRoomLabel, getRoomColor, buildGlAccountOptionsHtml, buildPaginationBarHtml, debounce } from "../js/utils.ts";
-import { appState } from "../js/state.js";
+import { calculateDaysCount, getRoomsTariffTotal, getActivityReferences, formatCurrency, escapeHtml, generateUid, getReservationRoomLabel, getRoomColor, buildGlAccountOptionsHtml, buildPaginationBarHtml, debounce } from "../src/utils/utils.ts";
+import { appState } from "../src/state/state.js";
 
 test("calculateDaysCount counts both endpoints inclusively", () => {
   assert.equal(calculateDaysCount("2025-01-01", "2025-01-05"), 5);

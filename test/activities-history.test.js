@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import "./indexeddb-mock.js";
-import { appState } from "../js/state.js";
+import { appState } from "../src/state/state.js";
 import {
   timeRangesOverlap,
   getReservationOccupiedRanges,
@@ -10,7 +10,7 @@ import {
   getDaysOfWeekInRange,
   formatTimestampToFrench,
   saveActivityVersion
-} from "../js/activities-history.ts";
+} from "../src/activities/history.ts";
 
 
 test("timeRangesOverlap detects overlapping windows on the same day", () => {

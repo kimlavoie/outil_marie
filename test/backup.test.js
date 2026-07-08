@@ -10,8 +10,8 @@ import {
   idbGetAutoBackupHandle,
   idbSetAutoBackupHandle,
   idbClearAutoBackupHandle
-} from "../js/backup.js";
-import { appState, setAppState } from "../js/state.js";
+} from "../src/services/backup.js";
+import { appState, setAppState } from "../src/state/state.js";
 
 
 test("validateBackupSchema returns valid=true for correct backup structures", () => {

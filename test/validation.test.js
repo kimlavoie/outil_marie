@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isNonEmptyString, isPlainObject, isFiniteNumber, isValidAmount, requireNonEmpty, validateRules } from "../js/validation.ts";
+import { isNonEmptyString, isPlainObject, isFiniteNumber, isValidAmount, requireNonEmpty, validateRules } from "../src/utils/validation.ts";
 
 test("isNonEmptyString rejects blank, whitespace-only and non-string values", () => {
   assert.equal(isNonEmptyString("Activité"), true);

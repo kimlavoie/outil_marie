@@ -1,9 +1,9 @@
 /**
  * backup.js - Backup/restore (JSON) and Excel export controllers
  */
-import { isPlainObject, validateRules } from "./validation.ts";
-import { logError } from "./logger.ts";
-import { openVersionedDb } from "./db-utils.ts";
+import { isPlainObject, validateRules } from "../utils/validation.ts";
+import { logError } from "../utils/logger.ts";
+import { openVersionedDb } from "../state/db-utils.ts";
 import {
   appState,
   setAppState,
@@ -18,8 +18,15 @@ import {
   getQuarterNumber,
   getActivePricingGrid,
   getFlattenedRoomTarifs
-} from "./state.js";
-import { showToast, showLoadingOverlay, hideLoadingOverlay, getRoomsTariffTotal, getActivityReferences, getReservationRoomLabel } from "./utils.ts";
+} from "../state/state.js";
+import {
+  showToast,
+  showLoadingOverlay,
+  hideLoadingOverlay,
+  getRoomsTariffTotal,
+  getActivityReferences,
+  getReservationRoomLabel
+} from "../utils/utils.ts";
 
 // --- Automatic file backup (File System Access API) ---
 // Keeps the localStorage database as the single source of truth; this only
@@ -292,7 +299,7 @@ function initBackupHandlers() {
       )
     ) {
       await seedDatabase();
-      const { applyTheme, renderAll } = await import("./navigation.js");
+      const { applyTheme, renderAll } = await import("../navigation.js");
       applyTheme("dark");
       renderAll();
       checkBackupReminder();
@@ -320,7 +327,7 @@ function initBackupHandlers() {
   const bannerActionBtn = document.getElementById("backup-banner-action-btn");
   if (bannerActionBtn) {
     bannerActionBtn.addEventListener("click", () => {
-      import("./navigation.js").then(m => m.switchToView("backup"));
+      import("../navigation.js").then(m => m.switchToView("backup"));
     });
   }
 
@@ -409,7 +416,7 @@ function handleJsonBackupFile(file) {
           logError("backup", "suppression des versions lors de la restauration", e);
         }
         await saveDatabase();
-        const { applyTheme, renderAll } = await import("./navigation.js");
+        const { applyTheme, renderAll } = await import("../navigation.js");
         applyTheme(appState.settings.theme || "dark");
         renderAll();
         checkBackupReminder();

@@ -10,17 +10,17 @@ import {
   EVENT_TYPES,
   toggleFavoriteActivity,
   getRecentlyViewedActivityIds
-} from "./state.js";
-import { escapeHtml, debounce } from "./utils.ts";
-import { textSimilarity } from "./fuzzy-match.ts";
-import { activitiesState, renderActivities } from "./activities-render.ts";
-import { openActivityDrawer } from "./activities-financials.ts";
-import { renderSettings, openSettingsPanel, openAccountModal, openDeptModal } from "./settings-view.tsx";
-import { renderDashboard, renderDashboardCharts } from "./dashboard-view.tsx";
-import { renderReconciliation } from "./reconciliation-view.tsx";
-import { reconciliationState, reconcileLedger } from "./reconciliation.ts";
-import { renderAccountReport } from "./account-report.js";
-import { exportToExcel, renderBackupView, checkBackupReminder } from "./backup.js";
+} from "./state/state.js";
+import { escapeHtml, debounce } from "./utils/utils.ts";
+import { textSimilarity } from "./utils/fuzzy-match.ts";
+import { activitiesState, renderActivities } from "./activities/render.ts";
+import { openActivityDrawer } from "./activities/financials.ts";
+import { renderSettings, openSettingsPanel, openAccountModal, openDeptModal } from "./components/settings/view.tsx";
+import { renderDashboard, renderDashboardCharts } from "./components/dashboard-view.tsx";
+import { renderReconciliation } from "./components/reconciliation-view.tsx";
+import { reconciliationState, reconcileLedger } from "./services/reconciliation.ts";
+import { renderAccountReport } from "./services/account-report.js";
+import { exportToExcel, renderBackupView, checkBackupReminder } from "./services/backup.js";
 
 // Theme management
 function applyTheme(theme) {

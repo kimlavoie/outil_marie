@@ -2,8 +2,8 @@
  * account-report.js - "Grand Livre local" view: per-account ledger cards
  * built from activity distributions
  */
-import { appState, getFiscalYear, getQuarterNumber, saveUiState } from "./state.js";
-import { escapeHtml, formatCurrency, buildPaginationBarHtml } from "./utils.ts";
+import { appState, getFiscalYear, getQuarterNumber, saveUiState } from "../state/state.js";
+import { escapeHtml, formatCurrency, buildPaginationBarHtml } from "../utils/utils.ts";
 
 // Account report view state, grouped (sort/pagination are per-account since
 // each account renders its own independently-paginated card)

@@ -13,10 +13,10 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { appState, parseLocalDateStr } from "./state.js";
-import { getRoomColor, getReservationRoomLabel } from "./utils.ts";
-import { openActivityDrawer, openActivityDetailModal } from "./activities-financials.ts";
-import { createDraftActivity } from "./activities-form.ts";
+import { appState, parseLocalDateStr } from "../state/state.js";
+import { getRoomColor, getReservationRoomLabel } from "../utils/utils.ts";
+import { openActivityDrawer, openActivityDetailModal } from "../activities/financials.ts";
+import { createDraftActivity } from "../activities/form.ts";
 
 const MONTH_NAMES_FR = [
   "Janvier",
@@ -98,7 +98,11 @@ function EventHoverPreview({ hover }: { hover: HoverState | null }) {
 
   const act = hover.act;
   const roomsLabel = (act.reservations || []).map(getReservationRoomLabel).filter(Boolean).join(", ") || "-";
-  const dateLabel = act.date_start ? (act.date_end && act.date_end !== act.date_start ? `${act.date_start} → ${act.date_end}` : act.date_start) : "-";
+  const dateLabel = act.date_start
+    ? act.date_end && act.date_end !== act.date_start
+      ? `${act.date_start} → ${act.date_end}`
+      : act.date_start
+    : "-";
 
   return (
     <div id="event-calendar-hover-preview" className="event-calendar-hover-preview active" ref={ref}>
@@ -148,7 +152,10 @@ function DayCell({
       className={`event-calendar-cell${isToday ? " today" : ""}${tall ? " tall" : ""}`}
       data-date={dateStr}
       onClick={e => {
-        if ((e.target as HTMLElement).closest(".event-calendar-event") || (e.target as HTMLElement).closest(".event-calendar-quick-add-btn")) {
+        if (
+          (e.target as HTMLElement).closest(".event-calendar-event") ||
+          (e.target as HTMLElement).closest(".event-calendar-quick-add-btn")
+        ) {
           return;
         }
         onOpenDay(dateStr);
@@ -266,7 +273,8 @@ function CalendarModal({ command }: { command: Command | null }) {
     }
   };
 
-  const onHover = (act: any, e: React.MouseEvent) => setHover({ act, anchorRect: (e.currentTarget as HTMLElement).getBoundingClientRect() });
+  const onHover = (act: any, e: React.MouseEvent) =>
+    setHover({ act, anchorRect: (e.currentTarget as HTMLElement).getBoundingClientRect() });
   const onUnhover = () => setHover(null);
 
   const navigate = (direction: number) => {
@@ -459,7 +467,11 @@ function CalendarModal({ command }: { command: Command | null }) {
               ))}
             </div>
           </div>
-          <details className="event-calendar-legend-details" open={legendOpen} onToggle={e => setLegendOpen((e.target as HTMLDetailsElement).open)}>
+          <details
+            className="event-calendar-legend-details"
+            open={legendOpen}
+            onToggle={e => setLegendOpen((e.target as HTMLDetailsElement).open)}
+          >
             <summary className="event-calendar-legend-summary">
               <span className="legend-summary-title">Légende des salles</span>
               <span className="legend-summary-preview">

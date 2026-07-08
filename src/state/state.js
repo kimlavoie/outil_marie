@@ -1,12 +1,12 @@
-import { calculateDaysCount, generateUid, showToast } from "./utils.ts";
+import { calculateDaysCount, generateUid, showToast } from "../utils/utils.ts";
 import { openVersionedDb } from "./db-utils.ts";
-import { logError } from "./logger.ts";
+import { logError } from "../utils/logger.ts";
 
 import { DEFAULT_CONFIG } from "./config-defaults.ts";
-import { activitiesState } from "./activities-render.ts";
-import { reconciliationState } from "./reconciliation.ts";
-import { accountReportState } from "./account-report.js";
-import { checkBackupReminder, scheduleAutoBackupWrite } from "./backup.js";
+import { activitiesState } from "../activities/render.ts";
+import { reconciliationState } from "../services/reconciliation.ts";
+import { accountReportState } from "../services/account-report.js";
+import { checkBackupReminder, scheduleAutoBackupWrite } from "../services/backup.js";
 
 // Free technical services (no fee): paid technical items (location de projecteur, piano à
 // queue, projecteur / équipement informatique) live in appState.settings.services instead, so

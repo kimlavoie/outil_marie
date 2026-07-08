@@ -8,7 +8,7 @@
  * `event.oldVersion`, so future schema changes can be added as `if (oldVersion < N)` blocks
  * without disturbing data written under earlier versions.
  */
-import { logError } from "./logger.ts";
+import { logError } from "../utils/logger.ts";
 
 // Opens `name` at `version`, calling `upgrade(db, oldVersion, newVersion)` inside the
 // browser-managed upgrade transaction whenever the stored version is behind. `upgrade` should

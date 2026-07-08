@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { computeDashboardStats } from "../js/dashboard.js";
+import { computeDashboardStats } from "../src/dashboard.js";
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];
