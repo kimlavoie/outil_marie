@@ -23,6 +23,17 @@ function generateUid(prefix: string) {
   return `${prefix}-${Date.now()}${Math.random().toString(36).substr(2, 5)}`;
 }
 
+export interface RateVersionRow {
+  key: string;
+  effective_date: string;
+  rate: string;
+  overtime_rate?: string;
+}
+
+function newRateVersionRow(effective_date = "", rate = "", overtime_rate?: string): RateVersionRow {
+  return { key: generateUid("rate-row"), effective_date, rate, overtime_rate };
+}
+
 // Returns a debounced wrapper that delays invoking fn until `delay` ms have
 // passed since the last call (used on search inputs to avoid a full re-render
 // on every keystroke).
@@ -527,6 +538,7 @@ export {
   formatCurrency,
   escapeHtml,
   generateUid,
+  newRateVersionRow,
   debounce,
   calculateDaysCount,
   getActivityReferences,

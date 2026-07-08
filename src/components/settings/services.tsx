@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { appState, saveDatabase, getActiveServiceRate } from "../../state/state.ts";
-import { showToast, generateUid } from "../../utils/utils.ts";
+import { showToast, generateUid, RateVersionRow, newRateVersionRow } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
-import { EditIcon, DeleteIcon, Modal, GlAccountOptions, RateVersionsEditor, RateVersionRow, newRateVersionRow } from "./common.tsx";
+import { EditIcon, DeleteIcon, Modal, GlAccountOptions, RateVersionsEditor } from "./common.tsx";
 
 export function ServicesPanel({ active, openModal, bump }: { active: boolean; openModal: (id: string | null) => void; bump: () => void }) {
   const services = appState.settings.services || [];

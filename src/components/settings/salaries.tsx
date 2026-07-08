@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { appState, saveDatabase, getActiveSalaryRate, getActiveSalaryOvertimeRate } from "../../state/state.ts";
-import { showToast, generateUid } from "../../utils/utils.ts";
-import { EditIcon, DeleteIcon, Modal, GlAccountOptions, RateVersionsEditor, RateVersionRow, newRateVersionRow } from "./common.tsx";
+import { showToast, generateUid, RateVersionRow, newRateVersionRow } from "../../utils/utils.ts";
+import { EditIcon, DeleteIcon, Modal, GlAccountOptions, RateVersionsEditor } from "./common.tsx";
 
 export function SalariesPanel({ active, openModal, bump }: { active: boolean; openModal: (id: string | null) => void; bump: () => void }) {
   const salaries: any[] = appState.settings.salaries || [];

@@ -1,17 +1,6 @@
 import { useEffect } from "react";
 import { appState } from "../../state/state.ts";
-import { formatDateMask, generateUid } from "../../utils/utils.ts";
-
-export interface RateVersionRow {
-  key: string;
-  effective_date: string;
-  rate: string;
-  overtime_rate?: string;
-}
-
-export function newRateVersionRow(effective_date = "", rate = "", overtime_rate?: string): RateVersionRow {
-  return { key: generateUid("rate-row"), effective_date, rate, overtime_rate };
-}
+import { formatDateMask, RateVersionRow } from "../../utils/utils.ts";
 
 export function EditIcon() {
   return (
