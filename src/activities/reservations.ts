@@ -54,7 +54,16 @@ function initReservationsSection() {
   const addBtn = el("add-reservation-btn");
   if (!addBtn) return;
   addBtn.addEventListener("click", () => {
-    addReservationCard();
+    const container = el("form-activity-reservations");
+    const existingCards = container ? container.querySelectorAll<HTMLElement>(".reservation-card") : [];
+    const lastCard = existingCards[existingCards.length - 1];
+    const previousSlots = lastCard ? collectSlotsFromCard(lastCard) : [];
+
+    const newCard = addReservationCard();
+    if (newCard && previousSlots.length) {
+      const slotsList = newCard.querySelector<HTMLElement>(".reservation-slots-list")!;
+      previousSlots.forEach(s => addSlotRow(slotsList, s.date, s.start_time, s.end_time));
+    }
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();
   });
