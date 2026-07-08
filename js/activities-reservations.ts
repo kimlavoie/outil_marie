@@ -232,9 +232,9 @@ function addSlotRow(container: HTMLElement, date = "", startTime = "", endTime =
     "beforeend",
     `
     <div id="${rowId}" class="distribution-row reservation-slot-row" style="grid-template-columns: 1fr 0.8fr 0.8fr auto;">
-      <input type="text" class="form-input slot-date-input" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}" value="${date}">
-      <input type="time" class="form-input slot-start-time-input" value="${startTime}">
-      <input type="time" class="form-input slot-end-time-input" value="${endTime}">
+      <input type="text" id="${rowId}-date" class="form-input slot-date-input" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}" value="${date}">
+      <input type="time" id="${rowId}-start-time" class="form-input slot-start-time-input" value="${startTime}">
+      <input type="time" id="${rowId}-end-time" class="form-input slot-end-time-input" value="${endTime}">
       <button type="button" class="btn-icon delete-slot-row-btn" data-row-id="${rowId}" title="Retirer ce créneau">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
@@ -290,32 +290,32 @@ function addNextSlotRow(container: HTMLElement) {
 // Builds the "+ Plage de jours" mini-generator markup: a date range, the weekdays to include,
 // and a shared heure début/fin, so a repeating multi-day schedule can be entered in one shot
 // instead of adding créneaux one at a time.
-function buildSlotRangeGeneratorHtml() {
+function buildSlotRangeGeneratorHtml(uid: string) {
   return `
     <div class="reservation-slot-range-generator" style="display: none; border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px;">
       <div class="form-group-row">
         <div class="form-group">
-          <label>Du</label>
-          <input type="text" class="form-input slot-range-start-date" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
+          <label for="${uid}-slot-range-start-date">Du</label>
+          <input type="text" id="${uid}-slot-range-start-date" class="form-input slot-range-start-date" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
         </div>
         <div class="form-group">
-          <label>Au</label>
-          <input type="text" class="form-input slot-range-end-date" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
+          <label for="${uid}-slot-range-end-date">Au</label>
+          <input type="text" id="${uid}-slot-range-end-date" class="form-input slot-range-end-date" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
         </div>
       </div>
       <div class="form-group-row">
         <div class="form-group">
-          <label>Heure de début</label>
-          <input type="time" class="form-input slot-range-start-time">
+          <label for="${uid}-slot-range-start-time">Heure de début</label>
+          <input type="time" id="${uid}-slot-range-start-time" class="form-input slot-range-start-time">
         </div>
         <div class="form-group">
-          <label>Heure de fin</label>
-          <input type="time" class="form-input slot-range-end-time">
+          <label for="${uid}-slot-range-end-time">Heure de fin</label>
+          <input type="time" id="${uid}-slot-range-end-time" class="form-input slot-range-end-time">
         </div>
       </div>
       <div class="form-group">
-        <label>Jours à inclure</label>
-        <div class="pill-toggle-group slot-range-weekdays-group">
+        <span class="field-label" id="${uid}-slot-range-weekdays-label">Jours à inclure</span>
+        <div class="pill-toggle-group slot-range-weekdays-group" role="group" aria-labelledby="${uid}-slot-range-weekdays-label">
           ${WEEKDAY_PILL_OPTIONS.map(d => `<button type="button" class="pill-toggle active" data-value="${d.value}">${d.label}</button>`).join("")}
         </div>
       </div>
@@ -401,8 +401,8 @@ function addReservationCard(reservationData: any = null) {
     <div class="reservation-card" id="${uid}" data-reservation-id="${reservationData ? reservationData.id : generateUid("res")}">
       <div class="reservation-card-header">
         <div class="form-group" style="flex: 1; margin-bottom: 0;">
-          <label>Salle</label>
-          ${buildSearchableSelectHtml("room-select-group", "room-search-input", "Rechercher une salle...")}
+          <label for="${uid}-room-search-input">Salle</label>
+          ${buildSearchableSelectHtml("room-select-group", "room-search-input", "Rechercher une salle...", `${uid}-room-search-input`)}
         </div>
         <button type="button" class="btn-icon remove-reservation-btn" title="Retirer cette réservation">
           <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
@@ -410,20 +410,20 @@ function addReservationCard(reservationData: any = null) {
       </div>
 
       <div class="form-group room-other-details-group" style="display: ${isOther ? "flex" : "none"};">
-        <label>Détails de la salle</label>
-        <input type="text" class="form-input room-other-details-input" placeholder="Précisez la salle utilisée..." value="${escapeHtml(reservationData && reservationData.room_other_details)}">
+        <label for="${uid}-room-other-details">Détails de la salle</label>
+        <input type="text" id="${uid}-room-other-details" class="form-input room-other-details-input" placeholder="Précisez la salle utilisée..." value="${escapeHtml(reservationData && reservationData.room_other_details)}">
       </div>
 
       <div class="form-group-row room-tariff-fields-row" style="display: flex; gap: 12px; margin-bottom: 12px;">
         <div class="form-group" style="flex: 1; margin-bottom: 0;">
-          <label>Tarif - Paramètre</label>
-          <select class="select-input room-tariff-parameter" style="padding: 10px 14px; width: 100%;">
+          <label for="${uid}-room-tariff-parameter">Tarif - Paramètre</label>
+          <select id="${uid}-room-tariff-parameter" class="select-input room-tariff-parameter" style="padding: 10px 14px; width: 100%;">
             <option value="">Sélectionner...</option>
           </select>
         </div>
         <div class="form-group room-tariff-client-type-group" style="flex: 1; margin-bottom: 0; display: flex; flex-direction: column;">
-          <label>Tarif - Type de client</label>
-          <select class="select-input room-tariff-client-type" style="padding: 10px 14px; width: 100%;">
+          <label for="${uid}-room-tariff-client-type">Tarif - Type de client</label>
+          <select id="${uid}-room-tariff-client-type" class="select-input room-tariff-client-type" style="padding: 10px 14px; width: 100%;">
             <option value="">Sélectionner...</option>
           </select>
         </div>
@@ -433,18 +433,18 @@ function addReservationCard(reservationData: any = null) {
       </div>
       <div class="form-group-row room-tariff-custom-group" style="display: ${isCustomTariff ? "flex" : "none"};">
         <div class="form-group">
-          <label>Description du tarif</label>
-          <input type="text" class="form-input room-tariff-custom-desc" placeholder="Ex: Rabais ponctuel" value="${isCustomTariff ? escapeHtml(reservationData.tariff_description) : ""}">
+          <label for="${uid}-room-tariff-custom-desc">Description du tarif</label>
+          <input type="text" id="${uid}-room-tariff-custom-desc" class="form-input room-tariff-custom-desc" placeholder="Ex: Rabais ponctuel" value="${isCustomTariff ? escapeHtml(reservationData.tariff_description) : ""}">
         </div>
         <div class="form-group">
-          <label>Montant ($ par jour)</label>
-          <input type="number" class="form-input room-tariff-custom-amount" min="0" step="0.01" value="${isCustomTariff ? reservationData.tariff_amount : ""}">
+          <label for="${uid}-room-tariff-custom-amount">Montant ($ par jour)</label>
+          <input type="number" id="${uid}-room-tariff-custom-amount" class="form-input room-tariff-custom-amount" min="0" step="0.01" value="${isCustomTariff ? reservationData.tariff_amount : ""}">
         </div>
       </div>
 
       <div class="form-group">
-        <label>Montage / Démontage</label>
-        <div class="pill-toggle-group">
+        <span class="field-label" id="${uid}-install-dismantle-label">Montage / Démontage</span>
+        <div class="pill-toggle-group" role="group" aria-labelledby="${uid}-install-dismantle-label">
           <button type="button" class="pill-toggle reservation-install-toggle ${install.enabled ? "active" : ""}">Montage</button>
           <button type="button" class="pill-toggle reservation-dismantle-toggle ${dismantle.enabled ? "active" : ""}">Démontage</button>
         </div>
@@ -458,66 +458,66 @@ function addReservationCard(reservationData: any = null) {
 
       <div class="distribution-section">
         <div class="distribution-header">
-          <label>Créneaux</label>
+          <span class="field-label">Créneaux</span>
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn btn-secondary reservation-add-slot-range-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Plage de jours</button>
             <button type="button" class="btn btn-secondary reservation-add-slot-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Créneau</button>
           </div>
         </div>
-        ${buildSlotRangeGeneratorHtml()}
+        ${buildSlotRangeGeneratorHtml(uid)}
         <div class="distribution-list reservation-slots-list"></div>
       </div>
 
       <div class="form-group">
-        <label>Services techniques</label>
-        <div class="pill-toggle-group room-technical-services-group">
+        <span class="field-label" id="${uid}-technical-services-label">Services techniques</span>
+        <div class="pill-toggle-group room-technical-services-group" role="group" aria-labelledby="${uid}-technical-services-label">
           ${TECHNICAL_SERVICES.map(s => `<button type="button" class="pill-toggle" data-value="${s}">${s}</button>`).join("")}
         </div>
       </div>
 
       <div class="form-group">
-        <label>Service de bar</label>
-        <div class="pill-toggle-group room-bar-toggle-group">
+        <span class="field-label" id="${uid}-bar-toggle-label">Service de bar</span>
+        <div class="pill-toggle-group room-bar-toggle-group" role="group" aria-labelledby="${uid}-bar-toggle-label">
           <button type="button" class="pill-toggle" data-value="active">Activer le service de bar</button>
         </div>
       </div>
       <div class="room-bar-details" style="display: none;">
         <div class="form-group">
-          <label>Type de boisson</label>
-          <div class="pill-toggle-group room-bar-drink-group">
+          <span class="field-label" id="${uid}-bar-drink-label">Type de boisson</span>
+          <div class="pill-toggle-group room-bar-drink-group" role="group" aria-labelledby="${uid}-bar-drink-label">
             ${BAR_DRINK_TYPES.map(s => `<button type="button" class="pill-toggle" data-value="${s}">${s}</button>`).join("")}
           </div>
         </div>
         <div class="form-group">
-          <label>Type de service</label>
-          <div class="pill-toggle-group room-bar-service-type-group">
+          <span class="field-label" id="${uid}-bar-service-type-label">Type de service</span>
+          <div class="pill-toggle-group room-bar-service-type-group" role="group" aria-labelledby="${uid}-bar-service-type-label">
             ${BAR_SERVICE_TYPES.map(s => `<button type="button" class="pill-toggle" data-value="${s}">${s}</button>`).join("")}
           </div>
         </div>
         <div class="form-group room-bar-hostess-count-group" style="display: none;">
-          <label>Nombre d'hôtesses</label>
-          <input type="number" class="form-input room-bar-hostess-count" min="1" step="1" value="1">
+          <label for="${uid}-room-bar-hostess-count">Nombre d'hôtesses</label>
+          <input type="number" id="${uid}-room-bar-hostess-count" class="form-input room-bar-hostess-count" min="1" step="1" value="1">
         </div>
         <div class="form-group">
-          <label>Commande spéciale</label>
-          <input type="text" class="form-input room-bar-special-order" placeholder="Précisez la commande spéciale...">
+          <label for="${uid}-room-bar-special-order">Commande spéciale</label>
+          <input type="text" id="${uid}-room-bar-special-order" class="form-input room-bar-special-order" placeholder="Précisez la commande spéciale...">
         </div>
       </div>
 
       <div class="form-group">
-        <label>Autres services</label>
-        <div class="pill-toggle-group room-host-duties-group">
+        <span class="field-label" id="${uid}-host-duties-label">Autres services</span>
+        <div class="pill-toggle-group room-host-duties-group" role="group" aria-labelledby="${uid}-host-duties-label">
           ${HOST_DUTY_OPTIONS.map(s => `<button type="button" class="pill-toggle" data-value="${s}">${s}</button>`).join("")}
         </div>
       </div>
       <div class="form-group room-host-duties-count-group" style="display: none;">
-        <label>Nombre d'hôtesses</label>
-        <input type="number" class="form-input room-host-duties-count" min="1" step="1" value="1">
+        <label for="${uid}-room-host-duties-count">Nombre d'hôtesses</label>
+        <input type="number" id="${uid}-room-host-duties-count" class="form-input room-host-duties-count" min="1" step="1" value="1">
       </div>
 
       <div class="distribution-section">
         <div class="distribution-header">
-          <label>Personnel requis</label>
+          <span class="field-label">Personnel requis</span>
           <button type="button" class="btn btn-secondary room-add-staff-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
         <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.4fr 0.6fr 0.6fr 0.6fr 1fr auto; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; padding: 0 12px; margin-bottom: 4px;">
@@ -528,7 +528,7 @@ function addReservationCard(reservationData: any = null) {
 
       <div class="distribution-section">
         <div class="distribution-header">
-          <label>Services</label>
+          <span class="field-label">Services</span>
           <button type="button" class="btn btn-secondary room-add-service-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
         <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.6fr 0.7fr 0.7fr 1fr auto; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; padding: 0 12px; margin-bottom: 4px;">
@@ -539,7 +539,7 @@ function addReservationCard(reservationData: any = null) {
 
       <div class="distribution-section">
         <div class="distribution-header">
-          <label>Autres frais</label>
+          <span class="field-label">Autres frais</span>
           <button type="button" class="btn btn-secondary room-add-fee-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
         <div class="distribution-list room-fees-list"></div>
@@ -874,13 +874,13 @@ function addStaffRow(container: HTMLElement, salaryId = "", count = 1, hours = 0
     "beforeend",
     `
     <div id="${rowId}" class="distribution-row" data-auto-generated="${autoGenerated ? "1" : ""}" style="grid-template-columns: 1.4fr 0.6fr 0.6fr 0.6fr 1fr auto;">
-      <select class="select-input staff-salary-select" style="padding: 8px 12px; font-size: 0.85rem;">
+      <select id="${rowId}-salary" class="select-input staff-salary-select" style="padding: 8px 12px; font-size: 0.85rem;">
         <option value="">Choisir un emploi...</option>
         ${salaryOptionsHtml}
       </select>
-      <input type="number" class="form-input staff-count-input" min="1" step="1" value="${count || 1}" placeholder="Qté" style="padding: 8px 12px; font-size: 0.85rem;">
-      <input type="number" class="form-input staff-hours-input" min="0" step="0.25" value="${hours || 0}" placeholder="Heures" style="padding: 8px 12px; font-size: 0.85rem;">
-      <input type="number" class="form-input staff-overtime-hours-input" min="0" step="0.25" value="${overtimeHours || 0}" placeholder="Heures sup." title="Heures en temps supplémentaire" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" id="${rowId}-count" class="form-input staff-count-input" min="1" step="1" value="${count || 1}" placeholder="Qté" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" id="${rowId}-hours" class="form-input staff-hours-input" min="0" step="0.25" value="${hours || 0}" placeholder="Heures" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" id="${rowId}-overtime-hours" class="form-input staff-overtime-hours-input" min="0" step="0.25" value="${overtimeHours || 0}" placeholder="Heures sup." title="Heures en temps supplémentaire" style="padding: 8px 12px; font-size: 0.85rem;">
       <span class="staff-subtotal-display" style="font-size: 0.85rem; color: var(--text-secondary); align-self: center;">0,00 $</span>
       <button type="button" class="btn-icon delete-staff-row-btn" data-row-id="${rowId}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
@@ -928,12 +928,12 @@ function addServiceRow(container: HTMLElement, serviceId = "", count = 1, hours 
     "beforeend",
     `
     <div id="${rowId}" class="distribution-row" data-auto-generated="${autoGenerated ? "1" : ""}" style="grid-template-columns: 1.6fr 0.7fr 0.7fr 1fr auto;">
-      <select class="select-input service-select" style="padding: 8px 12px; font-size: 0.85rem;">
+      <select id="${rowId}-service" class="select-input service-select" style="padding: 8px 12px; font-size: 0.85rem;">
         <option value="">Choisir un service...</option>
         ${serviceOptionsHtml}
       </select>
-      <input type="number" class="form-input service-count-input" min="1" step="1" value="${count || 1}" placeholder="Qté" style="padding: 8px 12px; font-size: 0.85rem;">
-      <input type="number" class="form-input service-hours-input" min="0" step="0.25" value="${hours || 0}" placeholder="Heures" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" id="${rowId}-count" class="form-input service-count-input" min="1" step="1" value="${count || 1}" placeholder="Qté" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" id="${rowId}-hours" class="form-input service-hours-input" min="0" step="0.25" value="${hours || 0}" placeholder="Heures" style="padding: 8px 12px; font-size: 0.85rem;">
       <span class="service-subtotal-display" style="font-size: 0.85rem; color: var(--text-secondary); align-self: center;">0,00 $</span>
       <button type="button" class="btn-icon delete-service-row-btn" data-row-id="${rowId}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
@@ -978,9 +978,9 @@ function addFeeRow(container: HTMLElement, description = "", amount: string | nu
     "beforeend",
     `
     <div id="${rowId}" class="distribution-row" data-auto-generated="${autoGenerated ? "1" : ""}">
-      <input type="text" class="form-input fee-desc-input" value="${escapeHtml(description)}" placeholder="Ex: Montage et démontage" style="padding: 8px 12px; font-size: 0.85rem;">
-      <input type="number" class="form-input fee-amount-input" min="0" step="0.01" value="${amount !== "" ? amount : ""}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
-      <select class="select-input fee-gl-select" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="text" id="${rowId}-desc" class="form-input fee-desc-input" value="${escapeHtml(description)}" placeholder="Ex: Montage et démontage" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" id="${rowId}-amount" class="form-input fee-amount-input" min="0" step="0.01" value="${amount !== "" ? amount : ""}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
+      <select id="${rowId}-gl" class="select-input fee-gl-select" style="padding: 8px 12px; font-size: 0.85rem;">
         ${buildGlAccountOptionsHtml(glAccountCode)}
       </select>
       <button type="button" class="btn-icon delete-fee-row-btn" data-row-id="${rowId}">

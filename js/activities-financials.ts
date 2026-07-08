@@ -366,11 +366,11 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "") {
 
   const rowHtml = `
     <div id="${rowId}" class="distribution-row">
-      <select class="select-input dist-account-select" style="padding: 8px 12px; font-size: 0.85rem;">
+      <select id="${rowId}-account" class="select-input dist-account-select" style="padding: 8px 12px; font-size: 0.85rem;">
         ${optionsHtml}
       </select>
-      <input type="number" class="form-input dist-amount-input" min="0" step="0.01" value="${amount > 0 ? amount : ""}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
-      <input type="text" class="form-input dist-reference-input" value="${escapeHtml(reference)}" placeholder="N° Facture, RI ou Encaissement" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="number" id="${rowId}-amount" class="form-input dist-amount-input" min="0" step="0.01" value="${amount > 0 ? amount : ""}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="text" id="${rowId}-reference" class="form-input dist-reference-input" value="${escapeHtml(reference)}" placeholder="N° Facture, RI ou Encaissement" style="padding: 8px 12px; font-size: 0.85rem;">
       <button type="button" class="btn-icon delete-dist-row-btn" data-row-id="${rowId}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>

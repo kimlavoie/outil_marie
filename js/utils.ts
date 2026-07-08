@@ -125,7 +125,7 @@ function buildPaginationBarHtml({
         <button type="button" class="btn-icon pagination-next" ${extraAttr} ${clampedPage >= totalPages ? "disabled" : ""} title="Page suivante">
           <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg>
         </button>
-        <select class="select-input pagination-size-select" ${extraAttr} title="Lignes par page">
+        <select class="select-input pagination-size-select" name="pagination-size" ${extraAttr} title="Lignes par page">
           ${[5, 10, 25, 50, 100].map(n => `<option value="${n}" ${n === pageSize ? "selected" : ""}>${n} / page</option>`).join("")}
         </select>
       </div>
@@ -252,12 +252,12 @@ function setExclusivePillValue(containerId: string, value: string) {
 // plus a filtered results popover (mirrors .calendar-popover / .quick-access-item). The
 // currently selected value is kept in a hidden input so callers can read it back like a <select>.
 // A chevron makes it read as a dropdown rather than a free-text field, even though it's typeable.
-function buildSearchableSelectHtml(wrapperClass: string, inputClass: string, placeholder: string) {
+function buildSearchableSelectHtml(wrapperClass: string, inputClass: string, placeholder: string, id = "") {
   return `
     <div class="${wrapperClass} searchable-select-wrapper" style="position: relative;">
-      <input type="text" class="form-input ${inputClass} searchable-select-input" placeholder="${placeholder}" autocomplete="off" style="padding-right: 34px; cursor: pointer;">
+      <input type="text" ${id ? `id="${id}"` : ""} class="form-input ${inputClass} searchable-select-input" placeholder="${placeholder}" autocomplete="off" style="padding-right: 34px; cursor: pointer;">
       <svg class="searchable-select-caret" viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: var(--text-muted); position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;"><path d="M7 10l5 5 5-5z"/></svg>
-      <input type="hidden" class="searchable-select-value">
+      <input type="hidden" name="${id || inputClass}-value" class="searchable-select-value">
       <div class="calendar-popover searchable-select-results" style="left: 0; right: auto; width: 100%; max-height: 220px; overflow-y: auto;"></div>
     </div>
   `;

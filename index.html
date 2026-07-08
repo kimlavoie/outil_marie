@@ -236,26 +236,29 @@
                       d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
                     />
                   </svg>
+                  <label for="activity-search" class="sr-only">Rechercher une activité</label>
                   <input
                     type="text"
                     id="activity-search"
                     class="search-input"
-                    aria-label="Rechercher une activité"
                     placeholder="Rechercher par nom, responsable, RI/Facture..."
                   />
                 </div>
 
                 <div class="filter-actions">
-                  <select id="filter-salle" class="select-input" aria-label="Filtrer par salle">
+                  <label for="filter-salle" class="sr-only">Filtrer par salle</label>
+                  <select id="filter-salle" class="select-input">
                     <option value="">Toutes les salles</option>
                     <!-- Populated dynamically -->
                   </select>
-                  <select id="filter-client-type" class="select-input" aria-label="Filtrer par type de client">
+                  <label for="filter-client-type" class="sr-only">Filtrer par type de client</label>
+                  <select id="filter-client-type" class="select-input">
                     <option value="">Tous types clients</option>
                     <option value="interne">Interne</option>
                     <option value="externe">Externe</option>
                   </select>
-                  <select id="filter-status" class="select-input" aria-label="Filtrer par état">
+                  <label for="filter-status" class="sr-only">Filtrer par état</label>
+                  <select id="filter-status" class="select-input">
                     <option value="">Tous les états</option>
                     <option value="brouillon">Brouillon</option>
                     <option value="soumise">Soumise au client</option>
@@ -280,6 +283,7 @@
                   <thead>
                     <tr>
                       <th style="width: 40px; text-align: center; vertical-align: middle">
+                        <label for="activities-select-all" class="sr-only">Tout sélectionner</label>
                         <input type="checkbox" id="activities-select-all" style="cursor: pointer" />
                       </th>
                       <th data-sort="id">N° Activité</th>
@@ -564,8 +568,8 @@
           <div id="activity-tab-panel-submission" class="activity-tab-panel active">
             <!-- Mode: Estimation (calcul allégé) vs Soumission (formulaire complet) -->
             <div class="form-group">
-              <label for="activity-mode-toggle">Mode</label>
-              <div id="activity-mode-toggle" class="pill-toggle-group">
+              <span class="field-label" id="activity-mode-toggle-label">Mode</span>
+              <div id="activity-mode-toggle" class="pill-toggle-group" role="group" aria-labelledby="activity-mode-toggle-label">
                 <button type="button" class="pill-toggle" data-mode="estimation">Estimation</button>
                 <button type="button" class="pill-toggle" data-mode="soumission">Soumission</button>
               </div>
@@ -737,7 +741,7 @@
             <!-- Récapitulatif financier (taxes québécoises) -->
             <div class="distribution-section">
               <div class="distribution-header">
-                <label>Récapitulatif financier</label>
+                <span class="field-label">Récapitulatif financier</span>
               </div>
               <div id="submission-financial-summary" class="financial-summary">
                 <!-- Populated dynamically -->
@@ -747,7 +751,7 @@
             <!-- Soumission -->
             <div class="distribution-section estimation-hide">
               <div class="distribution-header">
-                <label>Soumission</label>
+                <span class="field-label">Soumission</span>
               </div>
               <div id="submission-file-status" class="file-link-status"></div>
             </div>
@@ -755,7 +759,7 @@
             <!-- Contrat -->
             <div class="distribution-section estimation-hide">
               <div class="distribution-header">
-                <label>Contrat</label>
+                <span class="field-label">Contrat</span>
               </div>
               <div id="contract-file-status" class="file-link-status"></div>
             </div>
@@ -783,7 +787,7 @@
             <!-- Accounts Dynamic Distribution Interface -->
             <div class="distribution-section">
               <div class="distribution-header">
-                <label>Ventilation par compte de revenus (avec Numéro Facture, RI ou Encaissement par compte)</label>
+                <span class="field-label">Ventilation par compte de revenus (avec Numéro Facture, RI ou Encaissement par compte)</span>
                 <div style="display: flex; gap: 8px">
                   <button
                     type="button"
@@ -814,7 +818,7 @@
 
             <div class="distribution-section">
               <div class="distribution-header">
-                <label>État de la facturation</label>
+                <span class="field-label">État de la facturation</span>
               </div>
               <div id="billing-state-status" class="file-link-status"></div>
             </div>

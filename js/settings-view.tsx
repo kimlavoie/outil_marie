@@ -171,6 +171,7 @@ function RateVersionsEditor({
         <div key={row.key} className="distribution-row" style={{ gridTemplateColumns: withOvertime ? "1.4fr 1fr 1fr auto" : undefined }}>
           <input
             type="text"
+            name={`${row.key}-effective-date`}
             className="form-input"
             value={row.effective_date}
             placeholder="AAAA-MM-JJ (vide = depuis toujours)"
@@ -179,6 +180,7 @@ function RateVersionsEditor({
           />
           <input
             type="number"
+            name={`${row.key}-rate`}
             className="form-input"
             min={0}
             step={0.01}
@@ -190,6 +192,7 @@ function RateVersionsEditor({
           {withOvertime && (
             <input
               type="number"
+              name={`${row.key}-overtime-rate`}
               className="form-input"
               min={0}
               step={0.01}
@@ -765,7 +768,7 @@ function SalaryModal({ id, onClose, bump }: { id: string | null | undefined; onC
       </div>
       <div className="distribution-section">
         <div className="distribution-header">
-          <label>Historique des taux horaires (date d'entrée en vigueur, taux régulier et taux en temps supplémentaire)</label>
+          <span className="field-label">Historique des taux horaires (date d'entrée en vigueur, taux régulier et taux en temps supplémentaire)</span>
           <button
             type="button"
             className="btn btn-secondary"
@@ -964,7 +967,7 @@ function ServiceModal({ id, onClose, bump }: { id: string | null | undefined; on
       </div>
       <div className="distribution-section">
         <div className="distribution-header">
-          <label>Historique des tarifs (date d'entrée en vigueur et montant)</label>
+          <span className="field-label">Historique des tarifs (date d'entrée en vigueur et montant)</span>
           <button
             type="button"
             className="btn btn-secondary"
@@ -1350,7 +1353,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
 
       <div className="distribution-section">
         <div className="distribution-header">
-          <label>Grille tarifaire (paramètre × type de client)</label>
+          <span className="field-label">Grille tarifaire (paramètre × type de client)</span>
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "0.8rem" }} onClick={addVersion}>
               + Nouvelle version
@@ -1391,7 +1394,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
         <div className="form-group-row">
           <div className="form-group">
             <div className="distribution-header" style={{ marginBottom: 8 }}>
-              <label style={{ fontSize: "0.8rem" }}>Paramètres (lignes)</label>
+              <span className="field-label" style={{ fontSize: "0.8rem" }}>Paramètres (lignes)</span>
               <button type="button" className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: "0.75rem" }} onClick={addParameter}>
                 + Paramètre
               </button>
@@ -1401,6 +1404,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
                 <div key={p.id} className="distribution-row room-tarif-row" style={{ gridTemplateColumns: "1fr 1fr auto" }}>
                   <input
                     type="text"
+                    name={`${p.id}-name`}
                     className="form-input"
                     value={p.name}
                     placeholder="Ex: Journée"
@@ -1408,6 +1412,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
                     onChange={e => updateParameter(i, { name: e.target.value })}
                   />
                   <select
+                    name={`${p.id}-gl-account`}
                     className="select-input"
                     style={{ padding: "8px 12px", fontSize: "0.85rem" }}
                     title="Compte GL pour la facturation (optionnel)"
@@ -1425,7 +1430,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
           </div>
           <div className="form-group">
             <div className="distribution-header" style={{ marginBottom: 8 }}>
-              <label style={{ fontSize: "0.8rem" }}>Types de client (colonnes)</label>
+              <span className="field-label" style={{ fontSize: "0.8rem" }}>Types de client (colonnes)</span>
               <button type="button" className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: "0.75rem" }} onClick={addClientType}>
                 + Type de client
               </button>
@@ -1435,6 +1440,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
                 <div key={ct.id} className="distribution-row room-tarif-row" style={{ gridTemplateColumns: "1fr auto" }}>
                   <input
                     type="text"
+                    name={`${ct.id}-name`}
                     className="form-input"
                     value={ct.name}
                     placeholder="Ex: Interne"
@@ -1476,6 +1482,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
                         <td key={ct.id}>
                           <input
                             type="number"
+                            name={`cell-${p.id}-${ct.id}`}
                             min={0}
                             step={0.01}
                             className="form-input"
@@ -1496,7 +1503,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
 
       <div className="distribution-section">
         <div className="distribution-header">
-          <label>Salles liées (réservées automatiquement avec cette salle)</label>
+          <span className="field-label">Salles liées (réservées automatiquement avec cette salle)</span>
         </div>
         <div className="pill-toggle-group">
           {appState.settings.rooms
@@ -1516,7 +1523,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
 
       <div className="distribution-section">
         <div className="distribution-header">
-          <label>Personnel lié (ajouté automatiquement à la réservation)</label>
+          <span className="field-label">Personnel lié (ajouté automatiquement à la réservation)</span>
           <button
             type="button"
             className="btn btn-secondary"
@@ -1530,6 +1537,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
           {linkedStaff.map((row, i) => (
             <div key={row.key} className="distribution-row">
               <select
+                name={`${row.key}-salary`}
                 className="select-input"
                 style={{ padding: "8px 12px", fontSize: "0.85rem" }}
                 value={row.salaryId}
@@ -1544,6 +1552,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
               </select>
               <input
                 type="number"
+                name={`${row.key}-count`}
                 className="form-input"
                 min={1}
                 step={1}
@@ -1568,7 +1577,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
 
       <div className="distribution-section">
         <div className="distribution-header">
-          <label>Frais liés (ajoutés automatiquement à la réservation)</label>
+          <span className="field-label">Frais liés (ajoutés automatiquement à la réservation)</span>
           <button
             type="button"
             className="btn btn-secondary"
@@ -1583,6 +1592,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
             <div key={row.key} className="distribution-row">
               <input
                 type="text"
+                name={`${row.key}-desc`}
                 className="form-input"
                 value={row.desc}
                 placeholder="Ex: Montage et démontage"
@@ -1591,6 +1601,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
               />
               <input
                 type="number"
+                name={`${row.key}-amount`}
                 className="form-input"
                 min={0}
                 step={0.01}
@@ -1600,6 +1611,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
                 onChange={e => setLinkedFees(linkedFees.map((r, idx) => (idx === i ? { ...r, amount: e.target.value } : r)))}
               />
               <select
+                name={`${row.key}-gl`}
                 className="select-input"
                 style={{ padding: "8px 12px", fontSize: "0.85rem" }}
                 value={row.glCode}
@@ -1622,7 +1634,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
 
       <div className="distribution-section">
         <div className="distribution-header">
-          <label>Tâches du gestionnaire liées (générées automatiquement en planification)</label>
+          <span className="field-label">Tâches du gestionnaire liées (générées automatiquement en planification)</span>
           <button
             type="button"
             className="btn btn-secondary"
@@ -1637,6 +1649,7 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
             <div key={row.key} className="distribution-row room-tarif-row" style={{ gridTemplateColumns: "1fr auto" }}>
               <input
                 type="text"
+                name={`${row.key}-desc`}
                 className="form-input"
                 value={row.desc}
                 placeholder="Ex: Envoyer un courriel au responsable de la salle"

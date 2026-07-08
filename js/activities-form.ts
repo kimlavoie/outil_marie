@@ -469,8 +469,8 @@ function addPlanningTaskRow(task: any) {
     "beforeend",
     `
     <div id="${rowId}" class="distribution-row" data-task-id="${task.id}" data-auto-generated="${task.auto_generated ? "1" : ""}" style="grid-template-columns: auto 1fr auto; align-items: center;">
-      <input type="checkbox" class="task-done-checkbox" ${task.done ? "checked" : ""}>
-      <input type="text" class="form-input task-desc-input" value="${escapeHtml(task.description)}" placeholder="Description de la tâche" style="padding: 8px 12px; font-size: 0.85rem; ${doneStyle}">
+      <input type="checkbox" id="${rowId}-done" class="task-done-checkbox" ${task.done ? "checked" : ""}>
+      <input type="text" id="${rowId}-desc" class="form-input task-desc-input" value="${escapeHtml(task.description)}" placeholder="Description de la tâche" style="padding: 8px 12px; font-size: 0.85rem; ${doneStyle}">
       <button type="button" class="btn-icon delete-task-row-btn" data-row-id="${rowId}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>

@@ -314,7 +314,10 @@ function renderActivities() {
     tbody.innerHTML += `
       <tr class="activity-row ${isFilled ? "" : "row-empty"} ${activitiesState.selectedIds.has(act.id) ? "selected" : ""}" data-id="${act.id}" style="cursor: pointer; ${isFilled ? "" : "opacity: 0.5; font-style: italic;"}">
         <td onclick="event.stopPropagation();" style="text-align: center; vertical-align: middle; width: 40px;">
-          <input type="checkbox" class="activity-select-checkbox" data-id="${act.id}" ${activitiesState.selectedIds.has(act.id) ? "checked" : ""} style="cursor: pointer;" />
+          <label style="cursor: pointer;">
+            <span class="sr-only">Sélectionner l'activité ${act.id}</span>
+            <input type="checkbox" id="activity-select-${act.id}" class="activity-select-checkbox" data-id="${act.id}" ${activitiesState.selectedIds.has(act.id) ? "checked" : ""} style="cursor: pointer;" />
+          </label>
         </td>
         <td class="font-mono bold">${act.id}</td>
         <td>
