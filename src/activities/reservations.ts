@@ -3,7 +3,7 @@
  * tariff resolution, staff/service/fee sub-rows, and form collection helpers.
  * Part 3/5 of the activities module (see activities-render.ts for context).
  */
-import { initDatepickerWrapper } from "./datepicker.ts";
+import { initDatepickerWrapper, validateDateFieldFiscalYear } from "./datepicker.ts";
 import { WEEKDAY_PILL_OPTIONS } from "./form.ts";
 import {
   appState,
@@ -220,7 +220,10 @@ function addSlotRow(container: HTMLElement, date = "", startTime = "", endTime =
     "beforeend",
     `
     <div id="${rowId}" class="distribution-row reservation-slot-row" style="grid-template-columns: 1fr 0.8fr 0.8fr auto;">
-      <input type="text" id="${rowId}-date" class="form-input slot-date-input" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}" value="${date}">
+      <div>
+        <input type="text" id="${rowId}-date" class="form-input slot-date-input" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}" value="${date}">
+        <div class="field-error-msg" id="${rowId}-date-fy-error"></div>
+      </div>
       <input type="time" id="${rowId}-start-time" class="form-input slot-start-time-input" value="${startTime}">
       <input type="time" id="${rowId}-end-time" class="form-input slot-end-time-input" value="${endTime}">
       <button type="button" class="btn-icon delete-slot-row-btn" data-row-id="${rowId}" title="Retirer ce créneau">
@@ -230,7 +233,12 @@ function addSlotRow(container: HTMLElement, date = "", startTime = "", endTime =
   `
   );
   const row = el(rowId);
-  maskDateInput(row.querySelector<HTMLInputElement>(".slot-date-input"));
+  const slotDateInput = row.querySelector<HTMLInputElement>(".slot-date-input")!;
+  maskDateInput(slotDateInput);
+  slotDateInput.addEventListener("input", () => validateDateFieldFiscalYear(slotDateInput));
+  slotDateInput.addEventListener("change", () => validateDateFieldFiscalYear(slotDateInput));
+  slotDateInput.addEventListener("blur", () => validateDateFieldFiscalYear(slotDateInput));
+  validateDateFieldFiscalYear(slotDateInput);
   row.querySelector<HTMLInputElement>(".delete-slot-row-btn")!.addEventListener("click", () => {
     row.remove();
     updateFormDatesHelper();
@@ -277,10 +285,12 @@ function buildSlotRangeGeneratorHtml(uid: string) {
         <div class="form-group">
           <label for="${uid}-slot-range-start-date">Du</label>
           <input type="text" id="${uid}-slot-range-start-date" class="form-input slot-range-start-date" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
+          <div class="field-error-msg" id="${uid}-slot-range-start-date-fy-error"></div>
         </div>
         <div class="form-group">
           <label for="${uid}-slot-range-end-date">Au</label>
           <input type="text" id="${uid}-slot-range-end-date" class="form-input slot-range-end-date" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}">
+          <div class="field-error-msg" id="${uid}-slot-range-end-date-fy-error"></div>
         </div>
       </div>
       <div class="form-group-row">
@@ -313,8 +323,15 @@ function wireSlotRangeGenerator(card: HTMLElement) {
   const weekdaysGroup = generatorEl.querySelector<HTMLElement>(".slot-range-weekdays-group");
   const slotsList = card.querySelector<HTMLElement>(".reservation-slots-list")!;
   initPillToggleEl(weekdaysGroup);
-  maskDateInput(generatorEl.querySelector<HTMLInputElement>(".slot-range-start-date"));
-  maskDateInput(generatorEl.querySelector<HTMLInputElement>(".slot-range-end-date"));
+  const rangeStartInput = generatorEl.querySelector<HTMLInputElement>(".slot-range-start-date")!;
+  const rangeEndInput = generatorEl.querySelector<HTMLInputElement>(".slot-range-end-date")!;
+  maskDateInput(rangeStartInput);
+  maskDateInput(rangeEndInput);
+  for (const input of [rangeStartInput, rangeEndInput]) {
+    input.addEventListener("input", () => validateDateFieldFiscalYear(input));
+    input.addEventListener("change", () => validateDateFieldFiscalYear(input));
+    input.addEventListener("blur", () => validateDateFieldFiscalYear(input));
+  }
 
   toggleBtn.addEventListener("click", () => {
     generatorEl.style.display = generatorEl.style.display === "none" ? "block" : "none";

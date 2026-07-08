@@ -37,12 +37,12 @@ export function CloseIcon() {
   );
 }
 
-export function GlAccountOptions({ selectedCode = "" }: { selectedCode?: string }) {
+export function GlAccountOptions() {
   return (
     <>
       <option value="">Aucun</option>
       {appState.settings.accounts.map(acc => (
-        <option key={acc.code} value={acc.code} selected={acc.code === selectedCode}>
+        <option key={acc.code} value={acc.code}>
           {acc.code} ({acc.description})
         </option>
       ))}

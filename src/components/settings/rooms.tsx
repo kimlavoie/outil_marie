@@ -479,7 +479,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
                     value={ct.gl_account_code || ""}
                     onChange={e => updateClientType(i, { gl_account_code: e.target.value })}
                   >
-                    <GlAccountOptions selectedCode={ct.gl_account_code || ""} />
+                    <GlAccountOptions />
                   </select>
                   <button type="button" className="btn-icon" onClick={() => deleteClientType(i)}>
                     <DeleteIcon />
@@ -650,7 +650,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
                 value={row.glCode}
                 onChange={e => setLinkedFees(linkedFees.map((r, idx) => (idx === i ? { ...r, glCode: e.target.value } : r)))}
               >
-                <GlAccountOptions selectedCode={row.glCode} />
+                <GlAccountOptions />
               </select>
               <button
                 type="button"
