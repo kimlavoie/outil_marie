@@ -724,6 +724,7 @@ function migrateActivities() {
     });
     if (!act.submission) act.submission = { file_link_id: "", generated_at: "", sent_at: "" };
     if (!act.contract) act.contract = { file_link_id: "", approved_at: "" };
+    if (!act.form) act.form = { file_link_id: "", linked_at: "" };
     if (!act.planning_tasks) act.planning_tasks = [];
     if (act.billed_at === undefined) act.billed_at = "";
     if (act.completed_at === undefined) act.completed_at = "";

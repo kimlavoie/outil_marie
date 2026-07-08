@@ -554,6 +554,7 @@
       </div>
 
       <div class="activity-tabs">
+        <button type="button" class="activity-tab-btn" data-activity-tab="form">Formulaire</button>
         <button type="button" class="activity-tab-btn active" data-activity-tab="submission">Soumission et contrat</button>
         <button type="button" class="activity-tab-btn" data-activity-tab="planning">Planification</button>
         <button type="button" class="activity-tab-btn" data-activity-tab="billing">Facturation</button>
@@ -563,6 +564,19 @@
       <div class="drawer-content">
         <form id="activity-form">
           <input type="hidden" id="form-activity-internal-id" />
+
+          <!-- ============ TAB: Formulaire ============ -->
+          <div id="activity-tab-panel-form" class="activity-tab-panel">
+            <div style="margin-bottom: 16px; font-size: 0.85rem; color: var(--text-muted)">
+              Liez le formulaire PDF rempli pour cette réservation afin de pouvoir le consulter en tout temps.
+            </div>
+            <div class="distribution-section">
+              <div class="distribution-header">
+                <span class="field-label">Formulaire de réservation</span>
+              </div>
+              <div id="form-file-status" class="file-link-status"></div>
+            </div>
+          </div>
 
           <!-- ============ TAB: Soumission et contrat ============ -->
           <div id="activity-tab-panel-submission" class="activity-tab-panel active">

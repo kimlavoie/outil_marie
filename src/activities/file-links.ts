@@ -1,10 +1,11 @@
 /**
- * activities-file-links.ts - Linking an activity submission/contract to a file on disk via
+ * activities-file-links.ts - Linking an activity submission/contract/form to a file on disk via
  * the File System Access API (Chrome/Edge only), and the resulting status UI.
  *
- * Renders into #submission-file-status/#contract-file-status, containers that live inside the
- * activity form/drawer — so like js/datepicker.ts and js/activities-form.ts, this stays a plain
- * TS module (Phase 2 style) rather than a React component until Réservations gets its own turn.
+ * Renders into #submission-file-status/#contract-file-status/#form-file-status, containers that
+ * live inside the activity form/drawer — so like js/datepicker.ts and js/activities-form.ts, this
+ * stays a plain TS module (Phase 2 style) rather than a React component until Réservations gets
+ * its own turn.
  */
 import { appState } from "../state/state.ts";
 import { openVersionedDb } from "../state/db-utils.ts";
@@ -46,10 +47,11 @@ async function idbGetFileLink(id: string): Promise<{ handle: any; name: string }
 }
 
 // Lets the user pick an existing file on disk and links it (via the File System Access API) to
-// the given activity's submission/contract. Excel *generation* is deferred until the submission/
-// contract templates are provided — this only stores a reference to a file the user produced
-// manually, so they can reopen it and mark the activity Soumise/Approuvée.
-async function pickAndLinkFile(activityId: string, kind: "submission" | "contract") {
+// the given activity's submission/contract/form. Excel *generation* is deferred until the
+// submission/contract templates are provided — this only stores a reference to a file the user
+// produced manually, so they can reopen it (and, for submission/contract, mark the activity
+// Soumise/Approuvée).
+async function pickAndLinkFile(activityId: string, kind: "submission" | "contract" | "form") {
   if (!window.showOpenFilePicker) {
     showToast("Le lien de fichier nécessite un navigateur compatible avec l'API File System Access (Chrome ou Edge).", "warning");
     return;
@@ -67,6 +69,7 @@ async function pickAndLinkFile(activityId: string, kind: "submission" | "contrac
   commitActivityPatch(activityId, (act: any) => {
     act[kind].file_link_id = linkId;
     if (kind === "submission") act.submission.generated_at = new Date().toISOString().split("T")[0];
+    if (kind === "form") act.form.linked_at = new Date().toISOString().split("T")[0];
   });
   renderFileLinkStatus(
     kind,
@@ -95,10 +98,17 @@ async function openLinkedFile(linkId: string) {
   }
 }
 
-// Renders the "Lier un fichier / Ouvrir / Changer" status row plus the relevant state
-// transition button (Marquer comme Soumise au client / Marquer comme Approuvée).
-function renderFileLinkStatus(kind: "submission" | "contract", act: any) {
-  const container = document.getElementById(kind === "submission" ? "submission-file-status" : "contract-file-status");
+const FILE_STATUS_CONTAINER_IDS: Record<"submission" | "contract" | "form", string> = {
+  submission: "submission-file-status",
+  contract: "contract-file-status",
+  form: "form-file-status"
+};
+
+// Renders the "Lier un fichier / Ouvrir / Changer" status row plus, for submission/contract, the
+// relevant state transition button (Marquer comme Soumise au client / Marquer comme Approuvée).
+// The "form" kind (formulaire PDF lié à la réservation) has no state transition of its own.
+function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any) {
+  const container = document.getElementById(FILE_STATUS_CONTAINER_IDS[kind]);
   if (!container) return;
 
   const linkId = act[kind].file_link_id;
@@ -110,7 +120,7 @@ function renderFileLinkStatus(kind: "submission" | "contract", act: any) {
   if (kind === "submission") {
     const canSubmit = !!linkId && act.state === "brouillon";
     transitionBtnHtml = `<button type="button" id="mark-submitted-btn" class="btn btn-primary" ${canSubmit ? "" : "disabled"}>Marquer comme Soumise au client</button>`;
-  } else {
+  } else if (kind === "contract") {
     const canApprove = !!linkId && act.state === "soumise";
     transitionBtnHtml = `<button type="button" id="mark-approved-btn" class="btn btn-primary" ${canApprove ? "" : "disabled"}>Marquer comme Approuvée</button>`;
   }
@@ -140,7 +150,7 @@ function renderFileLinkStatus(kind: "submission" | "contract", act: any) {
         renderFileLinkStatus("contract", updated);
       });
     }
-  } else {
+  } else if (kind === "contract") {
     const btn = container.querySelector<HTMLButtonElement>("#mark-approved-btn");
     if (btn && !btn.disabled) {
       btn.addEventListener("click", () => {

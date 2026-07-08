@@ -320,6 +320,7 @@ function buildNewActivityRecord(id: string, name: string, mode: string) {
     client: { first_name: "", last_name: "", phone: "", email: "" },
     submission: { file_link_id: "", generated_at: "", sent_at: "" },
     contract: { file_link_id: "", approved_at: "" },
+    form: { file_link_id: "", linked_at: "" },
     planning_tasks: [],
     billed_at: "",
     completed_at: ""
@@ -360,6 +361,7 @@ function duplicateActivityAndOpen(sourceId: string) {
   clone.planning_tasks = [];
   clone.submission = { file_link_id: "", generated_at: "", sent_at: "" };
   clone.contract = { file_link_id: "", approved_at: "" };
+  clone.form = { file_link_id: "", linked_at: "" };
   clone.billed_at = "";
   clone.completed_at = "";
 
@@ -719,6 +721,7 @@ function fillActivityFormFields(act: any) {
     addDistributionRow(d.account_code, d.amount, d.reference);
   });
 
+  renderFileLinkStatus("form", act);
   renderFileLinkStatus("submission", act);
   renderFileLinkStatus("contract", act);
   updateSubmissionFinancialSummary();
