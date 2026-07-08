@@ -718,6 +718,7 @@ function migrateActivities() {
     }
     (act.distributions || []).forEach((d: any) => {
       if (d.reference === undefined) d.reference = "";
+      if (d.details === undefined) d.details = "";
     });
 
     // Activity lifecycle fields (state, client identification, planning tasks, submission/contract

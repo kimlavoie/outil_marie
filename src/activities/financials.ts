@@ -365,7 +365,7 @@ function cancelActivityDrawer() {
   closeActivityDrawer();
 }
 
-function addDistributionRow(accountCode = "", amount = 0, reference = "") {
+function addDistributionRow(accountCode = "", amount = 0, reference = "", details = "") {
   const container = el("form-distribution-list");
   const rowId = "dist-row-" + Date.now() + Math.random().toString(36).substr(2, 5);
 
@@ -376,12 +376,13 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "") {
   });
 
   const rowHtml = `
-    <div id="${rowId}" class="distribution-row">
+    <div id="${rowId}" class="distribution-row" style="grid-template-columns: 1.3fr 0.8fr 1fr 1.3fr auto;">
       <select id="${rowId}-account" class="select-input dist-account-select" style="padding: 8px 12px; font-size: 0.85rem;">
         ${optionsHtml}
       </select>
       <input type="number" id="${rowId}-amount" class="form-input dist-amount-input" min="0" step="0.01" value="${amount > 0 ? amount : ""}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
       <input type="text" id="${rowId}-reference" class="form-input dist-reference-input" value="${escapeHtml(reference)}" placeholder="N° Facture, RI ou Encaissement" style="padding: 8px 12px; font-size: 0.85rem;">
+      <input type="text" id="${rowId}-details" class="form-input dist-details-input" value="${escapeHtml(details)}" placeholder="Détails" style="padding: 8px 12px; font-size: 0.85rem;">
       <button type="button" class="btn-icon delete-dist-row-btn" data-row-id="${rowId}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
@@ -496,9 +497,10 @@ function autoSaveActivityForm() {
     const amtStr = row.querySelector<HTMLInputElement>(".dist-amount-input")?.value.trim() || "";
     const amt = parseFloat(amtStr) || 0;
     const reference = row.querySelector<HTMLInputElement>(".dist-reference-input")?.value.trim();
+    const details = row.querySelector<HTMLInputElement>(".dist-details-input")?.value.trim();
 
     if (acc && amt > 0) {
-      distributions.push({ account_code: acc, amount: amt, reference });
+      distributions.push({ account_code: acc, amount: amt, reference, details });
     }
   });
 

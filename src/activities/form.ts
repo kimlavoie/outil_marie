@@ -9,7 +9,16 @@
  * js/activities-financials.ts and js/activities-render.ts, this stays a plain TS module.
  */
 import { appState, saveDatabase } from "../state/state.ts";
-import { debounce, generateUid, maskPhoneInput, escapeHtml, showToast, getReservationRoomLabel, OTHER_ROOM_VALUE } from "../utils/utils.ts";
+import {
+  debounce,
+  generateUid,
+  maskPhoneInput,
+  escapeHtml,
+  showToast,
+  getReservationRoomLabel,
+  OTHER_ROOM_VALUE,
+  formatCurrency
+} from "../utils/utils.ts";
 import { requireNonEmpty } from "../utils/validation.ts";
 import {
   activitiesState,
@@ -606,7 +615,9 @@ function generateBillingLines(act: any) {
 
   reservations.forEach((r: any) => {
     if (r.tariff_gl_account_code && r.tariff_amount > 0) {
-      addDistributionRow(r.tariff_gl_account_code, r.tariff_amount * r.slots.length, "");
+      const days = r.slots.length;
+      const details = `Location salle ${r.room_name} - ${days} jour${days > 1 ? "s" : ""} à ${formatCurrency(r.tariff_amount)}`;
+      addDistributionRow(r.tariff_gl_account_code, r.tariff_amount * days, "", details);
     }
   });
 
@@ -617,10 +628,16 @@ function generateBillingLines(act: any) {
     const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
     const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
-    const amount =
-      getActiveSalaryRate(salary, eventDateStart) * hours * count +
-      getActiveSalaryOvertimeRate(salary, eventDateStart) * overtimeHours * count;
-    if (amount > 0) addDistributionRow(salary.gl_account_code, amount, "");
+    const rate = getActiveSalaryRate(salary, eventDateStart);
+    const overtimeRate = getActiveSalaryOvertimeRate(salary, eventDateStart);
+    const amount = rate * hours * count + overtimeRate * overtimeHours * count;
+    if (amount > 0) {
+      let details = `${count} ${salary.job}${count > 1 ? "s" : ""} de ${hours}h à ${formatCurrency(rate)}/h`;
+      if (overtimeHours > 0) {
+        details += ` + ${overtimeHours}h sup. à ${formatCurrency(overtimeRate)}/h`;
+      }
+      addDistributionRow(salary.gl_account_code, amount, "", details);
+    }
   });
 
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
@@ -631,14 +648,21 @@ function generateBillingLines(act: any) {
     const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
     const rate = getActiveServiceRate(service, eventDateStart);
-    const amount = service.type === "hourly" ? rate * hours * count : rate * count;
-    if (amount > 0) addDistributionRow(glAccountCode, amount, "");
+    const isHourly = service.type === "hourly";
+    const amount = isHourly ? rate * hours * count : rate * count;
+    if (amount > 0) {
+      const details = isHourly
+        ? `${count} x ${service.name} de ${hours}h à ${formatCurrency(rate)}/h`
+        : `${count} x ${service.name} à ${formatCurrency(rate)}`;
+      addDistributionRow(glAccountCode, amount, "", details);
+    }
   });
 
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-fees-list .distribution-row").forEach(row => {
     const glCode = row.querySelector<HTMLInputElement>(".fee-gl-select")!.value;
     const amount = parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input")!.value) || 0;
-    if (glCode && amount > 0) addDistributionRow(glCode, amount, "");
+    const description = row.querySelector<HTMLInputElement>(".fee-desc-input")?.value.trim() || "";
+    if (glCode && amount > 0) addDistributionRow(glCode, amount, "", description);
   });
 
   if (document.querySelectorAll("#form-distribution-list .distribution-row").length === 0) {
@@ -721,7 +745,7 @@ function fillActivityFormFields(act: any) {
 
   // Load distributions
   (act.distributions || []).forEach((d: any) => {
-    addDistributionRow(d.account_code, d.amount, d.reference);
+    addDistributionRow(d.account_code, d.amount, d.reference, d.details);
   });
 
   renderFileLinkStatus("form", act);
