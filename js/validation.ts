@@ -4,26 +4,26 @@
  * reinvent "is this a non-empty string" or "is this a valid amount".
  */
 
-function isNonEmptyString(value) {
+function isNonEmptyString(value: any) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-function isPlainObject(value) {
+function isPlainObject(value: any) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function isFiniteNumber(value) {
+function isFiniteNumber(value: any) {
   return typeof value === "number" && Number.isFinite(value);
 }
 
 // A valid monetary amount: a finite number, not negative unless allowNegative is set.
-function isValidAmount(value, { allowNegative = false } = {}) {
+function isValidAmount(value: any, { allowNegative = false } = {}) {
   return isFiniteNumber(value) && (allowNegative || value >= 0);
 }
 
 // Returns an error message if `value` is empty/blank, otherwise null (so callers can do
 // `const err = requireNonEmpty(name, "..."); if (err) { showToast(err); return; }`).
-function requireNonEmpty(value, message) {
+function requireNonEmpty(value: any, message: string) {
   return isNonEmptyString(value) ? null : message;
 }
 
@@ -31,7 +31,7 @@ function requireNonEmpty(value, message) {
 // failure as { valid: false, error }, or { valid: true } if every condition held. Used to
 // validate the shape of imported files (JSON backups, Excel ledgers) with a readable list of
 // rules instead of a pyramid of nested ifs.
-function validateRules(rules) {
+function validateRules(rules: [boolean, string][]): { valid: boolean; error?: string } {
   for (const [ok, message] of rules) {
     if (!ok) return { valid: false, error: message };
   }

@@ -13,15 +13,15 @@ import { textSimilarity } from "./fuzzy-match.ts";
 import { appState, getFiscalYear, getQuarterNumber, parseLocalDateStr, getReconDecisionsFromDb, saveReconDecisionToDb, deleteReconDecisionFromDb } from "./state.js";
 
 // Reconciliation view/engine state, grouped so ledger data and UI state live together
-let reconciliationState = {
-  ledgerTransactions: [],
-  results: [],
+const reconciliationState = {
+  ledgerTransactions: [] as any[],
+  results: [] as any[],
   filter: "all",
   page: 1,
   pageSize: 10,
   // Manually-reviewed lines, keyed by "account_code||reference" (see getReconDecisionsFromDb),
   // so decisions survive from one GL import to the next.
-  decisions: {},
+  decisions: {} as Record<string, any>,
   // Whether a ledger file has been imported (drives the view's drop-zone vs results-panel
   // display) — set by js/reconciliation-view.tsx's handleLedgerFile()/applyColumnMappingAndImport()
   // on success, cleared by its "Effacer l'import" button.
@@ -34,7 +34,7 @@ async function loadReconDecisions() {
   try {
     const list = await getReconDecisionsFromDb();
     reconciliationState.decisions = {};
-    list.forEach(d => {
+    list.forEach((d: any) => {
       reconciliationState.decisions[d.key] = d;
     });
   } catch (e) {
@@ -45,7 +45,7 @@ async function loadReconDecisions() {
 // Marks (or clears, when status is "") a reconciliation line as manually validated/ignored.
 // Doesn't re-render anything itself (that's the caller's job — js/reconciliation-view.tsx calls
 // reconcileLedger() + its own re-render after awaiting this) to keep this file DOM-free.
-async function setReconDecision(key, status, note = "") {
+async function setReconDecision(key: string, status: string, note = "") {
   if (!key) return;
   if (!status) {
     delete reconciliationState.decisions[key];
@@ -67,17 +67,17 @@ async function setReconDecision(key, status, note = "") {
 
 // Format reference key: uppercased, trimmed, and stripped of the trailing ".0" Excel adds when
 // a numeric reference column is read as a float.
-function cleanRef(val) {
+function cleanRef(val: any) {
   if (val === undefined || val === null) return "";
   let s = String(val).trim().toUpperCase();
   if (s.endsWith(".0")) s = s.substring(0, s.length - 2);
   return s;
 }
 
-function validateLedgerStructure(rawRows) {
+function validateLedgerStructure(rawRows: any) {
   const firstRow = Array.isArray(rawRows) && rawRows.length > 0 ? rawRows[0] : null;
   const requiredColumns = ["Poste budgétaire", "Date versée", "Montant courant"];
-  const missingColumns = firstRow ? requiredColumns.filter(col => !(col in firstRow)) : [];
+  const missingColumns: string[] = firstRow ? requiredColumns.filter(col => !(col in firstRow)) : [];
 
   return validateRules([
     [!!firstRow, "Le fichier Excel est vide ou ne contient aucune ligne de données."],
@@ -88,7 +88,7 @@ function validateLedgerStructure(rawRows) {
   ]);
 }
 
-function findBestColumnMatch(headers, possibleNames) {
+function findBestColumnMatch(headers: string[], possibleNames: string[]) {
   for (const name of possibleNames) {
     const matched = headers.find(h => {
       const cleanH = h
@@ -111,11 +111,11 @@ function findBestColumnMatch(headers, possibleNames) {
 // Reconciliation Engine Algorithm (pure: no DOM, no globals besides its arguments) — matches
 // each activity distribution against the imported GL ledger for the selected fiscal
 // year/quarters. Kept separate from reconcileLedger() so it can be unit tested directly.
-function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear, selectedQuarters) {
-  const results = [];
+function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[], selectedYear: string, selectedQuarters: number[]) {
+  const results: any[] = [];
 
   // 1. Group ledger transactions by Account & Clean Reference
-  const ledgerGroups = {};
+  const ledgerGroups: Record<string, any> = {};
 
   ledgerTransactions.forEach(tx => {
     // Period filter: Check transaction date against selected year and quarters
@@ -123,7 +123,7 @@ function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear
     const txYear = getFiscalYear(txDateStr);
     const txQuarter = getQuarterNumber(txDateStr);
 
-    if (txYear !== selectedYear || !selectedQuarters.includes(txQuarter)) {
+    if (txYear !== selectedYear || (txQuarter === null || !selectedQuarters.includes(txQuarter))) {
       return; // Skip transaction outside selected period
     }
 
@@ -167,12 +167,12 @@ function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear
     // Period filter
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== selectedYear || !selectedQuarters.includes(actQuarter)) {
+    if (actYear !== selectedYear || (actQuarter === null || !selectedQuarters.includes(actQuarter))) {
       return; // Skip activity outside selected period
     }
 
     // Check reconciliation for each distribution (reference is now defined per account)
-    act.distributions.forEach((dist, distIndex) => {
+    act.distributions.forEach((dist: any, distIndex: number) => {
       const distRef = cleanRef(dist.reference);
 
       if (!distRef) {
@@ -239,13 +239,13 @@ function matchDistributionsToLedger(activities, ledgerTransactions, selectedYear
       const group = ledgerGroups[key];
       // Revenue is credit (negative in GL), multiply by -1
       const amountGl = group.montant_somme * -1;
-      const txDates = group.txs.map(t => String(t["Date versée"] || "").trim()).filter(Boolean);
+      const txDates = group.txs.map((t: any) => String(t["Date versée"] || "").trim()).filter(Boolean);
 
       results.push({
         activityId: "",
         activityName: "(Non saisi dans l'application)",
         ledger_date: txDates.length ? txDates.sort()[0] : "",
-        ledger_description: group.txs.map(t => String(t["Description"] || t["Nom"] || "").trim()).find(Boolean) || "",
+        ledger_description: group.txs.map((t: any) => String(t["Description"] || t["Nom"] || "").trim()).find(Boolean) || "",
         account_code: group.account_code,
         reference: group.reference,
         amount_saisi: 0,
@@ -269,7 +269,7 @@ const FUZZY_DATE_TOLERANCE_DAYS = 5;
 const FUZZY_TEXT_MIN_SCORE = 0.3;
 
 // Absolute day difference between two "YYYY-MM-DD" strings (Infinity if either is missing/invalid)
-function daysBetweenDateStrs(dateStrA, dateStrB) {
+function daysBetweenDateStrs(dateStrA: string, dateStrB: string) {
   if (!dateStrA || !dateStrB) return Infinity;
   const a = parseLocalDateStr(dateStrA);
   const b = parseLocalDateStr(dateStrB);
@@ -283,15 +283,15 @@ function daysBetweenDateStrs(dateStrA, dateStrB) {
 // activité name and GL description read alike (typo, date decalée). Attaches up to 3 ranked
 // suggestions as result.suggestions; each unentered candidate keeps a back-reference to any
 // unlogged result that suggested it, for symmetry in the UI.
-function attachFuzzyMatchSuggestions(results) {
+function attachFuzzyMatchSuggestions(results: any[]) {
   const unlogged = results.filter(r => r.status === "unlogged");
   const unentered = results.filter(r => r.status === "unentered");
   if (unlogged.length === 0 || unentered.length === 0) return;
 
   unlogged.forEach(u => {
-    const candidates = unentered
-      .filter(e => e.account_code === u.account_code)
-      .map(e => {
+    const candidates: { entry: any; score: number; amountClose: boolean; dateClose: boolean; textScore: number }[] = unentered
+      .filter((e: any) => e.account_code === u.account_code)
+      .map((e: any) => {
         const amountClose = Math.abs((u.amount_saisi || 0) - (e.amount_gl || 0)) <= FUZZY_AMOUNT_TOLERANCE;
         const dateClose = daysBetweenDateStrs(u.activity_date, e.ledger_date) <= FUZZY_DATE_TOLERANCE_DAYS;
         const textScore = textSimilarity(u.activityName, e.ledger_description);
@@ -300,7 +300,7 @@ function attachFuzzyMatchSuggestions(results) {
         const score = (amountClose && dateClose ? 0.6 : 0) + textScore * 0.4;
         return { entry: e, score, amountClose, dateClose, textScore };
       })
-      .filter(Boolean)
+      .filter((c): c is { entry: any; score: number; amountClose: boolean; dateClose: boolean; textScore: number } => c !== null)
       .sort((a, b) => b.score - a.score)
       .slice(0, 3);
 

@@ -414,7 +414,6 @@ function DeptModal({ name, onClose, bump }: { name: string | null | undefined; o
   useEffect(() => {
     if (!isOpen) return;
     setNameVal(originalName);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, originalName]);
 
   const submit = () => {
@@ -540,7 +539,6 @@ function GlobalTaskModal({ id, onClose, bump }: { id: string | null | undefined;
     if (!isOpen) return;
     const task = originalId ? (appState.settings.global_tasks || []).find((t: { id: string }) => t.id === originalId) : null;
     setDesc(task ? task.description : "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, originalId]);
 
   const submit = () => {
@@ -678,7 +676,6 @@ function SalaryModal({ id, onClose, bump }: { id: string | null | undefined; onC
       setGlAccountCode("");
       setRows([newRateVersionRow()]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, originalId]);
 
   const submit = () => {
@@ -870,7 +867,6 @@ function ServiceModal({ id, onClose, bump }: { id: string | null | undefined; on
       setGlAccountCode("");
       setRows([newRateVersionRow()]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, originalId]);
 
   const submit = () => {
@@ -1132,7 +1128,6 @@ function RoomModal({ name, onClose, bump }: { name: string | null | undefined; o
     setLinkedTasks(
       ((room && room.linked_tasks) || []).map((t: { description: string }) => ({ key: generateUid("linked-task-row"), desc: t.description }))
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, originalName]);
 
   const activeGrid = grids[activeGridIndex];

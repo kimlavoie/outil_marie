@@ -4,35 +4,35 @@
  */
 
 // Helper: Format currencies in standard FR-CA format
-function formatCurrency(val) {
+function formatCurrency(val: any) {
   return new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(val);
 }
 
 // Escapes HTML-sensitive characters so free-text fields (names, notes, descriptions...) can be
 // safely interpolated into innerHTML template literals without risking markup/script injection.
-function escapeHtml(str) {
+function escapeHtml(str: any) {
   if (!str) return "";
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
 // Short unique id for dynamically created rows/cards (tarifs, salles réservées, ventilations)
-function generateUid(prefix) {
+function generateUid(prefix: string) {
   return `${prefix}-${Date.now()}${Math.random().toString(36).substr(2, 5)}`;
 }
 
 // Returns a debounced wrapper that delays invoking fn until `delay` ms have
 // passed since the last call (used on search inputs to avoid a full re-render
 // on every keystroke).
-function debounce(fn, delay = 250) {
-  let timer = null;
-  return (...args) => {
+function debounce(fn: (...args: any[]) => void, delay = 250) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return (...args: any[]) => {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), delay);
   };
 }
 
 // Helper: Calculate days between dates (inclusive)
-function calculateDaysCount(startStr, endStr) {
+function calculateDaysCount(startStr: string, endStr: string) {
   if (!startStr || !endStr) return 1;
   const start = new Date(startStr);
   const end = new Date(endStr);
@@ -43,15 +43,15 @@ function calculateDaysCount(startStr, endStr) {
 }
 
 // Joined list of distinct RI/Facture references across an activity's per-account distributions
-function getActivityReferences(act) {
-  const refs = (act.distributions || []).map(d => (d.reference || "").trim()).filter(Boolean);
+function getActivityReferences(act: any) {
+  const refs = (act.distributions || []).map((d: any) => (d.reference || "").trim()).filter(Boolean);
   return [...new Set(refs)].join(", ");
 }
 
 // Sum of tarif_amount × nombre de créneaux (chaque créneau = 1 jour) across all reservations
 // booked for an activity
-function getRoomsTariffTotal(act) {
-  return (act.reservations || []).reduce((sum, r) => sum + (r.tariff_amount || 0) * (r.slots || []).length, 0);
+function getRoomsTariffTotal(act: any) {
+  return (act.reservations || []).reduce((sum: number, r: any) => sum + (r.tariff_amount || 0) * (r.slots || []).length, 0);
 }
 
 // Sentinel room_name value for a reservation on a room outside the settings configuration
@@ -59,7 +59,7 @@ function getRoomsTariffTotal(act) {
 const OTHER_ROOM_VALUE = "__other__";
 
 // Display label for a reservation's room: the free-text detail for "Autre", otherwise its name
-function getReservationRoomLabel(reservation) {
+function getReservationRoomLabel(reservation: any) {
   if (!reservation) return "";
   if (reservation.room_name === OTHER_ROOM_VALUE) return reservation.room_other_details || "Autre";
   return reservation.room_name || "";
@@ -67,8 +67,8 @@ function getReservationRoomLabel(reservation) {
 
 // Room color, with a stable fallback for rooms saved before the color picker existed
 const FALLBACK_ROOM_COLORS = ["#4f46e5", "#059669", "#d97706", "#db2777", "#0891b2", "#7c3aed", "#dc2626", "#65a30d"];
-function getRoomColor(name) {
-  const room = appState.settings.rooms.find(r => r.name === name);
+function getRoomColor(name: string) {
+  const room = appState.settings.rooms.find((r: any) => r.name === name);
   if (room && room.color) return room.color;
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -81,7 +81,7 @@ function getRoomColor(name) {
 // <GlAccountOptions> equivalent for its own forms, since it doesn't need an HTML string.
 function buildGlAccountOptionsHtml(selectedCode = "") {
   let html = '<option value="">Aucun</option>';
-  appState.settings.accounts.forEach(acc => {
+  appState.settings.accounts.forEach((acc: any) => {
     html += `<option value="${acc.code}" ${acc.code === selectedCode ? "selected" : ""}>${acc.code} (${escapeHtml(acc.description)})</option>`;
   });
   return html;
@@ -94,7 +94,17 @@ function buildGlAccountOptionsHtml(selectedCode = "") {
 // Pure HTML builder for a pagination bar's contents. Buttons/select carry an
 // optional data-attribute (extraAttr) so a delegated listener can identify
 // which instance was interacted with when several bars share one ancestor.
-function buildPaginationBarHtml({ page, pageSize, totalItems, extraAttr = "" }) {
+function buildPaginationBarHtml({
+  page,
+  pageSize,
+  totalItems,
+  extraAttr = ""
+}: {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  extraAttr?: string;
+}) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const clampedPage = Math.min(Math.max(1, page), totalPages);
   const startItem = (clampedPage - 1) * pageSize + 1;
@@ -126,7 +136,16 @@ function buildPaginationBarHtml({ page, pageSize, totalItems, extraAttr = "" }) 
 // buildPaginationBarHtml for the loop-safe, delegation-friendly alternative.
 // Returns the (possibly clamped) current page, so callers can slice their
 // data with the corrected value.
-function renderPaginationBar(container, { page, pageSize, totalItems, onPageChange, onPageSizeChange }) {
+function renderPaginationBar(
+  container: HTMLElement | null,
+  {
+    page,
+    pageSize,
+    totalItems,
+    onPageChange,
+    onPageSizeChange
+  }: { page: number; pageSize: number; totalItems: number; onPageChange: (page: number) => void; onPageSizeChange: (size: number) => void }
+) {
   if (!container) return page;
 
   if (totalItems === 0) {
@@ -137,9 +156,11 @@ function renderPaginationBar(container, { page, pageSize, totalItems, onPageChan
   const { clampedPage, html } = buildPaginationBarHtml({ page, pageSize, totalItems });
   container.innerHTML = html;
 
-  container.querySelector(".pagination-prev").addEventListener("click", () => onPageChange(clampedPage - 1));
-  container.querySelector(".pagination-next").addEventListener("click", () => onPageChange(clampedPage + 1));
-  container.querySelector(".pagination-size-select").addEventListener("change", e => onPageSizeChange(parseInt(e.target.value, 10)));
+  container.querySelector(".pagination-prev")!.addEventListener("click", () => onPageChange(clampedPage - 1));
+  container.querySelector(".pagination-next")!.addEventListener("click", () => onPageChange(clampedPage + 1));
+  container
+    .querySelector(".pagination-size-select")!
+    .addEventListener("change", e => onPageSizeChange(parseInt((e.target as HTMLSelectElement).value, 10)));
 
   return clampedPage;
 }
@@ -149,24 +170,24 @@ function renderPaginationBar(container, { page, pageSize, totalItems, onPageChan
    ========================================================================== */
 
 // Sets which pills are marked active within a pill-toggle group element, based on a list of values
-function setPillGroupActiveEl(container, activeValues) {
+function setPillGroupActiveEl(container: HTMLElement | null, activeValues: string[]) {
   if (!container) return;
   container.querySelectorAll(".pill-toggle").forEach(btn => {
-    btn.classList.toggle("active", activeValues.includes(btn.dataset.value));
+    btn.classList.toggle("active", activeValues.includes((btn as HTMLElement).dataset.value as string));
   });
 }
 
 // Sets which pills are marked active within a pill-toggle group, based on a list of values
-function setPillGroupActive(containerId, activeValues) {
+function setPillGroupActive(containerId: string, activeValues: string[]) {
   setPillGroupActiveEl(document.getElementById(containerId), activeValues);
 }
 
 // Delegated click handler for a pill-toggle container element (survives innerHTML rebuilds)
-function initPillToggleEl(container) {
+function initPillToggleEl(container: HTMLElement | null) {
   if (!container) return;
 
   container.addEventListener("click", e => {
-    const btn = e.target.closest(".pill-toggle");
+    const btn = (e.target as HTMLElement).closest(".pill-toggle");
     if (!btn || !container.contains(btn)) return;
 
     btn.classList.toggle("active");
@@ -174,49 +195,49 @@ function initPillToggleEl(container) {
 }
 
 // Delegated click handler for a pill-toggle container (survives innerHTML rebuilds)
-function initPillToggle(containerId) {
+function initPillToggle(containerId: string) {
   initPillToggleEl(document.getElementById(containerId));
 }
 
 // Delegated click handler for a pill-toggle container element where only one pill can be active
 // at a time (clicking the already-active pill deselects it). `onChange(value)` fires with the
 // new value ("" if deselected) so callers can reveal/hide conditional fields.
-function initExclusivePillToggleEl(container, onChange) {
+function initExclusivePillToggleEl(container: HTMLElement | null, onChange?: (value: string) => void) {
   if (!container) return;
 
   container.addEventListener("click", e => {
-    const btn = e.target.closest(".pill-toggle");
+    const btn = (e.target as HTMLElement).closest(".pill-toggle") as HTMLElement | null;
     if (!btn || !container.contains(btn)) return;
 
     const wasActive = btn.classList.contains("active");
     container.querySelectorAll(".pill-toggle").forEach(b => b.classList.remove("active"));
     if (!wasActive) btn.classList.add("active");
-    if (onChange) onChange(wasActive ? "" : btn.dataset.value);
+    if (onChange) onChange(wasActive ? "" : (btn.dataset.value as string));
   });
 }
 
 // Delegated click handler for a pill-toggle container where only one pill can be active at a
 // time (clicking the already-active pill deselects it). `onChange(value)` fires with the new
 // value ("" if deselected) so callers can reveal/hide conditional fields.
-function initExclusivePillToggle(containerId, onChange) {
+function initExclusivePillToggle(containerId: string, onChange?: (value: string) => void) {
   initExclusivePillToggleEl(document.getElementById(containerId), onChange);
 }
 
-function getExclusivePillValueEl(container) {
+function getExclusivePillValueEl(container: HTMLElement | null) {
   const btn = container ? container.querySelector(".pill-toggle.active") : null;
-  return btn ? btn.dataset.value : "";
+  return btn ? (btn as HTMLElement).dataset.value : "";
 }
 
-function getExclusivePillValue(containerId) {
+function getExclusivePillValue(containerId: string) {
   return getExclusivePillValueEl(document.getElementById(containerId));
 }
 
-function setExclusivePillValueEl(container, value) {
+function setExclusivePillValueEl(container: HTMLElement | null, value: string) {
   if (!container) return;
-  container.querySelectorAll(".pill-toggle").forEach(b => b.classList.toggle("active", b.dataset.value === value));
+  container.querySelectorAll(".pill-toggle").forEach(b => b.classList.toggle("active", (b as HTMLElement).dataset.value === value));
 }
 
-function setExclusivePillValue(containerId, value) {
+function setExclusivePillValue(containerId: string, value: string) {
   setExclusivePillValueEl(document.getElementById(containerId), value);
 }
 
@@ -228,7 +249,7 @@ function setExclusivePillValue(containerId, value) {
 // plus a filtered results popover (mirrors .calendar-popover / .quick-access-item). The
 // currently selected value is kept in a hidden input so callers can read it back like a <select>.
 // A chevron makes it read as a dropdown rather than a free-text field, even though it's typeable.
-function buildSearchableSelectHtml(wrapperClass, inputClass, placeholder) {
+function buildSearchableSelectHtml(wrapperClass: string, inputClass: string, placeholder: string) {
   return `
     <div class="${wrapperClass} searchable-select-wrapper" style="position: relative;">
       <input type="text" class="form-input ${inputClass} searchable-select-input" placeholder="${placeholder}" autocomplete="off" style="padding-right: 34px; cursor: pointer;">
@@ -244,11 +265,16 @@ function buildSearchableSelectHtml(wrapperClass, inputClass, placeholder) {
 // pre-selects and pre-fills the input's displayed text. Unlike a plain text field, the input
 // always snaps back to the current selection's label once the list closes — typing only ever
 // filters the dropdown, it can never leave behind text that isn't a real selection.
-function initSearchableSelectEl(wrapper, items, onChange, initialValue = "") {
+function initSearchableSelectEl(
+  wrapper: HTMLElement | null,
+  items: { value: string; label: string }[],
+  onChange?: (value: string) => void,
+  initialValue = ""
+) {
   if (!wrapper) return;
-  const input = wrapper.querySelector(".searchable-select-input");
-  const valueInput = wrapper.querySelector(".searchable-select-value");
-  const resultsPanel = wrapper.querySelector(".searchable-select-results");
+  const input = wrapper.querySelector(".searchable-select-input") as HTMLInputElement;
+  const valueInput = wrapper.querySelector(".searchable-select-value") as HTMLInputElement;
+  const resultsPanel = wrapper.querySelector(".searchable-select-results") as HTMLElement;
 
   const selectedItem = items.find(i => i.value === initialValue);
   valueInput.value = initialValue || "";
@@ -256,7 +282,7 @@ function initSearchableSelectEl(wrapper, items, onChange, initialValue = "") {
 
   let highlightedIndex = -1;
 
-  function renderResults(query) {
+  function renderResults(query: string) {
     const filtered = query ? items.filter(i => i.label.toLowerCase().includes(query.toLowerCase())) : items;
 
     if (filtered.length === 0) {
@@ -281,12 +307,12 @@ function initSearchableSelectEl(wrapper, items, onChange, initialValue = "") {
     resultsPanel.querySelectorAll(".searchable-select-option").forEach(opt => {
       opt.addEventListener("mousedown", e => {
         e.preventDefault(); // keep focus so the ensuing click doesn't re-open the panel
-        selectItem(filtered[parseInt(opt.dataset.idx, 10)]);
+        selectItem(filtered[parseInt((opt as HTMLElement).dataset.idx as string, 10)]);
       });
     });
   }
 
-  function selectItem(item) {
+  function selectItem(item: { value: string; label: string }) {
     valueInput.value = item.value;
     input.value = item.label;
     resultsPanel.classList.remove("active");
@@ -300,10 +326,10 @@ function initSearchableSelectEl(wrapper, items, onChange, initialValue = "") {
     input.value = current ? current.label : "";
   }
 
-  function setHighlight(idx) {
+  function setHighlight(idx: number) {
     highlightedIndex = idx;
     resultsPanel.querySelectorAll(".searchable-select-option").forEach((opt, i) => {
-      opt.style.backgroundColor = i === idx ? "var(--bg-main)" : "";
+      (opt as HTMLElement).style.backgroundColor = i === idx ? "var(--bg-main)" : "";
     });
   }
 
@@ -341,7 +367,10 @@ function initSearchableSelectEl(wrapper, items, onChange, initialValue = "") {
     } else if (e.key === "Enter") {
       e.preventDefault();
       const opt = options[highlightedIndex];
-      if (opt) selectItem(items.find(i => i.value === opt.dataset.value));
+      if (opt) {
+        const found = items.find(i => i.value === opt.dataset.value);
+        if (found) selectItem(found);
+      }
     } else if (e.key === "Escape") {
       resultsPanel.classList.remove("active");
       snapToSelection();
@@ -364,7 +393,7 @@ function initSearchableSelectEl(wrapper, items, onChange, initialValue = "") {
       document.removeEventListener("click", outsideClickHandler);
       return;
     }
-    if (!wrapper.contains(e.target)) resultsPanel.classList.remove("active");
+    if (!wrapper.contains(e.target as Node)) resultsPanel.classList.remove("active");
   });
 }
 
@@ -372,10 +401,11 @@ function initSearchableSelectEl(wrapper, items, onChange, initialValue = "") {
    INPUT MASKS
    ========================================================================== */
 
-function maskDateInput(input) {
-  input.addEventListener("input", e => {
+function maskDateInput(input: HTMLInputElement | null) {
+  if (!input) return;
+  input.addEventListener("input", (e: Event) => {
     // Let the user delete normally with backspace
-    if (e.inputType === "deleteContentBackward") {
+    if ((e as InputEvent).inputType === "deleteContentBackward") {
       return;
     }
 
@@ -399,11 +429,11 @@ function maskDateInput(input) {
   });
 }
 
-function maskPhoneInput(input) {
+function maskPhoneInput(input: HTMLInputElement | null) {
   if (!input) return;
-  input.addEventListener("input", e => {
+  input.addEventListener("input", (e: Event) => {
     // Let the user delete normally with backspace or delete key
-    if (e.inputType === "deleteContentBackward" || e.inputType === "deleteContentForward") {
+    if ((e as InputEvent).inputType === "deleteContentBackward" || (e as InputEvent).inputType === "deleteContentForward") {
       return;
     }
 
@@ -436,7 +466,7 @@ function maskPhoneInput(input) {
 function showLoadingOverlay(message = "Veuillez patienter...") {
   const overlay = document.getElementById("loading-overlay");
   if (!overlay) return;
-  overlay.querySelector(".loading-overlay-text").textContent = message;
+  overlay.querySelector(".loading-overlay-text")!.textContent = message;
   overlay.classList.add("active");
 }
 
@@ -451,7 +481,7 @@ function hideLoadingOverlay() {
    TOASTS (non-blocking notifications, replaces alert() for info/success/error)
    ========================================================================== */
 
-const TOAST_ICONS = {
+const TOAST_ICONS: Record<string, string> = {
   success: '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>',
   error: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>',
   warning: '<path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>',
@@ -460,7 +490,7 @@ const TOAST_ICONS = {
 
 // Shows a temporary, non-blocking notification in the top-right corner (replaces alert() for
 // informational messages). `type` is "info" | "success" | "error" | "warning".
-function showToast(message, type = "info", duration = 4000) {
+function showToast(message: string, type = "info", duration = 4000) {
   const container = document.getElementById("toast-container");
   if (!container) return;
 
@@ -471,7 +501,7 @@ function showToast(message, type = "info", duration = 4000) {
     <div class="toast-message"></div>
     <button type="button" class="toast-close" aria-label="Fermer">&times;</button>
   `;
-  toast.querySelector(".toast-message").textContent = message;
+  toast.querySelector(".toast-message")!.textContent = message;
 
   const dismiss = () => {
     toast.classList.add("toast-leaving");
@@ -479,7 +509,7 @@ function showToast(message, type = "info", duration = 4000) {
     setTimeout(() => toast.remove(), 250);
   };
 
-  toast.querySelector(".toast-close").addEventListener("click", dismiss);
+  toast.querySelector(".toast-close")!.addEventListener("click", dismiss);
   container.appendChild(toast);
   requestAnimationFrame(() => toast.classList.add("toast-visible"));
 

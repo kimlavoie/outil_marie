@@ -98,7 +98,7 @@ function initFormHandlers() {
   // Activity record tabs (Soumission et contrat / Planification / Facturation / Historique)
   document.querySelectorAll(".activity-tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      const tabName = btn.getAttribute("data-activity-tab");
+      const tabName = btn.getAttribute("data-activity-tab") || "";
       switchActivityTab(tabName);
       if (tabName === "history") {
         const id = el("form-activity-internal-id").value;
@@ -271,7 +271,7 @@ function closeNewActivityModal() {
   el("modal-backdrop").classList.remove("active");
 }
 
-function submitNewActivityForm(e) {
+function submitNewActivityForm(e: Event) {
   e.preventDefault();
   const name = el("form-new-activity-name").value.trim();
   const nameError = requireNonEmpty(name, "Veuillez saisir le nom de l'activité.");
@@ -288,7 +288,7 @@ function submitNewActivityForm(e) {
 // Shared field defaults for a brand-new activity record (all lifecycle/submission/planning/
 // billing fields at their defaults). Mirrors the defaults migrateActivities() backfills onto
 // legacy records, so both paths keep producing the same shape.
-function buildNewActivityRecord(id, name, mode) {
+function buildNewActivityRecord(id: string, name: string, mode: string) {
   return {
     id,
     responsable: "",
@@ -318,7 +318,7 @@ function buildNewActivityRecord(id, name, mode) {
 
 // Builds a brand-new activity record, saves it immediately, and returns its id. Used by the
 // "Nouvelle Activité" quick button (mode "soumission").
-function createActivity(name, mode = "soumission") {
+function createActivity(name: string, mode = "soumission") {
   const id = generateNextActivityId();
   appState.activities.push(buildNewActivityRecord(id, name, mode));
   saveDatabase();
@@ -330,7 +330,7 @@ function createActivity(name, mode = "soumission") {
 // registering it in the system until the user clicks "Enregistrer". See cancelActivityDrawer(),
 // which discards it if the drawer is closed without saving, and submitActivityForm(), which
 // clears the draft flag once it's actually saved.
-function createDraftActivity(name) {
+function createDraftActivity(name: string) {
   const id = generateNextActivityId();
   appState.activities.push(buildNewActivityRecord(id, name, "estimation"));
   activitiesState.draftActivityId = id;
@@ -340,8 +340,8 @@ function createDraftActivity(name) {
 // Duplicates an existing activity's submission data (rooms, client, services, etc.) under a
 // fresh id, resetting the lifecycle fields (state, planning, submission/contract links, billing
 // dates) since a duplicate always restarts its own cycle from Brouillon.
-function duplicateActivityAndOpen(sourceId) {
-  const source = appState.activities.find(a => a.id === sourceId);
+function duplicateActivityAndOpen(sourceId: string) {
+  const source = appState.activities.find((a: any) => a.id === sourceId);
   if (!source) return;
 
   const clone = JSON.parse(JSON.stringify(source));
@@ -372,7 +372,7 @@ function duplicateActivityAndOpen(sourceId) {
 // event type, submission/contract file links) that estimation mode skips.
 // `locked` disables switching back to estimation once the activity has moved
 // past Brouillon (a submitted/approved activity always needs its full data).
-function applyActivityFormMode(mode, locked) {
+function applyActivityFormMode(mode: string, locked: boolean) {
   const toggle = el("activity-mode-toggle");
   const panel = el("activity-tab-panel-submission");
   toggle.querySelectorAll<HTMLButtonElement>(".pill-toggle").forEach(btn => {
@@ -393,11 +393,11 @@ function initActivityModeToggle() {
   el("activity-mode-toggle").addEventListener("click", e => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".pill-toggle");
     if (!btn || btn.disabled) return;
-    applyActivityFormMode(btn.dataset.mode, false);
+    applyActivityFormMode(btn.dataset.mode || "", false);
   });
 }
 
-function switchActivityTab(tabName) {
+function switchActivityTab(tabName: string) {
   document.querySelectorAll(".activity-tab-btn").forEach(btn => {
     btn.classList.toggle("active", btn.getAttribute("data-activity-tab") === tabName);
   });
@@ -409,7 +409,7 @@ function switchActivityTab(tabName) {
 // Renders the state badge + planning progress atop the activity record. Transition buttons
 // (Marquer comme Soumise/Approuvée/Facturée/Terminée) are added by the Soumission/Facturation
 // tabs once their gating logic exists.
-function renderActivityStateBar(act) {
+function renderActivityStateBar(act: any) {
   const bar = el("activity-state-bar");
   const progress = getPlanningProgress(act);
   bar.innerHTML = `
@@ -430,8 +430,8 @@ function renderActivityStateBar(act) {
 // Applies `patchFn` to the activity `id`, persists it, and refreshes the state bar / list —
 // for lifecycle mutations (file links, state transitions) that happen outside the main
 // "Enregistrer" form submit, so they take effect immediately.
-function commitActivityPatch(id, patchFn) {
-  const idx = appState.activities.findIndex(a => a.id === id);
+function commitActivityPatch(id: string, patchFn: (act: any) => void) {
+  const idx = appState.activities.findIndex((a: any) => a.id === id);
   if (idx === -1) return;
   patchFn(appState.activities[idx]);
   saveDatabase();
@@ -453,14 +453,14 @@ function commitActivityPatch(id, patchFn) {
    PLANIFICATION TAB (task checklist, auto-generation, progress)
    ========================================================================== */
 
-function renderPlanningTab(act) {
+function renderPlanningTab(act: any) {
   el("planning-tasks-list").innerHTML = "";
-  (act.planning_tasks || []).forEach(t => addPlanningTaskRow(t));
+  (act.planning_tasks || []).forEach((t: any) => addPlanningTaskRow(t));
   updatePlanningProgressDisplay(act);
   el("generate-planning-tasks-btn").disabled = (act.planning_tasks || []).length > 0;
 }
 
-function addPlanningTaskRow(task) {
+function addPlanningTaskRow(task: any) {
   const container = el("planning-tasks-list");
   const rowId = generateUid("task-row");
   const doneStyle = task.done ? "text-decoration: line-through; color: var(--text-muted);" : "";
@@ -479,10 +479,10 @@ function addPlanningTaskRow(task) {
   );
 
   const row = el(rowId);
-  const descInput = row.querySelector<HTMLInputElement>(".task-desc-input");
-  const checkbox = row.querySelector<HTMLInputElement>(".task-done-checkbox");
+  const descInput = row.querySelector<HTMLInputElement>(".task-desc-input")!;
+  const checkbox = row.querySelector<HTMLInputElement>(".task-done-checkbox")!;
 
-  row.querySelector(".delete-task-row-btn").addEventListener("click", () => {
+  row.querySelector(".delete-task-row-btn")!.addEventListener("click", () => {
     row.remove();
     persistPlanningTasks();
   });
@@ -498,14 +498,14 @@ function collectPlanningTasksFromForm() {
   return Array.from(document.querySelectorAll<HTMLElement>("#planning-tasks-list .distribution-row"))
     .map(row => ({
       id: row.dataset.taskId || generateUid("task"),
-      description: row.querySelector<HTMLInputElement>(".task-desc-input").value.trim(),
-      done: row.querySelector<HTMLInputElement>(".task-done-checkbox").checked,
+      description: row.querySelector<HTMLInputElement>(".task-desc-input")!.value.trim(),
+      done: row.querySelector<HTMLInputElement>(".task-done-checkbox")!.checked,
       auto_generated: row.dataset.autoGenerated === "1"
     }))
     .filter(t => t.description);
 }
 
-function updatePlanningProgressDisplay(act) {
+function updatePlanningProgressDisplay(act: any) {
   const progress = getPlanningProgress(act);
   el("planning-progress-bar-container").innerHTML = buildProgressBarHtml(progress.percent);
   el("planning-progress-label").textContent =
@@ -520,7 +520,7 @@ function persistPlanningTasks() {
   if (!id) return;
   const tasks = collectPlanningTasksFromForm();
 
-  commitActivityPatch(id, act => {
+  commitActivityPatch(id, (act: any) => {
     act.planning_tasks = tasks;
     const progress = getPlanningProgress(act);
     if (progress.total > 0 && progress.done === progress.total && (act.state === "soumise" || act.state === "approuvee")) {
@@ -528,7 +528,7 @@ function persistPlanningTasks() {
     }
   });
 
-  const updated = appState.activities.find(a => a.id === id);
+  const updated = appState.activities.find((a: any) => a.id === id);
   updatePlanningProgressDisplay(updated);
   el("generate-planning-tasks-btn").disabled = (updated.planning_tasks || []).length > 0;
 }
@@ -537,13 +537,13 @@ function persistPlanningTasks() {
 // réservation (naming any linked rooms that come along with it), a personnel-reservation task per
 // réservation that has staff attached, one task per linked "tâche du gestionnaire" on that room's
 // config, and one task per configured global task (Configuration > Tâches globales).
-function generatePlanningTasks(act) {
+function generatePlanningTasks(act: any) {
   if ((act.planning_tasks || []).length > 0) return;
 
-  const tasks = [];
-  (act.reservations || []).forEach(r => {
+  const tasks: any[] = [];
+  (act.reservations || []).forEach((r: any) => {
     const roomLabel = getReservationRoomLabel(r);
-    const roomConfig = r.room_name === OTHER_ROOM_VALUE ? null : appState.settings.rooms.find(rc => rc.name === r.room_name);
+    const roomConfig = r.room_name === OTHER_ROOM_VALUE ? null : appState.settings.rooms.find((rc: any) => rc.name === r.room_name);
     const linkedNames = roomConfig ? roomConfig.linked_rooms || [] : [];
     const reserveDesc = linkedNames.length
       ? `Réserver la salle ${roomLabel} (et salles liées : ${linkedNames.join(", ")}) dans le logiciel officiel`
@@ -555,19 +555,19 @@ function generatePlanningTasks(act) {
       tasks.push({ id: generateUid("task"), description: `Réserver le personnel pour ${roomLabel}`, done: false, auto_generated: true });
     }
 
-    (roomConfig ? roomConfig.linked_tasks || [] : []).forEach(lt => {
+    (roomConfig ? roomConfig.linked_tasks || [] : []).forEach((lt: any) => {
       tasks.push({ id: generateUid("task"), description: lt.description, done: false, auto_generated: true });
     });
   });
 
-  (appState.settings.global_tasks || []).forEach(gt => {
+  (appState.settings.global_tasks || []).forEach((gt: any) => {
     tasks.push({ id: generateUid("task"), description: gt.description, done: false, auto_generated: true });
   });
 
-  commitActivityPatch(act.id, a => {
+  commitActivityPatch(act.id, (a: any) => {
     a.planning_tasks = tasks;
   });
-  renderPlanningTab(appState.activities.find(a => a.id === act.id));
+  renderPlanningTab(appState.activities.find((a: any) => a.id === act.id));
 }
 
 /* ==========================================================================
@@ -578,7 +578,7 @@ function generatePlanningTasks(act) {
 // personnel jobs, and autres frais already carry a configured GL account — items without one
 // are left out so the user adds/maps them manually, consistent with the existing distribution
 // row validation (an amount without a selected account blocks saving).
-function generateBillingLines(act) {
+function generateBillingLines(act: any) {
   if (
     (act.distributions || []).length > 0 &&
     !confirm("Des lignes de facturation existent déjà. Les remplacer par les lignes générées automatiquement ?")
@@ -591,19 +591,19 @@ function generateBillingLines(act) {
   const reservations = collectReservationsFromForm();
   const eventDateStart = getAggregateEventDates(reservations).date_start;
 
-  reservations.forEach(r => {
+  reservations.forEach((r: any) => {
     if (r.tariff_gl_account_code && r.tariff_amount > 0) {
       addDistributionRow(r.tariff_gl_account_code, r.tariff_amount * r.slots.length, "");
     }
   });
 
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
-    const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select").value;
-    const salary = (appState.settings.salaries as any[] || []).find(s => s.id === salaryId);
+    const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
+    const salary = ((appState.settings.salaries as any[]) || []).find((s: any) => s.id === salaryId);
     if (!salary || !salary.gl_account_code) return;
-    const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input").value, 10) || 0;
-    const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input").value) || 0;
-    const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input").value) || 0;
+    const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
+    const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
+    const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
     const amount =
       getActiveSalaryRate(salary, eventDateStart) * hours * count +
       getActiveSalaryOvertimeRate(salary, eventDateStart) * overtimeHours * count;
@@ -611,19 +611,19 @@ function generateBillingLines(act) {
   });
 
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
-    const serviceId = row.querySelector<HTMLInputElement>(".service-select").value;
-    const service = (appState.settings.services as any[] || []).find(s => s.id === serviceId);
+    const serviceId = row.querySelector<HTMLInputElement>(".service-select")!.value;
+    const service = ((appState.settings.services as any[]) || []).find((s: any) => s.id === serviceId);
     if (!service || !service.gl_account_code) return;
-    const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input").value, 10) || 0;
-    const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input").value) || 0;
+    const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0;
+    const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
     const rate = getActiveServiceRate(service, eventDateStart);
     const amount = service.type === "hourly" ? rate * hours * count : rate * count;
     if (amount > 0) addDistributionRow(service.gl_account_code, amount, "");
   });
 
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-fees-list .distribution-row").forEach(row => {
-    const glCode = row.querySelector<HTMLInputElement>(".fee-gl-select").value;
-    const amount = parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input").value) || 0;
+    const glCode = row.querySelector<HTMLInputElement>(".fee-gl-select")!.value;
+    const amount = parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input")!.value) || 0;
     if (glCode && amount > 0) addDistributionRow(glCode, amount, "");
   });
 
@@ -634,7 +634,7 @@ function generateBillingLines(act) {
 }
 
 // Renders the Facturée/Terminée billing dates and gated transition buttons
-function renderBillingStateStatus(act) {
+function renderBillingStateStatus(act: any) {
   const container = el("billing-state-status");
   if (!container) return;
 
@@ -648,32 +648,32 @@ function renderBillingStateStatus(act) {
     <button type="button" id="mark-completed-btn" class="btn btn-primary" ${canComplete ? "" : "disabled"}>Marquer comme Terminée</button>
   `;
 
-  const billBtn = container.querySelector<HTMLButtonElement>("#mark-billed-btn");
+  const billBtn = container.querySelector<HTMLButtonElement>("#mark-billed-btn")!;
   if (!billBtn.disabled) {
     billBtn.addEventListener("click", () => {
-      commitActivityPatch(act.id, a => {
+      commitActivityPatch(act.id, (a: any) => {
         a.state = "facturee";
         a.billed_at = new Date().toISOString().split("T")[0];
       });
-      renderBillingStateStatus(appState.activities.find(a => a.id === act.id));
+      renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
     });
   }
 
-  const completeBtn = container.querySelector<HTMLButtonElement>("#mark-completed-btn");
+  const completeBtn = container.querySelector<HTMLButtonElement>("#mark-completed-btn")!;
   if (!completeBtn.disabled) {
     completeBtn.addEventListener("click", () => {
-      commitActivityPatch(act.id, a => {
+      commitActivityPatch(act.id, (a: any) => {
         a.state = "terminee";
         a.completed_at = new Date().toISOString().split("T")[0];
       });
-      renderBillingStateStatus(appState.activities.find(a => a.id === act.id));
+      renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
     });
   }
 }
 
 // Fills the activity form fields (everything except the id/internal-id keys)
 // from an existing activity object. Used by both Edit Mode and Duplicate Mode.
-function fillActivityFormFields(act) {
+function fillActivityFormFields(act: any) {
   applyActivityFormMode(act.mode || "estimation", act.state !== "brouillon");
   el("form-activity-coba").value = act.coba || "";
   el("form-activity-name").value = act.name;
@@ -691,12 +691,12 @@ function fillActivityFormFields(act) {
   el("form-activity-manager-phone").value = act.activity_manager?.phone || "";
   el("form-activity-manager-email").value = act.activity_manager?.email || "";
   el("form-activity-reservations").innerHTML = "";
-  (act.reservations || []).forEach(r => addReservationCard(r));
+  (act.reservations || []).forEach((r: any) => addReservationCard(r));
   // A brand-new activity starts with one réservation and one créneau pre-filled, so the user
   // doesn't have to click "+ Ajouter une réservation" just to get going.
   if ((act.reservations || []).length === 0) {
     const card = addReservationCard();
-    addSlotRow(card.querySelector(".reservation-slots-list"));
+    addSlotRow(card!.querySelector(".reservation-slots-list") as HTMLElement);
   }
   updateFormDatesHelper();
   el("form-activity-dept").value = act.department;
@@ -705,7 +705,7 @@ function fillActivityFormFields(act) {
   el("form-activity-event-type-other-group").style.display = act.event_type === "autre" ? "flex" : "none";
 
   // Load distributions
-  (act.distributions || []).forEach(d => {
+  (act.distributions || []).forEach((d: any) => {
     addDistributionRow(d.account_code, d.amount, d.reference);
   });
 

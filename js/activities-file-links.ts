@@ -15,7 +15,7 @@ const FILE_LINKS_DB_NAME = "outil_marie_file_links";
 const FILE_LINKS_STORE_NAME = "links";
 const FILE_LINKS_DB_VERSION = 1;
 
-function upgradeFileLinksDb(db, oldVersion) {
+function upgradeFileLinksDb(db: IDBDatabase, oldVersion: number) {
   if (oldVersion < 1 && !db.objectStoreNames.contains(FILE_LINKS_STORE_NAME)) {
     db.createObjectStore(FILE_LINKS_STORE_NAME);
   }
@@ -25,7 +25,7 @@ function openFileLinksDb() {
   return openVersionedDb(FILE_LINKS_DB_NAME, FILE_LINKS_DB_VERSION, upgradeFileLinksDb);
 }
 
-async function idbSetFileLink(id, record) {
+async function idbSetFileLink(id: string, record: any) {
   const db = await openFileLinksDb();
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(FILE_LINKS_STORE_NAME, "readwrite");
@@ -35,7 +35,7 @@ async function idbSetFileLink(id, record) {
   });
 }
 
-async function idbGetFileLink(id): Promise<{ handle: any; name: string } | null> {
+async function idbGetFileLink(id: string): Promise<{ handle: any; name: string } | null> {
   const db = await openFileLinksDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(FILE_LINKS_STORE_NAME, "readonly");
@@ -49,7 +49,7 @@ async function idbGetFileLink(id): Promise<{ handle: any; name: string } | null>
 // the given activity's submission/contract. Excel *generation* is deferred until the submission/
 // contract templates are provided — this only stores a reference to a file the user produced
 // manually, so they can reopen it and mark the activity Soumise/Approuvée.
-async function pickAndLinkFile(activityId, kind) {
+async function pickAndLinkFile(activityId: string, kind: "submission" | "contract") {
   if (!window.showOpenFilePicker) {
     showToast("Le lien de fichier nécessite un navigateur compatible avec l'API File System Access (Chrome ou Edge).", "warning");
     return;
@@ -64,17 +64,17 @@ async function pickAndLinkFile(activityId, kind) {
   const linkId = generateUid("filelink");
   await idbSetFileLink(linkId, { handle, name: handle.name });
 
-  commitActivityPatch(activityId, act => {
+  commitActivityPatch(activityId, (act: any) => {
     act[kind].file_link_id = linkId;
     if (kind === "submission") act.submission.generated_at = new Date().toISOString().split("T")[0];
   });
   renderFileLinkStatus(
     kind,
-    appState.activities.find(a => a.id === activityId)
+    appState.activities.find((a: any) => a.id === activityId)
   );
 }
 
-async function openLinkedFile(linkId) {
+async function openLinkedFile(linkId: string) {
   const record = await idbGetFileLink(linkId);
   if (!record) {
     showToast("Fichier introuvable (peut-être lié depuis un autre appareil).", "error");
@@ -90,14 +90,14 @@ async function openLinkedFile(linkId) {
     const file = await record.handle.getFile();
     const url = URL.createObjectURL(file);
     window.open(url, "_blank");
-  } catch (e) {
+  } catch (e: any) {
     showToast("Impossible d'ouvrir le fichier : " + e.message, "error");
   }
 }
 
 // Renders the "Lier un fichier / Ouvrir / Changer" status row plus the relevant state
 // transition button (Marquer comme Soumise au client / Marquer comme Approuvée).
-function renderFileLinkStatus(kind, act) {
+function renderFileLinkStatus(kind: "submission" | "contract", act: any) {
   const container = document.getElementById(kind === "submission" ? "submission-file-status" : "contract-file-status");
   if (!container) return;
 
@@ -122,7 +122,7 @@ function renderFileLinkStatus(kind, act) {
     ${transitionBtnHtml}
   `;
 
-  container.querySelector(`#${kind}-link-file-btn`).addEventListener("click", () => pickAndLinkFile(act.id, kind));
+  container.querySelector(`#${kind}-link-file-btn`)!.addEventListener("click", () => pickAndLinkFile(act.id, kind));
   const openBtn = container.querySelector(`#${kind}-open-file-btn`);
   if (openBtn) openBtn.addEventListener("click", () => openLinkedFile(linkId));
 
@@ -130,12 +130,12 @@ function renderFileLinkStatus(kind, act) {
     const btn = container.querySelector<HTMLButtonElement>("#mark-submitted-btn");
     if (btn && !btn.disabled) {
       btn.addEventListener("click", () => {
-        commitActivityPatch(act.id, a => {
+        commitActivityPatch(act.id, (a: any) => {
           a.state = "soumise";
           a.mode = "soumission";
           a.submission.sent_at = new Date().toISOString().split("T")[0];
         });
-        const updated = appState.activities.find(a => a.id === act.id);
+        const updated = appState.activities.find((a: any) => a.id === act.id);
         renderFileLinkStatus("submission", updated);
         renderFileLinkStatus("contract", updated);
       });
@@ -144,11 +144,11 @@ function renderFileLinkStatus(kind, act) {
     const btn = container.querySelector<HTMLButtonElement>("#mark-approved-btn");
     if (btn && !btn.disabled) {
       btn.addEventListener("click", () => {
-        commitActivityPatch(act.id, a => {
+        commitActivityPatch(act.id, (a: any) => {
           a.state = "approuvee";
           a.contract.approved_at = new Date().toISOString().split("T")[0];
         });
-        const updated = appState.activities.find(a => a.id === act.id);
+        const updated = appState.activities.find((a: any) => a.id === act.id);
         renderFileLinkStatus("submission", updated);
         renderFileLinkStatus("contract", updated);
       });

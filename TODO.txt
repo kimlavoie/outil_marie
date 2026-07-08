@@ -520,5 +520,64 @@ Rapprochement GL (js/reconciliation.ts + js/reconciliation-view.tsx) — détail
 Phase 5 — Nettoyage
 -----------------------------------------------------------------
 [ ] Retirer les scripts non-module restants (defer) et le bridging window.
-[ ] Activer strict: true dans tsconfig.
-[ ] Adapter la config eslint pour TypeScript.
+[x] Activer strict: true dans tsconfig — TERMINÉ.
+[x] Adapter la config eslint pour TypeScript — TERMINÉ.
+
+Adapter la config eslint pour TypeScript — détails
+- Ajout de typescript-eslint (parseur + regroupement recommended, non type-aware — rapide,
+  cohérent avec `tsc` qui fait déjà le travail de vérification de types) pour js/**/*.ts(x),
+  gardé séparé du bloc js/**/*.js existant (globals partagés entre les deux blocs).
+- Ajout d'eslint-plugin-react-hooks, mais seulement rules-of-hooks (error) et exhaustive-deps
+  (warn) — pas le "recommended" complet du plugin, qui inclut depuis sa v6 des règles orientées
+  React Compiler (set-state-in-effect, immutability...) qui supposent un état 100% géré par
+  React. Ces règles se déclenchaient à tort sur le pattern déjà établi ici : les vues React
+  (Paramètres, Rapprochement...) lisent/mutent directement l'objet appState partagé (externe à
+  React) plutôt qu'un state React pur — un faux positif systématique, pas un vrai problème.
+- 6 commentaires `eslint-disable-next-line react-hooks/exhaustive-deps` déjà présents dans
+  settings-view.tsx/reconciliation-view.tsx se sont révélés être des suppressions mortes une
+  fois le plugin réellement branché (exhaustive-deps ne les déclenchait pas) — retirés via
+  `eslint --fix`.
+- 4 erreurs `prefer-const` (introduites par le passage en TS strict de fichiers vanilla
+  d'origine, pas par ce changement eslint) corrigées en même temps : reconciliationState/
+  activitiesState/newActivityModalIntent (jamais réassignés, seulement mutés/pontés) et une
+  variable `current` (objet Date muté en place via .setDate(), jamais réassignée).
+- Validé : 0 erreur, 3 warnings inchangés (fonctions non-module utilisées seulement par
+  bootstrap, pré-existant).
+
+Activer strict: true dans tsconfig — détails
+- Choix initial : ne pas se lancer aveuglément dans la correction des ~745 erreurs révélées —
+  demandé à l'utilisateur comment traiter ça (revenir en arrière / sous-ensemble moins strict /
+  tout corriger) puisque ça touche la quasi-totalité des fichiers déjà convertis. Réponse :
+  tout corriger maintenant.
+- Cause racine la plus fréquente (résolue en premier, a fait chuter le compte de 745 à ~595) :
+  des littéraux `[]` dans state.js (appState.activities/favorites) et dans plusieurs fichiers TS
+  (reconciliationState.results, activitiesState.undoStack/redoStack, DEFAULT_CONFIG.rooms[].
+  linked_rooms/linked_staff/linked_fees/linked_tasks dans config-defaults.ts) s'inféraient en
+  `never[]` sous strict, cascadant en centaines de "Property X does not exist on type never"
+  chez tous les consommateurs. Corrigé par annotation de type explicite à la déclaration
+  (`[] as any[]`/`as string[]`/etc., ou JSDoc `@type` pour state.js qui reste un fichier .js).
+- Le reste, fichier par fichier (utils.ts, logger.ts, validation.ts, config-defaults.ts,
+  fuzzy-match.ts, db-utils.ts, datepicker.ts, dashboard-view.tsx, settings-view.tsx, reconciliation.ts,
+  activities-file-links.ts, activities-render.ts, activities-financials.ts, activities-history.ts,
+  activities-form.ts, activities-reservations.ts, dans cet ordre) : paramètres de fonction sans
+  type annotés en `any` ou en type concret quand évident (string/number/HTMLElement), résultats
+  de `document.querySelector`/`getElementById` possiblement null affirmés non-null avec `!`
+  quand l'élément vient d'être inséré par la même fonction (aucun changement de comportement —
+  reflète la confiance déjà implicite du JS d'origine), et `getAttribute`/`.find()` renvoyant
+  `string | null`/`number | null` corrigés avec `|| ""`/vérification explicite plutôt que
+  supposés non-null à tort.
+- activities-reservations.ts (le plus gros, 191 erreurs) : la cause racine (reservationData
+  typé `null` au lieu de `any` par défaut de paramètre) a fait chuter le compte de 184 à 162
+  d'un coup ; le reste corrigé par script (assertions non-null en masse sur les
+  `querySelector<T>(...)` de la fonction de construction de carte de réservation, guidé par les
+  numéros de ligne rapportés par tsc) plutôt qu'à la main, vu le volume et la répétitivité.
+- Aucun changement de comportement voulu nulle part : chaque correctif est soit une annotation
+  de type pure, soit une assertion `!`/`|| ""` qui documente une garantie déjà vraie à
+  l'exécution (élément fraîchement inséré, tableau qui contient toujours des nombres, etc.).
+- Validé après coup : tsc propre (0 erreur sur tout le projet), 98/98 tests (inchangé), lint
+  0 erreur/3 warnings (inchangé), vite build (35 modules, dist/ complet, aucun 404), vite dev
+  (résout en 200).
+[ ] Il reste à retirer les 3 derniers scripts non-module (navigation.js, account-report.js,
+    main.js) et le bridging window.X — pas commencé, plus gros changement de Phase 5 (touche
+    potentiellement tous les fichiers qui pontent encore sur window), à ne pas entamer sans
+    confirmation explicite une fois ce message lu.

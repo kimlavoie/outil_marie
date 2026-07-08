@@ -7,7 +7,7 @@
 // Builds a single-parameter pricing grid (one row "Tarif" x one column per client type) from
 // a flat list of {description, amount} pairs — used only to seed DEFAULT_CONFIG in the same
 // shape the old flat `tarifs[]` used to produce, now expressed as a versioned pricing grid.
-function buildSeedPricingGrid(gridId, paramId, tarifPairs) {
+function buildSeedPricingGrid(gridId: string, paramId: string, tarifPairs: { description: string; amount: number }[]) {
   return {
     id: gridId,
     effective_date: "", // "" means "in effect since the beginning"
@@ -28,10 +28,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Salle François-Brassard (326.1)",
@@ -42,10 +42,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Hall de la salle François-Brassard (341.1)",
@@ -56,10 +56,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Petit salon de la salle François-Brassard (326.1)",
@@ -70,10 +70,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Billetterie de la salle François-Brassard (320.1)",
@@ -84,10 +84,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Pas perdus (201.2)",
@@ -98,10 +98,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Cafétéria (120.2)",
@@ -112,10 +112,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Cantine Pavillon J.-Angers (CANATM)",
@@ -126,10 +126,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Cantine Pavillon Lionel-Gaudreault (CANPLG)",
@@ -140,10 +140,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Piscine (261.1)",
@@ -154,10 +154,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Gymnase (249.1)",
@@ -168,10 +168,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Jardin intérieur (JAR.1)",
@@ -182,10 +182,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Terrain forêt nourricière (FON.1)",
@@ -196,10 +196,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Terrain Piékouagami-PLG (TER-03)",
@@ -210,10 +210,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Surface synthétique (EDU.1)",
@@ -224,10 +224,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Local Club social (841.0)",
@@ -238,10 +238,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     },
     {
       name: "Hall de la direction générale (HALLDG)",
@@ -252,10 +252,10 @@ const DEFAULT_CONFIG = {
           { description: "Externe", amount: 0.0 }
         ])
       ],
-      linked_rooms: [],
-      linked_staff: [],
-      linked_fees: [],
-      linked_tasks: []
+      linked_rooms: [] as string[],
+      linked_staff: [] as { id: string; salary_id: string; count: number }[],
+      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_tasks: [] as { id: string; description: string }[]
     }
   ],
   departments: [

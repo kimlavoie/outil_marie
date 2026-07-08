@@ -13,7 +13,7 @@ import { logError } from "./logger.ts";
 // Opens `name` at `version`, calling `upgrade(db, oldVersion, newVersion)` inside the
 // browser-managed upgrade transaction whenever the stored version is behind. `upgrade` should
 // be written as a sequence of `if (oldVersion < N) { ... }` steps, one per past version bump.
-function openVersionedDb(name, version, upgrade) {
+function openVersionedDb(name: string, version: number, upgrade: (db: IDBDatabase, oldVersion: number, newVersion: number | null) => void) {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open(name, version);
     req.onupgradeneeded = event => {

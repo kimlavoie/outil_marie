@@ -73,7 +73,7 @@ function buildSalleShareConfig(isDark: boolean, textColor: string) {
 
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
+    if (actYear !== appState.selected_year || (actQuarter === null || !appState.selected_quarters.includes(actQuarter))) {
       return;
     }
 
@@ -121,7 +121,7 @@ function buildAccountsVolumeConfig(textColor: string, gridColor: string) {
 
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
+    if (actYear !== appState.selected_year || (actQuarter === null || !appState.selected_quarters.includes(actQuarter))) {
       return;
     }
 

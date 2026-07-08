@@ -33,7 +33,7 @@ function el<T extends Element = HTMLInputElement>(id: string): T {
 }
 
 // Activities view UI state, grouped so the module's moving parts live in one place
-let activitiesState = {
+const activitiesState = {
   sortKey: "id",
   sortOrder: "asc",
   page: 1,
@@ -41,18 +41,18 @@ let activitiesState = {
   // Id of an activity currently open in the drawer that hasn't been saved yet (created via the
   // "Estimation" quick button). Discarded (removed from appState.activities, not just closed) if
   // the drawer is closed/cancelled without clicking "Enregistrer".
-  draftActivityId: null,
-  openedActivitySnapshot: null,
-  selectedIds: new Set(),
+  draftActivityId: null as any,
+  openedActivitySnapshot: null as any,
+  selectedIds: new Set<any>(),
   // Undo/Redo history for the currently-open activity drawer (Ctrl+Z / Ctrl+Y): each entry is a
   // deep snapshot of the activity record taken right after a successful auto-save. Reset whenever
   // the drawer opens/closes so history never leaks between activities.
-  undoStack: [],
-  redoStack: [],
+  undoStack: [] as any[],
+  redoStack: [] as any[],
   // {refDate, viewMode} snapshot of the calendar the drawer was opened from (see
   // activities-financials.ts's openActivityDrawer), so the "back to calendar" button can restore
   // it. Not in the initial shape at declaration time in the original .js — TS needs it upfront.
-  calendarReturn: null
+  calendarReturn: null as any
 };
 
 const ACTIVITY_UNDO_HISTORY_LIMIT = 50;
@@ -60,7 +60,7 @@ const ACTIVITY_UNDO_HISTORY_LIMIT = 50;
 // Which flow the "Nom de l'activité" modal is currently serving: "soumission" creates and saves
 // the activity immediately in soumission mode; "estimation" only builds it in memory (estimation
 // mode) until the user actually saves the drawer form.
-let newActivityModalIntent = "soumission";
+const newActivityModalIntent = "soumission";
 
 // Activity lifecycle states, in order
 const ACTIVITY_STATES = [
@@ -72,11 +72,11 @@ const ACTIVITY_STATES = [
   { value: "terminee", label: "Terminée" }
 ];
 
-function getActivityStateLabel(state) {
+function getActivityStateLabel(state: string) {
   return (ACTIVITY_STATES.find(s => s.value === state) || ACTIVITY_STATES[0]).label;
 }
 
-function getActivityStateBadgeClass(state) {
+function getActivityStateBadgeClass(state: string) {
   switch (state) {
     case "terminee":
       return "badge-success";
@@ -93,16 +93,16 @@ function getActivityStateBadgeClass(state) {
 }
 
 // {done, total, percent} of an activity's planning tasks
-function getPlanningProgress(act) {
+function getPlanningProgress(act: any) {
   const tasks = act.planning_tasks || [];
-  const done = tasks.filter(t => t.done).length;
+  const done = tasks.filter((t: any) => t.done).length;
   const total = tasks.length;
   const percent = total > 0 ? Math.round((done / total) * 100) : 0;
   return { done, total, percent };
 }
 
 // Small progress-bar HTML snippet reused in the activities list and the Planification tab
-function buildProgressBarHtml(percent) {
+function buildProgressBarHtml(percent: number) {
   return `
     <div class="progress-bar" title="${percent}%">
       <div class="progress-bar-fill ${percent >= 100 ? "complete" : ""}" style="width: ${percent}%;"></div>
@@ -130,11 +130,11 @@ function renderActivities() {
       act.name.toLowerCase().includes(searchQuery) ||
       act.responsable.toLowerCase().includes(searchQuery) ||
       act.distributions.some(
-        d => d.account_code.toLowerCase().includes(searchQuery) || (d.reference || "").toLowerCase().includes(searchQuery)
+        (d: any) => d.account_code.toLowerCase().includes(searchQuery) || (d.reference || "").toLowerCase().includes(searchQuery)
       );
 
     // Salle filter
-    const matchesSalle = !filterSalle || (act.reservations || []).some(r => r.room_name === filterSalle);
+    const matchesSalle = !filterSalle || (act.reservations || []).some((r: any) => r.room_name === filterSalle);
 
     // Client type filter
     const matchesClientType = !filterClientType || act.client_type === filterClientType;
@@ -149,7 +149,7 @@ function renderActivities() {
     } else {
       const fy = getFiscalYear(act.date_start);
       const q = getQuarterNumber(act.date_start);
-      matchesPeriod = fy === appState.selected_year && appState.selected_quarters.includes(q);
+      matchesPeriod = fy === appState.selected_year && q !== null && appState.selected_quarters.includes(q);
     }
 
     return matchesSearch && matchesSalle && matchesClientType && matchesStatus && matchesPeriod;
@@ -186,8 +186,8 @@ function renderActivities() {
         valB = getActivityReferences(b).toLowerCase();
         break;
       case "totalRev":
-        valA = a.distributions.reduce((sum, d) => sum + d.amount, 0);
-        valB = b.distributions.reduce((sum, d) => sum + d.amount, 0);
+        valA = a.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
+        valB = b.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
         break;
       case "sansFrais":
         valA = a.client_type === "interne" ? getRoomsTariffTotal(a) : 0;
@@ -233,9 +233,9 @@ function renderActivities() {
   });
   const pageItems = filtered.slice((activitiesState.page - 1) * activitiesState.pageSize, activitiesState.page * activitiesState.pageSize);
 
-  pageItems.forEach(act => {
+  pageItems.forEach((act: any) => {
     const isFilled = act.name.trim() !== "";
-    const totalRev = act.distributions.reduce((sum, d) => sum + d.amount, 0);
+    const totalRev = act.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
 
     // Format distributions for visualization
     let distHtml = "";
@@ -243,8 +243,8 @@ function renderActivities() {
       distHtml = `
         <div class="activity-dist-list" style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.72rem;">
           ${act.distributions
-            .map(d => {
-              const accDesc = appState.settings.accounts.find(a => a.code === d.account_code)?.description || "";
+            .map((d: any) => {
+              const accDesc = appState.settings.accounts.find((a: any) => a.code === d.account_code)?.description || "";
               return `
               <span class="font-mono" style="background-color: var(--bg-main); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: var(--radius-sm); color: var(--text-secondary);" title="${escapeHtml(accDesc)}">
                 <strong>${d.account_code}</strong>: ${formatCurrency(d.amount)}${d.reference ? ` (${escapeHtml(d.reference)})` : ""}
@@ -370,10 +370,10 @@ function renderActivities() {
       const id = cb.getAttribute("data-id");
       if (cb.checked) {
         activitiesState.selectedIds.add(id);
-        cb.closest("tr").classList.add("selected");
+        cb.closest("tr")!.classList.add("selected");
       } else {
         activitiesState.selectedIds.delete(id);
-        cb.closest("tr").classList.remove("selected");
+        cb.closest("tr")!.classList.remove("selected");
       }
       updateBulkActionsBar();
     });
@@ -382,7 +382,7 @@ function renderActivities() {
   // Attach row click listeners to open the activity record (tabbed lifecycle view)
   document.querySelectorAll(".activity-row").forEach(row => {
     row.addEventListener("click", () => {
-      openActivityDrawer(row.getAttribute("data-id"));
+      openActivityDrawer(row.getAttribute("data-id") || "");
     });
   });
 
@@ -400,7 +400,7 @@ function renderActivities() {
   document.querySelectorAll(".open-act-tab-btn").forEach(btn => {
     btn.addEventListener("click", e => {
       e.stopPropagation();
-      const id = btn.getAttribute("data-id");
+      const id = btn.getAttribute("data-id") || "";
       const url = new URL(window.location.href);
       url.search = `?activity=${encodeURIComponent(id)}`;
       window.open(url.toString(), "_blank");
@@ -411,7 +411,7 @@ function renderActivities() {
   document.querySelectorAll(".duplicate-act-btn").forEach(btn => {
     btn.addEventListener("click", e => {
       e.stopPropagation();
-      duplicateActivityAndOpen(btn.getAttribute("data-id"));
+      duplicateActivityAndOpen(btn.getAttribute("data-id") || "");
     });
   });
 
@@ -492,10 +492,10 @@ function initBulkActionsHandlers() {
         cb.checked = isChecked;
         if (isChecked) {
           activitiesState.selectedIds.add(id);
-          cb.closest("tr").classList.add("selected");
+          cb.closest("tr")!.classList.add("selected");
         } else {
           activitiesState.selectedIds.delete(id);
-          cb.closest("tr").classList.remove("selected");
+          cb.closest("tr")!.classList.remove("selected");
         }
       });
       updateBulkActionsBar();

@@ -27,7 +27,7 @@ const FUZZY_TEXT_STOPWORDS = new Set([
 ]);
 
 // Splits text into lowercased, accent-stripped word tokens for similarity comparison
-function tokenizeForMatch(text) {
+function tokenizeForMatch(text: any) {
   return (text || "")
     .toString()
     .toLowerCase()
@@ -35,11 +35,11 @@ function tokenizeForMatch(text) {
     .replace(/\p{Diacritic}/gu, "")
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
-    .filter(t => t && !FUZZY_TEXT_STOPWORDS.has(t));
+    .filter((t: string) => t && !FUZZY_TEXT_STOPWORDS.has(t));
 }
 
 // Dice coefficient (2 * |A intersect B| / (|A|+|B|)) between the token sets of two strings, 0..1
-function textSimilarity(a, b) {
+function textSimilarity(a: any, b: any) {
   const tokensA = new Set(tokenizeForMatch(a));
   const tokensB = new Set(tokenizeForMatch(b));
   if (tokensA.size === 0 || tokensB.size === 0) return 0;

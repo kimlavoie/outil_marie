@@ -33,7 +33,9 @@ let appState = {
     services: [...DEFAULT_CONFIG.services],
     global_tasks: [...DEFAULT_CONFIG.global_tasks]
   },
+  /** @type {any[]} */
   activities: [],
+  /** @type {any[]} */
   favorites: [], // ids of activities pinned (by the user) to the "Accès rapide" list
   selected_year: "",
   selected_quarters: [1, 2, 3, 4]

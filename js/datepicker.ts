@@ -13,7 +13,7 @@ import { maskDateInput } from "./utils.ts";
 
 // Validates a date input's value against the active fiscal year and shows/hides
 // the associated .field-error-msg (id: "<input-id>-fy-error") in real time.
-function validateDateFieldFiscalYear(input) {
+function validateDateFieldFiscalYear(input: any) {
   const errorEl = document.getElementById(`${input.id}-fy-error`);
   if (!errorEl) return true;
 
@@ -66,7 +66,7 @@ function initCustomDatepickers() {
 // Wires a single .datepicker-wrapper element (mask, fiscal-year validation, popover
 // trigger). Safe to call individually for wrappers created dynamically after page load
 // (e.g. per-room schedule cards), so listeners aren't re-attached to existing wrappers.
-function initDatepickerWrapper(wrapper) {
+function initDatepickerWrapper(wrapper: any) {
   if (wrapper.dataset.datepickerInit) return;
   wrapper.dataset.datepickerInit = "true";
 
@@ -104,7 +104,7 @@ function initDatepickerWrapper(wrapper) {
   });
 }
 
-function renderCalendar(popover, input, displayDate) {
+function renderCalendar(popover: any, input: any, displayDate: Date) {
   const year = displayDate.getFullYear();
   const month = displayDate.getMonth(); // 0-11
 
@@ -181,21 +181,21 @@ function renderCalendar(popover, input, displayDate) {
   `;
 
   // Wire nav buttons
-  popover.querySelector(".prev-btn").addEventListener("click", e => {
+  popover.querySelector(".prev-btn").addEventListener("click", (e: Event) => {
     e.stopPropagation();
     displayDate.setMonth(displayDate.getMonth() - 1);
     renderCalendar(popover, input, displayDate);
   });
 
-  popover.querySelector(".next-btn").addEventListener("click", e => {
+  popover.querySelector(".next-btn").addEventListener("click", (e: Event) => {
     e.stopPropagation();
     displayDate.setMonth(displayDate.getMonth() + 1);
     renderCalendar(popover, input, displayDate);
   });
 
   // Wire day clicks
-  popover.querySelectorAll(".calendar-grid .calendar-day").forEach(dayEl => {
-    dayEl.addEventListener("click", e => {
+  popover.querySelectorAll(".calendar-grid .calendar-day").forEach((dayEl: any) => {
+    dayEl.addEventListener("click", (e: Event) => {
       e.stopPropagation();
       const day = dayEl.getAttribute("data-day");
       if (day) {

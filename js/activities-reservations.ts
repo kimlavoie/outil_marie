@@ -66,7 +66,7 @@ function initReservationsSection() {
 }
 
 // Builds one datepicker + time input pair (used for the optional montage/démontage periods)
-function buildRoomDateTimeFieldHtml(dateId, timeId, label) {
+function buildRoomDateTimeFieldHtml(dateId: string, timeId: string, label: string) {
   return `
     <div class="form-group">
       <label for="${dateId}">${label}</label>
@@ -90,7 +90,7 @@ function buildRoomDateTimeFieldHtml(dateId, timeId, label) {
 
 // Builds one datepicker + heure de début/fin trio (used for the montage/démontage periods,
 // which are confined to a single date but span a start-to-end time range within that date).
-function buildDatePeriodFieldHtml(dateId, startTimeId, endTimeId, label) {
+function buildDatePeriodFieldHtml(dateId: string, startTimeId: string, endTimeId: string, label: string) {
   return `
     <div class="form-group">
       <label for="${dateId}">${label}</label>
@@ -114,9 +114,9 @@ function buildDatePeriodFieldHtml(dateId, startTimeId, endTimeId, label) {
   `;
 }
 
-function buildTariffParameterOptionsHtml(roomName, dateStr, selectedTariffId) {
+function buildTariffParameterOptionsHtml(roomName: string, dateStr: string, selectedTariffId: string) {
   if (!roomName || roomName === OTHER_ROOM_VALUE) return "";
-  const roomConfig = appState.settings.rooms.find(r => r.name === roomName);
+  const roomConfig = appState.settings.rooms.find((r: any) => r.name === roomName);
   const grid = roomConfig ? getActivePricingGrid(roomConfig, dateStr) : null;
   if (!grid) return "";
 
@@ -126,13 +126,13 @@ function buildTariffParameterOptionsHtml(roomName, dateStr, selectedTariffId) {
   }
 
   return grid.parameters
-    .map(p => `<option value="${p.id}" ${selectedParamId === p.id ? "selected" : ""}>${escapeHtml(p.name)}</option>`)
+    .map((p: any) => `<option value="${p.id}" ${selectedParamId === p.id ? "selected" : ""}>${escapeHtml(p.name)}</option>`)
     .join("");
 }
 
-function buildTariffClientTypeOptionsHtml(roomName, dateStr, selectedTariffId, selectedParamId = "") {
+function buildTariffClientTypeOptionsHtml(roomName: string, dateStr: string, selectedTariffId: string, selectedParamId = "") {
   if (!roomName || roomName === OTHER_ROOM_VALUE) return "";
-  const roomConfig = appState.settings.rooms.find(r => r.name === roomName);
+  const roomConfig = appState.settings.rooms.find((r: any) => r.name === roomName);
   const grid = roomConfig ? getActivePricingGrid(roomConfig, dateStr) : null;
   if (!grid) return "";
 
@@ -146,10 +146,10 @@ function buildTariffClientTypeOptionsHtml(roomName, dateStr, selectedTariffId, s
   }
 
   return grid.client_types
-    .map(ct => {
+    .map((ct: any) => {
       let suffix = "";
       if (selectedParamId && selectedParamId !== "__custom__") {
-        const cell = grid.cells.find(c => c.parameter_id === selectedParamId && c.client_type_id === ct.id);
+        const cell = grid.cells.find((c: any) => c.parameter_id === selectedParamId && c.client_type_id === ct.id);
         if (cell) {
           suffix = ` (${cell.amount}$/jour)`;
         }
@@ -160,7 +160,7 @@ function buildTariffClientTypeOptionsHtml(roomName, dateStr, selectedTariffId, s
 }
 
 function updateResolvedPriceDisplay(card: HTMLElement) {
-  const roomName = card.querySelector<HTMLInputElement>(".searchable-select-value").value;
+  const roomName = card.querySelector<HTMLInputElement>(".searchable-select-value")!.value;
   const paramSelect = card.querySelector<HTMLInputElement>(".room-tariff-parameter");
   const ctSelect = card.querySelector<HTMLInputElement>(".room-tariff-client-type");
   const displayEl = card.querySelector<HTMLInputElement>(".room-tariff-resolved-price-display");
@@ -172,10 +172,10 @@ function updateResolvedPriceDisplay(card: HTMLElement) {
   const clientTypeVal = ctSelect.value;
 
   if (roomName && roomName !== OTHER_ROOM_VALUE && paramVal && paramVal !== "__custom__" && clientTypeVal) {
-    const roomConfig = appState.settings.rooms.find(r => r.name === roomName);
+    const roomConfig = appState.settings.rooms.find((r: any) => r.name === roomName);
     const grid = roomConfig ? getActivePricingGrid(roomConfig, "") : null;
     if (grid) {
-      const cell = grid.cells.find(c => c.parameter_id === paramVal && c.client_type_id === clientTypeVal);
+      const cell = grid.cells.find((c: any) => c.parameter_id === paramVal && c.client_type_id === clientTypeVal);
       const price = cell ? cell.amount : 0;
       valEl.textContent = formatCurrency(price);
       displayEl.style.display = "block";
@@ -185,7 +185,7 @@ function updateResolvedPriceDisplay(card: HTMLElement) {
   displayEl.style.display = "none";
 }
 
-function refreshReservationTariffSelect(card: HTMLElement, roomName, selectedTariffId = "") {
+function refreshReservationTariffSelect(card: HTMLElement, roomName: string, selectedTariffId = "") {
   const paramSelect = card.querySelector<HTMLInputElement>(".room-tariff-parameter");
   const ctSelect = card.querySelector<HTMLInputElement>(".room-tariff-client-type");
   const ctGroup = card.querySelector<HTMLInputElement>(".room-tariff-client-type-group");
@@ -243,7 +243,7 @@ function addSlotRow(container: HTMLElement, date = "", startTime = "", endTime =
   );
   const row = el(rowId);
   maskDateInput(row.querySelector<HTMLInputElement>(".slot-date-input"));
-  row.querySelector<HTMLInputElement>(".delete-slot-row-btn").addEventListener("click", () => {
+  row.querySelector<HTMLInputElement>(".delete-slot-row-btn")!.addEventListener("click", () => {
     row.remove();
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();
@@ -257,9 +257,9 @@ function collectSlotsFromCard(card: HTMLElement) {
   return Array.from(card.querySelectorAll<HTMLInputElement>(".reservation-slots-list .reservation-slot-row"))
     .map(row => ({
       id: generateUid("slot"),
-      date: row.querySelector<HTMLInputElement>(".slot-date-input").value,
-      start_time: row.querySelector<HTMLInputElement>(".slot-start-time-input").value,
-      end_time: row.querySelector<HTMLInputElement>(".slot-end-time-input").value
+      date: row.querySelector<HTMLInputElement>(".slot-date-input")!.value,
+      start_time: row.querySelector<HTMLInputElement>(".slot-start-time-input")!.value,
+      end_time: row.querySelector<HTMLInputElement>(".slot-end-time-input")!.value
     }))
     .filter(s => s.date);
 }
@@ -275,9 +275,9 @@ function addNextSlotRow(container: HTMLElement) {
     return;
   }
 
-  const lastDate = last.querySelector<HTMLInputElement>(".slot-date-input").value;
-  const startTime = last.querySelector<HTMLInputElement>(".slot-start-time-input").value;
-  const endTime = last.querySelector<HTMLInputElement>(".slot-end-time-input").value;
+  const lastDate = last.querySelector<HTMLInputElement>(".slot-date-input")!.value;
+  const startTime = last.querySelector<HTMLInputElement>(".slot-start-time-input")!.value;
+  const endTime = last.querySelector<HTMLInputElement>(".slot-end-time-input")!.value;
   let nextDate = "";
   if (lastDate) {
     const d = parseLocalDateStr(lastDate);
@@ -328,10 +328,10 @@ function buildSlotRangeGeneratorHtml() {
 }
 
 function wireSlotRangeGenerator(card: HTMLElement) {
-  const generatorEl = card.querySelector<HTMLInputElement>(".reservation-slot-range-generator");
-  const toggleBtn = card.querySelector<HTMLInputElement>(".reservation-add-slot-range-btn");
-  const weekdaysGroup = generatorEl.querySelector<HTMLInputElement>(".slot-range-weekdays-group");
-  const slotsList = card.querySelector<HTMLInputElement>(".reservation-slots-list");
+  const generatorEl = card.querySelector<HTMLElement>(".reservation-slot-range-generator")!;
+  const toggleBtn = card.querySelector<HTMLElement>(".reservation-add-slot-range-btn")!;
+  const weekdaysGroup = generatorEl.querySelector<HTMLElement>(".slot-range-weekdays-group");
+  const slotsList = card.querySelector<HTMLElement>(".reservation-slots-list")!;
   initPillToggleEl(weekdaysGroup);
   maskDateInput(generatorEl.querySelector<HTMLInputElement>(".slot-range-start-date"));
   maskDateInput(generatorEl.querySelector<HTMLInputElement>(".slot-range-end-date"));
@@ -339,16 +339,16 @@ function wireSlotRangeGenerator(card: HTMLElement) {
   toggleBtn.addEventListener("click", () => {
     generatorEl.style.display = generatorEl.style.display === "none" ? "block" : "none";
   });
-  generatorEl.querySelector<HTMLInputElement>(".slot-range-cancel-btn").addEventListener("click", () => {
+  generatorEl.querySelector<HTMLElement>(".slot-range-cancel-btn")!.addEventListener("click", () => {
     generatorEl.style.display = "none";
   });
 
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  generatorEl.querySelector<HTMLInputElement>(".slot-range-generate-btn").addEventListener("click", () => {
-    const startVal = generatorEl.querySelector<HTMLInputElement>(".slot-range-start-date").value;
-    const endVal = generatorEl.querySelector<HTMLInputElement>(".slot-range-end-date").value;
-    const startTime = generatorEl.querySelector<HTMLInputElement>(".slot-range-start-time").value;
-    const endTime = generatorEl.querySelector<HTMLInputElement>(".slot-range-end-time").value;
+  generatorEl.querySelector<HTMLElement>(".slot-range-generate-btn")!.addEventListener("click", () => {
+    const startVal = generatorEl.querySelector<HTMLInputElement>(".slot-range-start-date")!.value;
+    const endVal = generatorEl.querySelector<HTMLInputElement>(".slot-range-end-date")!.value;
+    const startTime = generatorEl.querySelector<HTMLInputElement>(".slot-range-start-time")!.value;
+    const endTime = generatorEl.querySelector<HTMLInputElement>(".slot-range-end-time")!.value;
     if (
       !dateRegex.test(startVal) ||
       !dateRegex.test(endVal) ||
@@ -364,7 +364,9 @@ function wireSlotRangeGenerator(card: HTMLElement) {
       showToast("La date de début doit être antérieure ou égale à la date de fin.", "warning");
       return;
     }
-    const activeWeekdays = Array.from(weekdaysGroup.querySelectorAll<HTMLInputElement>(".pill-toggle.active")).map(b => parseInt(b.dataset.value, 10));
+    const activeWeekdays = Array.from(weekdaysGroup!.querySelectorAll<HTMLElement>(".pill-toggle.active")).map(b =>
+      parseInt(b.dataset.value as string, 10)
+    );
     const d = new Date(start);
     while (d <= end) {
       if (activeWeekdays.includes(d.getDay())) addSlotRow(slotsList, formatDateStrLocal(d), startTime, endTime);
@@ -378,7 +380,7 @@ function wireSlotRangeGenerator(card: HTMLElement) {
 
 // Adds a reservation card to #form-activity-reservations. `reservationData` (an
 // act.reservations[] entry) pre-fills the fields when editing/duplicating an activity.
-function addReservationCard(reservationData = null) {
+function addReservationCard(reservationData: any = null) {
   const container = el("form-activity-reservations");
   if (!container) return;
 
@@ -549,18 +551,18 @@ function addReservationCard(reservationData = null) {
   const card = el(uid);
 
   if (install.enabled) {
-    card.querySelector<HTMLInputElement>(`#${uid}-install-date`).value = install.date || "";
-    card.querySelector<HTMLInputElement>(`#${uid}-install-start-time`).value = install.start_time || "";
-    card.querySelector<HTMLInputElement>(`#${uid}-install-end-time`).value = install.end_time || "";
+    card.querySelector<HTMLInputElement>(`#${uid}-install-date`)!.value = install.date || "";
+    card.querySelector<HTMLInputElement>(`#${uid}-install-start-time`)!.value = install.start_time || "";
+    card.querySelector<HTMLInputElement>(`#${uid}-install-end-time`)!.value = install.end_time || "";
   }
   if (dismantle.enabled) {
-    card.querySelector<HTMLInputElement>(`#${uid}-dismantle-date`).value = dismantle.date || "";
-    card.querySelector<HTMLInputElement>(`#${uid}-dismantle-start-time`).value = dismantle.start_time || "";
-    card.querySelector<HTMLInputElement>(`#${uid}-dismantle-end-time`).value = dismantle.end_time || "";
+    card.querySelector<HTMLInputElement>(`#${uid}-dismantle-date`)!.value = dismantle.date || "";
+    card.querySelector<HTMLInputElement>(`#${uid}-dismantle-start-time`)!.value = dismantle.start_time || "";
+    card.querySelector<HTMLInputElement>(`#${uid}-dismantle-end-time`)!.value = dismantle.end_time || "";
   }
 
   // Remove this reservation entirely
-  card.querySelector<HTMLInputElement>(".remove-reservation-btn").addEventListener("click", () => {
+  card.querySelector<HTMLInputElement>(".remove-reservation-btn")!.addEventListener("click", () => {
     card.remove();
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();
@@ -571,9 +573,9 @@ function addReservationCard(reservationData = null) {
   // free-text field; linked staff/frais are only auto-added the first time a brand-new
   // (empty) card gets a room picked, mirroring the previous pill-toggle behaviour.
   let hasAutoAddedLinked = !!reservationData;
-  const otherDetailsGroup = card.querySelector<HTMLInputElement>(".room-other-details-group");
+  const otherDetailsGroup = card.querySelector<HTMLInputElement>(".room-other-details-group")!;
   initSearchableSelectEl(
-    card.querySelector<HTMLInputElement>(".room-select-group"),
+    card.querySelector<HTMLInputElement>(".room-select-group")!,
     buildRoomSelectItems(),
     value => {
       otherDetailsGroup.style.display = value === OTHER_ROOM_VALUE ? "flex" : "none";
@@ -594,10 +596,10 @@ function addReservationCard(reservationData = null) {
   refreshReservationTariffSelect(card, roomName, selectedTariffId);
 
   // Wire the tarif selects to reveal/hide custom fields and show resolved price
-  const paramSelect = card.querySelector<HTMLInputElement>(".room-tariff-parameter");
-  const ctSelect = card.querySelector<HTMLInputElement>(".room-tariff-client-type");
-  const ctGroup = card.querySelector<HTMLInputElement>(".room-tariff-client-type-group");
-  const customGroup = card.querySelector<HTMLInputElement>(".room-tariff-custom-group");
+  const paramSelect = card.querySelector<HTMLInputElement>(".room-tariff-parameter")!;
+  const ctSelect = card.querySelector<HTMLInputElement>(".room-tariff-client-type")!;
+  const ctGroup = card.querySelector<HTMLInputElement>(".room-tariff-client-type-group")!;
+  const customGroup = card.querySelector<HTMLInputElement>(".room-tariff-custom-group")!;
 
   paramSelect.addEventListener("change", () => {
     const isCustom = paramSelect.value === "__custom__";
@@ -609,7 +611,7 @@ function addReservationCard(reservationData = null) {
       ctGroup.style.display = "flex";
       customGroup.style.display = "none";
       // Re-populate client types to show prices for this parameter
-      const roomVal = card.querySelector<HTMLInputElement>(".searchable-select-value").value;
+      const roomVal = card.querySelector<HTMLInputElement>(".searchable-select-value")!.value;
       const currentCtVal = ctSelect.value;
       ctSelect.innerHTML = `
         <option value="">Sélectionner...</option>
@@ -629,16 +631,16 @@ function addReservationCard(reservationData = null) {
   });
 
   // Montage/démontage optional toggles
-  const installToggle = card.querySelector<HTMLInputElement>(".reservation-install-toggle");
-  const installFields = card.querySelector<HTMLInputElement>(".reservation-install-fields");
+  const installToggle = card.querySelector<HTMLInputElement>(".reservation-install-toggle")!;
+  const installFields = card.querySelector<HTMLInputElement>(".reservation-install-fields")!;
   installToggle.addEventListener("click", () => {
     installToggle.classList.toggle("active");
     installFields.style.display = installToggle.classList.contains("active") ? "flex" : "none";
     updateFormDatesHelper();
     autoSaveActivityForm();
   });
-  const dismantleToggle = card.querySelector<HTMLInputElement>(".reservation-dismantle-toggle");
-  const dismantleFields = card.querySelector<HTMLInputElement>(".reservation-dismantle-fields");
+  const dismantleToggle = card.querySelector<HTMLInputElement>(".reservation-dismantle-toggle")!;
+  const dismantleFields = card.querySelector<HTMLInputElement>(".reservation-dismantle-fields")!;
   dismantleToggle.addEventListener("click", () => {
     dismantleToggle.classList.toggle("active");
     dismantleFields.style.display = dismantleToggle.classList.contains("active") ? "flex" : "none";
@@ -647,32 +649,32 @@ function addReservationCard(reservationData = null) {
   });
 
   // Wire the datepickers for the montage/démontage date fields
-  card.querySelectorAll<HTMLInputElement>(".datepicker-wrapper").forEach(initDatepickerWrapper);
+  card.querySelectorAll<HTMLInputElement>(".datepicker-wrapper")!.forEach(initDatepickerWrapper);
 
   // Créneaux: manual add button, plage-de-jours generator, and pre-filled rows when editing
-  const slotsList = card.querySelector<HTMLInputElement>(".reservation-slots-list");
-  card.querySelector<HTMLInputElement>(".reservation-add-slot-btn").addEventListener("click", () => {
+  const slotsList = card.querySelector<HTMLInputElement>(".reservation-slots-list")!;
+  card.querySelector<HTMLInputElement>(".reservation-add-slot-btn")!.addEventListener("click", () => {
     addNextSlotRow(slotsList);
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();
   });
   wireSlotRangeGenerator(card);
   if (reservationData) {
-    (reservationData.slots || []).forEach(s => addSlotRow(slotsList, s.date, s.start_time, s.end_time));
+    (reservationData.slots || []).forEach((s: any) => addSlotRow(slotsList, s.date, s.start_time, s.end_time));
   }
 
   // Wire this card's Services techniques / Service de bar / Autres services pill groups
-  const barToggleGroup = card.querySelector<HTMLInputElement>(".room-bar-toggle-group");
-  const barDetails = card.querySelector<HTMLInputElement>(".room-bar-details");
-  const barDrinkGroup = card.querySelector<HTMLInputElement>(".room-bar-drink-group");
-  const barServiceTypeGroup = card.querySelector<HTMLInputElement>(".room-bar-service-type-group");
-  const barHostessCountGroup = card.querySelector<HTMLInputElement>(".room-bar-hostess-count-group");
-  const barSpecialOrderInput = card.querySelector<HTMLInputElement>(".room-bar-special-order");
-  const hostDutiesGroup = card.querySelector<HTMLInputElement>(".room-host-duties-group");
-  const hostDutiesCountGroup = card.querySelector<HTMLInputElement>(".room-host-duties-count-group");
+  const barToggleGroup = card.querySelector<HTMLInputElement>(".room-bar-toggle-group")!;
+  const barDetails = card.querySelector<HTMLInputElement>(".room-bar-details")!;
+  const barDrinkGroup = card.querySelector<HTMLInputElement>(".room-bar-drink-group")!;
+  const barServiceTypeGroup = card.querySelector<HTMLInputElement>(".room-bar-service-type-group")!;
+  const barHostessCountGroup = card.querySelector<HTMLInputElement>(".room-bar-hostess-count-group")!;
+  const barSpecialOrderInput = card.querySelector<HTMLInputElement>(".room-bar-special-order")!;
+  const hostDutiesGroup = card.querySelector<HTMLInputElement>(".room-host-duties-group")!;
+  const hostDutiesCountGroup = card.querySelector<HTMLInputElement>(".room-host-duties-count-group")!;
 
-  initPillToggleEl(card.querySelector<HTMLInputElement>(".room-technical-services-group"));
-  card.querySelector<HTMLInputElement>(".room-technical-services-group").addEventListener("click", () => {
+  initPillToggleEl(card.querySelector<HTMLInputElement>(".room-technical-services-group")!);
+  card.querySelector<HTMLInputElement>(".room-technical-services-group")!.addEventListener("click", () => {
     autoSaveActivityForm();
   });
 
@@ -701,13 +703,13 @@ function addReservationCard(reservationData = null) {
 
   initPillToggleEl(hostDutiesGroup);
   hostDutiesGroup.addEventListener("click", () => {
-    const anyActive = hostDutiesGroup.querySelectorAll<HTMLInputElement>(".pill-toggle.active").length > 0;
+    const anyActive = hostDutiesGroup.querySelectorAll<HTMLInputElement>(".pill-toggle.active")!.length > 0;
     hostDutiesCountGroup.style.display = anyActive ? "flex" : "none";
     autoSaveActivityForm();
   });
 
   if (reservationData) {
-    setPillGroupActiveEl(card.querySelector<HTMLInputElement>(".room-technical-services-group"), reservationData.technical_services || []);
+    setPillGroupActiveEl(card.querySelector<HTMLInputElement>(".room-technical-services-group")!, reservationData.technical_services || []);
 
     const barService = reservationData.bar_service || {
       active: false,
@@ -717,7 +719,7 @@ function addReservationCard(reservationData = null) {
       special_order: ""
     };
     if (barService.active) {
-      barToggleGroup.querySelector<HTMLInputElement>(".pill-toggle").classList.add("active");
+      barToggleGroup.querySelector<HTMLInputElement>(".pill-toggle")!.classList.add("active");
       barDetails.style.display = "block";
     }
     setExclusivePillValueEl(barDrinkGroup, barService.drink_type || "");
@@ -726,27 +728,27 @@ function addReservationCard(reservationData = null) {
       barService.service_type === "Service d'hôtesses" || barService.service_type === "Distribution de breuvages et nettoyage de coupes"
         ? "flex"
         : "none";
-    card.querySelector<HTMLInputElement>(".room-bar-hostess-count").value = barService.hostess_count || 1;
+    card.querySelector<HTMLInputElement>(".room-bar-hostess-count")!.value = barService.hostess_count || 1;
     barSpecialOrderInput.value = barService.special_order || "";
 
     const hostDuties = reservationData.host_duties || { duties: [], hostess_count: 0 };
     setPillGroupActiveEl(hostDutiesGroup, hostDuties.duties || []);
     hostDutiesCountGroup.style.display = (hostDuties.duties || []).length > 0 ? "flex" : "none";
-    card.querySelector<HTMLInputElement>(".room-host-duties-count").value = hostDuties.hostess_count || 1;
+    card.querySelector<HTMLInputElement>(".room-host-duties-count")!.value = hostDuties.hostess_count || 1;
   }
 
   // Wire this card's own Personnel requis / Services / Autres frais buttons and lists
-  const staffList = card.querySelector<HTMLInputElement>(".room-staff-list");
-  const servicesList = card.querySelector<HTMLInputElement>(".room-services-list");
-  const feesList = card.querySelector<HTMLInputElement>(".room-fees-list");
-  card.querySelector<HTMLInputElement>(".room-add-staff-btn").addEventListener("click", () => addStaffRow(staffList));
-  card.querySelector<HTMLInputElement>(".room-add-service-btn").addEventListener("click", () => addServiceRow(servicesList));
-  card.querySelector<HTMLInputElement>(".room-add-fee-btn").addEventListener("click", () => addFeeRow(feesList));
+  const staffList = card.querySelector<HTMLInputElement>(".room-staff-list")!;
+  const servicesList = card.querySelector<HTMLInputElement>(".room-services-list")!;
+  const feesList = card.querySelector<HTMLInputElement>(".room-fees-list")!;
+  card.querySelector<HTMLInputElement>(".room-add-staff-btn")!.addEventListener("click", () => addStaffRow(staffList));
+  card.querySelector<HTMLInputElement>(".room-add-service-btn")!.addEventListener("click", () => addServiceRow(servicesList));
+  card.querySelector<HTMLInputElement>(".room-add-fee-btn")!.addEventListener("click", () => addFeeRow(feesList));
 
   if (reservationData) {
-    (reservationData.staff || []).forEach(s => addStaffRow(staffList, s.salary_id, s.count, s.hours, s.overtime_hours, s.auto_generated));
-    (reservationData.services || []).forEach(s => addServiceRow(servicesList, s.service_id, s.count, s.hours, s.auto_generated));
-    (reservationData.fees || []).forEach(f => addFeeRow(feesList, f.description, f.amount, f.gl_account_code, f.auto_generated));
+    (reservationData.staff || []).forEach((s: any) => addStaffRow(staffList, s.salary_id, s.count, s.hours, s.overtime_hours, s.auto_generated));
+    (reservationData.services || []).forEach((s: any) => addServiceRow(servicesList, s.service_id, s.count, s.hours, s.auto_generated));
+    (reservationData.fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, f.gl_account_code, f.auto_generated));
   }
 
   return card;
@@ -754,14 +756,14 @@ function addReservationCard(reservationData = null) {
 
 // Reads all currently visible reservation cards into an act.reservations[]-shaped array
 function collectReservationsFromForm() {
-  const cards = document.querySelectorAll<HTMLInputElement>("#form-activity-reservations .reservation-card");
+  const cards = document.querySelectorAll<HTMLInputElement>("#form-activity-reservations .reservation-card")!;
   return Array.from(cards).map(card => {
     const uid = card.id;
-    const roomName = card.querySelector<HTMLInputElement>(".searchable-select-value").value;
+    const roomName = card.querySelector<HTMLInputElement>(".searchable-select-value")!.value;
     const isOther = roomName === OTHER_ROOM_VALUE;
 
-    const paramSelect = card.querySelector<HTMLInputElement>(".room-tariff-parameter");
-    const ctSelect = card.querySelector<HTMLInputElement>(".room-tariff-client-type");
+    const paramSelect = card.querySelector<HTMLInputElement>(".room-tariff-parameter")!;
+    const ctSelect = card.querySelector<HTMLInputElement>(".room-tariff-client-type")!;
     const paramVal = paramSelect ? paramSelect.value : "";
     const clientTypeVal = ctSelect ? ctSelect.value : "";
     let tariffId = "",
@@ -770,17 +772,17 @@ function collectReservationsFromForm() {
       tariffGlAccountCode = "";
 
     if (paramVal === "__custom__") {
-      tariffDescription = card.querySelector<HTMLInputElement>(".room-tariff-custom-desc").value.trim();
-      tariffAmount = parseFloat(card.querySelector<HTMLInputElement>(".room-tariff-custom-amount").value) || 0;
+      tariffDescription = card.querySelector<HTMLInputElement>(".room-tariff-custom-desc")!.value.trim();
+      tariffAmount = parseFloat(card.querySelector<HTMLInputElement>(".room-tariff-custom-amount")!.value) || 0;
     } else if (paramVal && clientTypeVal && !isOther) {
       const roomConfig = appState.settings.rooms.find(r => r.name === roomName);
       const slots = collectSlotsFromCard(card);
       const firstSlotDate = slots.length ? [...slots].map(s => s.date).sort()[0] : "";
       const grid = roomConfig ? getActivePricingGrid(roomConfig, firstSlotDate) : null;
       if (grid) {
-        const param = grid.parameters.find(p => p.id === paramVal);
-        const ct = grid.client_types.find(c => c.id === clientTypeVal);
-        const cell = grid.cells.find(c => c.parameter_id === paramVal && c.client_type_id === clientTypeVal);
+        const param = grid.parameters.find((p: any) => p.id === paramVal);
+        const ct = grid.client_types.find((c: any) => c.id === clientTypeVal);
+        const cell = grid.cells.find((c: any) => c.parameter_id === paramVal && c.client_type_id === clientTypeVal);
         if (param && ct) {
           tariffId = `${paramVal}::${clientTypeVal}`;
           tariffDescription = grid.parameters.length > 1 ? `${param.name} - ${ct.name}` : ct.name;
@@ -790,39 +792,39 @@ function collectReservationsFromForm() {
       }
     }
 
-    const installEnabled = card.querySelector<HTMLInputElement>(".reservation-install-toggle").classList.contains("active");
-    const dismantleEnabled = card.querySelector<HTMLInputElement>(".reservation-dismantle-toggle").classList.contains("active");
+    const installEnabled = card.querySelector<HTMLInputElement>(".reservation-install-toggle")!.classList.contains("active");
+    const dismantleEnabled = card.querySelector<HTMLInputElement>(".reservation-dismantle-toggle")!.classList.contains("active");
 
-    const barToggleActive = card.querySelector<HTMLInputElement>(".room-bar-toggle-group .pill-toggle.active") !== null;
-    const barDrinkType = getExclusivePillValueEl(card.querySelector<HTMLInputElement>(".room-bar-drink-group"));
-    const barServiceType = getExclusivePillValueEl(card.querySelector<HTMLInputElement>(".room-bar-service-type-group"));
-    const barHostessCount = parseInt(card.querySelector<HTMLInputElement>(".room-bar-hostess-count").value, 10) || 0;
-    const barSpecialOrder = card.querySelector<HTMLInputElement>(".room-bar-special-order").value.trim();
-    const hostDutiesSelected = Array.from(card.querySelectorAll<HTMLInputElement>(".room-host-duties-group .pill-toggle.active")).map(b => b.dataset.value);
-    const hostDutiesCount = parseInt(card.querySelector<HTMLInputElement>(".room-host-duties-count").value, 10) || 0;
+    const barToggleActive = card.querySelector<HTMLInputElement>(".room-bar-toggle-group .pill-toggle.active")! !== null;
+    const barDrinkType = getExclusivePillValueEl(card.querySelector<HTMLInputElement>(".room-bar-drink-group")!);
+    const barServiceType = getExclusivePillValueEl(card.querySelector<HTMLInputElement>(".room-bar-service-type-group")!);
+    const barHostessCount = parseInt(card.querySelector<HTMLInputElement>(".room-bar-hostess-count")!.value, 10) || 0;
+    const barSpecialOrder = card.querySelector<HTMLInputElement>(".room-bar-special-order")!.value.trim();
+    const hostDutiesSelected = Array.from(card.querySelectorAll<HTMLInputElement>(".room-host-duties-group .pill-toggle.active")!).map(b => b.dataset.value);
+    const hostDutiesCount = parseInt(card.querySelector<HTMLInputElement>(".room-host-duties-count")!.value, 10) || 0;
 
     return {
       id: card.dataset.reservationId,
       room_name: roomName,
-      room_other_details: isOther ? card.querySelector<HTMLInputElement>(".room-other-details-input").value.trim() : "",
+      room_other_details: isOther ? card.querySelector<HTMLInputElement>(".room-other-details-input")!.value.trim() : "",
       tariff_id: tariffId,
       tariff_description: tariffDescription,
       tariff_amount: tariffAmount,
       tariff_gl_account_code: tariffGlAccountCode,
       install: {
         enabled: installEnabled,
-        date: installEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-install-date`).value : "",
-        start_time: installEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-install-start-time`).value : "",
-        end_time: installEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-install-end-time`).value : ""
+        date: installEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-install-date`)!.value : "",
+        start_time: installEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-install-start-time`)!.value : "",
+        end_time: installEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-install-end-time`)!.value : ""
       },
       dismantle: {
         enabled: dismantleEnabled,
-        date: dismantleEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-dismantle-date`).value : "",
-        start_time: dismantleEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-dismantle-start-time`).value : "",
-        end_time: dismantleEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-dismantle-end-time`).value : ""
+        date: dismantleEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-dismantle-date`)!.value : "",
+        start_time: dismantleEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-dismantle-start-time`)!.value : "",
+        end_time: dismantleEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-dismantle-end-time`)!.value : ""
       },
       slots: collectSlotsFromCard(card),
-      technical_services: Array.from(card.querySelectorAll<HTMLInputElement>(".room-technical-services-group .pill-toggle.active")).map(b => b.dataset.value),
+      technical_services: Array.from(card.querySelectorAll<HTMLInputElement>(".room-technical-services-group .pill-toggle.active")!).map(b => b.dataset.value),
       bar_service: {
         active: barToggleActive,
         drink_type: barToggleActive ? barDrinkType : "",
@@ -847,8 +849,8 @@ function collectReservationsFromForm() {
 
 // Aggregate {start, end} across every créneau of every réservation (min/max), used for the
 // activity's top-level date_start/date_end (fiscal year, filtering, calendar, sorting).
-function getAggregateEventDates(reservations) {
-  const allDates = reservations.flatMap(r => (r.slots || []).map(s => s.date)).filter(Boolean);
+function getAggregateEventDates(reservations: any[]) {
+  const allDates: string[] = reservations.flatMap((r: any) => (r.slots || []).map((s: any) => s.date)).filter(Boolean);
   return {
     date_start: allDates.length ? allDates.reduce((min, d) => (d < min ? d : min)) : "",
     date_end: allDates.length ? allDates.reduce((max, d) => (d > max ? d : max)) : ""
@@ -888,12 +890,12 @@ function addStaffRow(container: HTMLElement, salaryId = "", count = 1, hours = 0
   );
 
   const row = el(rowId);
-  row.querySelector<HTMLInputElement>(".delete-staff-row-btn").addEventListener("click", () => {
+  row.querySelector<HTMLInputElement>(".delete-staff-row-btn")!.addEventListener("click", () => {
     row.remove();
     updateSubmissionFinancialSummary();
     autoSaveActivityForm();
   });
-  row.querySelectorAll<HTMLInputElement>("select, input").forEach(el => {
+  row.querySelectorAll<HTMLInputElement>("select, input")!.forEach(el => {
     el.addEventListener("input", updateSubmissionFinancialSummary);
     el.addEventListener("change", updateSubmissionFinancialSummary);
   });
@@ -901,15 +903,15 @@ function addStaffRow(container: HTMLElement, salaryId = "", count = 1, hours = 0
 }
 
 function updateStaffRowSubtotal(row: HTMLElement) {
-  const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select").value;
-  const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input").value, 10) || 0;
-  const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input").value) || 0;
-  const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input").value) || 0;
+  const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
+  const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
+  const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
+  const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
   const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
   const dateStr = getAggregateEventDates(collectReservationsFromForm()).date_start;
   const rate = salary ? getActiveSalaryRate(salary, dateStr) : 0;
   const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, dateStr) : 0;
-  row.querySelector<HTMLInputElement>(".staff-subtotal-display").textContent = formatCurrency(rate * hours * count + overtimeRate * overtimeHours * count);
+  row.querySelector<HTMLInputElement>(".staff-subtotal-display")!.textContent = formatCurrency(rate * hours * count + overtimeRate * overtimeHours * count);
 }
 
 // Adds one service row (a pre-configured fixed or hourly fee, from the Services settings tab)
@@ -941,12 +943,12 @@ function addServiceRow(container: HTMLElement, serviceId = "", count = 1, hours 
   );
 
   const row = el(rowId);
-  row.querySelector<HTMLInputElement>(".delete-service-row-btn").addEventListener("click", () => {
+  row.querySelector<HTMLInputElement>(".delete-service-row-btn")!.addEventListener("click", () => {
     row.remove();
     updateSubmissionFinancialSummary();
     autoSaveActivityForm();
   });
-  row.querySelectorAll<HTMLInputElement>("select, input").forEach(el => {
+  row.querySelectorAll<HTMLInputElement>("select, input")!.forEach(el => {
     el.addEventListener("input", updateSubmissionFinancialSummary);
     el.addEventListener("change", updateSubmissionFinancialSummary);
   });
@@ -954,22 +956,22 @@ function addServiceRow(container: HTMLElement, serviceId = "", count = 1, hours 
 }
 
 function updateServiceRowSubtotal(row: HTMLElement) {
-  const serviceId = row.querySelector<HTMLInputElement>(".service-select").value;
-  const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input").value, 10) || 0;
-  const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input").value) || 0;
+  const serviceId = row.querySelector<HTMLInputElement>(".service-select")!.value;
+  const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0;
+  const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
   const service = (appState.settings.services || []).find(s => s.id === serviceId);
   const dateStr = getAggregateEventDates(collectReservationsFromForm()).date_start;
   const rate = service ? getActiveServiceRate(service, dateStr) : 0;
-  const hoursInput = row.querySelector<HTMLInputElement>(".service-hours-input");
+  const hoursInput = row.querySelector<HTMLInputElement>(".service-hours-input")!;
   const isHourly = service && service.type === "hourly";
   hoursInput.style.visibility = isHourly ? "visible" : "hidden";
   const subtotal = isHourly ? rate * hours * count : rate * count;
-  row.querySelector<HTMLInputElement>(".service-subtotal-display").textContent = formatCurrency(subtotal);
+  row.querySelector<HTMLInputElement>(".service-subtotal-display")!.textContent = formatCurrency(subtotal);
 }
 
 // Adds one "autre frais" row (description + montant + compte GL optionnel) to `container`
 // (a room card's own .room-fees-list).
-function addFeeRow(container: HTMLElement, description = "", amount = "", glAccountCode = "", autoGenerated = false) {
+function addFeeRow(container: HTMLElement, description = "", amount: string | number = "", glAccountCode = "", autoGenerated = false) {
   const rowId = generateUid("fee-row");
 
   container.insertAdjacentHTML(
@@ -989,36 +991,36 @@ function addFeeRow(container: HTMLElement, description = "", amount = "", glAcco
   );
 
   const row = el(rowId);
-  row.querySelector<HTMLInputElement>(".delete-fee-row-btn").addEventListener("click", () => {
+  row.querySelector<HTMLInputElement>(".delete-fee-row-btn")!.addEventListener("click", () => {
     row.remove();
     updateSubmissionFinancialSummary();
     autoSaveActivityForm();
   });
-  row.querySelectorAll<HTMLInputElement>("input, select").forEach(el => el.addEventListener("input", updateSubmissionFinancialSummary));
+  row.querySelectorAll<HTMLInputElement>("input, select")!.forEach(el => el.addEventListener("input", updateSubmissionFinancialSummary));
 }
 
 // When a room is added to the activity, auto-add its linked staff/fees into that room's own
 // (freshly created, empty) card — no duplicate risk since the card was just built.
-function autoAddLinkedStaffAndFees(card: HTMLElement, roomName) {
-  const room = appState.settings.rooms.find(r => r.name === roomName);
+function autoAddLinkedStaffAndFees(card: HTMLElement, roomName: string) {
+  const room = appState.settings.rooms.find((r: any) => r.name === roomName);
   if (!room) return;
 
-  const staffList = card.querySelector<HTMLInputElement>(".room-staff-list");
-  (room.linked_staff || []).forEach(s => addStaffRow(staffList, s.salary_id, s.count, 0, 0, true));
+  const staffList = card.querySelector<HTMLInputElement>(".room-staff-list")!;
+  (room.linked_staff || []).forEach((s: any) => addStaffRow(staffList, s.salary_id, s.count, 0, 0, true));
 
-  const feesList = card.querySelector<HTMLInputElement>(".room-fees-list");
-  (room.linked_fees || []).forEach(f => addFeeRow(feesList, f.description, f.amount, f.gl_account_code, true));
+  const feesList = card.querySelector<HTMLInputElement>(".room-fees-list")!;
+  (room.linked_fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, f.gl_account_code, true));
 }
 
 // Collects the Personnel requis rows from one reservation card into an act.reservations[].staff[]-shaped array
 function collectStaffFromForm(card: HTMLElement) {
-  return Array.from(card.querySelectorAll<HTMLInputElement>(".room-staff-list .distribution-row"))
+  return Array.from(card.querySelectorAll<HTMLInputElement>(".room-staff-list .distribution-row")!)
     .map(row => ({
       id: row.dataset.id || generateUid("staff"),
-      salary_id: row.querySelector<HTMLInputElement>(".staff-salary-select").value,
-      count: parseInt(row.querySelector<HTMLInputElement>(".staff-count-input").value, 10) || 0,
-      hours: parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input").value) || 0,
-      overtime_hours: parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input").value) || 0,
+      salary_id: row.querySelector<HTMLInputElement>(".staff-salary-select")!.value,
+      count: parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0,
+      hours: parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0,
+      overtime_hours: parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0,
       auto_generated: row.dataset.autoGenerated === "1"
     }))
     .filter(s => s.salary_id);
@@ -1026,12 +1028,12 @@ function collectStaffFromForm(card: HTMLElement) {
 
 // Collects the Services rows from one reservation card into an act.reservations[].services[]-shaped array
 function collectServicesFromForm(card: HTMLElement) {
-  return Array.from(card.querySelectorAll<HTMLInputElement>(".room-services-list .distribution-row"))
+  return Array.from(card.querySelectorAll<HTMLInputElement>(".room-services-list .distribution-row")!)
     .map(row => ({
       id: row.dataset.id || generateUid("service"),
-      service_id: row.querySelector<HTMLInputElement>(".service-select").value,
-      count: parseInt(row.querySelector<HTMLInputElement>(".service-count-input").value, 10) || 0,
-      hours: parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input").value) || 0,
+      service_id: row.querySelector<HTMLInputElement>(".service-select")!.value,
+      count: parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0,
+      hours: parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0,
       auto_generated: row.dataset.autoGenerated === "1"
     }))
     .filter(s => s.service_id);
@@ -1039,12 +1041,12 @@ function collectServicesFromForm(card: HTMLElement) {
 
 // Collects the Autres frais rows from one reservation card into an act.reservations[].fees[]-shaped array
 function collectFeesFromForm(card: HTMLElement) {
-  return Array.from(card.querySelectorAll<HTMLInputElement>(".room-fees-list .distribution-row"))
+  return Array.from(card.querySelectorAll<HTMLInputElement>(".room-fees-list .distribution-row")!)
     .map(row => ({
       id: row.dataset.id || generateUid("fee"),
-      description: row.querySelector<HTMLInputElement>(".fee-desc-input").value.trim(),
-      amount: parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input").value) || 0,
-      gl_account_code: row.querySelector<HTMLInputElement>(".fee-gl-select").value,
+      description: row.querySelector<HTMLInputElement>(".fee-desc-input")!.value.trim(),
+      amount: parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input")!.value) || 0,
+      gl_account_code: row.querySelector<HTMLInputElement>(".fee-gl-select")!.value,
       auto_generated: row.dataset.autoGenerated === "1"
     }))
     .filter(f => f.description);

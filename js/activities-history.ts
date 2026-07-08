@@ -31,8 +31,8 @@ import { fillActivityFormFields, renderActivityStateBar } from "./activities-for
 
 // Groups every autosave from one continuous edit into a single undo step (see
 // activities-financials.js's ACTIVITY_UNDO_DEBOUNCE_MS doc comment for why).
-function scheduleActivityUndoSnapshot(idx) {
-  clearTimeout(activityUndoSnapshotTimer);
+function scheduleActivityUndoSnapshot(idx: number) {
+  clearTimeout(activityUndoSnapshotTimer ?? undefined);
   setActivityUndoSnapshotTimer(
     setTimeout(() => {
       const act = appState.activities[idx];
@@ -44,7 +44,7 @@ function scheduleActivityUndoSnapshot(idx) {
 }
 
 // Records the activity's current state onto the undo stack (Ctrl+Z).
-function pushActivityUndoSnapshot(act) {
+function pushActivityUndoSnapshot(act: any) {
   activitiesState.undoStack.push(JSON.parse(JSON.stringify(act)));
   if (activitiesState.undoStack.length > ACTIVITY_UNDO_HISTORY_LIMIT) {
     activitiesState.undoStack.shift();
@@ -53,22 +53,22 @@ function pushActivityUndoSnapshot(act) {
 
 // Replaces the open activity's record with `snapshot`, then rebuilds the whole form from it
 // (same rebuild openActivityDrawer does), without touching the undo/redo stacks themselves.
-function restoreActivitySnapshot(snapshot) {
-  const idx = appState.activities.findIndex(a => a.id === snapshot.id);
+function restoreActivitySnapshot(snapshot: any) {
+  const idx = appState.activities.findIndex((a: any) => a.id === snapshot.id);
   if (idx === -1) return;
 
   // Cancel any pending debounced snapshot from the edit that's being undone/redone away, so it
   // can't fire afterwards and silently push a stale state back onto the stack.
-  clearTimeout(activityUndoSnapshotTimer);
+  clearTimeout(activityUndoSnapshotTimer ?? undefined);
 
   appState.activities[idx] = JSON.parse(JSON.stringify(snapshot));
 
-  document.getElementById("activity-drawer-title").textContent =
+  document.getElementById("activity-drawer-title")!.textContent =
     appState.activities[idx].name && appState.activities[idx].name.trim() !== ""
       ? appState.activities[idx].name
       : `Activité ${appState.activities[idx].id}`;
-  document.getElementById("form-activity-reservations").innerHTML = "";
-  document.getElementById("form-distribution-list").innerHTML = "";
+  document.getElementById("form-activity-reservations")!.innerHTML = "";
+  document.getElementById("form-distribution-list")!.innerHTML = "";
   fillActivityFormFields(appState.activities[idx]);
   renderActivityStateBar(appState.activities[idx]);
 
@@ -97,7 +97,7 @@ function redoActivityFormChange() {
   showToast("Modification rétablie.", "info", 2000);
 }
 
-function submitActivityForm(e) {
+function submitActivityForm(e?: Event) {
   if (e) e.preventDefault();
 
   const internalId = (document.getElementById("form-activity-internal-id") as HTMLInputElement).value;
@@ -128,7 +128,7 @@ function initActivitiesSort() {
 
   headers.forEach(th => {
     th.addEventListener("click", () => {
-      const sortKey = th.getAttribute("data-sort");
+      const sortKey = th.getAttribute("data-sort") || "";
       if (activitiesState.sortKey === sortKey) {
         activitiesState.sortOrder = activitiesState.sortOrder === "asc" ? "desc" : "asc";
       } else {
@@ -173,7 +173,7 @@ function updateFormDatesHelper() {
 
 // Returns true if two "HH:MM" time ranges on the same day overlap. A missing start/end time is
 // treated as spanning the whole day (conservative: flags a conflict rather than missing one).
-function timeRangesOverlap(startA, endA, startB, endB) {
+function timeRangesOverlap(startA: string, endA: string, startB: string, endB: string) {
   const a1 = startA || "00:00";
   const a2 = endA || "23:59";
   const b1 = startB || "00:00";
@@ -183,8 +183,10 @@ function timeRangesOverlap(startA, endA, startB, endB) {
 
 // Flattens a reservation into a list of {date, start_time, end_time} occupied ranges: its
 // créneaux plus its montage/démontage windows (a room is unavailable during setup/teardown too).
-function getReservationOccupiedRanges(reservation) {
-  const ranges = (reservation.slots || []).filter(s => s.date).map(s => ({ date: s.date, start_time: s.start_time, end_time: s.end_time }));
+function getReservationOccupiedRanges(reservation: any) {
+  const ranges = (reservation.slots || [])
+    .filter((s: any) => s.date)
+    .map((s: any) => ({ date: s.date, start_time: s.start_time, end_time: s.end_time }));
   if (reservation.install && reservation.install.enabled && reservation.install.date) {
     ranges.push({ date: reservation.install.date, start_time: reservation.install.start_time, end_time: reservation.install.end_time });
   }
@@ -202,25 +204,25 @@ function getReservationOccupiedRanges(reservation) {
 // activity's reservations, and displays a warning banner listing any room booked by both on an
 // overlapping date/time. Runs on every form change that can affect scheduling (room, créneaux,
 // montage/démontage).
-function checkRoomReservationConflicts(reservations) {
+function checkRoomReservationConflicts(reservations: any[]) {
   const bannerEl = document.getElementById("form-activity-room-conflicts");
   if (!bannerEl) return;
 
   const currentId = (document.getElementById("form-activity-internal-id") as HTMLInputElement).value;
-  const conflicts = []; // {roomName, otherActivityName}
+  const conflicts: { roomName: string; otherActivityName: string }[] = [];
 
-  reservations.forEach(res => {
+  reservations.forEach((res: any) => {
     if (!res.room_name || res.room_name === OTHER_ROOM_VALUE) return;
     const myRanges = getReservationOccupiedRanges(res);
     if (myRanges.length === 0) return;
 
-    appState.activities.forEach(other => {
+    appState.activities.forEach((other: any) => {
       if (other.deleted || other.id === currentId) return;
-      (other.reservations || []).forEach(otherRes => {
+      (other.reservations || []).forEach((otherRes: any) => {
         if (otherRes.room_name !== res.room_name) return;
         const otherRanges = getReservationOccupiedRanges(otherRes);
-        const overlaps = myRanges.some(mr =>
-          otherRanges.some(or => mr.date === or.date && timeRangesOverlap(mr.start_time, mr.end_time, or.start_time, or.end_time))
+        const overlaps = myRanges.some((mr: any) =>
+          otherRanges.some((or: any) => mr.date === or.date && timeRangesOverlap(mr.start_time, mr.end_time, or.start_time, or.end_time))
         );
         if (overlaps && !conflicts.some(c => c.roomName === res.room_name && c.otherActivityName === other.name)) {
           conflicts.push({ roomName: res.room_name, otherActivityName: other.name || "(sans nom)" });
@@ -249,7 +251,7 @@ function checkRoomReservationConflicts(reservations) {
   `;
 }
 
-function getDaysOfWeekInRange(startDateStr, endDateStr) {
+function getDaysOfWeekInRange(startDateStr: string, endDateStr: string) {
   if (!startDateStr || !endDateStr) return "";
 
   const start = parseLocalDateStr(startDateStr);
@@ -263,7 +265,7 @@ function getDaysOfWeekInRange(startDateStr, endDateStr) {
   const dayNames = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
   const uniqueDays = new Set<number>();
-  let current = new Date(start);
+  const current = new Date(start);
 
   // Limit loop to prevent freezing if dates are extremely far apart (e.g. max 31 days)
   const maxIterations = 31;
@@ -293,7 +295,7 @@ function getDaysOfWeekInRange(startDateStr, endDateStr) {
 
 // --- Activity Versioning Logic ---
 
-function formatTimestampToFrench(isoString) {
+function formatTimestampToFrench(isoString: string) {
   if (!isoString) return "";
   const d = new Date(isoString);
   if (isNaN(d.getTime())) return "";
@@ -308,7 +310,7 @@ function formatTimestampToFrench(isoString) {
   return `${day}/${month}/${year} à ${hours}h${minutes}:${seconds}`;
 }
 
-async function saveActivityVersion(act) {
+async function saveActivityVersion(act: any) {
   if (!act || !act.id) return;
   // Deep copy the activity object to prevent reference leaks
   const activityData = JSON.parse(JSON.stringify(act));
@@ -332,11 +334,11 @@ async function saveActivityVersion(act) {
   }
 }
 
-function computeActivityDiff(oldAct, newAct) {
-  const diffs = [];
+function computeActivityDiff(oldAct: any, newAct: any) {
+  const diffs: { label: string; oldVal: string; newVal: string }[] = [];
 
   // Helper to add diff
-  function addDiff(label, oldVal, newVal) {
+  function addDiff(label: string, oldVal: any, newVal: any) {
     const cleanOld = String(oldVal === undefined || oldVal === null ? "" : oldVal).trim();
     const cleanNew = String(newVal === undefined || newVal === null ? "" : newVal).trim();
     if (cleanOld !== cleanNew) {
@@ -351,9 +353,9 @@ function computeActivityDiff(oldAct, newAct) {
   addDiff("Département", oldAct.department, newAct.department);
 
   // Event Type mapping
-  const getEventLabel = val => {
+  const getEventLabel = (val: string) => {
     if (!val) return "";
-    const found = EVENT_TYPES.find(t => t.value === val);
+    const found = EVENT_TYPES.find((t: any) => t.value === val);
     return found ? found.label : val;
   };
   addDiff("Type d'événement", getEventLabel(oldAct.event_type), getEventLabel(newAct.event_type));
@@ -361,7 +363,7 @@ function computeActivityDiff(oldAct, newAct) {
     addDiff("Autre type d'événement", oldAct.event_type_other, newAct.event_type_other);
   }
 
-  const getClientTypeLabel = val => {
+  const getClientTypeLabel = (val: string) => {
     if (val === "interne") return "Interne";
     if (val === "externe") return "Externe";
     return val || "";
@@ -372,7 +374,7 @@ function computeActivityDiff(oldAct, newAct) {
   addDiff("Description", oldAct.description, newAct.description);
   addDiff("Statut de l'activité", getActivityStateLabel(oldAct.state), getActivityStateLabel(newAct.state));
 
-  const getModeLabel = val => {
+  const getModeLabel = (val: string) => {
     if (val === "estimation") return "Estimation";
     if (val === "soumission") return "Soumission";
     return val || "";
@@ -396,10 +398,10 @@ function computeActivityDiff(oldAct, newAct) {
   addDiff("Resp. Activité: Courriel", oldManager.email, newManager.email);
 
   // 4. Reservations summary
-  const getReservationsSummary = act => {
+  const getReservationsSummary = (act: any) => {
     if (!act.reservations || act.reservations.length === 0) return "Aucune salle";
     return act.reservations
-      .map(r => {
+      .map((r: any) => {
         const room = r.room_name;
         const slotsCount = r.slots ? r.slots.length : 0;
         return `${room} (${slotsCount} créneau${slotsCount > 1 ? "x" : ""})`;
@@ -409,10 +411,10 @@ function computeActivityDiff(oldAct, newAct) {
   addDiff("Réservations de salles", getReservationsSummary(oldAct), getReservationsSummary(newAct));
 
   // 5. Distributions summary
-  const getDistributionsSummary = act => {
+  const getDistributionsSummary = (act: any) => {
     if (!act.distributions || act.distributions.length === 0) return "Aucune ventilation";
     return act.distributions
-      .map(d => {
+      .map((d: any) => {
         return `${d.account_code} : ${formatCurrency(d.amount)}${d.reference ? ` (${d.reference})` : ""}`;
       })
       .join(" | ");
@@ -422,7 +424,7 @@ function computeActivityDiff(oldAct, newAct) {
   return diffs;
 }
 
-async function loadAndRenderActivityHistory(activityId) {
+async function loadAndRenderActivityHistory(activityId: string) {
   const container = document.getElementById("activity-history-list");
   if (!container) return;
 
@@ -431,7 +433,7 @@ async function loadAndRenderActivityHistory(activityId) {
   try {
     const versions = await getActivityVersionsFromDb(activityId);
     // Sort versions by timestamp descending (most recent first)
-    versions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    versions.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     if (versions.length === 0) {
       container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 4px;">Aucune version enregistrée pour cette activité.</div>`;
@@ -439,10 +441,10 @@ async function loadAndRenderActivityHistory(activityId) {
     }
 
     // Fetch the current version of the activity
-    const currentAct = appState.activities.find(a => a.id === activityId);
+    const currentAct = appState.activities.find((a: any) => a.id === activityId);
 
     let html = "";
-    versions.forEach((v, index) => {
+    versions.forEach((v: any, index: number) => {
       const dateStr = formatTimestampToFrench(v.timestamp);
       const stateLabel = getActivityStateLabel(v.state);
       const isCurrent = index === 0 ? " <span style='color: var(--success-text); font-weight: bold;'>(Actuelle)</span>" : "";
@@ -508,7 +510,7 @@ async function loadAndRenderActivityHistory(activityId) {
           }
         });
 
-        item.classList.toggle("expanded");
+        item!.classList.toggle("expanded");
       });
     });
 
@@ -519,7 +521,7 @@ async function loadAndRenderActivityHistory(activityId) {
       if (btn) {
         btn.addEventListener("click", e => {
           e.stopPropagation(); // prevent header toggle
-          const ver = versions.find(x => x.versionId === vId);
+          const ver = versions.find((x: any) => x.versionId === vId);
           if (
             ver &&
             confirm(
@@ -531,17 +533,17 @@ async function loadAndRenderActivityHistory(activityId) {
         });
       }
     });
-  } catch (e) {
+  } catch (e: any) {
     logError("activities-history", "chargement de l'historique des versions", e);
     container.innerHTML = `<div style="color: var(--danger-text); font-size: 0.85rem; padding: 4px;">Erreur lors du chargement de l'historique : ${e.message}</div>`;
   }
 }
 
-function restoreActivityVersion(versionRecord) {
+function restoreActivityVersion(versionRecord: any) {
   const currentId = (document.getElementById("form-activity-internal-id") as HTMLInputElement).value;
   if (!currentId) return;
 
-  const idx = appState.activities.findIndex(a => a.id === currentId);
+  const idx = appState.activities.findIndex((a: any) => a.id === currentId);
   if (idx === -1) return;
 
   // Restore the activity data

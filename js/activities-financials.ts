@@ -48,11 +48,11 @@ function updateSubmissionFinancialSummary() {
   let staffTotal = 0;
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
     updateStaffRowSubtotal(row);
-    const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select").value;
-    const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input").value, 10) || 0;
-    const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input").value) || 0;
-    const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input").value) || 0;
-    const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+    const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
+    const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
+    const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
+    const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
+    const salary = (appState.settings.salaries || []).find((s: any) => s.id === salaryId);
     const rate = salary ? getActiveSalaryRate(salary, eventDateStart) : 0;
     const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart) : 0;
     staffTotal += rate * hours * count + overtimeRate * overtimeHours * count;
@@ -61,17 +61,17 @@ function updateSubmissionFinancialSummary() {
   let servicesTotal = 0;
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
     updateServiceRowSubtotal(row);
-    const serviceId = row.querySelector<HTMLInputElement>(".service-select").value;
-    const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input").value, 10) || 0;
-    const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input").value) || 0;
-    const service = (appState.settings.services || []).find(s => s.id === serviceId);
+    const serviceId = row.querySelector<HTMLInputElement>(".service-select")!.value;
+    const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0;
+    const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
+    const service = (appState.settings.services || []).find((s: any) => s.id === serviceId);
     const rate = service ? getActiveServiceRate(service, eventDateStart) : 0;
     servicesTotal += service && service.type === "hourly" ? rate * hours * count : rate * count;
   });
 
   let feesTotal = 0;
   document.querySelectorAll("#form-activity-reservations .room-fees-list .distribution-row").forEach(row => {
-    feesTotal += parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input").value) || 0;
+    feesTotal += parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input")!.value) || 0;
   });
 
   const subtotal = roomsTotal + staffTotal + servicesTotal + feesTotal;
@@ -94,7 +94,7 @@ function updateSubmissionFinancialSummary() {
 // Same subtotal/TPS/TVQ/total breakdown as updateSubmissionFinancialSummary(), but computed from
 // a saved act.reservations[] instead of the live form (used for the printable PDF sheet, which
 // must reflect the persisted record even when opened outside the drawer).
-function computeActivityFinancials(act) {
+function computeActivityFinancials(act: any) {
   const reservations = act.reservations || [];
   const roomsTotal = getRoomsTariffTotal(act);
   const eventDateStart = getAggregateEventDates(reservations).date_start;
@@ -103,19 +103,19 @@ function computeActivityFinancials(act) {
   let servicesTotal = 0;
   let feesTotal = 0;
 
-  reservations.forEach(r => {
-    (r.staff || []).forEach(s => {
-      const salary = (appState.settings.salaries || []).find(sal => sal.id === s.salary_id);
+  reservations.forEach((r: any) => {
+    (r.staff || []).forEach((s: any) => {
+      const salary = (appState.settings.salaries || []).find((sal: any) => sal.id === s.salary_id);
       const rate = salary ? getActiveSalaryRate(salary, eventDateStart) : 0;
       const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart) : 0;
       staffTotal += rate * (s.hours || 0) * (s.count || 0) + overtimeRate * (s.overtime_hours || 0) * (s.count || 0);
     });
-    (r.services || []).forEach(s => {
-      const service = (appState.settings.services || []).find(sv => sv.id === s.service_id);
+    (r.services || []).forEach((s: any) => {
+      const service = (appState.settings.services || []).find((sv: any) => sv.id === s.service_id);
       const rate = service ? getActiveServiceRate(service, eventDateStart) : 0;
       servicesTotal += service && service.type === "hourly" ? rate * (s.hours || 0) * (s.count || 0) : rate * (s.count || 0);
     });
-    (r.fees || []).forEach(f => {
+    (r.fees || []).forEach((f: any) => {
       feesTotal += f.amount || 0;
     });
   });
@@ -128,7 +128,7 @@ function computeActivityFinancials(act) {
 
 // Builds the printable/PDF activity sheet's markup (client, gestionnaire, réservations, sommaire
 // financier), rendered offscreen into #print-activity-sheet and shown only via @media print.
-function buildPrintActivitySheetHtml(act) {
+function buildPrintActivitySheetHtml(act: any) {
   const fin = computeActivityFinancials(act);
   const client = act.client || {};
   const manager = act.activity_manager || {};
@@ -136,11 +136,12 @@ function buildPrintActivitySheetHtml(act) {
   const generatedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`;
 
   const roomsRows = (act.reservations || [])
-    .map(r => {
+    .map((r: any) => {
       const days = (r.slots || []).length;
       const slotsText =
-        (r.slots || []).map(s => `${s.date}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`).join(", ") ||
-        "-";
+        (r.slots || [])
+          .map((s: any) => `${s.date}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
+          .join(", ") || "-";
       return `
         <tr>
           <td>${escapeHtml(getReservationRoomLabel(r))}</td>
@@ -250,16 +251,16 @@ function generateNextActivityId() {
 // are created via the name-only modal/createActivity() before this is ever called).
 // `calendarReturn` is an optional eventCalendarState snapshot ({refDate, viewMode}) to return to
 // when the record was opened by clicking an event in the calendar.
-function openActivityDrawer(id, calendarReturn = null) {
+function openActivityDrawer(id: string, calendarReturn: any = null) {
   const drawer = el("activity-drawer");
   const backdrop = el("drawer-backdrop");
   const form = el<HTMLFormElement>("activity-form");
   const titleEl = el("activity-drawer-title");
 
-  const act = appState.activities.find(a => a.id === id);
+  const act = appState.activities.find((a: any) => a.id === id);
   if (!act) return;
 
-  clearTimeout(activityUndoSnapshotTimer);
+  clearTimeout(activityUndoSnapshotTimer ?? undefined);
   activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(act));
   activitiesState.undoStack = [JSON.parse(JSON.stringify(act))];
   activitiesState.redoStack = [];
@@ -303,14 +304,14 @@ function openActivityDrawer(id, calendarReturn = null) {
 }
 
 // Kept for calendar.js, which opens the activity record from a calendar event click
-function openActivityDetailModal(id, calendarReturn) {
+function openActivityDetailModal(id: string, calendarReturn: any) {
   openActivityDrawer(id, calendarReturn);
 }
 
 function closeActivityDrawer() {
   const currentId = el("form-activity-internal-id").value;
   if (currentId) {
-    const currentAct = appState.activities.find(a => a.id === currentId);
+    const currentAct = appState.activities.find((a: any) => a.id === currentId);
     const snapshot = activitiesState.openedActivitySnapshot;
     if (currentAct && snapshot && currentAct.id === snapshot.id) {
       if (JSON.stringify(currentAct) !== JSON.stringify(snapshot)) {
@@ -318,7 +319,7 @@ function closeActivityDrawer() {
       }
     }
   }
-  clearTimeout(activityUndoSnapshotTimer);
+  clearTimeout(activityUndoSnapshotTimer ?? undefined);
   activitiesState.openedActivitySnapshot = null;
   activitiesState.undoStack = [];
   activitiesState.redoStack = [];
@@ -377,13 +378,13 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "") {
 
   // Attach listeners
   const newRow = el(rowId);
-  newRow.querySelector(".delete-dist-row-btn").addEventListener("click", () => {
+  newRow.querySelector(".delete-dist-row-btn")!.addEventListener("click", () => {
     newRow.remove();
     updateDistributionTotal();
     autoSaveActivityForm();
   });
 
-  newRow.querySelector(".dist-amount-input").addEventListener("input", updateDistributionTotal);
+  newRow.querySelector(".dist-amount-input")!.addEventListener("input", updateDistributionTotal);
 
   updateDistributionTotal();
 }
@@ -397,9 +398,9 @@ function updateDistributionTotal() {
   el("form-distribution-total-val").textContent = formatCurrency(total);
 }
 
-let autoSaveTimeoutId = null;
+let autoSaveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-function showAutoSaveStatus(status) {
+function showAutoSaveStatus(status: string) {
   const internalId = el("form-activity-internal-id").value;
   if (internalId && activitiesState.draftActivityId === internalId) {
     const statusEl = el("auto-save-status");
@@ -474,10 +475,10 @@ function autoSaveActivityForm() {
   const eventTypeOther = el("form-activity-event-type-other").value.trim();
 
   // Build distributions array
-  const distributions = [];
+  const distributions: any[] = [];
   document.querySelectorAll(".distribution-row").forEach(row => {
     const acc = row.querySelector<HTMLInputElement>(".dist-account-select")?.value;
-    const amtStr = row.querySelector<HTMLInputElement>(".dist-amount-input")?.value.trim();
+    const amtStr = row.querySelector<HTMLInputElement>(".dist-amount-input")?.value.trim() || "";
     const amt = parseFloat(amtStr) || 0;
     const reference = row.querySelector<HTMLInputElement>(".dist-reference-input")?.value.trim();
 
@@ -541,13 +542,13 @@ function autoSaveActivityForm() {
 // the actual push by ACTIVITY_UNDO_DEBOUNCE_MS, so only the last (most complete) state in a burst
 // of saves gets recorded. Reads appState.activities[idx] lazily when the timer fires, not the
 // value at schedule time, so it always captures the final state of the burst.
-let activityUndoSnapshotTimer = null;
+let activityUndoSnapshotTimer: ReturnType<typeof setTimeout> | null = null;
 const ACTIVITY_UNDO_DEBOUNCE_MS = 800;
 
 // ES modules only give importers a read-only live view of an exported `let` — activities-history.js
 // needs to actually reassign activityUndoSnapshotTimer (see scheduleActivityUndoSnapshot), so it
 // goes through this setter instead of assigning the imported binding directly.
-function setActivityUndoSnapshotTimer(timer) {
+function setActivityUndoSnapshotTimer(timer: ReturnType<typeof setTimeout> | null) {
   activityUndoSnapshotTimer = timer;
 }
 
