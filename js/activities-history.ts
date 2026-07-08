@@ -11,7 +11,7 @@ import { appState, parseLocalDateStr, EVENT_TYPES, saveDatabase, getActivityVers
 import { showToast, escapeHtml, formatCurrency, OTHER_ROOM_VALUE } from "./utils.ts";
 import { requireNonEmpty } from "./validation.ts";
 import { logError } from "./logger.ts";
-import { reconciliationState, reconcileLedger } from "./reconciliation.js";
+import { reconciliationState, reconcileLedger } from "./reconciliation.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./activities-reservations.ts";
 import {
   activitiesState,

@@ -335,85 +335,9 @@
             </div>
           </section>
 
-          <!-- 3. RECONCILIATION VIEW -->
+          <!-- 3. RECONCILIATION VIEW (rendered by React — see js/reconciliation-view.tsx) -->
           <section id="view-validation" class="view-section">
-            <!-- File Drop Zone -->
-            <div id="drop-zone" class="drop-zone">
-              <svg class="drop-zone-icon" viewBox="0 0 24 24">
-                <path
-                  d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"
-                />
-              </svg>
-              <div class="drop-zone-text">Déposez le fichier extrait du Grand Livre (.xls, .xlsx) ici</div>
-              <div class="drop-zone-desc">ou cliquez pour parcourir vos fichiers</div>
-              <input type="file" id="ledger-file-input" style="display: none" accept=".xls,.xlsx" />
-            </div>
-
-            <!-- Reconciliation Panel (hidden initially until file parsed) -->
-            <div id="reconciliation-panel" style="display: none" class="reconciliation-grid">
-              <div class="reconcile-summary-bar">
-                <div class="summary-box" style="border-left: 4px solid var(--success)">
-                  <div id="recon-stat-valid" class="summary-box-val text-success">0</div>
-                  <div class="summary-box-lbl">Validés</div>
-                </div>
-                <div class="summary-box" style="border-left: 4px solid var(--danger)">
-                  <div id="recon-stat-diff" class="summary-box-val text-danger">0</div>
-                  <div class="summary-box-lbl">Écarts Montant</div>
-                </div>
-                <div class="summary-box" style="border-left: 4px solid var(--warning)">
-                  <div id="recon-stat-unlogged" class="summary-box-val text-warning">0</div>
-                  <div class="summary-box-lbl">Non dans le GL</div>
-                </div>
-                <div class="summary-box" style="border-left: 4px solid var(--info)">
-                  <div id="recon-stat-unentered" class="summary-box-val text-info">0</div>
-                  <div class="summary-box-lbl">Non saisis (GL seul)</div>
-                </div>
-              </div>
-
-              <div class="table-card">
-                <div class="table-toolbar">
-                  <div class="reconcile-tabs">
-                    <button class="reconcile-tab active" data-recon-filter="all">Tous (<span id="count-recon-all">0</span>)</button>
-                    <button class="reconcile-tab text-success" data-recon-filter="valid">
-                      Validés (<span id="count-recon-valid">0</span>)
-                    </button>
-                    <button class="reconcile-tab text-danger" data-recon-filter="diff">
-                      Écarts (<span id="count-recon-diff">0</span>)
-                    </button>
-                    <button class="reconcile-tab text-warning" data-recon-filter="unlogged">
-                      Non dans GL (<span id="count-recon-unlogged">0</span>)
-                    </button>
-                    <button class="reconcile-tab text-info" data-recon-filter="unentered">
-                      Non saisis (<span id="count-recon-unentered">0</span>)
-                    </button>
-                  </div>
-                  <div style="display: flex; gap: 8px">
-                    <button id="export-reconciliation-btn" class="btn btn-secondary">Exporter le rapprochement</button>
-                    <button id="clear-ledger-btn" class="btn btn-secondary btn-danger">Effacer l'import</button>
-                  </div>
-                </div>
-
-                <div class="table-responsive">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Poste Budgétaire / Description</th>
-                        <th>RI / Facture Réf.</th>
-                        <th>Montant Saisi</th>
-                        <th>Montant Réel (GL)</th>
-                        <th>Écart</th>
-                        <th>Statut Rapprochement</th>
-                        <th class="text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody id="reconciliation-table-body">
-                      <!-- Populated dynamically -->
-                    </tbody>
-                  </table>
-                </div>
-                <div id="reconciliation-pagination" class="pagination-bar"></div>
-              </div>
-            </div>
+            <div id="validation-root"></div>
           </section>
 
           <!-- 3.5 GRAND LIVRE LOCAL VIEW -->
@@ -943,109 +867,8 @@
       </div>
     </div>
 
-    <!-- Ledger Column Mapping Modal -->
-    <div
-      id="ledger-mapping-modal"
-      class="modal"
-      style="width: 500px; max-width: 95vw"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="ledger-mapping-modal-title"
-    >
-      <div class="modal-header">
-        <h3 class="modal-title" id="ledger-mapping-modal-title">Associer les colonnes du Grand Livre</h3>
-        <button id="ledger-mapping-modal-close" class="btn-icon" aria-label="Fermer">
-          <svg viewBox="0 0 24 24">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg>
-        </button>
-      </div>
-      <div class="modal-content">
-        <p style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-secondary)">
-          Certaines colonnes obligatoires n'ont pas été détectées automatiquement. Veuillez associer les champs requis aux colonnes de votre
-          fichier Excel.
-        </p>
-        <form id="ledger-mapping-form">
-          <div class="form-group">
-            <label for="map-poste-budgetaire">Poste budgétaire (Compte) *</label>
-            <select id="map-poste-budgetaire" class="form-input select-input" required></select>
-          </div>
-          <div class="form-group">
-            <label for="map-date-versee">Date versée *</label>
-            <select id="map-date-versee" class="form-input select-input" required></select>
-          </div>
-          <div class="form-group">
-            <label for="map-montant-courant">Montant courant *</label>
-            <select id="map-montant-courant" class="form-input select-input" required></select>
-          </div>
-          <div class="form-group">
-            <label for="map-no-reference">Numéro de référence (optionnel)</label>
-            <select id="map-no-reference" class="form-input select-input"></select>
-          </div>
-          <div class="form-group">
-            <label for="map-nom">Nom de l'auxiliaire (optionnel)</label>
-            <select id="map-nom" class="form-input select-input"></select>
-          </div>
-          <div class="form-group">
-            <label for="map-description">Description (optionnel)</label>
-            <select id="map-description" class="form-input select-input"></select>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button id="ledger-mapping-modal-cancel" class="btn btn-secondary">Annuler</button>
-        <button id="ledger-mapping-modal-submit" class="btn btn-primary">Valider et Importer</button>
-      </div>
-    </div>
-
     <!-- Modal Container Backdrop -->
     <div id="modal-backdrop" class="modal-backdrop" role="presentation"></div>
-
-
-    <!-- 5. Reconciliation Details Modal -->
-    <div
-      id="recon-detail-modal"
-      class="modal"
-      style="width: 800px; max-width: 95vw"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="recon-detail-modal-title"
-    >
-      <div class="modal-header">
-        <h3 class="modal-title" id="recon-detail-modal-title">Lignes de Grand Livre détaillées</h3>
-        <button id="recon-detail-modal-close" class="btn-icon" aria-label="Fermer">
-          <svg viewBox="0 0 24 24">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg>
-        </button>
-      </div>
-      <div class="modal-content" style="padding: 0">
-        <div style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-main); font-size: 0.9rem">
-          <div><strong>Compte :</strong> <span id="recon-detail-account"></span></div>
-          <div style="margin-top: 4px"><strong>Référence :</strong> <span id="recon-detail-ref"></span></div>
-        </div>
-        <div class="table-responsive" style="max-height: 400px; overflow-y: auto">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Auxiliaire</th>
-                <th>Description</th>
-                <th>Type Tr.</th>
-                <th>No Doc GL</th>
-                <th class="text-right">Montant</th>
-              </tr>
-            </thead>
-            <tbody id="recon-detail-table-body">
-              <!-- Populated dynamically -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="recon-detail-modal-close-btn" class="btn btn-secondary">Fermer</button>
-      </div>
-    </div>
 
     <!-- 7. Activities Calendar Modal (rendered by React — see js/calendar-view.tsx) -->
     <div id="calendar-modal-root"></div>
@@ -1071,7 +894,8 @@
     <script type="module" src="js/activities-reservations.ts"></script>
     <script type="module" src="js/activities-financials.ts"></script>
     <script type="module" src="js/activities-history.ts"></script>
-    <script type="module" src="js/reconciliation.js"></script>
+    <script type="module" src="js/reconciliation.ts"></script>
+    <script type="module" src="js/reconciliation-view.tsx"></script>
     <script type="module" src="js/settings-view.tsx"></script>
     <script type="module" src="js/backup.js"></script>
     <script src="js/account-report.js" defer></script>

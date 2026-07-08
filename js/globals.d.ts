@@ -8,6 +8,18 @@
 
 import type { DEFAULT_CONFIG } from "./config-defaults.ts";
 import type { FUZZY_TEXT_STOPWORDS, tokenizeForMatch, textSimilarity } from "./fuzzy-match.ts";
+import type {
+  reconciliationState,
+  loadReconDecisions,
+  setReconDecision,
+  cleanRef,
+  validateLedgerStructure,
+  findBestColumnMatch,
+  matchDistributionsToLedger,
+  daysBetweenDateStrs,
+  attachFuzzyMatchSuggestions,
+  reconcileLedger
+} from "./reconciliation.ts";
 import type { openVersionedDb } from "./db-utils.ts";
 import type {
   isNonEmptyString,
@@ -19,6 +31,7 @@ import type {
 } from "./validation.ts";
 import type { logError, logWarn, logInfo, getLogHistory } from "./logger.ts";
 import type { renderDashboard, renderDashboardCharts } from "./dashboard-view.tsx";
+import type { initReconciliationHandlers, renderReconciliation } from "./reconciliation-view.tsx";
 import type { renderSettings, openSettingsPanel, openAccountModal, openDeptModal, closeAllSettingsModals } from "./settings-view.tsx";
 import type { initCalendarModal, initViewCalendarButtons, openCalendarModal, openCalendarAtDate, reopenCalendarModal } from "./calendar-view.tsx";
 import type {
@@ -160,6 +173,16 @@ declare global {
     FUZZY_TEXT_STOPWORDS: typeof FUZZY_TEXT_STOPWORDS;
     tokenizeForMatch: typeof tokenizeForMatch;
     textSimilarity: typeof textSimilarity;
+    reconciliationState: typeof reconciliationState;
+    loadReconDecisions: typeof loadReconDecisions;
+    setReconDecision: typeof setReconDecision;
+    cleanRef: typeof cleanRef;
+    validateLedgerStructure: typeof validateLedgerStructure;
+    findBestColumnMatch: typeof findBestColumnMatch;
+    matchDistributionsToLedger: typeof matchDistributionsToLedger;
+    daysBetweenDateStrs: typeof daysBetweenDateStrs;
+    attachFuzzyMatchSuggestions: typeof attachFuzzyMatchSuggestions;
+    reconcileLedger: typeof reconcileLedger;
     openVersionedDb: typeof openVersionedDb;
     isNonEmptyString: typeof isNonEmptyString;
     isPlainObject: typeof isPlainObject;
@@ -203,6 +226,8 @@ declare global {
     hideLoadingOverlay: typeof hideLoadingOverlay;
     renderDashboard: typeof renderDashboard;
     renderDashboardCharts: typeof renderDashboardCharts;
+    initReconciliationHandlers: typeof initReconciliationHandlers;
+    renderReconciliation: typeof renderReconciliation;
     renderSettings: typeof renderSettings;
     openSettingsPanel: typeof openSettingsPanel;
     openAccountModal: typeof openAccountModal;

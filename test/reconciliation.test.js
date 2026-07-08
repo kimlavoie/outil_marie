@@ -7,7 +7,7 @@ import { getFiscalYear, getQuarterNumber, parseLocalDateStr } from "../js/state.
 global.getFiscalYear = getFiscalYear;
 global.getQuarterNumber = getQuarterNumber;
 global.parseLocalDateStr = parseLocalDateStr;
-import { matchDistributionsToLedger, validateLedgerStructure, findBestColumnMatch } from "../js/reconciliation.js";
+import { matchDistributionsToLedger, validateLedgerStructure, findBestColumnMatch } from "../js/reconciliation.ts";
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];

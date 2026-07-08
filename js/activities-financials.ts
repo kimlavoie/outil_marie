@@ -24,7 +24,7 @@ import {
   updateStaffRowSubtotal,
   updateServiceRowSubtotal
 } from "./activities-reservations.ts";
-import { reconciliationState, reconcileLedger } from "./reconciliation.js";
+import { reconciliationState, reconcileLedger } from "./reconciliation.ts";
 import { fillActivityFormFields, renderActivityStateBar, switchActivityTab, getActivityFormMode } from "./activities-form.ts";
 
 // Typed shorthand for document.getElementById in this file's heavy DOM-manipulation code:

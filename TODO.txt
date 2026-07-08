@@ -189,8 +189,9 @@ Ordre suggéré :
        e. Rendu/liste — TERMINÉ (js/activities-render.ts)
        f. Formulaire — TERMINÉ (js/activities-form.ts)
        g. Réservations — TERMINÉ (js/activities-reservations.ts)
-  5. Rapprochement GL (le plus complexe, migré en dernier, avec le plus
-     de tests)
+  5. Rapprochement GL — TERMINÉ (le plus complexe, migré en dernier, avec
+     le plus de tests) : js/reconciliation.ts (moteur/état) +
+     js/reconciliation-view.tsx (vue React)
 [x] Pour chaque vue : convertir en React + TS, garder la logique partagée
     en modules TS simples importés par les composants — ne pas réécrire
     la logique métier, seulement la couche de rendu.
@@ -426,7 +427,7 @@ Activités f. Formulaire (js/activities-form.ts) — détails
 [ ] Validation manuelle à prioriser (à faire par vous, `npm run dev`) :
     le raccourci Échap doit à nouveau fermer les modales de Paramètres.
 
-Activités g. Réservations (js/activities-reservations.ts) — détails — DERNIER FICHIER DE PHASE 4
+Activités g. Réservations (js/activities-reservations.ts) — détails
 - Le plus gros fichier de la vue Activités (cartes de réservation : salle,
   grille tarifaire, créneaux/plages de jours, montage/démontage, services
   techniques/bar/hôtesses, personnel/services/frais liés à la salle).
@@ -459,6 +460,62 @@ Activités g. Réservations (js/activities-reservations.ts) — détails — DER
     (c'était cassé), une plage de jours, du personnel/services liés,
     montage/démontage, service de bar — bref, l'ensemble du formulaire
     d'activité de bout en bout.
+- BUG TROUVÉ EN PRODUCTION APRÈS VALIDATION (signalé par l'utilisateur) :
+  "RangeError: Maximum call stack size exceeded" dans
+  activities-reservations.ts. Même classe de bug que celui déjà corrigé
+  dans activities-financials.ts pendant l'étape d — un script de
+  remplacement en masse (document.getElementById( -> el() ) avait aussi
+  réécrit le corps du helper el<T>() lui-même
+  (`return document.getElementById(id)` -> `return el(id)`), causant une
+  récursion infinie. Cette fois-ci non détecté avant de rapporter la fin
+  de l'étape. Corrigé, puis vérifié par grep (`grep -n "return el(id)"
+  js/*.ts`) qu'aucun autre fichier converti n'avait la même régression.
+  Retest complet (tsc, 98/98 tests, build) après correctif.
+
+Rapprochement GL (js/reconciliation.ts + js/reconciliation-view.tsx) — détails — DERNIER FICHIER DE PHASE 4
+- Découpage identique à Tableau de bord (dashboard.js/dashboard-view.tsx) :
+  js/reconciliation.ts garde uniquement le moteur pur (algorithme de
+  rapprochement, état reconciliationState, décisions manuelles) — importé
+  tel quel par test/reconciliation.test.js (Node ne sait exécuter que
+  .ts, pas .tsx) et par plusieurs fichiers Activités qui lisent
+  reconciliationState/reconcileLedger. js/reconciliation-view.tsx contient
+  toute la vue React (zone de dépôt, barre de stats, tableau à onglets/
+  pagination/révision manuelle/suggestions de correspondance floue,
+  modale de mappage de colonnes, modale de détail).
+- Contrairement à Paramètres/Calendrier, la surface externe est minimale :
+  seulement 2 points d'entrée appelés depuis l'extérieur (confirmé par
+  grep) — initReconciliationHandlers() (main.js, une fois au démarrage)
+  et renderReconciliation() (navigation.js, à chaque bascule vers l'onglet
+  "validation"). Tout le reste (import de fichier, modales, actions de
+  ligne, export Excel, suggestions) est redevenu interne au composant
+  React plutôt que des fonctions exportées séparément.
+- Champ `imported: false` ajouté à l'état initial de reconciliationState
+  pour piloter le choix zone de dépôt / panneau de résultats côté React
+  (remplace le toggle direct `style.display` de l'ancien code).
+- Ancien piège de régex avec accents (`/[̀-ͯ]/g`, utilisée pour
+  ignorer les accents en comparant des noms de colonnes) : ma première
+  tentative de restauration du fichier a produit les caractères Unicode
+  combinants littéraux au lieu de la notation d'échappement texte —
+  fonctionnellement identique (mêmes points de code), mais illisible par
+  rapport à l'original. Corrigé via un script Python en mode binaire brut
+  pour remplacer les octets UTF-8 exacts par la notation `̀`/`ͯ`.
+- Pas de nouvel import circulaire : reconciliation-view.tsx importe
+  directement createActivity/switchActivityTab (activities-form.ts),
+  renderActivities (activities-render.ts), openActivityDrawer/
+  addDistributionRow (activities-financials.ts) pour le bouton "+ Créer
+  activité" d'une ligne "non saisie" — ces fichiers n'important eux-mêmes
+  que reconciliation.ts (jamais reconciliation-view.tsx), la chaîne reste
+  à sens unique.
+- Validé : tsc propre, 98/98 tests (22 sur reconciliation.test.js), lint
+  inchangé (0 erreur, 3 warnings pré-existants sans rapport), vite build
+  (dist/ complet, aucun 404, scripts non-module toujours copiés), vite dev
+  (reconciliation.ts et reconciliation-view.tsx résolvent en 200).
+[ ] Validation manuelle restante (à faire par vous, `npm run dev`) :
+    importer un fichier du Grand Livre, mappage de colonnes (fichier avec
+    en-têtes non standards), onglets/filtres, pagination, validation/
+    ignorance manuelle d'un écart, suggestions de correspondance floue
+    (accepter une suggestion), export Excel, modale de détail des lignes
+    GL, "+ Créer activité" depuis une ligne non saisie, "Effacer l'import".
 
 Phase 5 — Nettoyage
 -----------------------------------------------------------------

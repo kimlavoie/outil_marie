@@ -22,7 +22,7 @@ import {
   calculateDaysCount,
   renderPaginationBar
 } from "./utils.ts";
-import { reconciliationState, reconcileLedger } from "./reconciliation.js";
+import { reconciliationState, reconcileLedger } from "./reconciliation.ts";
 import { openActivityDrawer } from "./activities-financials.ts";
 import { duplicateActivityAndOpen } from "./activities-form.ts";
 

@@ -16,7 +16,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { appState, getFiscalYear, getQuarterNumber, getQuarter } from "./state.js";
 import { getReservationRoomLabel, formatCurrency } from "./utils.ts";
 import { computeDashboardStats } from "./dashboard.js";
-import { reconciliationState } from "./reconciliation.js";
+import { reconciliationState } from "./reconciliation.ts";
 
 function buildQuarterlyRevenuesConfig(textColor: string, gridColor: string) {
   const quarterlySums: Record<string, number> = {
