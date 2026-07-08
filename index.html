@@ -6,8 +6,8 @@
     <title>Gestion Comptable & Rapprochement - Service Communautaire</title>
     <link rel="stylesheet" href="style.css" />
     <!-- Local dependencies loaded offline -->
-    <script src="lib/xlsx.full.min.js"></script>
-    <script src="lib/chart.umd.js"></script>
+    <script src="/lib/xlsx.full.min.js"></script>
+    <script src="/lib/chart.umd.js"></script>
   </head>
   <body>
     <div id="toast-container" class="toast-container" aria-live="polite"></div>
@@ -881,30 +881,7 @@
          screen, only shown by the @media print rule when window.print() is triggered) -->
     <div id="print-activity-sheet"></div>
 
-    <!-- Application Logic (order matters: each file depends on the ones before it) -->
-    <script type="module" src="js/logger.ts"></script>
-    <script type="module" src="js/validation.ts"></script>
-    <script type="module" src="js/db-utils.ts"></script>
-    <script type="module" src="js/fuzzy-match.ts"></script>
-    <script type="module" src="js/config-defaults.ts"></script>
-    <script type="module" src="js/state.js"></script>
-    <script type="module" src="js/utils.ts"></script>
-    <script type="module" src="js/navigation.js"></script>
-    <script type="module" src="js/dashboard.js"></script>
-    <script type="module" src="js/dashboard-view.tsx"></script>
-    <script type="module" src="js/activities-render.ts"></script>
-    <script type="module" src="js/activities-file-links.ts"></script>
-    <script type="module" src="js/activities-form.ts"></script>
-    <script type="module" src="js/activities-reservations.ts"></script>
-    <script type="module" src="js/activities-financials.ts"></script>
-    <script type="module" src="js/activities-history.ts"></script>
-    <script type="module" src="js/reconciliation.ts"></script>
-    <script type="module" src="js/reconciliation-view.tsx"></script>
-    <script type="module" src="js/settings-view.tsx"></script>
-    <script type="module" src="js/backup.js"></script>
-    <script type="module" src="js/account-report.js"></script>
-    <script type="module" src="js/datepicker.ts"></script>
-    <script type="module" src="js/calendar-view.tsx"></script>
+    <!-- Application Logic -->
     <script type="module" src="js/main.js"></script>
   </body>
 </html>
