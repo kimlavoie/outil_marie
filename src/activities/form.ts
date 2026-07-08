@@ -254,6 +254,9 @@ function initNewActivityModal() {
   el("new-activity-modal-close").addEventListener("click", closeNewActivityModal);
   el("new-activity-modal-cancel").addEventListener("click", closeNewActivityModal);
   el("new-activity-modal-submit").addEventListener("click", submitNewActivityForm);
+  // The submit button lives outside the <form> (in the modal footer), so pressing Enter in the
+  // name field triggers the form's native submit instead of the button's click — catch it here.
+  el<HTMLFormElement>("new-activity-form").addEventListener("submit", submitNewActivityForm);
 }
 
 function openNewActivityModal(intent = "soumission") {
