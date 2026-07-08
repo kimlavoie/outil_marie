@@ -546,7 +546,7 @@ function getActiveRateVersionField(versions: any[], dateStr: string, field: stri
 // given (mirrors getServiceTarif's default of showing its first <option> until the user picks).
 function getSalaryTarif(salary: any, tarifId?: string): any | null {
   const tarifs = (salary && salary.tarifs) || [];
-  if (tarifs.length === 0) return null;
+  if (tarifs.length === 0) return salary && salary.rate_versions ? salary : null;
   return tarifs.find((t: any) => t.id === tarifId) || tarifs[0];
 }
 
@@ -568,7 +568,7 @@ function getActiveSalaryOvertimeRate(salary: any, dateStr: string, tarifId?: str
 // given (mirrors the <select>'s own default of showing its first <option> until the user picks).
 function getServiceTarif(service: any, tarifId?: string): any | null {
   const tarifs = (service && service.tarifs) || [];
-  if (tarifs.length === 0) return null;
+  if (tarifs.length === 0) return service && service.rate_versions ? service : null;
   return tarifs.find((t: any) => t.id === tarifId) || tarifs[0];
 }
 
