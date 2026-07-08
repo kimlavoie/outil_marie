@@ -232,6 +232,13 @@ function initFormHandlers() {
       openNewActivityModal();
     }
 
+    // Alt + E for a new estimation, same behavior as the "add-estimation-btn-quick" button
+    // (skips the name modal, opens the drawer directly on a blank draft)
+    if (e.altKey && e.key.toLowerCase() === "e") {
+      e.preventDefault();
+      openActivityDrawer(createDraftActivity(""));
+    }
+
     // Escape to close drawers and modals
     if (e.key === "Escape") {
       cancelActivityDrawer();
