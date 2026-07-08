@@ -5,16 +5,16 @@ import { logError } from "../utils/logger.ts";
 import { DEFAULT_CONFIG } from "./config-defaults.ts";
 import { activitiesState } from "../activities/render.ts";
 import { reconciliationState } from "../services/reconciliation.ts";
-import { accountReportState } from "../services/account-report.js";
-import { checkBackupReminder, scheduleAutoBackupWrite } from "../services/backup.js";
+import { accountReportState } from "../services/account-report.ts";
+import { checkBackupReminder, scheduleAutoBackupWrite } from "../services/backup.ts";
 
 // Free technical services (no fee): paid technical items (location de projecteur, piano à
 // queue, projecteur / équipement informatique) live in appState.settings.services instead, so
 // their amounts stay modifiable from the Services settings tab.
-const TECHNICAL_SERVICES = ["Microphone", "Éclairage de scène", "Musique d'ambiance", "Fichier audio, vidéo ou présentation PowerPoint"];
-const BAR_DRINK_TYPES = ["Avec alcool", "Sans alcool"];
-const BAR_SERVICE_TYPES = ["Service autonome", "Service d'hôtesses", "Distribution de breuvages et nettoyage de coupes"];
-const HOST_DUTY_OPTIONS = ["Distribution de bouchées"];
+const TECHNICAL_SERVICES: string[] = ["Microphone", "Éclairage de scène", "Musique d'ambiance", "Fichier audio, vidéo ou présentation PowerPoint"];
+const BAR_DRINK_TYPES: string[] = ["Avec alcool", "Sans alcool"];
+const BAR_SERVICE_TYPES: string[] = ["Service autonome", "Service d'hôtesses", "Distribution de breuvages et nettoyage de coupes"];
+const HOST_DUTY_OPTIONS: string[] = ["Distribution de bouchées"];
 const EVENT_TYPES = [
   { value: "pedagogique", label: "Activité pédagogique" },
   { value: "parascolaire", label: "Activité parascolaire" },
@@ -24,8 +24,26 @@ const EVENT_TYPES = [
   { value: "autre", label: "Autre" }
 ];
 
+export interface AppState {
+  settings: {
+    theme: string;
+    rooms: any[];
+    departments: any[];
+    accounts: any[];
+    last_backup_date: string;
+    backup_reminder_days: number;
+    salaries: any[];
+    services: any[];
+    global_tasks: any[];
+  };
+  activities: any[];
+  favorites: any[];
+  selected_year: string;
+  selected_quarters: number[];
+}
+
 // Global App State
-let appState = {
+let appState: AppState = {
   settings: {
     theme: "dark",
     rooms: [...DEFAULT_CONFIG.rooms],
@@ -37,9 +55,7 @@ let appState = {
     services: [...DEFAULT_CONFIG.services],
     global_tasks: [...DEFAULT_CONFIG.global_tasks]
   },
-  /** @type {any[]} */
   activities: [],
-  /** @type {any[]} */
   favorites: [], // ids of activities pinned (by the user) to the "Accès rapide" list
   selected_year: "",
   selected_quarters: [1, 2, 3, 4]
@@ -49,16 +65,16 @@ let appState = {
 // restore needs to actually replace the whole object (not just mutate fields), so it goes
 // through this setter instead of assigning the imported binding directly (same pattern as
 // activities-financials.ts's setActivityUndoSnapshotTimer).
-function setAppState(newState) {
+function setAppState(newState: AppState) {
   appState = newState;
 }
 
 // Quick access (favorites) helpers
-function isFavoriteActivity(id) {
+function isFavoriteActivity(id: string) {
   return (appState.favorites || []).includes(id);
 }
 
-function toggleFavoriteActivity(id) {
+function toggleFavoriteActivity(id: string) {
   if (!appState.favorites) appState.favorites = [];
   if (appState.favorites.includes(id)) {
     appState.favorites = appState.favorites.filter(f => f !== id);
@@ -73,7 +89,7 @@ function toggleFavoriteActivity(id) {
 const RECENT_ACTIVITIES_KEY = "outil_marie_recent_activities";
 const RECENT_ACTIVITIES_MAX = 5;
 
-function getRecentlyViewedActivityIds() {
+function getRecentlyViewedActivityIds(): string[] {
   try {
     const raw = localStorage.getItem(RECENT_ACTIVITIES_KEY);
     return raw ? JSON.parse(raw) : [];
@@ -84,14 +100,14 @@ function getRecentlyViewedActivityIds() {
 
 // Moves `id` to the front of the recently-viewed list (de-duplicating), capped at
 // RECENT_ACTIVITIES_MAX entries. Call whenever an activity record is opened.
-function recordActivityView(id) {
+function recordActivityView(id: string) {
   const ids = getRecentlyViewedActivityIds().filter(existingId => existingId !== id);
   ids.unshift(id);
   localStorage.setItem(RECENT_ACTIVITIES_KEY, JSON.stringify(ids.slice(0, RECENT_ACTIVITIES_MAX)));
 }
 
 // Period Helpers
-function getFiscalYear(dateStr) {
+function getFiscalYear(dateStr: string): string {
   if (!dateStr) return "";
   const date = parseLocalDateStr(dateStr);
   if (isNaN(date.getTime())) return "";
@@ -100,7 +116,7 @@ function getFiscalYear(dateStr) {
   return month >= 6 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
 }
 
-function getQuarterNumber(dateStr) {
+function getQuarterNumber(dateStr: string): number | null {
   if (!dateStr) return null;
   const date = parseLocalDateStr(dateStr);
   if (isNaN(date.getTime())) return null;
@@ -111,7 +127,7 @@ function getQuarterNumber(dateStr) {
   return 4;
 }
 
-function getDefaultFiscalYear() {
+function getDefaultFiscalYear(): string {
   const d = new Date();
   const year = d.getFullYear();
   const month = d.getMonth();
@@ -119,7 +135,7 @@ function getDefaultFiscalYear() {
 }
 
 // Returns the {start, end} "YYYY-MM-DD" bounds (juillet à juin) of a fiscal year string like "2024-2025".
-function getFiscalYearRange(fy) {
+function getFiscalYearRange(fy: string): { start: string; end: string } | null {
   if (!fy) return null;
   const match = /^(\d{4})-(\d{4})$/.exec(fy);
   if (!match) return null;
@@ -127,10 +143,10 @@ function getFiscalYearRange(fy) {
 }
 
 // Helper: Check which quarter a date belongs to
-function getQuarter(dateStr) {
+function getQuarter(dateStr: string): string | null {
   if (!dateStr) return null;
   const date = parseLocalDateStr(dateStr);
-  if (isNaN(date)) return null;
+  if (isNaN(date.getTime())) return null;
   const month = date.getMonth(); // 0-11
   // Q1: Jul-Sep (months 6, 7, 8)
   // Q2: Oct-Dec (months 9, 10, 11)
@@ -144,7 +160,7 @@ function getQuarter(dateStr) {
 
 // Parses a "YYYY-MM-DD" string as a local date (avoids the UTC-midnight off-by-one
 // that new Date("YYYY-MM-DD") causes in timezones behind UTC).
-function parseLocalDateStr(dateStr) {
+function parseLocalDateStr(dateStr: string): Date {
   if (!dateStr) return new Date(NaN);
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
   if (!match) return new Date(dateStr);
@@ -152,7 +168,7 @@ function parseLocalDateStr(dateStr) {
 }
 
 // Formats a local Date back into a "YYYY-MM-DD" string (inverse of parseLocalDateStr)
-function formatDateStrLocal(date) {
+function formatDateStrLocal(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
@@ -168,7 +184,7 @@ const APP_DB_VERSION = 3;
 
 // Each block runs only for databases that haven't reached that version yet, so re-opening an
 // already-migrated database is a no-op and a fresh database walks through every step in order.
-function upgradeAppDb(db, oldVersion) {
+function upgradeAppDb(db: IDBDatabase, oldVersion: number) {
   if (oldVersion < 1 && !db.objectStoreNames.contains(APP_STORE_NAME)) {
     db.createObjectStore(APP_STORE_NAME);
   }
@@ -181,7 +197,7 @@ function upgradeAppDb(db, oldVersion) {
   }
 }
 
-function openAppDb() {
+function openAppDb(): Promise<IDBDatabase> {
   return openVersionedDb(APP_DB_NAME, APP_DB_VERSION, upgradeAppDb);
 }
 
@@ -189,7 +205,7 @@ function openAppDb() {
 // so the decision survives across GL re-imports (a new import produces the same key for the same
 // account+référence pair). Kept in their own IndexedDB store rather than appState so they aren't
 // wiped out by a JSON backup restore of unrelated activity data.
-function getReconDecisionsFromDb() {
+function getReconDecisionsFromDb(): Promise<any[]> {
   return openAppDb().then(db => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction("recon_decisions", "readonly");
@@ -201,7 +217,7 @@ function getReconDecisionsFromDb() {
   });
 }
 
-function saveReconDecisionToDb(decision) {
+function saveReconDecisionToDb(decision: any): Promise<void> {
   return openAppDb().then(db => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction("recon_decisions", "readwrite");
@@ -213,7 +229,7 @@ function saveReconDecisionToDb(decision) {
   });
 }
 
-function deleteReconDecisionFromDb(key) {
+function deleteReconDecisionFromDb(key: string): Promise<void> {
   return openAppDb().then(db => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction("recon_decisions", "readwrite");
@@ -225,7 +241,7 @@ function deleteReconDecisionFromDb(key) {
   });
 }
 
-function addActivityVersionToDb(versionRecord) {
+function addActivityVersionToDb(versionRecord: any): Promise<void> {
   return openAppDb().then(db => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction("activity_versions", "readwrite");
@@ -237,7 +253,7 @@ function addActivityVersionToDb(versionRecord) {
   });
 }
 
-function getActivityVersionsFromDb(activityId) {
+function getActivityVersionsFromDb(activityId: string): Promise<any[]> {
   return openAppDb().then(db => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction("activity_versions", "readonly");
@@ -250,12 +266,12 @@ function getActivityVersionsFromDb(activityId) {
   });
 }
 
-function pruneActivityVersions(activityId, maxVersions = 20) {
+function pruneActivityVersions(activityId: string, maxVersions: number = 20): Promise<void> {
   return getActivityVersionsFromDb(activityId).then(versions => {
     if (versions.length <= maxVersions) return Promise.resolve();
 
     // Sort oldest first to delete the oldest ones
-    versions.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    versions.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     const toDelete = versions.slice(0, versions.length - maxVersions);
 
     return openAppDb().then(db => {
@@ -279,7 +295,7 @@ function pruneActivityVersions(activityId, maxVersions = 20) {
   });
 }
 
-function clearAllActivityVersionsFromDb() {
+function clearAllActivityVersionsFromDb(): Promise<void> {
   return openAppDb().then(db => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction("activity_versions", "readwrite");
@@ -291,7 +307,7 @@ function clearAllActivityVersionsFromDb() {
   });
 }
 
-function getAppStateFromDb() {
+function getAppStateFromDb(): Promise<any | null> {
   return openAppDb().then(db => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(APP_STORE_NAME, "readonly");
@@ -303,7 +319,7 @@ function getAppStateFromDb() {
   });
 }
 
-function saveAppStateToDb(state) {
+function saveAppStateToDb(state: any): Promise<void> {
   return openAppDb().then(db => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(APP_STORE_NAME, "readwrite");
@@ -320,7 +336,7 @@ function saveAppStateToDb(state) {
 // rendering, search and financial totals all assume every activity has these fields/arrays
 // (e.g. act.name.toLowerCase(), act.distributions.some(...)) without their own fallback. Drops
 // only entries that aren't recoverable objects (no id); everything else gets safe defaults.
-function sanitizeActivitiesList(rawActivities) {
+function sanitizeActivitiesList(rawActivities: any[]): any[] {
   if (!Array.isArray(rawActivities)) return [];
   return rawActivities
     .filter(act => act && typeof act === "object" && typeof act.id === "string" && act.id)
@@ -329,13 +345,13 @@ function sanitizeActivitiesList(rawActivities) {
       if (typeof act.responsable !== "string") act.responsable = "";
       if (!Array.isArray(act.distributions)) act.distributions = [];
       if (!Array.isArray(act.reservations)) act.reservations = [];
-      act.distributions = act.distributions.filter(d => d && typeof d === "object");
-      act.reservations = act.reservations.filter(r => r && typeof r === "object");
+      act.distributions = act.distributions.filter((d: any) => d && typeof d === "object");
+      act.reservations = act.reservations.filter((r: any) => r && typeof r === "object");
       return act;
     });
 }
 
-async function loadDatabase() {
+async function loadDatabase(): Promise<void> {
   try {
     let dbData = await getAppStateFromDb();
 
@@ -372,7 +388,7 @@ async function loadDatabase() {
       if (!appState.settings.global_tasks || appState.settings.global_tasks.length === 0)
         appState.settings.global_tasks = [...DEFAULT_CONFIG.global_tasks];
       if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
-      appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
+      appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days as any, 10);
       if (isNaN(appState.settings.backup_reminder_days)) {
         appState.settings.backup_reminder_days = 7;
       }
@@ -421,8 +437,8 @@ function migrateRoomsConfig() {
           id: generateUid("grid"),
           effective_date: "",
           parameters: [{ id: paramId, name: "Tarif" }],
-          client_types: tarifs.map(t => ({ id: t.id, name: t.description })),
-          cells: tarifs.map(t => ({ parameter_id: paramId, client_type_id: t.id, amount: t.amount }))
+          client_types: tarifs.map((t: any) => ({ id: t.id, name: t.description })),
+          cells: tarifs.map((t: any) => ({ parameter_id: paramId, client_type_id: t.id, amount: t.amount }))
         }
       ];
     }
@@ -443,7 +459,7 @@ function migrateSalariesConfig() {
       sal.rate_versions = [{ id: generateUid("rv"), effective_date: "", rate: sal.rate || 0 }];
       delete sal.rate;
     }
-    sal.rate_versions.forEach(v => {
+    sal.rate_versions.forEach((v: any) => {
       if (v.overtime_rate === undefined) v.overtime_rate = 0;
     });
   });
@@ -464,7 +480,7 @@ function migrateServicesConfig() {
 // Returns the pricing grid version in effect for `dateStr` (the most recent grid whose
 // effective_date is empty or <= dateStr). Falls back to the earliest grid if dateStr is empty
 // or precedes every version.
-function getActivePricingGrid(room, dateStr) {
+function getActivePricingGrid(room: any, dateStr: string): any | null {
   const grids = (room && room.pricing_grids) || [];
   if (grids.length === 0) return null;
   const sorted = [...grids].sort((a, b) => (a.effective_date || "").localeCompare(b.effective_date || ""));
@@ -479,7 +495,7 @@ function getActivePricingGrid(room, dateStr) {
 // Resolves the value of `field` from whichever rate version is in effect for `dateStr` (the
 // most recent version whose effective_date is empty or <= dateStr; falls back to the earliest
 // version if dateStr is empty or precedes every version).
-function getActiveRateVersionField(versions, dateStr, field) {
+function getActiveRateVersionField(versions: any[], dateStr: string, field: string): number {
   versions = versions || [];
   if (versions.length === 0) return 0;
   const sorted = [...versions].sort((a, b) => (a.effective_date || "").localeCompare(b.effective_date || ""));
@@ -492,18 +508,18 @@ function getActiveRateVersionField(versions, dateStr, field) {
 }
 
 // Returns the salary rate in effect for `dateStr` (same resolution rule as getActivePricingGrid)
-function getActiveSalaryRate(salary, dateStr) {
+function getActiveSalaryRate(salary: any, dateStr: string): number {
   return getActiveRateVersionField(salary && salary.rate_versions, dateStr, "rate");
 }
 
 // Returns the overtime (temps supplémentaire) rate in effect for `dateStr`
-function getActiveSalaryOvertimeRate(salary, dateStr) {
+function getActiveSalaryOvertimeRate(salary: any, dateStr: string): number {
   return getActiveRateVersionField(salary && salary.rate_versions, dateStr, "overtime_rate");
 }
 
 // Returns the service rate in effect for `dateStr` (services share the same versioned
 // rate_versions shape as salaries, so the resolution logic is identical)
-function getActiveServiceRate(service, dateStr) {
+function getActiveServiceRate(service: any, dateStr: string): number {
   return getActiveSalaryRate(service, dateStr);
 }
 
@@ -511,13 +527,13 @@ function getActiveServiceRate(service, dateStr) {
 // into the old {id, description, amount} tarifs[] shape, so activities.js's room-tariff selector
 // keeps working unchanged until Phase 3 makes it grid-aware (parameter + client type selects).
 // `id` encodes "parameterId::clientTypeId" so the amount can be looked back up.
-function getFlattenedRoomTarifs(room, dateStr) {
+function getFlattenedRoomTarifs(room: any, dateStr: string): any[] {
   const grid = getActivePricingGrid(room, dateStr);
   if (!grid) return [];
-  const tarifs = [];
-  grid.parameters.forEach(param => {
-    grid.client_types.forEach(ct => {
-      const cell = grid.cells.find(c => c.parameter_id === param.id && c.client_type_id === ct.id);
+  const tarifs: any[] = [];
+  grid.parameters.forEach((param: any) => {
+    grid.client_types.forEach((ct: any) => {
+      const cell = grid.cells.find((c: any) => c.parameter_id === param.id && c.client_type_id === ct.id);
       const desc = grid.parameters.length > 1 ? `${param.name} - ${ct.name}` : ct.name;
       tarifs.push({
         id: `${param.id}::${ct.id}`,
@@ -550,7 +566,7 @@ function migrateActivities() {
     // shared install/dismantle/start/end schedule for the whole activity. Each
     // room now carries its own schedule and a snapshotted tariff.
     if (act.rooms.length > 0 && typeof act.rooms[0] === "string") {
-      act.rooms = act.rooms.map(name => {
+      act.rooms = act.rooms.map((name: string) => {
         const roomConfig = (appState.settings.rooms || []).find(r => r.name === name);
         const wantedTariffDesc = act.client_type === "interne" ? "Interne" : "Externe";
         const flatTarifs = roomConfig ? getFlattenedRoomTarifs(roomConfig, act.date_start) : [];
@@ -595,8 +611,8 @@ function migrateActivities() {
       };
       if (Array.isArray(act.consumption) && act.consumption.length > 0) {
         legacyBarService.active = true;
-        if (act.consumption.some(c => c.includes("avec alcool"))) legacyBarService.drink_type = "Avec alcool";
-        else if (act.consumption.some(c => c.includes("sans alcool"))) legacyBarService.drink_type = "Sans alcool";
+        if (act.consumption.some((c: string) => c.includes("avec alcool"))) legacyBarService.drink_type = "Avec alcool";
+        else if (act.consumption.some((c: string) => c.includes("sans alcool"))) legacyBarService.drink_type = "Sans alcool";
       }
       if (Array.isArray(act.host_services) && act.host_services.includes("Service de bar payant")) {
         legacyBarService.active = true;
@@ -609,7 +625,7 @@ function migrateActivities() {
     if (!legacyHostDuties) {
       legacyHostDuties = { duties: [], hostess_count: 0 };
       if (Array.isArray(act.host_services)) {
-        if (act.host_services.some(h => h.startsWith("Distribution de breuvages"))) {
+        if (act.host_services.some((h: any) => h.startsWith("Distribution de breuvages"))) {
           legacyHostDuties.duties.push("Distribution de breuvages et nettoyage de coupes");
         }
         if (act.host_services.includes("Distribution de bouchées")) {
@@ -628,15 +644,15 @@ function migrateActivities() {
     const legacyServices = act.services || [];
     const legacyFees = act.fees || [];
 
-    (act.rooms || []).forEach((r, idx) => {
+    (act.rooms || []).forEach((r: any, idx: number) => {
       if (r.tariff_gl_account_code === undefined) r.tariff_gl_account_code = "";
       if (!r.technical_services) r.technical_services = [...legacyTechnicalServices];
       if (!r.bar_service) r.bar_service = JSON.parse(JSON.stringify(legacyBarService));
       if (!r.host_duties) r.host_duties = JSON.parse(JSON.stringify(legacyHostDuties));
       if (!r.staff) {
         r.staff = legacyStaff
-          .filter(s => s.source_room === r.name || (!s.source_room && idx === 0))
-          .map(s => {
+          .filter((s: any) => s.source_room === r.name || (!s.source_room && idx === 0))
+          .map((s: any) => {
             const c = { ...s };
             delete c.source_room;
             return c;
@@ -644,8 +660,8 @@ function migrateActivities() {
       }
       if (!r.services) {
         r.services = legacyServices
-          .filter(s => s.source_room === r.name || (!s.source_room && idx === 0))
-          .map(s => {
+          .filter((s: any) => s.source_room === r.name || (!s.source_room && idx === 0))
+          .map((s: any) => {
             const c = { ...s };
             delete c.source_room;
             return c;
@@ -653,8 +669,8 @@ function migrateActivities() {
       }
       if (!r.fees) {
         r.fees = legacyFees
-          .filter(f => f.source_room === r.name || (!f.source_room && idx === 0))
-          .map(f => {
+          .filter((f: any) => f.source_room === r.name || (!f.source_room && idx === 0))
+          .map((f: any) => {
             const c = { ...f };
             delete c.source_room;
             return c;
@@ -685,12 +701,12 @@ function migrateActivities() {
     // Legacy: reference was a single field on the activity. Move it onto each
     // distribution (per-account reference) since it is now defined per compte.
     if (act.reference !== undefined) {
-      (act.distributions || []).forEach(d => {
+      (act.distributions || []).forEach((d: any) => {
         if (d.reference === undefined) d.reference = act.reference;
       });
       delete act.reference;
     }
-    (act.distributions || []).forEach(d => {
+    (act.distributions || []).forEach((d: any) => {
       if (d.reference === undefined) d.reference = "";
     });
 
@@ -701,8 +717,8 @@ function migrateActivities() {
     // submission data, so they default to "soumission" rather than the lighter estimation mode.
     if (act.mode === undefined) act.mode = "soumission";
     if (!act.client) act.client = { first_name: "", last_name: "", phone: "", email: "" };
-    (act.rooms || []).forEach(r => {
-      (r.staff || []).forEach(s => {
+    (act.rooms || []).forEach((r: any) => {
+      (r.staff || []).forEach((s: any) => {
         if (s.overtime_hours === undefined) s.overtime_hours = 0;
       });
     });
@@ -719,8 +735,8 @@ function migrateActivities() {
     // span (same start_time/end_time on each) to keep the tariff total (days x tariff)
     // identical after migration.
     if (!act.reservations) {
-      act.reservations = (act.rooms || []).map(r => {
-        const slots = [];
+      act.reservations = (act.rooms || []).map((r: any) => {
+        const slots: any[] = [];
         if (r.date_start) {
           const dayCount = calculateDaysCount(r.date_start, r.date_end || r.date_start);
           const start = parseLocalDateStr(r.date_start);
@@ -761,7 +777,7 @@ function migrateActivities() {
     // that a single moment (one date + one heure, field named `time`). Both collapse to a single
     // date with a start/end heure: the range's start_date becomes the date (end_date is dropped,
     // now meaningless), and the single moment's `time` becomes start_time with an empty end_time.
-    (act.reservations || []).forEach(r => {
+    (act.reservations || []).forEach((r: any) => {
       if (r.install) {
         if (r.install.start_date !== undefined) {
           r.install = {
@@ -791,7 +807,7 @@ function migrateActivities() {
 }
 
 // Seed Initial Database with empty activities list
-async function seedDatabase() {
+async function seedDatabase(): Promise<void> {
   appState.settings = {
     theme: "dark",
     rooms: [...DEFAULT_CONFIG.rooms],
@@ -822,7 +838,7 @@ async function seedDatabase() {
 let lastSaveFailed = false;
 
 // Save state to IndexedDB
-async function saveDatabase() {
+async function saveDatabase(): Promise<void> {
   try {
     await saveAppStateToDb(appState);
     if (lastSaveFailed) {
@@ -847,10 +863,10 @@ const UI_STATE_KEY = "outil_marie_ui_state";
 function saveUiState() {
   const uiState = {
     activities: {
-      search: document.getElementById("activity-search")?.value || "",
-      filterSalle: document.getElementById("filter-salle")?.value || "",
-      filterClientType: document.getElementById("filter-client-type")?.value || "",
-      filterStatus: document.getElementById("filter-status")?.value || "",
+      search: (document.getElementById("activity-search") as HTMLInputElement)?.value || "",
+      filterSalle: (document.getElementById("filter-salle") as HTMLSelectElement)?.value || "",
+      filterClientType: (document.getElementById("filter-client-type") as HTMLSelectElement)?.value || "",
+      filterStatus: (document.getElementById("filter-status") as HTMLSelectElement)?.value || "",
       sortKey: activitiesState.sortKey,
       sortOrder: activitiesState.sortOrder,
       page: activitiesState.page,
@@ -862,7 +878,7 @@ function saveUiState() {
       pageSize: reconciliationState.pageSize
     },
     accountReport: {
-      filterAccount: document.getElementById("filter-report-account")?.value || "",
+      filterAccount: (document.getElementById("filter-report-account") as HTMLSelectElement)?.value || "",
       sortKey: accountReportState.sortKey,
       sortOrder: accountReportState.sortOrder,
       pageSize: accountReportState.pageSize,
@@ -880,7 +896,7 @@ function restoreUiState() {
   const raw = localStorage.getItem(UI_STATE_KEY);
   if (!raw) return;
 
-  let uiState;
+  let uiState: any;
   try {
     uiState = JSON.parse(raw);
   } catch (e) {
@@ -889,10 +905,10 @@ function restoreUiState() {
   }
 
   const act = uiState.activities || {};
-  const searchEl = document.getElementById("activity-search");
-  const salleEl = document.getElementById("filter-salle");
-  const clientTypeEl = document.getElementById("filter-client-type");
-  const statusEl = document.getElementById("filter-status");
+  const searchEl = document.getElementById("activity-search") as HTMLInputElement | null;
+  const salleEl = document.getElementById("filter-salle") as HTMLSelectElement | null;
+  const clientTypeEl = document.getElementById("filter-client-type") as HTMLSelectElement | null;
+  const statusEl = document.getElementById("filter-status") as HTMLSelectElement | null;
   if (searchEl && act.search !== undefined) searchEl.value = act.search;
   if (salleEl && act.filterSalle !== undefined) salleEl.value = act.filterSalle;
   if (clientTypeEl && act.filterClientType !== undefined) clientTypeEl.value = act.filterClientType;
@@ -913,7 +929,7 @@ function restoreUiState() {
   if (recon.pageSize) reconciliationState.pageSize = recon.pageSize;
 
   const report = uiState.accountReport || {};
-  const reportAccountEl = document.getElementById("filter-report-account");
+  const reportAccountEl = document.getElementById("filter-report-account") as HTMLSelectElement | null;
   if (reportAccountEl && report.filterAccount !== undefined) reportAccountEl.value = report.filterAccount;
   if (report.sortKey) accountReportState.sortKey = report.sortKey;
   if (report.sortOrder) accountReportState.sortOrder = report.sortOrder;

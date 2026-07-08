@@ -1,4 +1,10 @@
 class MockIDBRequest {
+  onsuccess: any;
+  onerror: any;
+  onupgradeneeded: any;
+  result: any;
+  error: any;
+
   constructor() {
     this.onsuccess = null;
     this.onerror = null;
@@ -9,7 +15,11 @@ class MockIDBRequest {
 }
 
 class MockIDBDatabase {
-  constructor(name, version) {
+  name: string;
+  version: number;
+  objectStores: Map<string, MockIDBObjectStore>;
+
+  constructor(name: string, version: number) {
     this.name = name;
     this.version = version;
     this.objectStores = new Map();
@@ -18,20 +28,20 @@ class MockIDBDatabase {
   get objectStoreNames() {
     const keys = Array.from(this.objectStores.keys());
     return {
-      contains: (name) => this.objectStores.has(name),
+      contains: (name: string) => this.objectStores.has(name),
       length: keys.length,
-      item: (index) => keys[index],
+      item: (index: number) => keys[index],
       entries: () => keys.entries()
-    };
+    } as any;
   }
 
-  createObjectStore(name, options) {
+  createObjectStore(name: string, options?: any) {
     const store = new MockIDBObjectStore(name, options);
     this.objectStores.set(name, store);
     return store;
   }
 
-  transaction(storeNames, mode) {
+  transaction(storeNames: any, mode: any) {
     const names = Array.isArray(storeNames) ? storeNames : [storeNames];
     const tx = new MockIDBTransaction(this, names, mode);
     return tx;
@@ -39,7 +49,13 @@ class MockIDBDatabase {
 }
 
 class MockIDBTransaction {
-  constructor(db, storeNames, mode) {
+  db: MockIDBDatabase;
+  storeNames: string[];
+  mode: string;
+  oncomplete: any;
+  onerror: any;
+
+  constructor(db: MockIDBDatabase, storeNames: string[], mode: string) {
     this.db = db;
     this.storeNames = storeNames;
     this.mode = mode;
@@ -50,7 +66,7 @@ class MockIDBTransaction {
     }, 5);
   }
 
-  objectStore(name) {
+  objectStore(name: string) {
     const store = this.db.objectStores.get(name);
     if (!store) throw new Error(`Store ${name} not found`);
     return store;
@@ -58,11 +74,13 @@ class MockIDBTransaction {
 }
 
 class MockIDBIndex {
-  constructor(store) {
+  store: MockIDBObjectStore;
+
+  constructor(store: MockIDBObjectStore) {
     this.store = store;
   }
 
-  getAll(key) {
+  getAll(key: any) {
     const req = new MockIDBRequest();
     setTimeout(() => {
       const results = Array.from(this.store.data.values()).filter(val => {
@@ -76,17 +94,21 @@ class MockIDBIndex {
 }
 
 class MockIDBObjectStore {
-  constructor(name, options = {}) {
+  name: string;
+  options: any;
+  data: Map<any, any>;
+
+  constructor(name: string, options = {}) {
     this.name = name;
     this.options = options;
     this.data = new Map();
   }
 
-  createIndex(name, keyPath, options = {}) {
+  createIndex(name: string, keyPath: any, options = {}) {
     // no-op mock
   }
 
-  index(name) {
+  index(name: string) {
     return new MockIDBIndex(this);
   }
 
@@ -99,7 +121,7 @@ class MockIDBObjectStore {
     return req;
   }
 
-  get(key) {
+  get(key: any) {
     const req = new MockIDBRequest();
     setTimeout(() => {
       req.result = this.data.get(key) || null;
@@ -108,7 +130,7 @@ class MockIDBObjectStore {
     return req;
   }
 
-  put(value, optionalKey) {
+  put(value: any, optionalKey?: any) {
     const req = new MockIDBRequest();
     const key = this.options.keyPath ? value[this.options.keyPath] : optionalKey;
     this.data.set(key, value);
@@ -119,7 +141,7 @@ class MockIDBObjectStore {
     return req;
   }
 
-  delete(key) {
+  delete(key: any) {
     const req = new MockIDBRequest();
     this.data.delete(key);
     setTimeout(() => {
@@ -129,10 +151,10 @@ class MockIDBObjectStore {
   }
 }
 
-const mockDatabases = new Map();
+const mockDatabases = new Map<string, MockIDBDatabase>();
 
-globalThis.indexedDB = {
-  open(name, version) {
+(globalThis as any).indexedDB = {
+  open(name: string, version: number) {
     const req = new MockIDBRequest();
     setTimeout(() => {
       let db = mockDatabases.get(name);
@@ -157,3 +179,4 @@ globalThis.indexedDB = {
     return req;
   }
 };
+export {};

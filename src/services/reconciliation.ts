@@ -18,7 +18,7 @@ import {
   getReconDecisionsFromDb,
   saveReconDecisionToDb,
   deleteReconDecisionFromDb
-} from "../state/state.js";
+} from "../state/state.ts";
 
 // Reconciliation view/engine state, grouped so ledger data and UI state live together
 const reconciliationState = {

@@ -1,19 +1,19 @@
 /**
- * dashboard.js - Dashboard view KPI computation (pure, no DOM, unit-tested directly).
+ * dashboard.ts - Dashboard view KPI computation (pure, no DOM, unit-tested directly).
  * The rendering (stat cards, Chart.js visualizations) and the renderDashboard()/
  * renderDashboardCharts() functions navigation.js imports and calls live in js/dashboard-view.tsx
  * (React, since Phase 3 of the Vite/React/TS migration — see TODO.txt).
  *
- * Kept as a separate plain .js module (rather than folded into dashboard-view.tsx) so the test
+ * Kept as a separate plain .ts module (rather than folded into dashboard-view.tsx) so the test
  * suite can still import computeDashboardStats through plain `node --test`: Node's built-in
  * TypeScript support strips .ts but can't execute .tsx (JSX needs a real transform, not just
  * type erasure), so nothing reachable from a test file's import graph can be a .tsx module.
  */
-import { getFiscalYear, getQuarterNumber } from "./state/state.js";
+import { getFiscalYear, getQuarterNumber } from "./state/state.ts";
 import { getRoomsTariffTotal } from "./utils/utils.ts";
 
 // Pure KPI computation (no DOM) so it can be unit tested directly.
-function computeDashboardStats(activities, selectedYear, selectedQuarters, reconciliationResults) {
+function computeDashboardStats(activities: any[], selectedYear: string, selectedQuarters: number[], reconciliationResults: any[]) {
   let totalRevenue = 0;
   let totalInternalFree = 0;
   let filledCount = 0;
@@ -26,14 +26,14 @@ function computeDashboardStats(activities, selectedYear, selectedQuarters, recon
     // Period filter
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== selectedYear || !selectedQuarters.includes(actQuarter)) {
+    if (actYear !== selectedYear || actQuarter === null || !selectedQuarters.includes(actQuarter)) {
       return;
     }
 
     filledCount++;
 
     // Revenue sum for this activity
-    const activityRevenue = act.distributions.reduce((sum, dist) => sum + dist.amount, 0);
+    const activityRevenue = act.distributions.reduce((sum: number, dist: any) => sum + dist.amount, 0);
     totalRevenue += activityRevenue;
 
     // Internal free valuation: client is internal, and no actual charge (revenue is zero)

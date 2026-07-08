@@ -53,4 +53,3 @@ test("log methods handle undefined details correctly", () => {
   assert.equal(warn.details, undefined);
   assert.equal(info.details, undefined);
 });
-

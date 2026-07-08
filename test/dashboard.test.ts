@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { computeDashboardStats } from "../src/dashboard.js";
+import { computeDashboardStats } from "../src/dashboard.ts";
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];
@@ -13,7 +13,7 @@ test("sums revenue and counts only filled activities within the selected period"
     { name: "Activité B", date_start: "2024-08-01", client_type: "externe", distributions: [{ amount: 999 }] } // wrong fiscal year: ignored
   ];
 
-  const stats = computeDashboardStats(activities, YEAR, ALL_QUARTERS, []);
+  const stats = computeDashboardStats(activities as any[], YEAR, ALL_QUARTERS, []);
   assert.equal(stats.totalRevenue, 150);
   assert.equal(stats.filledCount, 1);
 });
@@ -29,7 +29,7 @@ test("values free internal bookings at their room tariff when no revenue was cha
     }
   ];
 
-  const stats = computeDashboardStats(activities, YEAR, ALL_QUARTERS, []);
+  const stats = computeDashboardStats(activities as any[], YEAR, ALL_QUARTERS, []);
   assert.equal(stats.totalInternalFree, 175);
 });
 
@@ -44,7 +44,7 @@ test("does not value internal bookings that were actually charged", () => {
     }
   ];
 
-  const stats = computeDashboardStats(activities, YEAR, ALL_QUARTERS, []);
+  const stats = computeDashboardStats(activities as any[], YEAR, ALL_QUARTERS, []);
   assert.equal(stats.totalInternalFree, 0);
 });
 
@@ -71,7 +71,8 @@ test("ignores activities that are marked as deleted", () => {
     { name: "Activité Supprimée", date_start: "2025-08-01", client_type: "externe", deleted: true, distributions: [{ amount: 500 }] }
   ];
 
-  const stats = computeDashboardStats(activities, YEAR, ALL_QUARTERS, []);
+  const stats = computeDashboardStats(activities as any[], YEAR, ALL_QUARTERS, []);
   assert.equal(stats.totalRevenue, 100);
   assert.equal(stats.filledCount, 1);
 });
+export {};

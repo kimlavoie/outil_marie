@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabase } from "../../state/state.js";
+import { appState, saveDatabase } from "../../state/state.ts";
 import { showToast, generateUid } from "../../utils/utils.ts";
 import { EditIcon, DeleteIcon, Modal } from "./common.tsx";
 

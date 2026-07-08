@@ -1,5 +1,5 @@
 /**
- * backup.js - Backup/restore (JSON) and Excel export controllers
+ * backup.ts - Backup/restore (JSON) and Excel export controllers
  */
 import { isPlainObject, validateRules } from "../utils/validation.ts";
 import { logError } from "../utils/logger.ts";
@@ -18,7 +18,8 @@ import {
   getQuarterNumber,
   getActivePricingGrid,
   getFlattenedRoomTarifs
-} from "../state/state.js";
+} from "../state/state.ts";
+import type { AppState } from "../state/state.ts";
 import {
   showToast,
   showLoadingOverlay,
@@ -38,21 +39,21 @@ const AUTO_BACKUP_STORE = "handles";
 const AUTO_BACKUP_KEY = "backup_file";
 const AUTO_BACKUP_DB_VERSION = 1;
 
-let autoBackupHandle = null;
-let autoBackupLastWrite = null;
-let autoBackupWriteTimer = null;
+let autoBackupHandle: any = null;
+let autoBackupLastWrite: Date | null = null;
+let autoBackupWriteTimer: any = null;
 
-function upgradeAutoBackupDb(db, oldVersion) {
+function upgradeAutoBackupDb(db: IDBDatabase, oldVersion: number) {
   if (oldVersion < 1 && !db.objectStoreNames.contains(AUTO_BACKUP_STORE)) {
     db.createObjectStore(AUTO_BACKUP_STORE);
   }
 }
 
-function openAutoBackupDb() {
+function openAutoBackupDb(): Promise<IDBDatabase> {
   return openVersionedDb(AUTO_BACKUP_DB_NAME, AUTO_BACKUP_DB_VERSION, upgradeAutoBackupDb);
 }
 
-async function idbGetAutoBackupHandle() {
+async function idbGetAutoBackupHandle(): Promise<any> {
   const db = await openAutoBackupDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(AUTO_BACKUP_STORE, "readonly");
@@ -62,7 +63,7 @@ async function idbGetAutoBackupHandle() {
   });
 }
 
-async function idbSetAutoBackupHandle(handle) {
+async function idbSetAutoBackupHandle(handle: any): Promise<void> {
   const db = await openAutoBackupDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(AUTO_BACKUP_STORE, "readwrite");
@@ -72,7 +73,7 @@ async function idbSetAutoBackupHandle(handle) {
   });
 }
 
-async function idbClearAutoBackupHandle() {
+async function idbClearAutoBackupHandle(): Promise<void> {
   const db = await openAutoBackupDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(AUTO_BACKUP_STORE, "readwrite");
@@ -84,7 +85,7 @@ async function idbClearAutoBackupHandle() {
 
 // Builds the status widget with DOM APIs (not innerHTML) since the file name
 // comes from the user's filesystem and shouldn't be interpolated as markup.
-function renderAutoBackupStatus(status, filename) {
+function renderAutoBackupStatus(status: string, filename?: string) {
   updateAutoBackupBanner(status, filename);
 
   const container = document.getElementById("auto-backup-status");
@@ -138,12 +139,13 @@ function renderAutoBackupStatus(status, filename) {
 
 // Shows/hides the app-wide banner (visible on every view, not just the
 // Sauvegarde & Export screen) so a lapsed permission doesn't go unnoticed.
-function updateAutoBackupBanner(status, filename) {
+function updateAutoBackupBanner(status: string, filename?: string) {
   const banner = document.getElementById("auto-backup-reminder-banner");
   if (!banner) return;
 
   if (status === "needs-permission") {
-    document.getElementById("auto-backup-reminder-filename").textContent = filename || "";
+    const fnEl = document.getElementById("auto-backup-reminder-filename");
+    if (fnEl) fnEl.textContent = filename || "";
     banner.style.display = "flex";
   } else {
     banner.style.display = "none";
@@ -171,6 +173,7 @@ async function initAutoBackup() {
 }
 
 async function connectAutoBackupFile() {
+  if (!window.showSaveFilePicker) return;
   try {
     const handle = await window.showSaveFilePicker({
       suggestedName: "compta_marie_autosave.json",
@@ -185,7 +188,7 @@ async function connectAutoBackupFile() {
     autoBackupHandle = handle;
     renderAutoBackupStatus("connected", handle.name);
     await writeAutoBackupNow();
-  } catch (e) {
+  } catch (e: any) {
     if (e.name !== "AbortError") {
       logError("backup", "sélection du fichier de sauvegarde automatique", e);
       showToast("Erreur lors de la sélection du fichier : " + e.message, "error");
@@ -203,7 +206,7 @@ async function reconnectAutoBackupPermission() {
     } else {
       showToast("Permission refusée.", "error");
     }
-  } catch (e) {
+  } catch (e: any) {
     logError("backup", "reconnexion de la permission de sauvegarde automatique", e);
     showToast("Erreur lors de la reconnexion : " + e.message, "error");
   }
@@ -256,7 +259,7 @@ async function writeAutoBackupNow() {
 
 function initBackupHandlers() {
   // Export JSON Backup
-  document.getElementById("backup-export-json").addEventListener("click", async () => {
+  document.getElementById("backup-export-json")?.addEventListener("click", async () => {
     // Update last backup date to today before export
     appState.settings.last_backup_date = new Date().toISOString().split("T")[0];
     await saveDatabase();
@@ -277,29 +280,32 @@ function initBackupHandlers() {
 
   // Backup file selection drag & drop
   const jsonDropZone = document.getElementById("json-drop-zone");
-  const jsonFileInput = document.getElementById("json-file-input");
+  const jsonFileInput = document.getElementById("json-file-input") as HTMLInputElement | null;
 
-  jsonDropZone.addEventListener("click", () => jsonFileInput.click());
+  if (jsonDropZone && jsonFileInput) {
+    jsonDropZone.addEventListener("click", () => jsonFileInput.click());
 
-  jsonFileInput.addEventListener("change", e => {
-    const file = e.target.files[0];
-    if (file) handleJsonBackupFile(file);
-  });
+    jsonFileInput.addEventListener("change", e => {
+      const files = (e.target as HTMLInputElement).files;
+      const file = files ? files[0] : null;
+      if (file) handleJsonBackupFile(file);
+    });
+  }
 
   // Export Excel
-  document.getElementById("backup-export-excel").addEventListener("click", () => {
+  document.getElementById("backup-export-excel")?.addEventListener("click", () => {
     exportToExcel();
   });
 
   // Reset database button
-  document.getElementById("backup-reset-db").addEventListener("click", async () => {
+  document.getElementById("backup-reset-db")?.addEventListener("click", async () => {
     if (
       confirm(
         "ATTENTION : Cette action va supprimer définitivement toutes vos activités enregistrées. Les comptes, tarifs de salles et départements seront réinitialisés à leurs valeurs d'origine. Voulez-vous continuer ?"
       )
     ) {
       await seedDatabase();
-      const { applyTheme, renderAll } = await import("../navigation.js");
+      const { applyTheme, renderAll } = await import("../navigation.ts");
       applyTheme("dark");
       renderAll();
       checkBackupReminder();
@@ -308,13 +314,13 @@ function initBackupHandlers() {
   });
 
   // Reminder days input event handler
-  const reminderInput = document.getElementById("backup-reminder-days-input");
+  const reminderInput = document.getElementById("backup-reminder-days-input") as HTMLInputElement | null;
   if (reminderInput) {
     reminderInput.addEventListener("change", e => {
-      let val = parseInt(e.target.value, 10);
+      let val = parseInt((e.target as HTMLInputElement).value, 10);
       if (isNaN(val) || val < 1) {
         val = 7;
-        e.target.value = 7;
+        (e.target as HTMLInputElement).value = "7";
       }
       appState.settings.backup_reminder_days = val;
       saveDatabase();
@@ -327,7 +333,7 @@ function initBackupHandlers() {
   const bannerActionBtn = document.getElementById("backup-banner-action-btn");
   if (bannerActionBtn) {
     bannerActionBtn.addEventListener("click", () => {
-      import("../navigation.js").then(m => m.switchToView("backup"));
+      import("../navigation.ts").then(m => m.switchToView("backup"));
     });
   }
 
@@ -335,9 +341,10 @@ function initBackupHandlers() {
   const autoBackupContainer = document.getElementById("auto-backup-status");
   if (autoBackupContainer) {
     autoBackupContainer.addEventListener("click", e => {
-      if (e.target.id === "auto-backup-connect-btn") connectAutoBackupFile();
-      else if (e.target.id === "auto-backup-reconnect-btn") reconnectAutoBackupPermission();
-      else if (e.target.id === "auto-backup-disconnect-btn") disconnectAutoBackup();
+      const target = e.target as HTMLElement;
+      if (target.id === "auto-backup-connect-btn") connectAutoBackupFile();
+      else if (target.id === "auto-backup-reconnect-btn") reconnectAutoBackupPermission();
+      else if (target.id === "auto-backup-disconnect-btn") disconnectAutoBackup();
     });
   }
   initAutoBackup();
@@ -351,7 +358,7 @@ function initBackupHandlers() {
   }
 }
 
-function validateBackupSchema(parsed) {
+function validateBackupSchema(parsed: any): { valid: boolean; error?: string } {
   const settings = isPlainObject(parsed) ? parsed.settings : undefined;
   return validateRules([
     [isPlainObject(parsed), "Le contenu du fichier n'est pas un objet JSON valide."],
@@ -372,12 +379,14 @@ function validateBackupSchema(parsed) {
   ]);
 }
 
-function handleJsonBackupFile(file) {
+function handleJsonBackupFile(file: File) {
   const reader = new FileReader();
 
   reader.onload = async function (e) {
     try {
-      const parsed = JSON.parse(e.target.result);
+      const result = e.target?.result;
+      if (typeof result !== "string") return;
+      const parsed = JSON.parse(result);
       const validation = validateBackupSchema(parsed);
       if (!validation.valid) {
         showToast("Échec de la validation : " + validation.error, "error", 6000);
@@ -389,12 +398,24 @@ function handleJsonBackupFile(file) {
 
         // Sanitize settings on restoration
         if (!appState.favorites) appState.favorites = [];
-        if (!appState.settings) appState.settings = {};
+        if (!appState.settings) {
+          appState.settings = {
+            theme: "dark",
+            rooms: [],
+            departments: [],
+            accounts: [],
+            last_backup_date: "",
+            backup_reminder_days: 7,
+            salaries: [],
+            services: [],
+            global_tasks: []
+          };
+        }
         if (!appState.settings.rooms) appState.settings.rooms = [];
         if (!appState.settings.salaries) appState.settings.salaries = [];
         if (!appState.settings.services) appState.settings.services = [];
         if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
-        appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days, 10);
+        appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days as any, 10);
         if (isNaN(appState.settings.backup_reminder_days)) {
           appState.settings.backup_reminder_days = 7;
         }
@@ -412,17 +433,17 @@ function handleJsonBackupFile(file) {
 
         try {
           await clearAllActivityVersionsFromDb();
-        } catch (e) {
-          logError("backup", "suppression des versions lors de la restauration", e);
+        } catch (err) {
+          logError("backup", "suppression des versions lors de la restauration", err);
         }
         await saveDatabase();
-        const { applyTheme, renderAll } = await import("../navigation.js");
+        const { applyTheme, renderAll } = await import("../navigation.ts");
         applyTheme(appState.settings.theme || "dark");
         renderAll();
         checkBackupReminder();
         showToast("Base de données restaurée avec succès !", "success");
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast("Erreur lors de la lecture du fichier JSON : " + err.message, "error");
     }
   };
@@ -431,7 +452,7 @@ function handleJsonBackupFile(file) {
 }
 
 // Backup reminder helpers and views
-function getDaysSinceLastBackup() {
+function getDaysSinceLastBackup(): number | null {
   if (!appState.settings.last_backup_date) {
     return null;
   }
@@ -450,7 +471,7 @@ function getDaysSinceLastBackup() {
   return diffDays;
 }
 
-function formatLocalDateToFrench(dateStr) {
+function formatLocalDateToFrench(dateStr: string): string {
   if (!dateStr) return "Aucune sauvegarde effectuée";
   const parts = dateStr.split("-");
   if (parts.length !== 3) return dateStr;
@@ -465,7 +486,8 @@ function formatLocalDateToFrench(dateStr) {
 
 function checkBackupReminder() {
   const banner = document.getElementById("backup-reminder-banner");
-  if (!banner) return;
+  const alertTextEl = document.getElementById("backup-alert-text");
+  if (!banner || !alertTextEl) return;
 
   if (appState.activities.length === 0) {
     banner.style.display = "none";
@@ -476,7 +498,7 @@ function checkBackupReminder() {
   const reminderDays = appState.settings.backup_reminder_days || 7;
 
   if (!lastBackup) {
-    document.getElementById("backup-alert-text").innerHTML = `
+    alertTextEl.innerHTML = `
       <svg viewBox="0 0 24 24" class="alert-icon" style="fill: var(--warning-text); margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
       <span>Attention : Aucune sauvegarde de vos données n'a été effectuée.</span>
     `;
@@ -484,7 +506,7 @@ function checkBackupReminder() {
   } else {
     const days = getDaysSinceLastBackup();
     if (days !== null && days >= reminderDays) {
-      document.getElementById("backup-alert-text").innerHTML = `
+      alertTextEl.innerHTML = `
         <svg viewBox="0 0 24 24" class="alert-icon" style="fill: var(--warning-text); margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
         <span>Attention : Votre dernière sauvegarde remonte à <strong>${days}</strong> ${days > 1 ? "jours" : "jour"} (limite configurée à ${reminderDays} jours).</span>
       `;
@@ -523,16 +545,16 @@ function renderBackupView() {
   }
 
   // Update reminder input value
-  const inputEl = document.getElementById("backup-reminder-days-input");
+  const inputEl = document.getElementById("backup-reminder-days-input") as HTMLInputElement | null;
   if (inputEl) {
-    inputEl.value = reminderDays;
+    inputEl.value = String(reminderDays);
   }
 }
 
 // Generate structured excel matching the original template
 function exportToExcel() {
   // Helper to convert column index to letter
-  function getExcelColName(colIdx) {
+  function getExcelColName(colIdx: number) {
     let temp,
       letter = "";
     while (colIdx > 0) {
@@ -549,7 +571,7 @@ function exportToExcel() {
   setTimeout(() => runExportToExcel(getExcelColName), 20);
 }
 
-function runExportToExcel(getExcelColName) {
+function runExportToExcel(getExcelColName: (colIdx: number) => string) {
   try {
     const wb = XLSX.utils.book_new();
 
@@ -588,13 +610,13 @@ function runExportToExcel(getExcelColName) {
       if (act.name.trim() === "") return false;
       const actYear = getFiscalYear(act.date_start);
       const actQuarter = getQuarterNumber(act.date_start);
-      return actYear === appState.selected_year && appState.selected_quarters.includes(actQuarter);
+      return actYear === appState.selected_year && actQuarter !== null && appState.selected_quarters.includes(actQuarter);
     });
 
     // Add activities rows
     activeActivities.forEach((act, rIdx) => {
       const isFilled = act.name.trim() !== "";
-      const row = [];
+      const row: any[] = [];
 
       row.push(act.id); // NUMERO ACTIVITE
       row.push(isFilled ? act.responsable : ""); // RESPONSABLE FACTURATION
@@ -607,29 +629,23 @@ function runExportToExcel(getExcelColName) {
       row.push({ t: "n", f: `E${excelRow}-D${excelRow}+1` });
 
       row.push(isFilled ? act.client_type : ""); // Client interne ou externe
-      row.push(isFilled ? act.category || "" : ""); // CATÉGORIE (champ retiré du formulaire, conservé vide pour ne pas décaler les colonnes)
+      row.push(isFilled ? act.category || "" : ""); // CATÉGORIE
       row.push(isFilled ? (act.reservations || []).map(getReservationRoomLabel).join(", ") : ""); // SALLE
-      row.push(0); // TEMPS RÉMI (champ retiré du formulaire, conservé vide pour ne pas décaler les colonnes)
+      row.push(0); // TEMPS RÉMI
       row.push(isFilled ? act.department : ""); // DÉPARTEMENT
 
       // PRIX SALLE SANS FRAIS
-      // Chaque salle a maintenant son propre tarif et sa propre période, donc ce
-      // n'est plus un simple produit "jours × tarif fixe" exprimable en formule
-      // Excel uniforme : on calcule directement la valeur en JS.
       row.push(isFilled && act.client_type === "interne" ? getRoomsTariffTotal(act) : 0);
 
-      row.push(isFilled ? getActivityReferences(act) : ""); // NUMÉRO DE FACTURE... (regroupé par compte)
+      row.push(isFilled ? getActivityReferences(act) : ""); // NUMÉRO DE FACTURE...
 
       // Distribute amounts to matching account columns
       accountsOrder.forEach(code => {
-        const dist = act.distributions.find(d => d.account_code === code);
+        const dist = act.distributions.find((d: any) => d.account_code === code);
         row.push(dist ? dist.amount : 0);
       });
 
       // REVENUS TOTAL RÉÈL (written as formula summing distributions)
-      // distributions columns start at column index 13 (N) and end at headers.length - 2
-      // Let's convert column indices to Excel column letters!
-
       const firstDistCol = getExcelColName(13 + 1); // 1-based index (N)
       const lastDistCol = getExcelColName(13 + accountsOrder.length); // End of accounts
 
@@ -702,7 +718,7 @@ function runExportToExcel(getExcelColName) {
     const filename = `compta_marie_rapport_${appState.selected_year}_${qStr || "aucun"}_${new Date().toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(wb, filename);
     showToast("Export Excel terminé.", "success");
-  } catch (err) {
+  } catch (err: any) {
     logError("backup", "export Excel", err);
     showToast("Erreur lors de l'export Excel : " + err.message, "error");
   } finally {

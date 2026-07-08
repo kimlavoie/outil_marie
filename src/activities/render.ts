@@ -21,7 +21,7 @@ import {
   saveUiState,
   isFavoriteActivity,
   toggleFavoriteActivity
-} from "../state/state.js";
+} from "../state/state.ts";
 import {
   getReservationRoomLabel,
   getActivityReferences,
@@ -402,11 +402,11 @@ function renderActivities() {
   document.querySelectorAll(".favorite-act-btn").forEach(btn => {
     btn.addEventListener("click", e => {
       e.stopPropagation();
-      toggleFavoriteActivity(btn.getAttribute("data-id"));
+      toggleFavoriteActivity(btn.getAttribute("data-id") || "");
       renderActivities();
       // Dynamic import: navigation.js pulls in the .tsx views (Paramètres/Tableau de bord/...),
       // and this module must stay importable by plain `node --test` (Node can't load .tsx).
-      import("../navigation.js").then(m => m.renderQuickAccessAll());
+      import("../navigation.ts").then(m => m.renderQuickAccessAll());
     });
   });
 
@@ -444,7 +444,7 @@ function renderActivities() {
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();
         }
-        import("../navigation.js").then(m => m.renderAll());
+        import("../navigation.ts").then(m => m.renderAll());
       }
     });
   });
@@ -544,7 +544,7 @@ function initBulkActionsHandlers() {
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();
         }
-        import("../navigation.js").then(m => m.renderAll());
+        import("../navigation.ts").then(m => m.renderAll());
       }
     });
   }
@@ -575,7 +575,7 @@ function initBulkActionsHandlers() {
 
       activitiesState.selectedIds.clear();
       saveDatabase();
-      import("../navigation.js").then(m => m.renderAll());
+      import("../navigation.ts").then(m => m.renderAll());
 
       if (stateMenu) {
         stateMenu.classList.add("hidden");

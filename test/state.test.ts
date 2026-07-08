@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import "./indexeddb-mock.js";
+import "./indexeddb-mock.ts";
 
 // Mock localStorage globally
-globalThis.localStorage = {
-  store: {},
-  getItem(key) { return this.store[key] || null; },
-  setItem(key, value) { this.store[key] = String(value); },
-  removeItem(key) { delete this.store[key]; },
+(globalThis as any).localStorage = {
+  store: {} as Record<string, string>,
+  getItem(key: string) { return this.store[key] || null; },
+  setItem(key: string, value: string) { this.store[key] = String(value); },
+  removeItem(key: string) { delete this.store[key]; },
   clear() { this.store = {}; }
 };
 
@@ -27,7 +27,7 @@ import {
   toggleFavoriteActivity,
   getRecentlyViewedActivityIds,
   recordActivityView
-} from "../src/state/state.js";
+} from "../src/state/state.ts";
 
 test("getFiscalYear: July onward belongs to the year that just started", () => {
   assert.equal(getFiscalYear("2025-07-01"), "2025-2026");
@@ -176,7 +176,7 @@ test("isFavoriteActivity checks if an activity is in appState.favorites", () => 
 });
 
 test("toggleFavoriteActivity pins and unpins an activity and calls saveDatabase", async () => {
-  globalThis.document = { getElementById: () => null };
+  (globalThis as any).document = { getElementById: () => null };
   appState.favorites = ["act-1"];
   
   toggleFavoriteActivity("act-2");
@@ -214,4 +214,4 @@ test("recordActivityView adds/moves activity id to the front of recently viewed 
   recordActivityView("act-6");
   assert.deepEqual(getRecentlyViewedActivityIds(), ["act-6", "act-5", "act-4", "act-3", "act-1"]);
 });
-
+export {};

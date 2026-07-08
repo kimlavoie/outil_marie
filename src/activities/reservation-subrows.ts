@@ -1,4 +1,4 @@
-import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.js";
+import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
 import { escapeHtml, formatCurrency, generateUid, buildGlAccountOptionsHtml } from "../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "./financials.ts";
 

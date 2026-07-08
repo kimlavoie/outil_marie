@@ -13,7 +13,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { appState, parseLocalDateStr } from "../state/state.js";
+import { appState, parseLocalDateStr } from "../state/state.ts";
 import { getRoomColor, getReservationRoomLabel } from "../utils/utils.ts";
 import { openActivityDrawer, openActivityDetailModal } from "../activities/financials.ts";
 import { createDraftActivity } from "../activities/form.ts";

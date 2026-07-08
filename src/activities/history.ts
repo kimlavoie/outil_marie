@@ -15,7 +15,7 @@ import {
   getActivityVersionsFromDb,
   addActivityVersionToDb,
   pruneActivityVersions
-} from "../state/state.js";
+} from "../state/state.ts";
 import { showToast, escapeHtml, formatCurrency, OTHER_ROOM_VALUE } from "../utils/utils.ts";
 import { requireNonEmpty } from "../utils/validation.ts";
 import { logError } from "../utils/logger.ts";

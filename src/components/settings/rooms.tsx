@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabase, getFlattenedRoomTarifs } from "../../state/state.js";
+import { appState, saveDatabase, getFlattenedRoomTarifs } from "../../state/state.ts";
 import { generateUid, formatCurrency, getRoomColor, FALLBACK_ROOM_COLORS, showToast } from "../../utils/utils.ts";
-import { populateDropdowns } from "../../navigation.js";
+import { populateDropdowns } from "../../navigation.ts";
 import { EditIcon, DeleteIcon, Modal, GlAccountOptions } from "./common.tsx";
 
 interface GridParam {

@@ -4,19 +4,25 @@ import assert from "node:assert/strict";
 // activities-financials.ts imports appState directly from state.js (a real, shared, mutable
 // object) rather than reading it as a global, so we set up its test fixture by mutating that same
 // imported object's .settings rather than replacing the binding.
-import { appState } from "../src/state/state.js";
+import { appState } from "../src/state/state.ts";
 import { computeActivityFinancials, generateNextActivityId, buildPrintActivitySheetHtml } from "../src/activities/financials.ts";
 
-
 appState.settings = {
+  theme: "dark",
+  rooms: [],
+  departments: [],
+  accounts: [],
+  last_backup_date: "",
+  backup_reminder_days: 7,
   salaries: [{ id: "sal1", rate_versions: [{ effective_date: "", rate: 20, overtime_rate: 30 }] }],
   services: [
     { id: "svc-hourly", type: "hourly", rate_versions: [{ effective_date: "", rate: 10 }] },
     { id: "svc-flat", type: "flat", rate_versions: [{ effective_date: "", rate: 50 }] }
-  ]
+  ],
+  global_tasks: []
 };
 
-function makeActivity(reservationOverrides) {
+function makeActivity(reservationOverrides: any): any {
   return {
     reservations: [
       {
@@ -154,4 +160,4 @@ test("buildPrintActivitySheetHtml generates print layout template", () => {
   const normalizedHtml = html.replace(/\u00a0/g, " ");
   assert.ok(normalizedHtml.includes("150,00 $") || normalizedHtml.includes("150.00 $") || (normalizedHtml.includes("150") && normalizedHtml.includes("$")));
 });
-
+export {};

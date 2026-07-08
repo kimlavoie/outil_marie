@@ -8,7 +8,7 @@
  * js/datepicker.ts, js/activities-file-links.ts, js/activities-history.ts,
  * js/activities-financials.ts and js/activities-render.ts, this stays a plain TS module.
  */
-import { appState, saveDatabase } from "../state/state.js";
+import { appState, saveDatabase } from "../state/state.ts";
 import { debounce, generateUid, maskPhoneInput, escapeHtml, showToast, getReservationRoomLabel, OTHER_ROOM_VALUE } from "../utils/utils.ts";
 import { requireNonEmpty } from "../utils/validation.ts";
 import {
@@ -47,7 +47,7 @@ import {
   addSlotRow,
   initReservationsSection
 } from "./reservations.ts";
-import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.js";
+import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
 
 // Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
 // comment for why this cast is needed/safe.

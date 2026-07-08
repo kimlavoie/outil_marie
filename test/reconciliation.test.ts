@@ -2,12 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { matchDistributionsToLedger, validateLedgerStructure, findBestColumnMatch, cleanRef, reconcileLedger, reconciliationState } from "../src/services/reconciliation.ts";
-import { appState } from "../src/state/state.js";
+import { appState } from "../src/state/state.ts";
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];
 
-function activity(overrides) {
+function activity(overrides: any) {
   return {
     id: "act-1",
     name: "Activité test",
@@ -21,7 +21,7 @@ test("marks a distribution as valid when the ledger amount matches within 2 cent
   const activities = [activity({ distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] })];
   const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
 
-  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
   assert.equal(results.length, 1);
   assert.equal(results[0].status, "valid");
 });
@@ -30,22 +30,22 @@ test("marks a distribution as diff when the ledger amount doesn't match", () => 
   const activities = [activity({ distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] })];
   const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -80 }];
 
-  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
   assert.equal(results[0].status, "diff");
-  assert.equal(results[0].diff, 20);
+  assert.equal((results[0] as any).diff, 20);
 });
 
 test("marks a distribution without a matching ledger entry as unlogged", () => {
   const activities = [activity({ distributions: [{ account_code: "892-1", reference: "RI999", amount: 100 }] })];
 
-  const results = matchDistributionsToLedger(activities, [], YEAR, ALL_QUARTERS);
+  const results = matchDistributionsToLedger(activities as any[], [], YEAR, ALL_QUARTERS);
   assert.equal(results[0].status, "unlogged");
 });
 
 test("marks a distribution with no reference as unlogged", () => {
   const activities = [activity({ distributions: [{ account_code: "892-1", reference: "", amount: 100 }] })];
 
-  const results = matchDistributionsToLedger(activities, [], YEAR, ALL_QUARTERS);
+  const results = matchDistributionsToLedger(activities as any[], [], YEAR, ALL_QUARTERS);
   assert.equal(results[0].status, "unlogged");
 });
 
@@ -55,7 +55,7 @@ test("marks a ledger entry with no matching activity distribution as unentered",
   const results = matchDistributionsToLedger([], ledger, YEAR, ALL_QUARTERS);
   assert.equal(results.length, 1);
   assert.equal(results[0].status, "unentered");
-  assert.equal(results[0].amount_gl, 100);
+  assert.equal((results[0] as any).amount_gl, 100);
 });
 
 test("sums multiple ledger transactions sharing the same account+reference before comparing", () => {
@@ -65,7 +65,7 @@ test("sums multiple ledger transactions sharing the same account+reference befor
     { "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -40 }
   ];
 
-  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
   assert.equal(results.length, 1);
   assert.equal(results[0].status, "valid"); // -60 + -40 = -100 -> expected revenue 100
 });
@@ -82,7 +82,7 @@ test("evaluates two distributions sharing the same account+reference independent
   ];
   const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
 
-  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
   assert.equal(results.length, 2);
   assert.equal(results[0].status, "valid");
   assert.equal(results[1].status, "diff");
@@ -92,7 +92,7 @@ test("treats a zero-amount distribution matching a zero-amount ledger entry as v
   const activities = [activity({ distributions: [{ account_code: "892-1", reference: "RI001", amount: 0 }] })];
   const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": 0 }];
 
-  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
   assert.equal(results[0].status, "valid");
 });
 
@@ -100,14 +100,14 @@ test("skips activities and ledger transactions outside the selected fiscal perio
   const activities = [activity({ date_start: "2024-08-01", distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] })];
   const ledger = [{ "Date versée": "2024-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
 
-  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
   assert.equal(results.length, 0);
 });
 
 test("ignores blank (unfilled) activities", () => {
   const activities = [activity({ name: "", distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] })];
 
-  const results = matchDistributionsToLedger(activities, [], YEAR, ALL_QUARTERS);
+  const results = matchDistributionsToLedger(activities as any[], [], YEAR, ALL_QUARTERS);
   assert.equal(results.length, 0);
 });
 
@@ -117,7 +117,7 @@ test("ignores deleted activities in reconciliation matching", () => {
   ];
   const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
 
-  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
   // It should be treated as unentered in the ledger, because the app activity is ignored/deleted
   assert.equal(results.length, 1);
   assert.equal(results[0].status, "unentered");
@@ -134,9 +134,9 @@ test("suggests a fuzzy match when the amount and date are close but the référe
   // Same compte, close amount (+0.03) and date (2 days later), but a completely different référence
   const ledger = [{ "Date versée": "2025-08-17", "Poste budgétaire": "892-1", "No référence": "RI999", "Montant courant": -100.03 }];
 
-  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
-  const unlogged = results.find(r => r.status === "unlogged");
-  const unentered = results.find(r => r.status === "unentered");
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  const unlogged = results.find(r => r.status === "unlogged") as any;
+  const unentered = results.find(r => r.status === "unentered") as any;
   assert.ok(unlogged.suggestions && unlogged.suggestions.length === 1);
   assert.equal(unlogged.suggestions[0].reference, "RI999");
   assert.ok(unentered.suggestedFor.includes("Location de salle"));
@@ -155,8 +155,8 @@ test("suggests a fuzzy match based on text similarity when amount/date are not c
     { "Date versée": "2025-11-20", "Poste budgétaire": "892-1", "No référence": "RI999", "Montant courant": -40, Description: "conference climat" }
   ];
 
-  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
-  const unlogged = results.find(r => r.status === "unlogged");
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  const unlogged = results.find(r => r.status === "unlogged") as any;
   assert.ok(unlogged.suggestions && unlogged.suggestions.length === 1);
   assert.equal(unlogged.suggestions[0].reference, "RI999");
 });
@@ -173,8 +173,8 @@ test("does not suggest a match when neither amount/date nor text are close", () 
     { "Date versée": "2025-12-25", "Poste budgétaire": "892-1", "No référence": "RI999", "Montant courant": -40, Description: "vente de billets" }
   ];
 
-  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
-  const unlogged = results.find(r => r.status === "unlogged");
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  const unlogged = results.find(r => r.status === "unlogged") as any;
   assert.equal(unlogged.suggestions, undefined);
 });
 
@@ -192,7 +192,7 @@ test("validateLedgerStructure returns valid=false and error details for missing 
   ];
   const validation = validateLedgerStructure(incorrectRows);
   assert.equal(validation.valid, false);
-  assert.match(validation.error, /Date versée/);
+  assert.match(validation.error!, /Date versée/);
 });
 
 test("validateLedgerStructure returns valid=false for empty ledger file", () => {
@@ -233,7 +233,7 @@ test("cleanRef handles null, undefined, spaces and Excel float suffix (.0)", () 
   assert.equal(cleanRef(undefined), "");
   assert.equal(cleanRef("  ri001  "), "RI001");
   assert.equal(cleanRef("12345.0"), "12345");
-  assert.equal(cleanRef(123.0), "123");
+  assert.equal(cleanRef(123.0 as any), "123");
 });
 
 test("matchDistributionsToLedger chooses RI code from Nom when available", () => {
@@ -241,7 +241,7 @@ test("matchDistributionsToLedger chooses RI code from Nom when available", () =>
   // Nom starts with RI, No référence is something else
   const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "123456", "Nom": "RI001", "Montant courant": -100 }];
   
-  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
   assert.equal(results.length, 1);
   assert.equal(results[0].status, "valid");
   assert.equal(results[0].reference, "RI001");
@@ -258,8 +258,8 @@ test("reconcileLedger performs match and applies local reconciliationState.decis
   
   try {
     appState.activities = [
-      activity({ distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] }),
-      activity({ id: "act-2", distributions: [{ account_code: "892-2", reference: "RI002", amount: 200 }] })
+      activity({ distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] }) as any,
+      activity({ id: "act-2", distributions: [{ account_code: "892-2", reference: "RI002", amount: 200 }] }) as any
     ];
     appState.selected_year = YEAR;
     appState.selected_quarters = ALL_QUARTERS;
@@ -279,11 +279,11 @@ test("reconcileLedger performs match and applies local reconciliationState.decis
     const results = reconciliationState.results;
     assert.equal(results.length, 2);
     
-    const r1 = results.find(r => r.reference === "RI001");
+    const r1 = results.find(r => r.reference === "RI001") as any;
     assert.equal(r1.status, "valid");
     assert.equal(r1.reviewStatus, "");
     
-    const r2 = results.find(r => r.reference === "RI002");
+    const r2 = results.find(r => r.reference === "RI002") as any;
     assert.equal(r2.status, "unlogged");
     assert.equal(r2.reviewStatus, "validated"); // review status was successfully applied from decisions!
     
@@ -297,4 +297,4 @@ test("reconcileLedger performs match and applies local reconciliationState.decis
     reconciliationState.results = prevResults;
   }
 });
-
+export {};

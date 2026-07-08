@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import "./indexeddb-mock.js";
-import { appState } from "../src/state/state.js";
+import "./indexeddb-mock.ts";
+import { appState } from "../src/state/state.ts";
 import {
   timeRangesOverlap,
   getReservationOccupiedRanges,
@@ -11,7 +11,6 @@ import {
   formatTimestampToFrench,
   saveActivityVersion
 } from "../src/activities/history.ts";
-
 
 test("timeRangesOverlap detects overlapping windows on the same day", () => {
   assert.equal(timeRangesOverlap("09:00", "12:00", "11:00", "14:00"), true);
@@ -30,16 +29,16 @@ test("getReservationOccupiedRanges includes créneaux plus enabled install/disma
     install: { enabled: true, date: "2025-07-31", start_time: "13:00", end_time: "17:00" },
     dismantle: { enabled: false, date: "2025-08-02" }
   };
-  const ranges = getReservationOccupiedRanges(reservation);
+  const ranges = getReservationOccupiedRanges(reservation as any);
   assert.equal(ranges.length, 2);
-  assert.ok(ranges.some(r => r.date === "2025-08-01"));
-  assert.ok(ranges.some(r => r.date === "2025-07-31"));
-  assert.ok(!ranges.some(r => r.date === "2025-08-02")); // disabled dismantle window excluded
+  assert.ok(ranges.some((r: any) => r.date === "2025-08-01"));
+  assert.ok(ranges.some((r: any) => r.date === "2025-07-31"));
+  assert.ok(!ranges.some((r: any) => r.date === "2025-08-02")); // disabled dismantle window excluded
 });
 
 test("getReservationOccupiedRanges ignores slots without a date", () => {
   const reservation = { slots: [{ start_time: "09:00", end_time: "10:00" }] };
-  assert.deepEqual(getReservationOccupiedRanges(reservation), []);
+  assert.deepEqual(getReservationOccupiedRanges(reservation as any), []);
 });
 
 test("computeActivityDiff reports only fields that actually changed", () => {
@@ -55,7 +54,8 @@ test("computeActivityDiff reports only fields that actually changed", () => {
 
 test("computeActivityDiff labels empty values as [Vide] instead of leaving them blank", () => {
   const diffs = computeActivityDiff({ description: "Une description" }, { description: "" });
-  const descDiff = diffs.find(d => d.label === "Description");
+  const descDiff = diffs.find(d => d.label === "Description") as any;
+  assert.ok(descDiff);
   assert.equal(descDiff.oldVal, "Une description");
   assert.equal(descDiff.newVal, "[Vide]");
 });
@@ -65,16 +65,17 @@ test("computeActivityDiff summarizes reservation and distribution changes rather
   const newAct = { reservations: [{ room_name: "Salle A", slots: [{ date: "2025-08-01" }, { date: "2025-08-02" }] }] };
 
   const diffs = computeActivityDiff(oldAct, newAct);
-  const resDiff = diffs.find(d => d.label === "Réservations de salles");
+  const resDiff = diffs.find(d => d.label === "Réservations de salles") as any;
+  assert.ok(resDiff);
   assert.equal(resDiff.oldVal, "Aucune salle");
   assert.equal(resDiff.newVal, "Salle A (2 créneaux)");
 });
 
 test("checkRoomReservationConflicts detects conflicts and sets banner innerHTML", () => {
   const internalIdEl = { value: "act-1" };
-  const bannerEl = { style: {}, innerHTML: "" };
-  globalThis.document = {
-    getElementById(id) {
+  const bannerEl = { style: {} as any, innerHTML: "" };
+  (globalThis as any).document = {
+    getElementById(id: string) {
       if (id === "form-activity-internal-id") return internalIdEl;
       if (id === "form-activity-room-conflicts") return bannerEl;
       return null;
@@ -102,7 +103,7 @@ test("checkRoomReservationConflicts detects conflicts and sets banner innerHTML"
     }
   ];
 
-  checkRoomReservationConflicts(currentReservations);
+  checkRoomReservationConflicts(currentReservations as any);
 
   assert.equal(bannerEl.style.display, "block");
   assert.ok(bannerEl.innerHTML.includes("Salle A"));
@@ -135,7 +136,7 @@ test("formatTimestampToFrench formats ISO string into French readable timestamp"
 
 test("saveActivityVersion saves the version to IndexedDB", async () => {
   const act = { id: "act-1", name: "Versioned Event", state: "confirmed" };
-  await saveActivityVersion(act);
+  await saveActivityVersion(act as any);
   assert.ok(true);
 });
-
+export {};

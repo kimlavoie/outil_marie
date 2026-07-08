@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabase, getActiveSalaryRate, getActiveSalaryOvertimeRate } from "../../state/state.js";
+import { appState, saveDatabase, getActiveSalaryRate, getActiveSalaryOvertimeRate } from "../../state/state.ts";
 import { showToast, generateUid } from "../../utils/utils.ts";
 import { EditIcon, DeleteIcon, Modal, GlAccountOptions, RateVersionsEditor, RateVersionRow, newRateVersionRow } from "./common.tsx";
 
@@ -30,7 +30,7 @@ export function SalariesPanel({ active, openModal, bump }: { active: boolean; op
         {salaries.map((sal: { id: string; job: string; rate_versions: unknown[] }) => {
           const currentRate = getActiveSalaryRate(sal, "");
           const currentOvertimeRate = getActiveSalaryOvertimeRate(sal, "");
-          const overtimeNote = currentOvertimeRate > 0 ? ` · ${parseFloat(currentOvertimeRate).toFixed(2)} $ / heure (temps sup.)` : "";
+          const overtimeNote = currentOvertimeRate > 0 ? ` · ${currentOvertimeRate.toFixed(2)} $ / heure (temps sup.)` : "";
           const versionCount = (sal.rate_versions || []).length;
           const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
           return (
@@ -40,7 +40,7 @@ export function SalariesPanel({ active, openModal, bump }: { active: boolean; op
                   {sal.job}
                 </span>
                 <span className="settings-list-item-desc">
-                  {parseFloat(currentRate).toFixed(2)} $ / heure{overtimeNote}
+                  {currentRate.toFixed(2)} $ / heure{overtimeNote}
                   {versionNote}
                 </span>
               </div>

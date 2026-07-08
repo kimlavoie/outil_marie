@@ -14,7 +14,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { appState, saveDatabase } from "../state/state.js";
+import { appState, saveDatabase } from "../state/state.ts";
 import { showToast, showLoadingOverlay, hideLoadingOverlay, formatCurrency, renderPaginationBar } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
 import {

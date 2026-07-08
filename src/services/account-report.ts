@@ -1,13 +1,20 @@
 /**
- * account-report.js - "Grand Livre local" view: per-account ledger cards
+ * account-report.ts - "Grand Livre local" view: per-account ledger cards
  * built from activity distributions
  */
-import { appState, getFiscalYear, getQuarterNumber, saveUiState } from "../state/state.js";
+import { appState, getFiscalYear, getQuarterNumber, saveUiState } from "../state/state.ts";
 import { escapeHtml, formatCurrency, buildPaginationBarHtml } from "../utils/utils.ts";
+
+export interface AccountReportState {
+  sortKey: string;
+  sortOrder: "asc" | "desc";
+  pageSize: number;
+  pages: Record<string, number>;
+}
 
 // Account report view state, grouped (sort/pagination are per-account since
 // each account renders its own independently-paginated card)
-const accountReportState = {
+const accountReportState: AccountReportState = {
   sortKey: "id",
   sortOrder: "asc",
   pageSize: 10,
@@ -17,13 +24,15 @@ const accountReportState = {
 function renderAccountReport() {
   saveUiState();
   const container = document.getElementById("account-report-container");
-  const filterAccount = document.getElementById("filter-report-account").value;
+  const filterAccountSelect = document.getElementById("filter-report-account") as HTMLSelectElement | null;
+  if (!container || !filterAccountSelect) return;
 
+  const filterAccount = filterAccountSelect.value;
   container.innerHTML = "";
 
   // 1. Group activity distributions by account code
   // We want to map: accountCode -> array of { activity, distAmount }
-  const accountEntries = {};
+  const accountEntries: Record<string, any[]> = {};
 
   // Initialize for all configured accounts
   appState.settings.accounts.forEach(acc => {
@@ -38,11 +47,11 @@ function renderAccountReport() {
     // Period filter
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || !appState.selected_quarters.includes(actQuarter)) {
+    if (actYear !== appState.selected_year || actQuarter === null || !appState.selected_quarters.includes(actQuarter)) {
       return;
     }
 
-    act.distributions.forEach(d => {
+    act.distributions.forEach((d: any) => {
       if (accountEntries[d.account_code]) {
         accountEntries[d.account_code].push({
           activity: act,
@@ -91,8 +100,8 @@ function renderAccountReport() {
 
     // Sort entries according to the current account report sort state
     entries.sort((a, b) => {
-      let valA = "";
-      let valB = "";
+      let valA: any = "";
+      let valB: any = "";
 
       switch (accountReportState.sortKey) {
         case "id":
@@ -222,30 +231,36 @@ function renderAccountReport() {
   // per-account cards are rebuilt via innerHTML += on every render, which
   // would otherwise tear down any directly-attached listeners)
   container.onclick = e => {
-    const th = e.target.closest("th[data-sort]");
+    const target = e.target as HTMLElement;
+    const th = target.closest("th[data-sort]");
     if (th && container.contains(th)) {
       const sortKey = th.getAttribute("data-sort");
-      if (accountReportState.sortKey === sortKey) {
-        accountReportState.sortOrder = accountReportState.sortOrder === "asc" ? "desc" : "asc";
-      } else {
-        accountReportState.sortKey = sortKey;
-        accountReportState.sortOrder = "asc";
+      if (sortKey) {
+        if (accountReportState.sortKey === sortKey) {
+          accountReportState.sortOrder = accountReportState.sortOrder === "asc" ? "desc" : "asc";
+        } else {
+          accountReportState.sortKey = sortKey;
+          accountReportState.sortOrder = "asc";
+        }
+        renderAccountReport();
       }
-      renderAccountReport();
       return;
     }
 
-    const pageBtn = e.target.closest(".pagination-prev, .pagination-next");
+    const pageBtn = target.closest(".pagination-prev, .pagination-next") as HTMLElement | null;
     if (pageBtn && container.contains(pageBtn)) {
       const code = pageBtn.getAttribute("data-account");
-      const currentPage = accountReportState.pages[code] || 1;
-      accountReportState.pages[code] = pageBtn.classList.contains("pagination-prev") ? currentPage - 1 : currentPage + 1;
-      renderAccountReport();
+      if (code) {
+        const currentPage = accountReportState.pages[code] || 1;
+        accountReportState.pages[code] = pageBtn.classList.contains("pagination-prev") ? currentPage - 1 : currentPage + 1;
+        renderAccountReport();
+      }
     }
   };
 
   container.onchange = e => {
-    const select = e.target.closest(".pagination-size-select");
+    const target = e.target as HTMLSelectElement;
+    const select = target.closest(".pagination-size-select") as HTMLSelectElement | null;
     if (select && container.contains(select)) {
       accountReportState.pageSize = parseInt(select.value, 10);
       accountReportState.pages = {};

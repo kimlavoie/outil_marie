@@ -21,7 +21,7 @@ import {
   getActiveSalaryOvertimeRate,
   getActiveServiceRate,
   recordActivityView
-} from "../state/state.js";
+} from "../state/state.ts";
 import {
   formatCurrency,
   escapeHtml,
@@ -281,7 +281,7 @@ function openActivityDrawer(id: string, calendarReturn: any = null) {
     recordActivityView(act.id);
     // Dynamic import: navigation.js pulls in the .tsx views, and this module must stay
     // importable by plain `node --test` (Node can't load .tsx).
-    import("../navigation.js").then(m => m.renderQuickAccessAll());
+    import("../navigation.ts").then(m => m.renderQuickAccessAll());
   }
 
   form.reset();

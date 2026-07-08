@@ -6,7 +6,7 @@
  * activity form/drawer — so like js/datepicker.ts and js/activities-form.ts, this stays a plain
  * TS module (Phase 2 style) rather than a React component until Réservations gets its own turn.
  */
-import { appState } from "../state/state.js";
+import { appState } from "../state/state.ts";
 import { openVersionedDb } from "../state/db-utils.ts";
 import { generateUid, showToast } from "../utils/utils.ts";
 import { commitActivityPatch } from "./form.ts";

@@ -13,9 +13,9 @@
  */
 import { useEffect, useRef, type RefObject } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { appState, getFiscalYear, getQuarterNumber, getQuarter } from "../state/state.js";
+import { appState, getFiscalYear, getQuarterNumber, getQuarter } from "../state/state.ts";
 import { getReservationRoomLabel, formatCurrency } from "../utils/utils.ts";
-import { computeDashboardStats } from "../dashboard.js";
+import { computeDashboardStats } from "../dashboard.ts";
 import { reconciliationState } from "../services/reconciliation.ts";
 
 function buildQuarterlyRevenuesConfig(textColor: string, gridColor: string) {

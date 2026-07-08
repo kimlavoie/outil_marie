@@ -1,14 +1,14 @@
 /**
- * main.js - App bootstrap. Loaded last: wires up every module's init
+ * main.ts - App bootstrap. Loaded last: wires up every module's init
  * function once the DOM is ready.
  */
 import { logError } from "./utils/logger.ts";
 import { showToast } from "./utils/utils.ts";
-import { appState, loadDatabase, restoreUiState } from "./state/state.js";
-import { applyTheme, initPeriodSelector, initNavigation, populateDropdowns, renderAll, switchToView } from "./navigation.js";
+import { appState, loadDatabase, restoreUiState } from "./state/state.ts";
+import { applyTheme, initPeriodSelector, initNavigation, populateDropdowns, renderAll, switchToView } from "./navigation.ts";
 import { initFormHandlers, initNewActivityModal } from "./activities/form.ts";
 import { initReconciliationHandlers } from "./components/reconciliation-view.tsx";
-import { initBackupHandlers } from "./services/backup.js";
+import { initBackupHandlers } from "./services/backup.ts";
 import { initCustomDatepickers } from "./activities/datepicker.ts";
 import { initCalendarModal, initViewCalendarButtons } from "./components/calendar-view.tsx";
 import { initActivitiesSort } from "./activities/history.ts";

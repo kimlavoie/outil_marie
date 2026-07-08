@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import "./indexeddb-mock.js";
+import "./indexeddb-mock.ts";
 import { openVersionedDb } from "../src/state/db-utils.ts";
 
 test("openVersionedDb opens a database and runs upgradeneeded callback", async () => {
@@ -8,7 +8,7 @@ test("openVersionedDb opens a database and runs upgradeneeded callback", async (
   let oldV = -1;
   let newV = -1;
 
-  const db = await openVersionedDb("test-db-1", 1, (database, oldVersion, newVersion) => {
+  const db = await openVersionedDb("test-db-1", 1, (database: any, oldVersion: any, newVersion: any) => {
     upgradeCalled = true;
     oldV = oldVersion;
     newV = newVersion;
@@ -26,7 +26,7 @@ test("openVersionedDb opens a database and runs upgradeneeded callback", async (
   let oldV2 = -1;
   let newV2 = -1;
 
-  const db2 = await openVersionedDb("test-db-1", 2, (database, oldVersion, newVersion) => {
+  const db2 = await openVersionedDb("test-db-1", 2, (database: any, oldVersion: any, newVersion: any) => {
     upgradeCalled2 = true;
     oldV2 = oldVersion;
     newV2 = newVersion;
@@ -44,4 +44,4 @@ test("openVersionedDb handles upgrade errors by logging them and continuing", as
   });
   assert.ok(db);
 });
-
+export {};

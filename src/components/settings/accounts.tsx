@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabase } from "../../state/state.js";
+import { appState, saveDatabase } from "../../state/state.ts";
 import { showToast } from "../../utils/utils.ts";
-import { populateDropdowns } from "../../navigation.js";
+import { populateDropdowns } from "../../navigation.ts";
 import { EditIcon, DeleteIcon, Modal } from "./common.tsx";
 
 export function AccountsPanel({

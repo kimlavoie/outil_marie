@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { calculateDaysCount, getRoomsTariffTotal, getActivityReferences, formatCurrency, escapeHtml, generateUid, getReservationRoomLabel, getRoomColor, buildGlAccountOptionsHtml, buildPaginationBarHtml, debounce } from "../src/utils/utils.ts";
-import { appState } from "../src/state/state.js";
+import { appState } from "../src/state/state.ts";
 
 test("calculateDaysCount counts both endpoints inclusively", () => {
   assert.equal(calculateDaysCount("2025-01-01", "2025-01-05"), 5);
@@ -25,7 +25,7 @@ test("getRoomsTariffTotal sums tariff_amount x number of créneaux across every 
       { slots: [{ date: "2025-02-01" }, { date: "2025-02-02" }, { date: "2025-02-03" }], tariff_amount: 50 } // 3 slots x 50 = 150
     ]
   };
-  assert.equal(getRoomsTariffTotal(activity), 350);
+  assert.equal(getRoomsTariffTotal(activity as any), 350);
 });
 
 test("getRoomsTariffTotal returns 0 when the activity has no reservations", () => {
@@ -37,7 +37,7 @@ test("getActivityReferences joins distinct, non-empty references", () => {
   const activity = {
     distributions: [{ reference: "RI001" }, { reference: "RI001" }, { reference: "RI002" }, { reference: "" }]
   };
-  assert.equal(getActivityReferences(activity), "RI001, RI002");
+  assert.equal(getActivityReferences(activity as any), "RI001, RI002");
 });
 
 test("formatCurrency formats value into CAD in French CA style", () => {
@@ -69,10 +69,20 @@ test("getReservationRoomLabel returns reservation room name or other details", (
 });
 
 test("getRoomColor returns configured room color or stable fallback from hash", () => {
-  appState.settings.rooms = [
-    { name: "Salle Bleue", color: "#0000ff" },
-    { name: "Salle Sans Couleur" }
-  ];
+  appState.settings = {
+    theme: "dark",
+    rooms: [
+      { name: "Salle Bleue", color: "#0000ff" },
+      { name: "Salle Sans Couleur" }
+    ] as any[],
+    salaries: [],
+    services: [],
+    global_tasks: [],
+    departments: [],
+    accounts: [],
+    last_backup_date: "",
+    backup_reminder_days: 7
+  };
   
   // Configured color
   assert.equal(getRoomColor("Salle Bleue"), "#0000ff");
@@ -89,10 +99,20 @@ test("getRoomColor returns configured room color or stable fallback from hash", 
 });
 
 test("buildGlAccountOptionsHtml generates correct select options HTML with optional selection", () => {
-  appState.settings.accounts = [
-    { code: "101", description: "Caisse" },
-    { code: "102", description: "Banque & Épargne" }
-  ];
+  appState.settings = {
+    theme: "dark",
+    rooms: [],
+    salaries: [],
+    services: [],
+    global_tasks: [],
+    departments: [],
+    accounts: [
+      { code: "101", description: "Caisse" },
+      { code: "102", description: "Banque & Épargne" }
+    ],
+    last_backup_date: "",
+    backup_reminder_days: 7
+  };
   
   const optionsHtml = buildGlAccountOptionsHtml();
   assert.ok(optionsHtml.includes('<option value="">Aucun</option>'));
@@ -133,5 +153,4 @@ test("debounce delays execution and only runs the last call in the delay period"
   await new Promise(resolve => setTimeout(resolve, 80));
   assert.equal(called, 1);
 });
-
-
+export {};

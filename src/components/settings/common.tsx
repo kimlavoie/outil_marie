@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { appState } from "../../state/state.js";
+import { appState } from "../../state/state.ts";
 import { generateUid } from "../../utils/utils.ts";
 
 export interface RateVersionRow {

@@ -1,5 +1,5 @@
 /**
- * navigation.js - Theme, top-level view switching, shared dropdowns, and the
+ * navigation.ts - Theme, top-level view switching, shared dropdowns, and the
  * fiscal year / quarter period selector.
  */
 import {
@@ -10,7 +10,7 @@ import {
   EVENT_TYPES,
   toggleFavoriteActivity,
   getRecentlyViewedActivityIds
-} from "./state/state.js";
+} from "./state/state.ts";
 import { escapeHtml, debounce } from "./utils/utils.ts";
 import { textSimilarity } from "./utils/fuzzy-match.ts";
 import { activitiesState, renderActivities } from "./activities/render.ts";
@@ -19,17 +19,19 @@ import { renderSettings, openSettingsPanel, openAccountModal, openDeptModal } fr
 import { renderDashboard, renderDashboardCharts } from "./components/dashboard-view.tsx";
 import { renderReconciliation } from "./components/reconciliation-view.tsx";
 import { reconciliationState, reconcileLedger } from "./services/reconciliation.ts";
-import { renderAccountReport } from "./services/account-report.js";
-import { exportToExcel, renderBackupView, checkBackupReminder } from "./services/backup.js";
+import { renderAccountReport } from "./services/account-report.ts";
+import { exportToExcel, renderBackupView, checkBackupReminder } from "./services/backup.ts";
 
 // Theme management
-function applyTheme(theme) {
+function applyTheme(theme: string) {
   document.documentElement.setAttribute("data-theme", theme);
   appState.settings.theme = theme;
 
   const sunIcon = document.getElementById("theme-sun-icon");
   const moonIcon = document.getElementById("theme-moon-icon");
   const btnText = document.getElementById("theme-btn-text");
+
+  if (!sunIcon || !moonIcon || !btnText) return;
 
   if (theme === "light") {
     sunIcon.style.display = "none";
@@ -43,17 +45,17 @@ function applyTheme(theme) {
 }
 
 // Navigation switcher
-function switchToView(view) {
+function switchToView(view: string) {
   const navItems = document.querySelectorAll(".nav-item");
   const sections = document.querySelectorAll(".view-section");
   const viewTitle = document.getElementById("view-title");
   const targetSection = document.getElementById(`view-${view}`);
-  if (!targetSection) return;
+  if (!targetSection || !viewTitle) return;
 
   // Clear activity selections if we leave the activities view
   if (view !== "activities" && activitiesState.selectedIds) {
     activitiesState.selectedIds.clear();
-    const selectAllCheckbox = document.getElementById("activities-select-all");
+    const selectAllCheckbox = document.getElementById("activities-select-all") as HTMLInputElement | null;
     if (selectAllCheckbox) {
       selectAllCheckbox.checked = false;
       selectAllCheckbox.indeterminate = false;
@@ -72,7 +74,7 @@ function switchToView(view) {
   targetSection.classList.add("active");
 
   // Set top bar title
-  const labels = {
+  const labels: Record<string, string> = {
     dashboard: "Tableau de bord",
     activities: "Journal des Activités",
     validation: "Rapprochement Comptable",
@@ -94,23 +96,23 @@ function initNavigation() {
 
   navItems.forEach(item => {
     item.addEventListener("click", () => {
-      switchToView(item.getAttribute("data-view"));
+      switchToView(item.getAttribute("data-view") || "");
     });
   });
 
   // Theme toggle button
-  document.getElementById("theme-toggle").addEventListener("click", () => {
+  document.getElementById("theme-toggle")?.addEventListener("click", () => {
     const currentTheme = appState.settings.theme === "light" ? "dark" : "light";
     applyTheme(currentTheme);
     saveDatabase();
     // Re-draw charts in case colors need to adjust (Chart.js respects theme context changes if redrawn)
-    if (document.getElementById("view-dashboard").classList.contains("active")) {
+    if (document.getElementById("view-dashboard")?.classList.contains("active")) {
       renderDashboardCharts();
     }
   });
 
   // Quick Export Excel Header button
-  document.getElementById("quick-export-excel").addEventListener("click", () => {
+  document.getElementById("quick-export-excel")?.addEventListener("click", () => {
     exportToExcel();
   });
 
@@ -135,14 +137,14 @@ const GLOBAL_SEARCH_FUZZY_MIN_SCORE = 0.5;
 
 // True if `query` is a substring of `text`, or fuzzy-similar enough to it (typo/word-order
 // tolerant) using the same Dice-coefficient scoring as the reconciliation engine's suggestions.
-function globalSearchMatches(text, query) {
+function globalSearchMatches(text: string, query: string): boolean {
   const value = (text || "").toLowerCase();
   if (value.includes(query)) return true;
   return textSimilarity(value, query) >= GLOBAL_SEARCH_FUZZY_MIN_SCORE;
 }
 
 function initGlobalSearch() {
-  const input = document.getElementById("global-search-input");
+  const input = document.getElementById("global-search-input") as HTMLInputElement | null;
   const resultsPanel = document.getElementById("global-search-results");
   if (!input || !resultsPanel) return;
 
@@ -157,7 +159,7 @@ function initGlobalSearch() {
 
   // Close on outside click, keep open on clicks inside the panel itself
   document.addEventListener("click", e => {
-    if (resultsPanel.classList.contains("active") && !resultsPanel.contains(e.target) && e.target !== input) {
+    if (resultsPanel.classList.contains("active") && !resultsPanel.contains(e.target as Node) && e.target !== input) {
       resultsPanel.classList.remove("active");
     }
   });
@@ -170,7 +172,7 @@ function initGlobalSearch() {
 
 // Builds one labeled results section (skipped entirely if empty, so an empty category leaves
 // no dangling header behind).
-function buildGlobalSearchSectionHtml(label, itemsHtml) {
+function buildGlobalSearchSectionHtml(label: string, itemsHtml: string): string {
   if (!itemsHtml) return "";
   return `
     <div class="quick-access-section">
@@ -180,7 +182,7 @@ function buildGlobalSearchSectionHtml(label, itemsHtml) {
   `;
 }
 
-function buildGlobalSearchItemHtml({ type, id, title, subtitle }) {
+function buildGlobalSearchItemHtml({ type, id, title, subtitle }: { type: string; id: string; title: string; subtitle?: string }): string {
   return `
     <div class="quick-access-item global-search-result" data-type="${type}" data-id="${escapeHtml(id)}" style="display: flex; flex-direction: column; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-main); cursor: pointer; margin-bottom: 4px;">
       <span class="bold" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(title)}</span>
@@ -191,7 +193,7 @@ function buildGlobalSearchItemHtml({ type, id, title, subtitle }) {
 
 // Opens the result the user clicked: jumps to the right view (and, for settings entities, the
 // right tab panel) then opens the matching edit modal/drawer directly.
-function openGlobalSearchResult(type, id) {
+function openGlobalSearchResult(type: string, id: string) {
   if (type === "activity") {
     switchToView("activities");
     openActivityDrawer(id);
@@ -206,8 +208,9 @@ function openGlobalSearchResult(type, id) {
   }
 }
 
-function renderGlobalSearchResults(query) {
+function renderGlobalSearchResults(query: string) {
   const resultsPanel = document.getElementById("global-search-results");
+  if (!resultsPanel) return;
 
   if (!query) {
     resultsPanel.classList.remove("active");
@@ -266,10 +269,11 @@ function renderGlobalSearchResults(query) {
 
   resultsPanel.querySelectorAll(".global-search-result").forEach(item => {
     item.addEventListener("click", () => {
-      const type = item.getAttribute("data-type");
-      const id = item.getAttribute("data-id");
+      const type = item.getAttribute("data-type") || "";
+      const id = item.getAttribute("data-id") || "";
       resultsPanel.classList.remove("active");
-      document.getElementById("global-search-input").value = "";
+      const input = document.getElementById("global-search-input") as HTMLInputElement | null;
+      if (input) input.value = "";
       openGlobalSearchResult(type, id);
     });
   });
@@ -291,7 +295,7 @@ function initQuickAccessDropdown() {
 
   // Close on outside click, keep open on clicks inside the panel itself
   document.addEventListener("click", e => {
-    if (panel.classList.contains("active") && !panel.contains(e.target) && e.target !== toggleBtn) {
+    if (panel.classList.contains("active") && !panel.contains(e.target as Node) && e.target !== toggleBtn) {
       panel.classList.remove("active");
     }
   });
@@ -313,7 +317,7 @@ const UPCOMING_ACTIVITY_LIMIT = 5;
 
 // Ids of filled activities starting today or within the next UPCOMING_ACTIVITY_WINDOW_DAYS days,
 // soonest first.
-function getUpcomingActivityIds() {
+function getUpcomingActivityIds(): string[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const windowEnd = new Date(today);
@@ -323,7 +327,7 @@ function getUpcomingActivityIds() {
     .filter(act => !act.deleted && act.name.trim() !== "" && act.date_start)
     .map(act => ({ id: act.id, date: parseLocalDateStr(act.date_start) }))
     .filter(entry => !isNaN(entry.date.getTime()) && entry.date >= today && entry.date <= windowEnd)
-    .sort((a, b) => a.date - b.date)
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
     .slice(0, UPCOMING_ACTIVITY_LIMIT)
     .map(entry => entry.id);
 }
@@ -331,7 +335,7 @@ function getUpcomingActivityIds() {
 // Builds one activity row. `category` controls the action button: pinned entries ("favorite")
 // get an unpin (x) button, entries surfaced automatically ("recent"/"upcoming") get a pin
 // (star) button so the user can promote them to the permanent list in one click.
-function buildQuickAccessItemHtml(act, category) {
+function buildQuickAccessItemHtml(act: any, category: string): string {
   const actionBtnHtml =
     category === "favorite"
       ? `<button class="btn-icon remove-quick-access-btn" data-id="${act.id}" title="Retirer des accès rapides" style="flex: 0 0 auto;">
@@ -359,7 +363,7 @@ function buildQuickAccessItemHtml(act, category) {
 
 // Builds one labeled section (skipped entirely if empty, so an empty category leaves no
 // dangling header behind).
-function buildQuickAccessSectionHtml(label, items, category) {
+function buildQuickAccessSectionHtml(label: string, items: any[], category: string): string {
   if (items.length === 0) return "";
   return `
     <div class="quick-access-section">
@@ -370,11 +374,12 @@ function buildQuickAccessSectionHtml(label, items, category) {
 }
 
 // Wires click-to-open, unpin, and pin buttons for a rendered quick access container
-function wireQuickAccessItemEvents(container) {
+function wireQuickAccessItemEvents(container: HTMLElement) {
   container.querySelectorAll(".quick-access-item").forEach(item => {
     item.addEventListener("click", e => {
-      if (e.target.closest(".remove-quick-access-btn") || e.target.closest(".pin-quick-access-btn")) return;
-      const id = item.getAttribute("data-id");
+      const target = e.target as HTMLElement;
+      if (target.closest(".remove-quick-access-btn") || target.closest(".pin-quick-access-btn")) return;
+      const id = item.getAttribute("data-id") || "";
       closeQuickAccessDropdown();
       switchToView("activities");
       openActivityDrawer(id);
@@ -384,9 +389,10 @@ function wireQuickAccessItemEvents(container) {
   container.querySelectorAll(".remove-quick-access-btn, .pin-quick-access-btn").forEach(btn => {
     btn.addEventListener("click", e => {
       e.stopPropagation();
-      toggleFavoriteActivity(btn.getAttribute("data-id"));
+      const id = btn.getAttribute("data-id") || "";
+      toggleFavoriteActivity(id);
       renderQuickAccessAll();
-      if (document.getElementById("view-activities").classList.contains("active")) renderActivities();
+      if (document.getElementById("view-activities")?.classList.contains("active")) renderActivities();
     });
   });
 }
@@ -425,13 +431,13 @@ function renderQuickAccessAll() {
   wireQuickAccessItemEvents(listContainer);
 
   if (countBadge) {
-    countBadge.textContent = totalCount;
+    countBadge.textContent = String(totalCount);
     countBadge.style.display = totalCount > 0 ? "inline-flex" : "none";
   }
 }
 
 // Render dynamic elements for a specific view
-function renderView(view) {
+function renderView(view: string) {
   if (view === "dashboard") {
     renderDashboard();
   } else if (view === "activities") {
@@ -458,14 +464,14 @@ function renderAll() {
   // Render currently active view
   const activeNav = document.querySelector(".nav-item.active");
   if (activeNav) {
-    renderView(activeNav.getAttribute("data-view"));
+    renderView(activeNav.getAttribute("data-view") || "");
   }
 }
 
 // Populate dropdown elements globally
 function populateDropdowns() {
-  const filterSalleSelect = document.getElementById("filter-salle");
-  const deptsSelects = [document.getElementById("form-activity-dept")];
+  const filterSalleSelect = document.getElementById("filter-salle") as HTMLSelectElement | null;
+  const deptsSelects = [document.getElementById("form-activity-dept") as HTMLSelectElement | null];
 
   // Filter Salle dropdown (single-select filter, unaffected by multi-room support)
   if (filterSalleSelect) {
@@ -482,7 +488,7 @@ function populateDropdowns() {
   // and addReservationCard() in activities.js), so it doesn't need populating here.
 
   // Form Event type dropdown
-  const eventTypeSelect = document.getElementById("form-activity-event-type");
+  const eventTypeSelect = document.getElementById("form-activity-event-type") as HTMLSelectElement | null;
   if (eventTypeSelect && !eventTypeSelect.dataset.populated) {
     eventTypeSelect.innerHTML =
       '<option value="">Sélectionner...</option>' + EVENT_TYPES.map(t => `<option value="${t.value}">${t.label}</option>`).join("");
@@ -499,7 +505,7 @@ function populateDropdowns() {
   });
 
   // Account report dropdown filter
-  const reportAccountSelect = document.getElementById("filter-report-account");
+  const reportAccountSelect = document.getElementById("filter-report-account") as HTMLSelectElement | null;
   if (reportAccountSelect) {
     const previousReportValue = reportAccountSelect.value;
     reportAccountSelect.innerHTML = '<option value="">Tous les comptes</option>';
@@ -520,7 +526,7 @@ function initPeriodSelector() {
 
   // Wire quarter buttons toggling
   document.querySelectorAll(".quarter-toggle").forEach(btn => {
-    const q = parseInt(btn.getAttribute("data-q"));
+    const q = parseInt(btn.getAttribute("data-q") || "0", 10);
 
     // Set initial class
     if (appState.selected_quarters.includes(q)) {
@@ -553,10 +559,10 @@ function initPeriodSelector() {
   });
 
   // Wire year select
-  const yearSelect = document.getElementById("top-fiscal-year");
+  const yearSelect = document.getElementById("top-fiscal-year") as HTMLSelectElement | null;
   if (yearSelect) {
     yearSelect.addEventListener("change", e => {
-      appState.selected_year = e.target.value;
+      appState.selected_year = (e.target as HTMLSelectElement).value;
       saveDatabase();
 
       // Re-run validation if ledger has been loaded to update statuses immediately!
@@ -570,7 +576,7 @@ function initPeriodSelector() {
 }
 
 function populateFiscalYears() {
-  const select = document.getElementById("top-fiscal-year");
+  const select = document.getElementById("top-fiscal-year") as HTMLSelectElement | null;
   if (!select) return;
 
   // Base years

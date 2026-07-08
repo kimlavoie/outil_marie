@@ -34,30 +34,7 @@ const sharedGlobals = {
 
 export default tseslint.config(
   {
-    files: ["src/**/*.js"],
-    ignores: ["src/lib/**", "**/*.min.js", "**/*.umd.js"],
-    languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: "module",
-      globals: sharedGlobals
-    },
-    rules: {
-      "no-undef": "off",
-      // vars: "local" only flags unused variables declared *inside* a function/block — top-level
-      // `function foo() {}` declarations are the app's cross-file API (see file banner comment)
-      // and are expected to look "unused" from any single file's perspective.
-      "no-unused-vars": ["warn", { args: "none", vars: "local", varsIgnorePattern: "^_" }],
-      eqeqeq: ["warn", "smart"],
-      "no-var": "warn",
-      "no-fallthrough": "error",
-      "no-dupe-keys": "error",
-      "no-duplicate-case": "error",
-      "no-unreachable": "error",
-      "no-const-assign": "error"
-    }
-  },
-  {
-    files: ["src/**/*.ts", "src/**/*.tsx"],
+    files: ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts"],
     extends: [tseslint.configs.recommended],
     plugins: { "react-hooks": reactHooks },
     languageOptions: {

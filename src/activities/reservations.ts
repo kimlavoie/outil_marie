@@ -14,7 +14,7 @@ import {
   BAR_DRINK_TYPES,
   BAR_SERVICE_TYPES,
   HOST_DUTY_OPTIONS
-} from "../state/state.js";
+} from "../state/state.ts";
 import {
   escapeHtml,
   formatCurrency,

@@ -1,11 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { migrateActivities, migrateRoomsConfig, appState } from "../src/state/state.js";
+import { migrateActivities, migrateRoomsConfig, appState } from "../src/state/state.ts";
 
 test("migrateActivities correctly migrates legacy room_name to reservations format", () => {
   // Setup legacy settings
   appState.settings = {
+    theme: "dark",
     rooms: [
       {
         name: "Salle François-Brassard (326.1)",
@@ -24,7 +25,12 @@ test("migrateActivities correctly migrates legacy room_name to reservations form
       }
     ],
     salaries: [],
-    services: []
+    services: [],
+    global_tasks: [],
+    departments: [],
+    accounts: [],
+    last_backup_date: "",
+    backup_reminder_days: 7
   };
 
   // Setup legacy activity
@@ -111,14 +117,32 @@ test("migrateActivities broadcast legacy activity-level reference onto distribut
 });
 
 test("migrateRoomsConfig does nothing and does not throw when there are no rooms", () => {
-  appState.settings = { rooms: [] };
+  appState.settings = {
+    theme: "dark",
+    rooms: [],
+    salaries: [],
+    services: [],
+    global_tasks: [],
+    departments: [],
+    accounts: [],
+    last_backup_date: "",
+    backup_reminder_days: 7
+  };
   assert.doesNotThrow(() => migrateRoomsConfig());
   assert.deepEqual(appState.settings.rooms, []);
 });
 
 test("migrateRoomsConfig builds a pricing grid from legacy price_internal/price_external", () => {
   appState.settings = {
-    rooms: [{ name: "Salle A", price_internal: 100, price_external: 150 }]
+    theme: "dark",
+    rooms: [{ name: "Salle A", price_internal: 100, price_external: 150 } as any],
+    salaries: [],
+    services: [],
+    global_tasks: [],
+    departments: [],
+    accounts: [],
+    last_backup_date: "",
+    backup_reminder_days: 7
   };
 
   migrateRoomsConfig();
@@ -131,18 +155,19 @@ test("migrateRoomsConfig builds a pricing grid from legacy price_internal/price_
   const grid = room.pricing_grids[0];
   assert.equal(grid.client_types.length, 2); // Interne + Externe
   assert.deepEqual(
-    grid.cells.map(c => c.amount),
+    grid.cells.map((c: any) => c.amount),
     [100, 150]
   );
 });
 
 test("migrateRoomsConfig leaves an existing pricing_grids untouched and still drops legacy tarifs", () => {
   appState.settings = {
+    theme: "dark",
     rooms: [
       {
         name: "Salle B",
         // Legacy leftover tarifs alongside an already-migrated pricing_grids: pricing_grids wins.
-        tarifs: [{ id: "t1", description: "Interne", amount: 999 }],
+        tarifs: [{ id: "t1", description: "Interne", amount: 999 }] as any,
         pricing_grids: [
           {
             effective_date: "",
@@ -151,8 +176,15 @@ test("migrateRoomsConfig leaves an existing pricing_grids untouched and still dr
             cells: [{ parameter_id: "p1", client_type_id: "ct1", amount: 42 }]
           }
         ]
-      }
-    ]
+      } as any
+    ],
+    salaries: [],
+    services: [],
+    global_tasks: [],
+    departments: [],
+    accounts: [],
+    last_backup_date: "",
+    backup_reminder_days: 7
   };
 
   migrateRoomsConfig();
@@ -165,7 +197,15 @@ test("migrateRoomsConfig leaves an existing pricing_grids untouched and still dr
 
 test("migrateRoomsConfig treats a null pricing_grids like a missing one and rebuilds it", () => {
   appState.settings = {
-    rooms: [{ name: "Salle C", pricing_grids: null, tarifs: [{ id: "t1", description: "Interne", amount: 75 }] }]
+    theme: "dark",
+    rooms: [{ name: "Salle C", pricing_grids: null, tarifs: [{ id: "t1", description: "Interne", amount: 75 }] } as any],
+    salaries: [],
+    services: [],
+    global_tasks: [],
+    departments: [],
+    accounts: [],
+    last_backup_date: "",
+    backup_reminder_days: 7
   };
 
   migrateRoomsConfig();
@@ -176,7 +216,17 @@ test("migrateRoomsConfig treats a null pricing_grids like a missing one and rebu
 });
 
 test("migrateRoomsConfig always ensures linked_* arrays exist", () => {
-  appState.settings = { rooms: [{ name: "Salle D", pricing_grids: [] }] };
+  appState.settings = {
+    theme: "dark",
+    rooms: [{ name: "Salle D", pricing_grids: [] } as any],
+    salaries: [],
+    services: [],
+    global_tasks: [],
+    departments: [],
+    accounts: [],
+    last_backup_date: "",
+    backup_reminder_days: 7
+  };
   migrateRoomsConfig();
   const room = appState.settings.rooms[0];
   assert.deepEqual(room.linked_rooms, []);
@@ -184,3 +234,4 @@ test("migrateRoomsConfig always ensures linked_* arrays exist", () => {
   assert.deepEqual(room.linked_fees, []);
   assert.deepEqual(room.linked_tasks, []);
 });
+export {};
