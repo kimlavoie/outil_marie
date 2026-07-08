@@ -29,7 +29,8 @@ import {
   escapeHtml,
   formatCurrency,
   calculateDaysCount,
-  renderPaginationBar
+  renderPaginationBar,
+  getMultiSelectValues
 } from "../utils/utils.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { openActivityDrawer, openActivityDetailsModal } from "./financials.ts";
@@ -145,9 +146,9 @@ function renderActivities() {
   saveUiState();
   const tbody = el("activities-table-body");
   const searchQuery = el("activity-search").value.toLowerCase();
-  const filterSalle = el("filter-salle").value;
-  const filterClientType = el("filter-client-type").value;
-  const filterStatus = el("filter-status")?.value || "";
+  const filterSalles = getMultiSelectValues("filter-salle-panel");
+  const filterClientTypes = getMultiSelectValues("filter-client-type-panel");
+  const filterStatuses = getMultiSelectValues("filter-status-panel");
 
   tbody.innerHTML = "";
 
@@ -165,13 +166,14 @@ function renderActivities() {
       );
 
     // Salle filter
-    const matchesSalle = !filterSalle || (act.reservations || []).some((r: any) => r.room_name === filterSalle);
+    const matchesSalle =
+      filterSalles.length === 0 || (act.reservations || []).some((r: any) => filterSalles.includes(r.room_name));
 
     // Client type filter
-    const matchesClientType = !filterClientType || act.client_type === filterClientType;
+    const matchesClientType = filterClientTypes.length === 0 || filterClientTypes.includes(act.client_type);
 
     // Status filter
-    const matchesStatus = !filterStatus || act.state === filterStatus;
+    const matchesStatus = filterStatuses.length === 0 || filterStatuses.includes(act.state);
 
     // Period filter
     let matchesPeriod = false;

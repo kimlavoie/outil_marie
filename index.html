@@ -246,27 +246,57 @@
                 </div>
 
                 <div class="filter-actions">
-                  <label for="filter-salle" class="sr-only">Filtrer par salle</label>
-                  <select id="filter-salle" class="select-input">
-                    <option value="">Toutes les salles</option>
-                    <!-- Populated dynamically -->
-                  </select>
-                  <label for="filter-client-type" class="sr-only">Filtrer par type de client</label>
-                  <select id="filter-client-type" class="select-input">
-                    <option value="">Tous types clients</option>
-                    <option value="interne">Interne</option>
-                    <option value="externe">Externe</option>
-                  </select>
-                  <label for="filter-status" class="sr-only">Filtrer par état</label>
-                  <select id="filter-status" class="select-input">
-                    <option value="">Tous les états</option>
-                    <option value="brouillon">Brouillon</option>
-                    <option value="soumise">Soumise au client</option>
-                    <option value="approuvee">Approuvée</option>
-                    <option value="planifiee">Planifiée</option>
-                    <option value="facturee">Facturée</option>
-                    <option value="terminee">Terminée</option>
-                  </select>
+                  <div class="multi-select" id="filter-salle-wrapper">
+                    <button
+                      type="button"
+                      class="select-input multi-select-btn"
+                      id="filter-salle-btn"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      data-default-label="Toutes les salles"
+                    >
+                      Toutes les salles
+                    </button>
+                    <div class="multi-select-panel" id="filter-salle-panel" hidden>
+                      <!-- Populated dynamically -->
+                    </div>
+                  </div>
+                  <div class="multi-select" id="filter-client-type-wrapper">
+                    <button
+                      type="button"
+                      class="select-input multi-select-btn"
+                      id="filter-client-type-btn"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      data-default-label="Tous types clients"
+                    >
+                      Tous types clients
+                    </button>
+                    <div class="multi-select-panel" id="filter-client-type-panel" hidden>
+                      <label class="multi-select-option"><input type="checkbox" value="interne" /> Interne</label>
+                      <label class="multi-select-option"><input type="checkbox" value="externe" /> Externe</label>
+                    </div>
+                  </div>
+                  <div class="multi-select" id="filter-status-wrapper">
+                    <button
+                      type="button"
+                      class="select-input multi-select-btn"
+                      id="filter-status-btn"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      data-default-label="Tous les états"
+                    >
+                      Tous les états
+                    </button>
+                    <div class="multi-select-panel" id="filter-status-panel" hidden>
+                      <label class="multi-select-option"><input type="checkbox" value="brouillon" /> Brouillon</label>
+                      <label class="multi-select-option"><input type="checkbox" value="soumise" /> Soumise au client</label>
+                      <label class="multi-select-option"><input type="checkbox" value="approuvee" /> Approuvée</label>
+                      <label class="multi-select-option"><input type="checkbox" value="planifiee" /> Planifiée</label>
+                      <label class="multi-select-option"><input type="checkbox" value="facturee" /> Facturée</label>
+                      <label class="multi-select-option"><input type="checkbox" value="terminee" /> Terminée</label>
+                    </div>
+                  </div>
                   <button id="open-calendar-btn" class="btn btn-secondary" title="Voir le calendrier des événements">
                     <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px">
                       <path

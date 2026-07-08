@@ -1,4 +1,4 @@
-import { calculateDaysCount, generateUid, showToast } from "../utils/utils.ts";
+import { calculateDaysCount, generateUid, showToast, getMultiSelectValues, setMultiSelectValues } from "../utils/utils.ts";
 import { openVersionedDb } from "./db-utils.ts";
 import { logError } from "../utils/logger.ts";
 
@@ -936,9 +936,9 @@ function saveUiState() {
   const uiState = {
     activities: {
       search: (document.getElementById("activity-search") as HTMLInputElement)?.value || "",
-      filterSalle: (document.getElementById("filter-salle") as HTMLSelectElement)?.value || "",
-      filterClientType: (document.getElementById("filter-client-type") as HTMLSelectElement)?.value || "",
-      filterStatus: (document.getElementById("filter-status") as HTMLSelectElement)?.value || "",
+      filterSalles: getMultiSelectValues("filter-salle-panel"),
+      filterClientTypes: getMultiSelectValues("filter-client-type-panel"),
+      filterStatuses: getMultiSelectValues("filter-status-panel"),
       sortKey: activitiesState.sortKey,
       sortOrder: activitiesState.sortOrder,
       page: activitiesState.page,
@@ -978,13 +978,10 @@ function restoreUiState() {
 
   const act = uiState.activities || {};
   const searchEl = document.getElementById("activity-search") as HTMLInputElement | null;
-  const salleEl = document.getElementById("filter-salle") as HTMLSelectElement | null;
-  const clientTypeEl = document.getElementById("filter-client-type") as HTMLSelectElement | null;
-  const statusEl = document.getElementById("filter-status") as HTMLSelectElement | null;
   if (searchEl && act.search !== undefined) searchEl.value = act.search;
-  if (salleEl && act.filterSalle !== undefined) salleEl.value = act.filterSalle;
-  if (clientTypeEl && act.filterClientType !== undefined) clientTypeEl.value = act.filterClientType;
-  if (statusEl && act.filterStatus !== undefined) statusEl.value = act.filterStatus;
+  if (act.filterSalles !== undefined) setMultiSelectValues("filter-salle-panel", act.filterSalles);
+  if (act.filterClientTypes !== undefined) setMultiSelectValues("filter-client-type-panel", act.filterClientTypes);
+  if (act.filterStatuses !== undefined) setMultiSelectValues("filter-status-panel", act.filterStatuses);
   if (act.sortKey) activitiesState.sortKey = act.sortKey;
   if (act.sortOrder) activitiesState.sortOrder = act.sortOrder;
   if (act.page) activitiesState.page = act.page;

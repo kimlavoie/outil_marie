@@ -11,7 +11,7 @@ import {
   toggleFavoriteActivity,
   getRecentlyViewedActivityIds
 } from "./state/state.ts";
-import { escapeHtml, debounce } from "./utils/utils.ts";
+import { escapeHtml, debounce, getMultiSelectValues, setMultiSelectValues } from "./utils/utils.ts";
 import { textSimilarity } from "./utils/fuzzy-match.ts";
 import { activitiesState, renderActivities } from "./activities/render.ts";
 import { openActivityDrawer } from "./activities/financials.ts";
@@ -470,17 +470,19 @@ function renderAll() {
 
 // Populate dropdown elements globally
 function populateDropdowns() {
-  const filterSalleSelect = document.getElementById("filter-salle") as HTMLSelectElement | null;
+  const filterSallePanel = document.getElementById("filter-salle-panel") as HTMLElement | null;
   const deptsSelects = [document.getElementById("form-activity-dept") as HTMLSelectElement | null];
 
-  // Filter Salle dropdown (single-select filter, unaffected by multi-room support)
-  if (filterSalleSelect) {
-    const previousSalleValue = filterSalleSelect.value;
-    filterSalleSelect.innerHTML = '<option value="">Toutes les salles</option>';
-    appState.settings.rooms.forEach(r => {
-      filterSalleSelect.innerHTML += `<option value="${escapeHtml(r.name)}">${escapeHtml(r.name)}</option>`;
-    });
-    filterSalleSelect.value = previousSalleValue;
+  // Filter Salle dropdown (multi-select: rebuild the checkbox list, preserving whatever was checked)
+  if (filterSallePanel) {
+    const previousSalleValues = getMultiSelectValues("filter-salle-panel");
+    filterSallePanel.innerHTML = appState.settings.rooms
+      .map(
+        r =>
+          `<label class="multi-select-option"><input type="checkbox" value="${escapeHtml(r.name)}" /> ${escapeHtml(r.name)}</label>`
+      )
+      .join("");
+    setMultiSelectValues("filter-salle-panel", previousSalleValues);
   }
 
   // Note: the salle selector inside each reservation card is a searchable combobox built

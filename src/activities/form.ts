@@ -17,7 +17,8 @@ import {
   showToast,
   getReservationRoomLabel,
   OTHER_ROOM_VALUE,
-  formatCurrency
+  formatCurrency,
+  initMultiSelectDropdown
 } from "../utils/utils.ts";
 import { requireNonEmpty } from "../utils/validation.ts";
 import {
@@ -138,11 +139,11 @@ function initFormHandlers() {
   };
   // Debounced on the free-text search box only: typing fires an "input" event per
   // keystroke, and each one re-filters/re-sorts/re-renders the whole table.
-  // Filter selects fire one discrete "change" event per interaction, so they stay immediate.
+  // Filter dropdowns fire one discrete "change" event per checkbox toggle, so they stay immediate.
   el("activity-search").addEventListener("input", debounce(resetActivitiesPageAndRender, 250));
-  el("filter-salle").addEventListener("change", resetActivitiesPageAndRender);
-  el("filter-client-type").addEventListener("change", resetActivitiesPageAndRender);
-  el("filter-status").addEventListener("change", resetActivitiesPageAndRender);
+  initMultiSelectDropdown("filter-salle-btn", "filter-salle-panel", resetActivitiesPageAndRender);
+  initMultiSelectDropdown("filter-client-type-btn", "filter-client-type-panel", resetActivitiesPageAndRender);
+  initMultiSelectDropdown("filter-status-btn", "filter-status-panel", resetActivitiesPageAndRender);
 
   // Account distributions buttons
   el("form-add-distribution-btn").addEventListener("click", () => {
