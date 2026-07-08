@@ -1,7 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateBackupSchema, getDaysSinceLastBackup, formatLocalDateToFrench } from "../js/backup.js";
-import { setAppState } from "../js/state.js";
+import "./indexeddb-mock.js";
+import {
+  validateBackupSchema,
+  getDaysSinceLastBackup,
+  formatLocalDateToFrench,
+  checkBackupReminder,
+  openAutoBackupDb,
+  idbGetAutoBackupHandle,
+  idbSetAutoBackupHandle,
+  idbClearAutoBackupHandle
+} from "../js/backup.js";
+import { appState, setAppState } from "../js/state.js";
+
 
 test("validateBackupSchema returns valid=true for correct backup structures", () => {
   const correctBackup = {
@@ -102,3 +113,60 @@ test("formatLocalDateToFrench formats a valid date and handles missing/malformed
   assert.equal(formatLocalDateToFrench(""), "Aucune sauvegarde effectuée");
   assert.equal(formatLocalDateToFrench("2025/08/01"), "2025/08/01"); // wrong separator: returned as-is
 });
+
+test("checkBackupReminder hides banner if no activities exist", () => {
+  const banner = { style: { display: "block" } };
+  globalThis.document = {
+    getElementById(id) {
+      if (id === "backup-reminder-banner") return banner;
+      return null;
+    }
+  };
+  
+  setAppState({ activities: [], settings: { last_backup_date: "" } });
+  checkBackupReminder();
+  assert.equal(banner.style.display, "none");
+});
+
+test("checkBackupReminder shows banner if activities exist but no backup date", () => {
+  const banner = { style: { display: "none" } };
+  const alertText = { innerHTML: "" };
+  globalThis.document = {
+    getElementById(id) {
+      if (id === "backup-reminder-banner") return banner;
+      if (id === "backup-alert-text") return alertText;
+      return null;
+    }
+  };
+  
+  setAppState({
+    activities: [{ id: "act-1" }],
+    settings: { last_backup_date: "", backup_reminder_days: 7 }
+  });
+  checkBackupReminder();
+  assert.equal(banner.style.display, "flex");
+  assert.ok(alertText.innerHTML.includes("Aucune sauvegarde"));
+});
+
+test("auto-backup database operations work correctly", async () => {
+  const db = await openAutoBackupDb();
+  assert.ok(db);
+  assert.equal(db.name, "outil_marie_autobackup");
+
+  // initially no handle
+  const handle1 = await idbGetAutoBackupHandle();
+  assert.equal(handle1, null);
+
+  // set handle
+  const mockHandle = { name: "backup.json", kind: "file" };
+  await idbSetAutoBackupHandle(mockHandle);
+  
+  const handle2 = await idbGetAutoBackupHandle();
+  assert.deepEqual(handle2, mockHandle);
+
+  // clear handle
+  await idbClearAutoBackupHandle();
+  const handle3 = await idbGetAutoBackupHandle();
+  assert.equal(handle3, null);
+});
+

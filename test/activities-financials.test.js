@@ -5,7 +5,8 @@ import assert from "node:assert/strict";
 // object) rather than reading it as a global, so we set up its test fixture by mutating that same
 // imported object's .settings rather than replacing the binding.
 import { appState } from "../js/state.js";
-import { computeActivityFinancials } from "../js/activities-financials.ts";
+import { computeActivityFinancials, generateNextActivityId, buildPrintActivitySheetHtml } from "../js/activities-financials.ts";
+
 
 appState.settings = {
   salaries: [{ id: "sal1", rate_versions: [{ effective_date: "", rate: 20, overtime_rate: 30 }] }],
@@ -105,3 +106,52 @@ test("computeActivityFinancials treats an unknown salary/service id as a zero ra
   assert.equal(fin.staffTotal, 0);
   assert.equal(fin.servicesTotal, 0);
 });
+
+test("generateNextActivityId generates next chronological ID for fiscal year", () => {
+  appState.selected_year = "2025-2026";
+  appState.activities = [
+    { id: "2526-001", name: "Activité 1" },
+    { id: "2526-002", name: "Activité 2" },
+    { id: "2425-005", name: "Activité ancienne" }
+  ];
+  
+  const nextId = generateNextActivityId();
+  assert.equal(nextId, "2526-003");
+});
+
+test("generateNextActivityId falls back to 001 if no activities exist for year", () => {
+  appState.selected_year = "2025-2026";
+  appState.activities = [];
+  
+  const nextId = generateNextActivityId();
+  assert.equal(nextId, "2526-001");
+});
+
+test("buildPrintActivitySheetHtml generates print layout template", () => {
+  const act = {
+    id: "2526-001",
+    name: "Conférence Climat",
+    mode: "estimation",
+    client_type: "externe",
+    client: { first_name: "Jean", last_name: "Dupont", phone: "514-123-4567", email: "jean@dupont.com" },
+    activity_manager: { first_name: "Marie", last_name: "Gérante", phone: "514-987-6543", email: "marie@admin.com" },
+    reservations: [
+      {
+        room_name: "Salle François-Brassard (326.1)",
+        tariff_description: "Tarif Régulier",
+        tariff_amount: 150,
+        slots: [{ date: "2025-08-01", start_time: "09:00", end_time: "17:00" }]
+      }
+    ]
+  };
+
+  const html = buildPrintActivitySheetHtml(act);
+  assert.ok(html.includes("<h1>Estimation</h1>"));
+  assert.ok(html.includes("Conférence Climat"));
+  assert.ok(html.includes("Jean Dupont"));
+  assert.ok(html.includes("Marie Gérante"));
+  assert.ok(html.includes("Salle François-Brassard"));
+  const normalizedHtml = html.replace(/\u00a0/g, " ");
+  assert.ok(normalizedHtml.includes("150,00 $") || normalizedHtml.includes("150.00 $") || (normalizedHtml.includes("150") && normalizedHtml.includes("$")));
+});
+

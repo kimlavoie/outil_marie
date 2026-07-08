@@ -1,5 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import "./indexeddb-mock.js";
+
+// Mock localStorage globally
+globalThis.localStorage = {
+  store: {},
+  getItem(key) { return this.store[key] || null; },
+  setItem(key, value) { this.store[key] = String(value); },
+  removeItem(key) { delete this.store[key]; },
+  clear() { this.store = {}; }
+};
+
 import {
   getFiscalYear,
   getQuarterNumber,
@@ -9,7 +20,13 @@ import {
   getActiveSalaryRate,
   getActiveSalaryOvertimeRate,
   getActiveServiceRate,
-  getFlattenedRoomTarifs
+  getFlattenedRoomTarifs,
+  appState,
+  setAppState,
+  isFavoriteActivity,
+  toggleFavoriteActivity,
+  getRecentlyViewedActivityIds,
+  recordActivityView
 } from "../js/state.js";
 
 test("getFiscalYear: July onward belongs to the year that just started", () => {
@@ -151,3 +168,50 @@ test("getFlattenedRoomTarifs prefixes with the parameter name when there are mul
   // No cell defined for p1::ct1: amount defaults to 0 rather than throwing
   assert.equal(tarifs.find(t => t.id === "p1::ct1").amount, 0);
 });
+
+test("isFavoriteActivity checks if an activity is in appState.favorites", () => {
+  appState.favorites = ["act-1", "act-2"];
+  assert.equal(isFavoriteActivity("act-1"), true);
+  assert.equal(isFavoriteActivity("act-3"), false);
+});
+
+test("toggleFavoriteActivity pins and unpins an activity and calls saveDatabase", async () => {
+  globalThis.document = { getElementById: () => null };
+  appState.favorites = ["act-1"];
+  
+  toggleFavoriteActivity("act-2");
+  assert.deepEqual(appState.favorites, ["act-1", "act-2"]);
+
+  toggleFavoriteActivity("act-1");
+  assert.deepEqual(appState.favorites, ["act-2"]);
+});
+
+test("getRecentlyViewedActivityIds returns recently viewed activity ids from localStorage", () => {
+  localStorage.clear();
+  assert.deepEqual(getRecentlyViewedActivityIds(), []);
+  
+  localStorage.setItem("outil_marie_recent_activities", JSON.stringify(["act-3", "act-4"]));
+  assert.deepEqual(getRecentlyViewedActivityIds(), ["act-3", "act-4"]);
+});
+
+test("recordActivityView adds/moves activity id to the front of recently viewed capped at 5", () => {
+  localStorage.clear();
+  
+  recordActivityView("act-1");
+  assert.deepEqual(getRecentlyViewedActivityIds(), ["act-1"]);
+  
+  recordActivityView("act-2");
+  assert.deepEqual(getRecentlyViewedActivityIds(), ["act-2", "act-1"]);
+  
+  // duplicates are moved to front
+  recordActivityView("act-1");
+  assert.deepEqual(getRecentlyViewedActivityIds(), ["act-1", "act-2"]);
+  
+  // cap at 5
+  recordActivityView("act-3");
+  recordActivityView("act-4");
+  recordActivityView("act-5");
+  recordActivityView("act-6");
+  assert.deepEqual(getRecentlyViewedActivityIds(), ["act-6", "act-5", "act-4", "act-3", "act-1"]);
+});
+

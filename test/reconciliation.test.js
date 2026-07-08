@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { matchDistributionsToLedger, validateLedgerStructure, findBestColumnMatch } from "../js/reconciliation.ts";
+import { matchDistributionsToLedger, validateLedgerStructure, findBestColumnMatch, cleanRef, reconcileLedger, reconciliationState } from "../js/reconciliation.ts";
+import { appState } from "../js/state.js";
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];
@@ -226,3 +227,74 @@ test("findBestColumnMatch returns an empty string when nothing matches", () => {
   assert.equal(findBestColumnMatch(["Colonne inconnue"], ["poste budgetaire"]), "");
   assert.equal(findBestColumnMatch([], ["poste budgetaire"]), "");
 });
+
+test("cleanRef handles null, undefined, spaces and Excel float suffix (.0)", () => {
+  assert.equal(cleanRef(null), "");
+  assert.equal(cleanRef(undefined), "");
+  assert.equal(cleanRef("  ri001  "), "RI001");
+  assert.equal(cleanRef("12345.0"), "12345");
+  assert.equal(cleanRef(123.0), "123");
+});
+
+test("matchDistributionsToLedger chooses RI code from Nom when available", () => {
+  const activities = [activity({ distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] })];
+  // Nom starts with RI, No référence is something else
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "123456", "Nom": "RI001", "Montant courant": -100 }];
+  
+  const results = matchDistributionsToLedger(activities, ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "valid");
+  assert.equal(results[0].reference, "RI001");
+});
+
+test("reconcileLedger performs match and applies local reconciliationState.decisions review statuses", () => {
+  // Save previous state to restore later
+  const prevActivities = appState.activities;
+  const prevYear = appState.selected_year;
+  const prevQuarters = appState.selected_quarters;
+  const prevLedgerTx = reconciliationState.ledgerTransactions;
+  const prevDecisions = reconciliationState.decisions;
+  const prevResults = reconciliationState.results;
+  
+  try {
+    appState.activities = [
+      activity({ distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] }),
+      activity({ id: "act-2", distributions: [{ account_code: "892-2", reference: "RI002", amount: 200 }] })
+    ];
+    appState.selected_year = YEAR;
+    appState.selected_quarters = ALL_QUARTERS;
+    
+    // Ledgers: RI001 matches perfectly (100). RI002 does not match at all (unlogged).
+    reconciliationState.ledgerTransactions = [
+      { "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }
+    ];
+    
+    // Mock a manual decision for RI002
+    reconciliationState.decisions = {
+      "892-2||RI002": { key: "892-2||RI002", status: "validated", note: "Approuvé manuellement" }
+    };
+    
+    reconcileLedger();
+    
+    const results = reconciliationState.results;
+    assert.equal(results.length, 2);
+    
+    const r1 = results.find(r => r.reference === "RI001");
+    assert.equal(r1.status, "valid");
+    assert.equal(r1.reviewStatus, "");
+    
+    const r2 = results.find(r => r.reference === "RI002");
+    assert.equal(r2.status, "unlogged");
+    assert.equal(r2.reviewStatus, "validated"); // review status was successfully applied from decisions!
+    
+  } finally {
+    // Restore state
+    appState.activities = prevActivities;
+    appState.selected_year = prevYear;
+    appState.selected_quarters = prevQuarters;
+    reconciliationState.ledgerTransactions = prevLedgerTx;
+    reconciliationState.decisions = prevDecisions;
+    reconciliationState.results = prevResults;
+  }
+});
+
