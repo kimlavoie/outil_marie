@@ -624,19 +624,22 @@ function generateBillingLines(act: any) {
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
     const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
     const salary = ((appState.settings.salaries as any[]) || []).find((s: any) => s.id === salaryId);
-    if (!salary || !salary.gl_account_code) return;
+    const tarifId = row.querySelector<HTMLSelectElement>(".staff-tarif-select")!.value;
+    const tarif = salary && ((salary.tarifs as any[]) || []).find((t: any) => t.id === tarifId);
+    const glAccountCode = tarif ? tarif.gl_account_code : "";
+    if (!salary || !tarif || !glAccountCode) return;
     const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
     const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
-    const rate = getActiveSalaryRate(salary, eventDateStart);
-    const overtimeRate = getActiveSalaryOvertimeRate(salary, eventDateStart);
+    const rate = getActiveSalaryRate(salary, eventDateStart, tarifId);
+    const overtimeRate = getActiveSalaryOvertimeRate(salary, eventDateStart, tarifId);
     const amount = rate * hours * count + overtimeRate * overtimeHours * count;
     if (amount > 0) {
       let details = `${count} ${salary.job}${count > 1 ? "s" : ""} de ${hours}h à ${formatCurrency(rate)}/h`;
       if (overtimeHours > 0) {
         details += ` + ${overtimeHours}h sup. à ${formatCurrency(overtimeRate)}/h`;
       }
-      addDistributionRow(salary.gl_account_code, amount, "", details);
+      addDistributionRow(glAccountCode, amount, "", details);
     }
   });
 

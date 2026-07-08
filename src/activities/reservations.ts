@@ -739,7 +739,7 @@ function addReservationCard(reservationData: any = null) {
 
   if (reservationData) {
     (reservationData.staff || []).forEach((s: any) =>
-      addStaffRow(staffList, s.salary_id, s.count, s.hours, s.overtime_hours, s.auto_generated)
+      addStaffRow(staffList, s.salary_id, s.count, s.hours, s.overtime_hours, s.tarif_id, s.auto_generated)
     );
     (reservationData.services || []).forEach((s: any) =>
       addServiceRow(servicesList, s.service_id, s.count, s.hours, s.tarif_id, s.auto_generated)

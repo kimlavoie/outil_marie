@@ -451,10 +451,12 @@ function migrateRoomsConfig() {
   });
 }
 
-// Migrate legacy flat salary rate to a versioned rate history per job, and ensure every
-// version carries an overtime_rate (added later, defaults to 0 for pre-existing versions).
+// Migrate legacy flat salary rate (a single gl_account_code and rate_versions history per job)
+// to tarifs[]: each tarif carries its own budget account AND its own rate history, so a job can
+// be billed under several budget codes (mirrors migrateServicesConfig's tarifs[] for equipment).
 function migrateSalariesConfig() {
   (appState.settings.salaries || []).forEach(sal => {
+    if (sal.tarifs) return;
     if (!sal.rate_versions) {
       sal.rate_versions = [{ id: generateUid("rv"), effective_date: "", rate: sal.rate || 0 }];
       delete sal.rate;
@@ -462,6 +464,16 @@ function migrateSalariesConfig() {
     sal.rate_versions.forEach((v: any) => {
       if (v.overtime_rate === undefined) v.overtime_rate = 0;
     });
+    sal.tarifs = [
+      {
+        id: generateUid("tarif"),
+        label: "",
+        gl_account_code: sal.gl_account_code || "",
+        rate_versions: sal.rate_versions
+      }
+    ];
+    delete sal.gl_account_code;
+    delete sal.rate_versions;
   });
 }
 
@@ -529,14 +541,26 @@ function getActiveRateVersionField(versions: any[], dateStr: string, field: stri
   return applicable[field] || 0;
 }
 
-// Returns the salary rate in effect for `dateStr` (same resolution rule as getActivePricingGrid)
-function getActiveSalaryRate(salary: any, dateStr: string): number {
-  return getActiveRateVersionField(salary && salary.rate_versions, dateStr, "rate");
+// Returns the tarif (named price point with its own budget account and rate history) matching
+// `tarifId` on `salary`, defaulting to the first configured tarif when none/an unknown id is
+// given (mirrors getServiceTarif's default of showing its first <option> until the user picks).
+function getSalaryTarif(salary: any, tarifId?: string): any | null {
+  const tarifs = (salary && salary.tarifs) || [];
+  if (tarifs.length === 0) return null;
+  return tarifs.find((t: any) => t.id === tarifId) || tarifs[0];
 }
 
-// Returns the overtime (temps supplémentaire) rate in effect for `dateStr`
-function getActiveSalaryOvertimeRate(salary: any, dateStr: string): number {
-  return getActiveRateVersionField(salary && salary.rate_versions, dateStr, "overtime_rate");
+// Returns the salary rate in effect for `dateStr` on the given salary's tarif (same resolution
+// rule as getActivePricingGrid, applied to that tarif's own rate_versions history)
+function getActiveSalaryRate(salary: any, dateStr: string, tarifId?: string): number {
+  const tarif = getSalaryTarif(salary, tarifId);
+  return getActiveRateVersionField(tarif && tarif.rate_versions, dateStr, "rate");
+}
+
+// Returns the overtime (temps supplémentaire) rate in effect for `dateStr` on the given salary's tarif
+function getActiveSalaryOvertimeRate(salary: any, dateStr: string, tarifId?: string): number {
+  const tarif = getSalaryTarif(salary, tarifId);
+  return getActiveRateVersionField(tarif && tarif.rate_versions, dateStr, "overtime_rate");
 }
 
 // Returns the tarif (named price point with its own budget account and rate history) matching
@@ -1024,6 +1048,7 @@ export {
   getActiveRateVersionField,
   getActiveSalaryRate,
   getActiveSalaryOvertimeRate,
+  getSalaryTarif,
   getActiveServiceRate,
   getServiceTarif,
   getFlattenedRoomTarifs,

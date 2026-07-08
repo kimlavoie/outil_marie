@@ -62,12 +62,13 @@ function updateSubmissionFinancialSummary() {
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
     updateStaffRowSubtotal(row);
     const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
+    const tarifId = row.querySelector<HTMLInputElement>(".staff-tarif-select")!.value;
     const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
     const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
     const salary = (appState.settings.salaries || []).find((s: any) => s.id === salaryId);
-    const rate = salary ? getActiveSalaryRate(salary, eventDateStart) : 0;
-    const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart) : 0;
+    const rate = salary ? getActiveSalaryRate(salary, eventDateStart, tarifId) : 0;
+    const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, tarifId) : 0;
     staffTotal += rate * hours * count + overtimeRate * overtimeHours * count;
   });
 
@@ -120,8 +121,8 @@ function computeActivityFinancials(act: any) {
   reservations.forEach((r: any) => {
     (r.staff || []).forEach((s: any) => {
       const salary = (appState.settings.salaries || []).find((sal: any) => sal.id === s.salary_id);
-      const rate = salary ? getActiveSalaryRate(salary, eventDateStart) : 0;
-      const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart) : 0;
+      const rate = salary ? getActiveSalaryRate(salary, eventDateStart, s.tarif_id) : 0;
+      const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, s.tarif_id) : 0;
       staffTotal += rate * (s.hours || 0) * (s.count || 0) + overtimeRate * (s.overtime_hours || 0) * (s.count || 0);
     });
     (r.services || []).forEach((s: any) => {

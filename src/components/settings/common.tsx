@@ -181,11 +181,20 @@ export interface TarifRow {
   rateRows: RateVersionRow[];
 }
 
-// One block per named tarif a service can be billed under (e.g. "Interne" / "Externe"), each
-// carrying its own budget account and its own dated rate history (via the nested
-// RateVersionsEditor). The reservation form's service line then picks one of these tarifs
-// instead of an account and a rate independently.
-export function TarifsEditor({ rows, onChange }: { rows: TarifRow[]; onChange: (rows: TarifRow[]) => void }) {
+// One block per named tarif a service (or salary) can be billed under (e.g. "Interne" / "Externe"),
+// each carrying its own budget account and its own dated rate history (via the nested
+// RateVersionsEditor). The reservation form's service/staff line then picks one of these tarifs
+// instead of an account and a rate independently. `withOvertime` adds the overtime rate column
+// used by salary tarifs (services have no overtime rate).
+export function TarifsEditor({
+  rows,
+  onChange,
+  withOvertime = false
+}: {
+  rows: TarifRow[];
+  onChange: (rows: TarifRow[]) => void;
+  withOvertime?: boolean;
+}) {
   const update = (i: number, patch: Partial<TarifRow>) => {
     onChange(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   };
@@ -216,7 +225,7 @@ export function TarifsEditor({ rows, onChange }: { rows: TarifRow[]; onChange: (
               <DeleteIcon />
             </button>
           </div>
-          <RateVersionsEditor rows={row.rateRows} onChange={rateRows => update(i, { rateRows })} withOvertime={false} />
+          <RateVersionsEditor rows={row.rateRows} onChange={rateRows => update(i, { rateRows })} withOvertime={withOvertime} />
           <button
             type="button"
             className="btn btn-secondary"
