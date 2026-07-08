@@ -56,7 +56,8 @@ function renderAccountReport() {
         accountEntries[d.account_code].push({
           activity: act,
           amount: d.amount,
-          reference: d.reference
+          reference: d.reference,
+          details: d.details
         });
       } else {
         // Fallback in case account code is not in configured settings list
@@ -64,7 +65,8 @@ function renderAccountReport() {
           {
             activity: act,
             amount: d.amount,
-            reference: d.reference
+            reference: d.reference,
+            details: d.details
           }
         ];
       }
@@ -148,7 +150,7 @@ function renderAccountReport() {
     if (entries.length === 0) {
       tableRowsHtml = `
         <tr>
-          <td colspan="6" class="text-center" style="color: var(--text-muted); padding: 24px;">
+          <td colspan="7" class="text-center" style="color: var(--text-muted); padding: 24px;">
             Aucune écriture enregistrée pour ce compte.
           </td>
         </tr>
@@ -170,6 +172,7 @@ function renderAccountReport() {
             <td>${datesText}</td>
             <td>${escapeHtml(act.department)}</td>
             <td class="font-mono">${escapeHtml(e.reference) || "-"}</td>
+            <td>${escapeHtml(e.details) || "-"}</td>
             <td class="bold text-right font-mono" style="color: var(--success-text);">${formatCurrency(e.amount)}</td>
           </tr>
         `;
@@ -197,13 +200,14 @@ function renderAccountReport() {
                 <th data-sort="date_start" class="${accountReportState.sortKey === "date_start" ? (accountReportState.sortOrder === "asc" ? "sort-asc" : "sort-desc") : ""}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Dates d'occupation</th>
                 <th data-sort="department" class="${accountReportState.sortKey === "department" ? (accountReportState.sortOrder === "asc" ? "sort-asc" : "sort-desc") : ""}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Département</th>
                 <th data-sort="reference" class="${accountReportState.sortKey === "reference" ? (accountReportState.sortOrder === "asc" ? "sort-asc" : "sort-desc") : ""}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">RI / Facture Réf.</th>
+                <th style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Détails</th>
                 <th data-sort="amount" class="${accountReportState.sortKey === "amount" ? (accountReportState.sortOrder === "asc" ? "sort-asc" : "sort-desc") : ""}" style="padding: 12px 24px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); text-align: right;">Montant</th>
               </tr>
             </thead>
             <tbody>
               ${tableRowsHtml}
               <tr style="background-color: var(--bg-main); border-top: 2px solid var(--border-color);">
-                <td colspan="5" class="bold text-right" style="padding: 16px 24px; font-size: 0.92rem; text-transform: uppercase;">
+                <td colspan="6" class="bold text-right" style="padding: 16px 24px; font-size: 0.92rem; text-transform: uppercase;">
                   Total pour le compte ${acc.code} :
                 </td>
                 <td class="bold text-right font-mono" style="padding: 16px 24px; font-size: 1.05rem; color: var(--primary);">

@@ -2343,6 +2343,7 @@ input[type="checkbox"] {
 .history-item {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
