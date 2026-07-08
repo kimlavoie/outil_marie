@@ -643,11 +643,13 @@ function generateBillingLines(act: any) {
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
     const serviceId = row.querySelector<HTMLInputElement>(".service-select")!.value;
     const service = ((appState.settings.services as any[]) || []).find((s: any) => s.id === serviceId);
-    const glAccountCode = row.querySelector<HTMLSelectElement>(".service-gl-account-select")!.value;
-    if (!service || !glAccountCode) return;
+    const tarifId = row.querySelector<HTMLSelectElement>(".service-tarif-select")!.value;
+    const tarif = service && ((service.tarifs as any[]) || []).find((t: any) => t.id === tarifId);
+    const glAccountCode = tarif ? tarif.gl_account_code : "";
+    if (!service || !tarif || !glAccountCode) return;
     const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
-    const rate = getActiveServiceRate(service, eventDateStart);
+    const rate = getActiveServiceRate(service, eventDateStart, tarifId);
     const isHourly = service.type === "hourly";
     const amount = isHourly ? rate * hours * count : rate * count;
     if (amount > 0) {

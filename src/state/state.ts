@@ -476,13 +476,25 @@ function migrateServicesConfig() {
     }
   });
 
-  // Legacy: a service used to carry a single gl_account_code. Services can now be billed to
-  // several named budget accounts (e.g. one for internal clients, one for external ones), each
-  // selected on the reservation's service line, so the single code becomes a one-entry list.
+  // Legacy: a service used to carry a single gl_account_code. That became a list of named
+  // billing_accounts (one per client type) with a single rate_versions history shared by all of
+  // them. Both are now merged into tarifs[]: each tarif carries its own budget account AND its
+  // own rate history, so different client types can also have different price histories.
   appState.settings.services.forEach(svc => {
-    if (!svc.billing_accounts) {
-      svc.billing_accounts = svc.gl_account_code ? [{ id: generateUid("billing"), label: "", gl_account_code: svc.gl_account_code }] : [];
+    if (!svc.tarifs) {
+      if (svc.billing_accounts === undefined) {
+        svc.billing_accounts = svc.gl_account_code ? [{ id: generateUid("billing"), label: "", gl_account_code: svc.gl_account_code }] : [];
+      }
+      const accounts = svc.billing_accounts.length > 0 ? svc.billing_accounts : [{ id: generateUid("billing"), label: "", gl_account_code: "" }];
+      svc.tarifs = accounts.map((a: any) => ({
+        id: a.id,
+        label: a.label || "",
+        gl_account_code: a.gl_account_code || "",
+        rate_versions: JSON.parse(JSON.stringify(svc.rate_versions || []))
+      }));
       delete svc.gl_account_code;
+      delete svc.billing_accounts;
+      delete svc.rate_versions;
     }
   });
 }
@@ -527,10 +539,20 @@ function getActiveSalaryOvertimeRate(salary: any, dateStr: string): number {
   return getActiveRateVersionField(salary && salary.rate_versions, dateStr, "overtime_rate");
 }
 
-// Returns the service rate in effect for `dateStr` (services share the same versioned
-// rate_versions shape as salaries, so the resolution logic is identical)
-function getActiveServiceRate(service: any, dateStr: string): number {
-  return getActiveSalaryRate(service, dateStr);
+// Returns the tarif (named price point with its own budget account and rate history) matching
+// `tarifId` on `service`, defaulting to the first configured tarif when none/an unknown id is
+// given (mirrors the <select>'s own default of showing its first <option> until the user picks).
+function getServiceTarif(service: any, tarifId?: string): any | null {
+  const tarifs = (service && service.tarifs) || [];
+  if (tarifs.length === 0) return null;
+  return tarifs.find((t: any) => t.id === tarifId) || tarifs[0];
+}
+
+// Returns the rate in effect for `dateStr` on the given service's tarif (same resolution rule as
+// getActivePricingGrid, applied to that tarif's own rate_versions history)
+function getActiveServiceRate(service: any, dateStr: string, tarifId?: string): number {
+  const tarif = getServiceTarif(service, tarifId);
+  return getActiveRateVersionField(tarif && tarif.rate_versions, dateStr, "rate");
 }
 
 // Compat shim: flattens a room's active pricing grid (cross product of parameters x client_types)
@@ -815,6 +837,19 @@ function migrateActivities() {
           r.dismantle = { enabled: r.dismantle.enabled, date: r.dismantle.date || "", start_time: r.dismantle.time || "", end_time: "" };
         }
       }
+
+      // Legacy: a reservation's service line used to carry the gl_account_code chosen directly
+      // from the service's billing_accounts list. Since that list is now services[].tarifs (each
+      // tarif owning both an account and its own rate history), the line now points at a tarif_id
+      // instead; matched by gl_account_code against the service's already-migrated tarifs.
+      (r.services || []).forEach((s: any) => {
+        if (s.gl_account_code !== undefined) {
+          const service = (appState.settings.services || []).find((sv: any) => sv.id === s.service_id);
+          const tarif = service && (service.tarifs || []).find((t: any) => t.gl_account_code === s.gl_account_code);
+          s.tarif_id = tarif ? tarif.id : "";
+          delete s.gl_account_code;
+        }
+      });
     });
   });
 }
@@ -990,6 +1025,7 @@ export {
   getActiveSalaryRate,
   getActiveSalaryOvertimeRate,
   getActiveServiceRate,
+  getServiceTarif,
   getFlattenedRoomTarifs,
   migrateActivities,
   seedDatabase,

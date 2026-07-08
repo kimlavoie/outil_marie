@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { appState } from "../../state/state.ts";
-import { formatDateMask, RateVersionRow } from "../../utils/utils.ts";
+import { formatDateMask, RateVersionRow, newRateVersionRow } from "../../utils/utils.ts";
 
 export function EditIcon() {
   return (
@@ -174,17 +174,19 @@ export function RateVersionsEditor({
   );
 }
 
-export interface BillingAccountRow {
+export interface TarifRow {
   key: string;
   label: string;
   gl_account_code: string;
+  rateRows: RateVersionRow[];
 }
 
-// One row per named budget account a service can be billed to (e.g. "Interne" / "Externe"),
-// mirroring RateVersionsEditor above. The reservation form's service line then picks one of
-// these accounts to bill against instead of a single fixed account per service.
-export function BillingAccountsEditor({ rows, onChange }: { rows: BillingAccountRow[]; onChange: (rows: BillingAccountRow[]) => void }) {
-  const update = (i: number, patch: Partial<BillingAccountRow>) => {
+// One block per named tarif a service can be billed under (e.g. "Interne" / "Externe"), each
+// carrying its own budget account and its own dated rate history (via the nested
+// RateVersionsEditor). The reservation form's service line then picks one of these tarifs
+// instead of an account and a rate independently.
+export function TarifsEditor({ rows, onChange }: { rows: TarifRow[]; onChange: (rows: TarifRow[]) => void }) {
+  const update = (i: number, patch: Partial<TarifRow>) => {
     onChange(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   };
   const remove = (i: number) => onChange(rows.filter((_, idx) => idx !== i));
@@ -192,25 +194,36 @@ export function BillingAccountsEditor({ rows, onChange }: { rows: BillingAccount
   return (
     <div className="distribution-list">
       {rows.map((row, i) => (
-        <div key={row.key} className="distribution-row" style={{ gridTemplateColumns: "1fr 1.4fr auto" }}>
-          <input
-            type="text"
-            className="form-input"
-            value={row.label}
-            placeholder="Ex: Interne"
-            style={{ padding: "8px 12px", fontSize: "0.85rem" }}
-            onChange={e => update(i, { label: e.target.value })}
-          />
-          <select
-            className="select-input"
-            value={row.gl_account_code}
-            style={{ padding: "8px 12px", fontSize: "0.85rem" }}
-            onChange={e => update(i, { gl_account_code: e.target.value })}
+        <div key={row.key} className="tarif-editor-block" style={{ border: "1px solid var(--border)", borderRadius: 6, padding: 8, marginBottom: 8 }}>
+          <div className="distribution-row" style={{ gridTemplateColumns: "1fr 1.4fr auto", marginBottom: 8 }}>
+            <input
+              type="text"
+              className="form-input"
+              value={row.label}
+              placeholder="Ex: Interne"
+              style={{ padding: "8px 12px", fontSize: "0.85rem" }}
+              onChange={e => update(i, { label: e.target.value })}
+            />
+            <select
+              className="select-input"
+              value={row.gl_account_code}
+              style={{ padding: "8px 12px", fontSize: "0.85rem" }}
+              onChange={e => update(i, { gl_account_code: e.target.value })}
+            >
+              <GlAccountOptions />
+            </select>
+            <button type="button" className="btn-icon" style={{ width: 14, height: 14 }} onClick={() => remove(i)}>
+              <DeleteIcon />
+            </button>
+          </div>
+          <RateVersionsEditor rows={row.rateRows} onChange={rateRows => update(i, { rateRows })} withOvertime={false} />
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ padding: "4px 10px", fontSize: "0.75rem" }}
+            onClick={() => update(i, { rateRows: [...row.rateRows, newRateVersionRow()] })}
           >
-            <GlAccountOptions />
-          </select>
-          <button type="button" className="btn-icon" style={{ width: 14, height: 14 }} onClick={() => remove(i)}>
-            <DeleteIcon />
+            + Ajouter une version de tarif
           </button>
         </div>
       ))}

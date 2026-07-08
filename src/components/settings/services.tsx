@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { appState, saveDatabase, getActiveServiceRate } from "../../state/state.ts";
-import { showToast, generateUid, RateVersionRow, newRateVersionRow } from "../../utils/utils.ts";
+import { showToast, generateUid, newRateVersionRow } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
-import { EditIcon, DeleteIcon, Modal, RateVersionsEditor, BillingAccountsEditor, BillingAccountRow } from "./common.tsx";
+import { EditIcon, DeleteIcon, Modal, TarifsEditor, TarifRow } from "./common.tsx";
 
 export function ServicesPanel({ active, openModal, bump }: { active: boolean; openModal: (id: string | null) => void; bump: () => void }) {
   const services = appState.settings.services || [];
@@ -28,11 +28,11 @@ export function ServicesPanel({ active, openModal, bump }: { active: boolean; op
         </button>
       </div>
       <div className="settings-list">
-        {services.map((svc: { id: string; name: string; type: string; rate_versions: unknown[] }) => {
+        {services.map((svc: { id: string; name: string; type: string; tarifs: { label: string }[] }) => {
+          const tarifs = svc.tarifs || [];
           const currentRate = getActiveServiceRate(svc, "");
-          const versionCount = (svc.rate_versions || []).length;
-          const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
           const unit = svc.type === "hourly" ? "$ / heure" : "$";
+          const tarifNote = tarifs.length > 1 ? ` (${tarifs.length} tarifs)` : "";
           return (
             <div key={svc.id} className="settings-list-item">
               <div className="settings-list-item-info">
@@ -41,7 +41,7 @@ export function ServicesPanel({ active, openModal, bump }: { active: boolean; op
                 </span>
                 <span className="settings-list-item-desc">
                   {currentRate.toFixed(2)} {unit}
-                  {versionNote}
+                  {tarifNote}
                 </span>
               </div>
               <div className="flex gap-2">
@@ -65,8 +65,7 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
   const originalId = id || "";
   const [name, setName] = useState("");
   const [type, setType] = useState("fixed");
-  const [billingAccounts, setBillingAccounts] = useState<BillingAccountRow[]>([]);
-  const [rows, setRows] = useState<RateVersionRow[]>([]);
+  const [tarifs, setTarifs] = useState<TarifRow[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -75,21 +74,18 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
     if (svc) {
       setName(svc.name);
       setType(svc.type || "fixed");
-      setBillingAccounts(
-        (svc.billing_accounts || []).map((a: { label: string; gl_account_code: string }) => ({
-          key: generateUid("billing-row"),
-          label: a.label || "",
-          gl_account_code: a.gl_account_code || ""
+      setTarifs(
+        (svc.tarifs || []).map((t: any) => ({
+          key: generateUid("tarif-row"),
+          label: t.label || "",
+          gl_account_code: t.gl_account_code || "",
+          rateRows: (t.rate_versions || []).map((v: any) => newRateVersionRow(v.effective_date, String(v.rate)))
         }))
-      );
-      setRows(
-        (svc.rate_versions || []).map((v: { effective_date: string; rate: number }) => newRateVersionRow(v.effective_date, String(v.rate)))
       );
     } else {
       setName("");
       setType("fixed");
-      setBillingAccounts([]);
-      setRows([newRateVersionRow()]);
+      setTarifs([{ key: generateUid("tarif-row"), label: "", gl_account_code: "", rateRows: [newRateVersionRow()] }]);
     }
   }, [isOpen, originalId]);
 
@@ -101,34 +97,33 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
       return;
     }
 
-    const rateVersions: { id: string; effective_date: string; rate: number }[] = [];
     let rateErrorMsg = "";
-    rows.forEach(row => {
-      const dateStr = row.effective_date.trim();
-      const rateStr = row.rate.trim();
-      const rate = parseFloat(rateStr);
-      if (!dateStr && !rateStr) return;
-      if (!rateStr || isNaN(rate) || rate < 0) {
-        rateErrorMsg = "Veuillez saisir un montant valide (supérieur ou égal à 0) pour chaque version.";
-      } else if (dateStr && !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        rateErrorMsg = "La date d'entrée en vigueur doit être au format AAAA-MM-JJ, ou vide.";
-      } else {
-        rateVersions.push({ id: generateUid("rv"), effective_date: dateStr, rate });
-      }
+    const tarifsResult = tarifs.map(tarif => {
+      const rateVersions: { id: string; effective_date: string; rate: number }[] = [];
+      tarif.rateRows.forEach(row => {
+        const dateStr = row.effective_date.trim();
+        const rateStr = row.rate.trim();
+        const rate = parseFloat(rateStr);
+        if (!dateStr && !rateStr) return;
+        if (!rateStr || isNaN(rate) || rate < 0) {
+          rateErrorMsg = "Veuillez saisir un montant valide (supérieur ou égal à 0) pour chaque version.";
+        } else if (dateStr && !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          rateErrorMsg = "La date d'entrée en vigueur doit être au format AAAA-MM-JJ, ou vide.";
+        } else {
+          rateVersions.push({ id: generateUid("rv"), effective_date: dateStr, rate });
+        }
+      });
+      return { id: generateUid("tarif"), label: tarif.label.trim(), gl_account_code: tarif.gl_account_code, rate_versions: rateVersions };
     });
 
     if (rateErrorMsg) {
       showToast(rateErrorMsg, "warning");
       return;
     }
-    if (rateVersions.length === 0) {
-      showToast("Veuillez saisir au moins un montant.", "warning");
+    if (tarifsResult.length === 0 || tarifsResult.every(t => t.rate_versions.length === 0)) {
+      showToast("Veuillez saisir au moins un tarif avec un montant.", "warning");
       return;
     }
-
-    const billingAccountsResult = billingAccounts
-      .filter(a => a.gl_account_code)
-      .map(a => ({ id: generateUid("billing"), label: a.label.trim(), gl_account_code: a.gl_account_code }));
 
     const services = appState.settings.services || [];
     const duplicate = services.some(
@@ -142,15 +137,14 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
     if (originalId) {
       const idx = services.findIndex((s: { id: string }) => s.id === originalId);
       if (idx !== -1) {
-        services[idx] = { id: originalId, name: serviceName, type, billing_accounts: billingAccountsResult, rate_versions: rateVersions };
+        services[idx] = { id: originalId, name: serviceName, type, tarifs: tarifsResult };
       }
     } else {
       services.push({
         id: generateUid("service"),
         name: serviceName,
         type,
-        billing_accounts: billingAccountsResult,
-        rate_versions: rateVersions
+        tarifs: tarifsResult
       });
     }
     services.sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
@@ -191,31 +185,19 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
       </div>
       <div className="distribution-section">
         <div className="distribution-header">
-          <span className="field-label">Comptes budgétaires (optionnel, pour la facturation)</span>
+          <span className="field-label">Tarifs (compte budgétaire et historique de montants)</span>
           <button
             type="button"
             className="btn btn-secondary"
             style={{ padding: "6px 12px", fontSize: "0.8rem" }}
-            onClick={() => setBillingAccounts([...billingAccounts, { key: generateUid("billing-row"), label: "", gl_account_code: "" }])}
+            onClick={() =>
+              setTarifs([...tarifs, { key: generateUid("tarif-row"), label: "", gl_account_code: "", rateRows: [newRateVersionRow()] }])
+            }
           >
-            + Ajouter un compte
+            + Ajouter un tarif
           </button>
         </div>
-        <BillingAccountsEditor rows={billingAccounts} onChange={setBillingAccounts} />
-      </div>
-      <div className="distribution-section">
-        <div className="distribution-header">
-          <span className="field-label">Historique des tarifs (date d'entrée en vigueur et montant)</span>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            style={{ padding: "6px 12px", fontSize: "0.8rem" }}
-            onClick={() => setRows([...rows, newRateVersionRow()])}
-          >
-            + Ajouter une version
-          </button>
-        </div>
-        <RateVersionsEditor rows={rows} onChange={setRows} withOvertime={false} />
+        <TarifsEditor rows={tarifs} onChange={setTarifs} />
       </div>
     </Modal>
   );
