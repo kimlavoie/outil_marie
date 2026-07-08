@@ -318,21 +318,21 @@ const DEFAULT_CONFIG = {
       id: "service-location-projecteur",
       name: "Location de projecteur",
       type: "hourly",
-      gl_account_code: "",
+      billing_accounts: [] as { id: string; label: string; gl_account_code: string }[],
       rate_versions: [{ id: "rv-location-projecteur", effective_date: "", rate: 20 }]
     },
     {
       id: "service-piano-queue",
       name: "Piano à queue",
       type: "fixed",
-      gl_account_code: "",
+      billing_accounts: [] as { id: string; label: string; gl_account_code: string }[],
       rate_versions: [{ id: "rv-piano-queue", effective_date: "", rate: 350 }]
     },
     {
       id: "service-projecteur-equipement",
       name: "Projecteur / équipement informatique",
       type: "fixed",
-      gl_account_code: "",
+      billing_accounts: [] as { id: string; label: string; gl_account_code: string }[],
       rate_versions: [{ id: "rv-projecteur-equipement", effective_date: "", rate: 32 }]
     }
   ],

@@ -170,3 +170,47 @@ export function RateVersionsEditor({
     </div>
   );
 }
+
+export interface BillingAccountRow {
+  key: string;
+  label: string;
+  gl_account_code: string;
+}
+
+// One row per named budget account a service can be billed to (e.g. "Interne" / "Externe"),
+// mirroring RateVersionsEditor above. The reservation form's service line then picks one of
+// these accounts to bill against instead of a single fixed account per service.
+export function BillingAccountsEditor({ rows, onChange }: { rows: BillingAccountRow[]; onChange: (rows: BillingAccountRow[]) => void }) {
+  const update = (i: number, patch: Partial<BillingAccountRow>) => {
+    onChange(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  };
+  const remove = (i: number) => onChange(rows.filter((_, idx) => idx !== i));
+
+  return (
+    <div className="distribution-list">
+      {rows.map((row, i) => (
+        <div key={row.key} className="distribution-row" style={{ gridTemplateColumns: "1fr 1.4fr auto" }}>
+          <input
+            type="text"
+            className="form-input"
+            value={row.label}
+            placeholder="Ex: Interne"
+            style={{ padding: "8px 12px", fontSize: "0.85rem" }}
+            onChange={e => update(i, { label: e.target.value })}
+          />
+          <select
+            className="select-input"
+            value={row.gl_account_code}
+            style={{ padding: "8px 12px", fontSize: "0.85rem" }}
+            onChange={e => update(i, { gl_account_code: e.target.value })}
+          >
+            <GlAccountOptions />
+          </select>
+          <button type="button" className="btn-icon" style={{ width: 14, height: 14 }} onClick={() => remove(i)}>
+            <DeleteIcon />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}

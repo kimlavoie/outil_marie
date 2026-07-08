@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { appState, saveDatabase, getActiveServiceRate } from "../../state/state.ts";
 import { showToast, generateUid, RateVersionRow, newRateVersionRow } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
-import { EditIcon, DeleteIcon, Modal, GlAccountOptions, RateVersionsEditor } from "./common.tsx";
+import { EditIcon, DeleteIcon, Modal, RateVersionsEditor, BillingAccountsEditor, BillingAccountRow } from "./common.tsx";
 
 export function ServicesPanel({ active, openModal, bump }: { active: boolean; openModal: (id: string | null) => void; bump: () => void }) {
   const services = appState.settings.services || [];
@@ -65,7 +65,7 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
   const originalId = id || "";
   const [name, setName] = useState("");
   const [type, setType] = useState("fixed");
-  const [glAccountCode, setGlAccountCode] = useState("");
+  const [billingAccounts, setBillingAccounts] = useState<BillingAccountRow[]>([]);
   const [rows, setRows] = useState<RateVersionRow[]>([]);
 
   useEffect(() => {
@@ -75,14 +75,20 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
     if (svc) {
       setName(svc.name);
       setType(svc.type || "fixed");
-      setGlAccountCode(svc.gl_account_code || "");
+      setBillingAccounts(
+        (svc.billing_accounts || []).map((a: { label: string; gl_account_code: string }) => ({
+          key: generateUid("billing-row"),
+          label: a.label || "",
+          gl_account_code: a.gl_account_code || ""
+        }))
+      );
       setRows(
         (svc.rate_versions || []).map((v: { effective_date: string; rate: number }) => newRateVersionRow(v.effective_date, String(v.rate)))
       );
     } else {
       setName("");
       setType("fixed");
-      setGlAccountCode("");
+      setBillingAccounts([]);
       setRows([newRateVersionRow()]);
     }
   }, [isOpen, originalId]);
@@ -120,6 +126,10 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
       return;
     }
 
+    const billingAccountsResult = billingAccounts
+      .filter(a => a.gl_account_code)
+      .map(a => ({ id: generateUid("billing"), label: a.label.trim(), gl_account_code: a.gl_account_code }));
+
     const services = appState.settings.services || [];
     const duplicate = services.some(
       (s: { name: string; id: string }) => s.name.toUpperCase() === serviceName.toUpperCase() && s.id !== originalId
@@ -132,10 +142,16 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
     if (originalId) {
       const idx = services.findIndex((s: { id: string }) => s.id === originalId);
       if (idx !== -1) {
-        services[idx] = { id: originalId, name: serviceName, type, gl_account_code: glAccountCode, rate_versions: rateVersions };
+        services[idx] = { id: originalId, name: serviceName, type, billing_accounts: billingAccountsResult, rate_versions: rateVersions };
       }
     } else {
-      services.push({ id: generateUid("service"), name: serviceName, type, gl_account_code: glAccountCode, rate_versions: rateVersions });
+      services.push({
+        id: generateUid("service"),
+        name: serviceName,
+        type,
+        billing_accounts: billingAccountsResult,
+        rate_versions: rateVersions
+      });
     }
     services.sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
     appState.settings.services = services;
@@ -173,16 +189,19 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
           <option value="hourly">Frais horaire</option>
         </select>
       </div>
-      <div className="form-group">
-        <label htmlFor="form-service-gl-account">Compte budgétaire associé (optionnel, pour la facturation)</label>
-        <select
-          id="form-service-gl-account"
-          className="select-input"
-          value={glAccountCode}
-          onChange={e => setGlAccountCode(e.target.value)}
-        >
-          <GlAccountOptions />
-        </select>
+      <div className="distribution-section">
+        <div className="distribution-header">
+          <span className="field-label">Comptes budgétaires (optionnel, pour la facturation)</span>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ padding: "6px 12px", fontSize: "0.8rem" }}
+            onClick={() => setBillingAccounts([...billingAccounts, { key: generateUid("billing-row"), label: "", gl_account_code: "" }])}
+          >
+            + Ajouter un compte
+          </button>
+        </div>
+        <BillingAccountsEditor rows={billingAccounts} onChange={setBillingAccounts} />
       </div>
       <div className="distribution-section">
         <div className="distribution-header">

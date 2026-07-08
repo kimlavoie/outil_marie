@@ -626,12 +626,13 @@ function generateBillingLines(act: any) {
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
     const serviceId = row.querySelector<HTMLInputElement>(".service-select")!.value;
     const service = ((appState.settings.services as any[]) || []).find((s: any) => s.id === serviceId);
-    if (!service || !service.gl_account_code) return;
+    const glAccountCode = row.querySelector<HTMLSelectElement>(".service-gl-account-select")!.value;
+    if (!service || !glAccountCode) return;
     const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
     const rate = getActiveServiceRate(service, eventDateStart);
     const amount = service.type === "hourly" ? rate * hours * count : rate * count;
-    if (amount > 0) addDistributionRow(service.gl_account_code, amount, "");
+    if (amount > 0) addDistributionRow(glAccountCode, amount, "");
   });
 
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-fees-list .distribution-row").forEach(row => {

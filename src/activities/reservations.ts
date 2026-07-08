@@ -535,8 +535,8 @@ function addReservationCard(reservationData: any = null) {
           <span class="field-label">Services</span>
           <button type="button" class="btn btn-secondary room-add-service-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
-        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.6fr 0.7fr 0.7fr 1fr auto; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; padding: 0 12px; margin-bottom: 4px;">
-          <span>Service</span><span>Qté</span><span title="Utilisé seulement pour les services facturés à l'heure">Heures</span><span>Sous-total</span><span></span>
+        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.3fr 0.6fr 0.6fr 1fr 1fr auto; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; padding: 0 12px; margin-bottom: 4px;">
+          <span>Service</span><span>Qté</span><span title="Utilisé seulement pour les services facturés à l'heure">Heures</span><span>Compte à facturer</span><span>Sous-total</span><span></span>
         </div>
         <div class="distribution-list room-services-list"></div>
       </div>
@@ -741,7 +741,9 @@ function addReservationCard(reservationData: any = null) {
     (reservationData.staff || []).forEach((s: any) =>
       addStaffRow(staffList, s.salary_id, s.count, s.hours, s.overtime_hours, s.auto_generated)
     );
-    (reservationData.services || []).forEach((s: any) => addServiceRow(servicesList, s.service_id, s.count, s.hours, s.auto_generated));
+    (reservationData.services || []).forEach((s: any) =>
+      addServiceRow(servicesList, s.service_id, s.count, s.hours, s.gl_account_code, s.auto_generated)
+    );
     (reservationData.fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, f.gl_account_code, f.auto_generated));
   }
 

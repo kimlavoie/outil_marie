@@ -475,6 +475,16 @@ function migrateServicesConfig() {
       appState.settings.services.push(JSON.parse(JSON.stringify(defaultSvc)));
     }
   });
+
+  // Legacy: a service used to carry a single gl_account_code. Services can now be billed to
+  // several named budget accounts (e.g. one for internal clients, one for external ones), each
+  // selected on the reservation's service line, so the single code becomes a one-entry list.
+  appState.settings.services.forEach(svc => {
+    if (!svc.billing_accounts) {
+      svc.billing_accounts = svc.gl_account_code ? [{ id: generateUid("billing"), label: "", gl_account_code: svc.gl_account_code }] : [];
+      delete svc.gl_account_code;
+    }
+  });
 }
 
 // Returns the pricing grid version in effect for `dateStr` (the most recent grid whose
