@@ -24,6 +24,23 @@ import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveSe
 
 const CONTRACT_TEMPLATE_PATH = "CONTRAT.xlsx";
 
+// Sheet layout: 6 equal-width columns (A:F) — reused both for <cols> and to size the header
+// image so it spans exactly the same width as the rest of the sheet (see buildDrawingXml).
+const SHEET_COLS = 6;
+const COL_WIDTH_UNITS = 22;
+
+// Original header image dimensions (CONTRAT.xlsx's drawing2.xml, "Image 3") in EMU.
+const SOURCE_IMAGE_WIDTH_EMU = 16138070;
+const SOURCE_IMAGE_HEIGHT_EMU = 2777553;
+
+// Scales the header image down to exactly the sheet's own column width (it was originally sized
+// for a much wider ~17-column sheet) instead of overflowing past column F. Excel's column width
+// unit is ~7px/unit at the 11pt reference font (see wrapRowHeight's doc comment); 1px = 9525 EMU.
+const IMAGE_WIDTH_EMU = SHEET_COLS * (COL_WIDTH_UNITS * 7 + 5) * 9525;
+const IMAGE_HEIGHT_EMU = Math.round((IMAGE_WIDTH_EMU * SOURCE_IMAGE_HEIGHT_EMU) / SOURCE_IMAGE_WIDTH_EMU);
+// How many default-height (15pt) blank rows the scaled-down image now covers, plus a small margin.
+const IMAGE_ROW_SPAN = Math.ceil(IMAGE_HEIGHT_EMU / 12700 / 15) + 1;
+
 // Style ids borrowed from CONTRAT.xlsx's "Salle poly et SFB" sheet (xl/styles.xml is copied
 // unmodified from that file, so these ids keep meaning exactly what they mean there).
 const S = {
@@ -191,16 +208,39 @@ function xmlEscapeText(str: string) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Appends one new cellXfs entry to xl/styles.xml — a clone of style 96 (S.resValue: the boxed
+// "Détail de la réservation" value cell) with its numFmtId switched from 14 (date) to 0 (general).
+// None of the 176 existing styles combine that exact fill/border with a general number format, so
+// rather than settle for a visually-inconsistent existing style, this adds one (styles.xml is
+// otherwise untouched, and appending never invalidates an existing style's index).
+function addNumericResValueStyle(stylesXmlBytes: Uint8Array): { patched: Uint8Array; styleIndex: number } {
+  const xmlText = new TextDecoder("utf-8").decode(stylesXmlBytes);
+  const match = xmlText.match(/<cellXfs count="(\d+)">/);
+  if (!match) return { patched: stylesXmlBytes, styleIndex: S.resValue };
+
+  const count = parseInt(match[1], 10);
+  const newXf =
+    `<xf numFmtId="0" fontId="5" fillId="7" borderId="16" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">` +
+    `<alignment horizontal="left"/></xf>`;
+  const patchedText = xmlText.replace(`<cellXfs count="${count}">`, `<cellXfs count="${count + 1}">`).replace("</cellXfs>", `${newXf}</cellXfs>`);
+  return { patched: new TextEncoder().encode(patchedText), styleIndex: count };
+}
+
 // Estimates a row height (points) that fits `text` wrapped across a cell `widthUnits` wide (in
 // Excel's <col width> units — see buildSheetXml's <cols>) at a given `fontSize` (points). The
 // borrowed styles here run from 14pt to 20pt (see xl/styles.xml font ids), much larger than the
-// 11pt default a naive fixed-chars-per-line estimate would assume — using the real font size
-// keeps rows tall enough that wrapped text doesn't get vertically clipped.
+// 11pt default a naive fixed-chars-per-line estimate would assume.
+//
+// Excel's width unit is defined against an 11pt reference font (~7px/unit); a `fontSize`-pt font
+// renders roughly `7 * fontSize/11` px/char, so chars-per-line scales as `widthUnits * 11 /
+// fontSize`. A 0.85 fudge factor is applied on top since word-wrap breaks at word boundaries, not
+// mid-character, so real lines fit somewhat fewer characters than the raw pixel math suggests —
+// better to overshoot the row height than clip text.
 function wrapRowHeight(text: string, widthUnits: number, fontSize = 16) {
-  const charsPerLine = Math.max(8, Math.floor((widthUnits * 1.8 * 11) / fontSize));
-  const lineHeight = fontSize * 1.3;
+  const charsPerLine = Math.max(6, Math.floor((widthUnits * 11 * 0.85) / fontSize));
+  const lineHeight = fontSize * 1.35;
   const lines = text.split("\n").reduce((sum, seg) => sum + Math.max(1, Math.ceil(seg.length / charsPerLine)), 0);
-  return Math.max(20, Math.round(lines * lineHeight + 6));
+  return Math.max(20, Math.round(lines * lineHeight + 8));
 }
 
 interface CellSpec {
@@ -309,13 +349,13 @@ function formatDateFr(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
-function buildSheetXml(act: any) {
+function buildSheetXml(act: any, numericResValueStyle: number) {
   const sb = new SheetBuilder();
   const manager = act.activity_manager || {};
 
-  // Rows 1-15 stay empty: the header image (a fixed-size floating drawing, see buildDrawingXml)
-  // covers them regardless of row height.
-  sb.blankRows(15);
+  // The header image (a fixed-size floating drawing, see buildDrawingXml) covers these rows
+  // regardless of row height — leave them empty so content starts right below it.
+  sb.blankRows(IMAGE_ROW_SPAN);
 
   sb.labelRow("N° de contrat", act.id);
   sb.blankRows(1);
@@ -354,7 +394,7 @@ function buildSheetXml(act: any) {
   }
   sb.labelRow("Titre de l'activité", act.name, S.resLabel, S.resValue);
   sb.labelRow("Description", act.description, S.resLabel, S.resValue);
-  sb.labelRow("Nombre de personnes prévu", act.attendees_count || undefined, S.resLabel, S.value);
+  sb.labelRow("Nombre de personnes prévu", act.attendees_count || undefined, S.resLabel, numericResValueStyle);
   sb.blankRows(1);
 
   const eventDateStart = dates.date_start;
@@ -469,7 +509,7 @@ function buildSheetXml(act: any) {
   });
 
   const { sheetDataXml, mergeCellsXml } = sb.render();
-  const cols = `<cols>${["A", "B", "C", "D", "E", "F"].map((_, i) => `<col min="${i + 1}" max="${i + 1}" customWidth="1" width="22"/>`).join("")}</cols>`;
+  const cols = `<cols>${Array.from({ length: SHEET_COLS }, (_, i) => `<col min="${i + 1}" max="${i + 1}" customWidth="1" width="${COL_WIDTH_UNITS}"/>`).join("")}</cols>`;
   return (
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
     `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
@@ -484,19 +524,19 @@ function buildSheetXml(act: any) {
   );
 }
 
-// Fixed-size header image, anchored at the top-left corner regardless of the underlying grid
-// (avoids depending on exact row/column sizes to reproduce the original's proportions).
+// Header image, anchored at the top-left corner and scaled to IMAGE_WIDTH_EMU/IMAGE_HEIGHT_EMU
+// (the sheet's actual column width, aspect ratio preserved) regardless of the underlying grid.
 function buildDrawingXml() {
   return (
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
     `<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">` +
     `<xdr:oneCellAnchor>` +
     `<xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>` +
-    `<xdr:ext cx="16138070" cy="2777553"/>` +
+    `<xdr:ext cx="${IMAGE_WIDTH_EMU}" cy="${IMAGE_HEIGHT_EMU}"/>` +
     `<xdr:pic>` +
     `<xdr:nvPicPr><xdr:cNvPr id="1" name="Image 3"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>` +
     `<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>` +
-    `<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="16138070" cy="2777553"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>` +
+    `<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${IMAGE_WIDTH_EMU}" cy="${IMAGE_HEIGHT_EMU}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>` +
     `</xdr:pic>` +
     `<xdr:clientData/>` +
     `</xdr:oneCellAnchor>` +
@@ -527,13 +567,14 @@ async function generateContractXlsx(act: any) {
   }
 
   const templateZip = await JSZip.loadAsync(templateBuffer);
-  const stylesXml = await templateZip.file("xl/styles.xml")?.async("uint8array");
+  const stylesXmlRaw = await templateZip.file("xl/styles.xml")?.async("uint8array");
   const themeXml = await templateZip.file("xl/theme/theme1.xml")?.async("uint8array");
   const headerImage = await templateZip.file("xl/media/image2.png")?.async("uint8array");
-  if (!stylesXml || !themeXml || !headerImage) {
+  if (!stylesXmlRaw || !themeXml || !headerImage) {
     showToast("Le gabarit de contrat est invalide (styles ou image d'entête introuvables).", "error");
     return;
   }
+  const { patched: stylesXml, styleIndex: numericResValueStyle } = addNumericResValueStyle(stylesXmlRaw);
 
   const zip = new JSZip();
   zip.file(
@@ -600,7 +641,7 @@ async function generateContractXlsx(act: any) {
       `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image2.png"/>` +
       `</Relationships>`
   );
-  zip.file("xl/worksheets/sheet1.xml", buildSheetXml(act));
+  zip.file("xl/worksheets/sheet1.xml", buildSheetXml(act, numericResValueStyle));
   zip.file(
     "xl/worksheets/_rels/sheet1.xml.rels",
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
