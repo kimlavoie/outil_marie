@@ -68,9 +68,17 @@ function updateSubmissionFinancialSummary() {
     const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
     const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
-    const salary = (appState.settings.salaries || []).find((s: any) => s.id === salaryId);
-    const rate = salary ? getActiveSalaryRate(salary, eventDateStart, tarifId) : 0;
-    const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, tarifId) : 0;
+    let rate = 0;
+    let overtimeRate = 0;
+    if (tarifId === "__custom__") {
+      const wrapper = row.closest(".distribution-row-wrapper");
+      rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!.value) || 0 : 0;
+      overtimeRate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!.value) || 0 : 0;
+    } else {
+      const salary = (appState.settings.salaries || []).find((s: any) => s.id === salaryId);
+      rate = salary ? getActiveSalaryRate(salary, eventDateStart, tarifId) : 0;
+      overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, tarifId) : 0;
+    }
     staffTotal += rate * hours * count + overtimeRate * overtimeHours * count;
   });
 
@@ -81,8 +89,15 @@ function updateSubmissionFinancialSummary() {
     const tarifId = row.querySelector<HTMLInputElement>(".service-tarif-select")!.value;
     const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
+    let rate = 0;
+    if (tarifId === "__custom__") {
+      const wrapper = row.closest(".distribution-row-wrapper");
+      rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!.value) || 0 : 0;
+    } else {
+      const service = (appState.settings.services || []).find((s: any) => s.id === serviceId);
+      rate = service ? getActiveServiceRate(service, eventDateStart, tarifId) : 0;
+    }
     const service = (appState.settings.services || []).find((s: any) => s.id === serviceId);
-    const rate = service ? getActiveServiceRate(service, eventDateStart, tarifId) : 0;
     servicesTotal += service && service.type === "hourly" ? rate * hours * count : rate * count;
   });
 
@@ -123,13 +138,25 @@ function computeActivityFinancials(act: any) {
   reservations.forEach((r: any) => {
     (r.staff || []).forEach((s: any) => {
       const salary = (appState.settings.salaries || []).find((sal: any) => sal.id === s.salary_id);
-      const rate = salary ? getActiveSalaryRate(salary, eventDateStart, s.tarif_id) : 0;
-      const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, s.tarif_id) : 0;
+      let rate = 0;
+      let overtimeRate = 0;
+      if (s.tarif_id === "__custom__") {
+        rate = s.custom_rate || 0;
+        overtimeRate = s.custom_overtime_rate || 0;
+      } else {
+        rate = salary ? getActiveSalaryRate(salary, eventDateStart, s.tarif_id) : 0;
+        overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, s.tarif_id) : 0;
+      }
       staffTotal += rate * (s.hours || 0) * (s.count || 0) + overtimeRate * (s.overtime_hours || 0) * (s.count || 0);
     });
     (r.services || []).forEach((s: any) => {
       const service = (appState.settings.services || []).find((sv: any) => sv.id === s.service_id);
-      const rate = service ? getActiveServiceRate(service, eventDateStart, s.tarif_id) : 0;
+      let rate = 0;
+      if (s.tarif_id === "__custom__") {
+        rate = s.custom_rate || 0;
+      } else {
+        rate = service ? getActiveServiceRate(service, eventDateStart, s.tarif_id) : 0;
+      }
       servicesTotal += service && service.type === "hourly" ? rate * (s.hours || 0) * (s.count || 0) : rate * (s.count || 0);
     });
     (r.fees || []).forEach((f: any) => {

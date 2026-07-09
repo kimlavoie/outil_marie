@@ -498,8 +498,15 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
         sb.itemTableHeader("Personnel", "Nombre", "Heures", "Sous-total");
         staff.forEach((s: any) => {
           const salary = (appState.settings.salaries || []).find((sal: any) => sal.id === s.salary_id);
-          const rate = salary ? getActiveSalaryRate(salary, eventDateStart, s.tarif_id) : 0;
-          const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, s.tarif_id) : 0;
+          let rate = 0;
+          let overtimeRate = 0;
+          if (s.tarif_id === "__custom__") {
+            rate = s.custom_rate || 0;
+            overtimeRate = s.custom_overtime_rate || 0;
+          } else {
+            rate = salary ? getActiveSalaryRate(salary, eventDateStart, s.tarif_id) : 0;
+            overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, s.tarif_id) : 0;
+          }
           const amount = rate * (s.hours || 0) * (s.count || 0) + overtimeRate * (s.overtime_hours || 0) * (s.count || 0);
           const heures = s.overtime_hours ? `${s.hours || 0} (+${s.overtime_hours} sup.)` : String(s.hours || 0);
           sb.itemRow(salary?.job || "(rôle non défini)", s.count || 0, heures, amount);
@@ -511,7 +518,12 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
         sb.itemTableHeader("Équipements", "Nombre", "Heures", "Sous-total");
         services.forEach((s: any) => {
           const service = (appState.settings.services || []).find((sv: any) => sv.id === s.service_id);
-          const rate = service ? getActiveServiceRate(service, eventDateStart, s.tarif_id) : 0;
+          let rate = 0;
+          if (s.tarif_id === "__custom__") {
+            rate = s.custom_rate || 0;
+          } else {
+            rate = service ? getActiveServiceRate(service, eventDateStart, s.tarif_id) : 0;
+          }
           const isHourly = service && service.type === "hourly";
           const amount = isHourly ? rate * (s.hours || 0) * (s.count || 0) : rate * (s.count || 0);
           sb.itemRow(service?.name || "(service non défini)", s.count || 0, isHourly ? s.hours || 0 : "-", amount);

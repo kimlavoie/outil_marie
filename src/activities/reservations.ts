@@ -28,7 +28,8 @@ import {
   initExclusivePillToggleEl,
   setPillGroupActiveEl,
   getExclusivePillValueEl,
-  maskDateInput
+  maskDateInput,
+  buildGlAccountOptionsHtml
 } from "../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "./financials.ts";
 import { updateFormDatesHelper } from "./history.ts";
@@ -435,14 +436,20 @@ function addReservationCard(reservationData: any = null) {
       <div class="room-tariff-resolved-price-display" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: -6px; margin-bottom: 12px; display: none;">
         Tarif résolu : <strong class="resolved-price-val">0,00 $</strong> / jour
       </div>
-      <div class="form-group-row room-tariff-custom-group" style="display: ${isCustomTariff ? "flex" : "none"};">
-        <div class="form-group">
+      <div class="form-group-row room-tariff-custom-group" style="display: ${isCustomTariff ? "flex" : "none"}; gap: 12px; margin-bottom: 12px;">
+        <div class="form-group" style="flex: 1; margin-bottom: 0;">
           <label for="${uid}-room-tariff-custom-desc">Description du tarif</label>
           <input type="text" id="${uid}-room-tariff-custom-desc" class="form-input room-tariff-custom-desc" placeholder="Ex: Rabais ponctuel" value="${isCustomTariff ? escapeHtml(reservationData.tariff_description) : ""}">
         </div>
-        <div class="form-group">
+        <div class="form-group" style="flex: 1; margin-bottom: 0;">
           <label for="${uid}-room-tariff-custom-amount">Montant ($ par jour)</label>
           <input type="number" id="${uid}-room-tariff-custom-amount" class="form-input room-tariff-custom-amount" min="0" step="0.01" value="${isCustomTariff ? reservationData.tariff_amount : ""}">
+        </div>
+        <div class="form-group" style="flex: 1.5; margin-bottom: 0;">
+          <label for="${uid}-room-tariff-custom-gl">Code budgétaire</label>
+          <select id="${uid}-room-tariff-custom-gl" class="select-input room-tariff-custom-gl" style="padding: 10px 14px; width: 100%;">
+            ${buildGlAccountOptionsHtml(isCustomTariff ? reservationData.tariff_gl_account_code : "")}
+          </select>
         </div>
       </div>
 
@@ -626,6 +633,17 @@ function addReservationCard(reservationData: any = null) {
     updateSubmissionFinancialSummary();
     autoSaveActivityForm();
   });
+  
+  card.querySelectorAll(".room-tariff-custom-group input, .room-tariff-custom-group select").forEach(input => {
+    input.addEventListener("input", () => {
+      updateSubmissionFinancialSummary();
+      autoSaveActivityForm();
+    });
+    input.addEventListener("change", () => {
+      updateSubmissionFinancialSummary();
+      autoSaveActivityForm();
+    });
+  });
 
   const installToggle = card.querySelector<HTMLInputElement>(".reservation-install-toggle")!;
   const installFields = card.querySelector<HTMLInputElement>(".reservation-install-fields")!;
@@ -739,10 +757,30 @@ function addReservationCard(reservationData: any = null) {
 
   if (reservationData) {
     (reservationData.staff || []).forEach((s: any) =>
-      addStaffRow(staffList, s.salary_id, s.count, s.hours, s.overtime_hours, s.tarif_id, s.auto_generated)
+      addStaffRow(
+        staffList,
+        s.salary_id,
+        s.count,
+        s.hours,
+        s.overtime_hours,
+        s.tarif_id,
+        s.auto_generated,
+        s.custom_rate || 0,
+        s.custom_overtime_rate || 0,
+        s.custom_gl_account_code || ""
+      )
     );
     (reservationData.services || []).forEach((s: any) =>
-      addServiceRow(servicesList, s.service_id, s.count, s.hours, s.tarif_id, s.auto_generated)
+      addServiceRow(
+        servicesList,
+        s.service_id,
+        s.count,
+        s.hours,
+        s.tarif_id,
+        s.auto_generated,
+        s.custom_rate || 0,
+        s.custom_gl_account_code || ""
+      )
     );
     (reservationData.fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, f.gl_account_code, f.auto_generated));
   }
@@ -769,6 +807,7 @@ function collectReservationsFromForm() {
     if (paramVal === "__custom__") {
       tariffDescription = card.querySelector<HTMLInputElement>(".room-tariff-custom-desc")!.value.trim();
       tariffAmount = parseFloat(card.querySelector<HTMLInputElement>(".room-tariff-custom-amount")!.value) || 0;
+      tariffGlAccountCode = card.querySelector<HTMLSelectElement>(".room-tariff-custom-gl")!.value;
     } else if (paramVal && clientTypeVal && !isOther) {
       const roomConfig = appState.settings.rooms.find(r => r.name === roomName);
       const slots = collectSlotsFromCard(card);

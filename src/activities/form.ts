@@ -832,14 +832,27 @@ function generateBillingLines(act: any) {
     const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
     const salary = ((appState.settings.salaries as any[]) || []).find((s: any) => s.id === salaryId);
     const tarifId = row.querySelector<HTMLSelectElement>(".staff-tarif-select")!.value;
-    const tarif = salary && ((salary.tarifs as any[]) || []).find((t: any) => t.id === tarifId);
-    const glAccountCode = tarif ? tarif.gl_account_code : "";
-    if (!salary || !tarif || !glAccountCode) return;
+    if (!salary) return;
+
+    let glAccountCode = "";
+    let rate = 0;
+    let overtimeRate = 0;
+    if (tarifId === "__custom__") {
+      const wrapper = row.closest(".distribution-row-wrapper");
+      glAccountCode = wrapper ? wrapper.querySelector<HTMLSelectElement>(".staff-custom-gl-select")!.value : "";
+      rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!.value) || 0 : 0;
+      overtimeRate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!.value) || 0 : 0;
+    } else {
+      const tarif = salary && ((salary.tarifs as any[]) || []).find((t: any) => t.id === tarifId);
+      glAccountCode = tarif ? tarif.gl_account_code : "";
+      rate = getActiveSalaryRate(salary, eventDateStart, tarifId);
+      overtimeRate = getActiveSalaryOvertimeRate(salary, eventDateStart, tarifId);
+    }
+    if (!glAccountCode) return;
+
     const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
     const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
-    const rate = getActiveSalaryRate(salary, eventDateStart, tarifId);
-    const overtimeRate = getActiveSalaryOvertimeRate(salary, eventDateStart, tarifId);
     const amount = rate * hours * count + overtimeRate * overtimeHours * count;
     if (amount > 0) {
       let details = `${count} ${salary.job}${count > 1 ? "s" : ""} de ${hours}h à ${formatCurrency(rate)}/h`;
@@ -854,12 +867,23 @@ function generateBillingLines(act: any) {
     const serviceId = row.querySelector<HTMLInputElement>(".service-select")!.value;
     const service = ((appState.settings.services as any[]) || []).find((s: any) => s.id === serviceId);
     const tarifId = row.querySelector<HTMLSelectElement>(".service-tarif-select")!.value;
-    const tarif = service && ((service.tarifs as any[]) || []).find((t: any) => t.id === tarifId);
-    const glAccountCode = tarif ? tarif.gl_account_code : "";
-    if (!service || !tarif || !glAccountCode) return;
+    if (!service) return;
+
+    let glAccountCode = "";
+    let rate = 0;
+    if (tarifId === "__custom__") {
+      const wrapper = row.closest(".distribution-row-wrapper");
+      glAccountCode = wrapper ? wrapper.querySelector<HTMLSelectElement>(".service-custom-gl-select")!.value : "";
+      rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!.value) || 0 : 0;
+    } else {
+      const tarif = service && ((service.tarifs as any[]) || []).find((t: any) => t.id === tarifId);
+      glAccountCode = tarif ? tarif.gl_account_code : "";
+      rate = getActiveServiceRate(service, eventDateStart, tarifId);
+    }
+    if (!glAccountCode) return;
+
     const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
-    const rate = getActiveServiceRate(service, eventDateStart, tarifId);
     const isHourly = service.type === "hourly";
     const amount = isHourly ? rate * hours * count : rate * count;
     if (amount > 0) {

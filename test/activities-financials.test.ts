@@ -159,4 +159,22 @@ test("buildPrintActivitySheetHtml generates print layout template", () => {
   const normalizedHtml = html.replace(/\u00a0/g, " ");
   assert.ok(normalizedHtml.includes("150,00 $") || normalizedHtml.includes("150.00 $") || (normalizedHtml.includes("150") && normalizedHtml.includes("$")));
 });
+
+test("computeActivityFinancials uses custom staff and service rates when tarif_id is __custom__", () => {
+  const fin = computeActivityFinancials(
+    makeActivity({
+      staff: [
+        { salary_id: "sal1", hours: 4, count: 2, overtime_hours: 1, tarif_id: "__custom__", custom_rate: 25, custom_overtime_rate: 35 }
+      ],
+      services: [
+        { service_id: "svc-hourly", hours: 3, count: 2, tarif_id: "__custom__", custom_rate: 15 }
+      ]
+    })
+  );
+  // staff custom: (25 * 4 * 2) + (35 * 1 * 2) = 200 + 70 = 270
+  // service custom: 15 * 3 * 2 = 90
+  assert.equal(fin.staffTotal, 270);
+  assert.equal(fin.servicesTotal, 90);
+});
+
 export {};
