@@ -2776,6 +2776,33 @@ tr.activity-row.selected td {
   background-color: var(--primary-light) !important;
 }
 
+/* Multi-select checkboxes: kept subtle so they don't compete with the row data, and only
+   stand out on row hover, when checked, or (for the header) when a selection is in progress */
+.activity-select-checkbox {
+  opacity: 0.12;
+  transform: scale(0.75);
+  transition: opacity var(--transition-smooth);
+}
+
+tr.activity-row:hover .activity-select-checkbox,
+.activity-select-checkbox:checked,
+.activity-select-checkbox:focus-visible {
+  opacity: 0.7;
+}
+
+#activities-select-all {
+  opacity: 0.12;
+  transform: scale(0.75);
+  transition: opacity var(--transition-smooth);
+}
+
+.table-responsive thead:hover #activities-select-all,
+#activities-select-all:checked,
+#activities-select-all:indeterminate,
+#activities-select-all:focus-visible {
+  opacity: 0.7;
+}
+
 /* ==========================================================================
    TOASTS (non-blocking notifications)
    ========================================================================== */
