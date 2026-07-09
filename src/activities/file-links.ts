@@ -12,6 +12,7 @@ import { openVersionedDb } from "../state/db-utils.ts";
 import { generateUid, showToast, escapeHtml } from "../utils/utils.ts";
 import { commitActivityPatch } from "./form.ts";
 import { deriveActivityState } from "./render.ts";
+import { generateContractXlsx } from "../services/contract-generator.ts";
 
 const FILE_LINKS_DB_NAME = "outil_marie_file_links";
 const FILE_LINKS_STORE_NAME = "links";
@@ -48,10 +49,9 @@ async function idbGetFileLink(id: string): Promise<{ handle: any; name: string }
 }
 
 // Lets the user pick an existing file on disk and links it (via the File System Access API) to
-// the given activity's submission/contract/form. Excel *generation* is deferred until the
-// submission/contract templates are provided — this only stores a reference to a file the user
-// produced manually, so they can reopen it (and, for submission/contract, mark the activity
-// Soumise/Approuvée).
+// the given activity's submission/contract/form — this only stores a reference to a file the
+// user produced manually (or downloaded via generateContractXlsx()), so they can reopen it (and,
+// for submission/contract, mark the activity Soumise/Approuvée).
 async function pickAndLinkFile(activityId: string, kind: "submission" | "contract" | "form") {
   if (!window.showOpenFilePicker) {
     showToast("Le lien de fichier nécessite un navigateur compatible avec l'API File System Access (Chrome ou Edge).", "warning");
@@ -147,8 +147,14 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
     document.getElementById("accordion-check-contract-file")?.classList.toggle("complete", !!approved);
   }
 
+  const generateContractBtnHtml =
+    kind === "contract"
+      ? `<button type="button" class="btn btn-secondary" id="contract-generate-btn" style="padding: 6px 12px; font-size: 0.85rem;">Générer le contrat (xlsx)</button>`
+      : "";
+
   container.innerHTML = `
     ${linkedLabel}
+    ${generateContractBtnHtml}
     <button type="button" class="btn btn-secondary" id="${kind}-link-file-btn" style="padding: 6px 12px; font-size: 0.85rem;">${linkId ? "Changer le fichier lié" : "Lier un fichier"}</button>
     ${linkId ? `<button type="button" class="btn btn-secondary" id="${kind}-open-file-btn" style="padding: 6px 12px; font-size: 0.85rem;">Ouvrir</button>` : ""}
     ${transitionBtnHtml}
@@ -157,6 +163,8 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
   container.querySelector(`#${kind}-link-file-btn`)!.addEventListener("click", () => pickAndLinkFile(act.id, kind));
   const openBtn = container.querySelector(`#${kind}-open-file-btn`);
   if (openBtn) openBtn.addEventListener("click", () => openLinkedFile(linkId));
+  const generateBtn = container.querySelector("#contract-generate-btn");
+  if (generateBtn) generateBtn.addEventListener("click", () => generateContractXlsx(act));
 
   if (kind === "submission") {
     const btn = container.querySelector<HTMLButtonElement>("#mark-submitted-btn");

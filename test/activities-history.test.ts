@@ -42,14 +42,14 @@ test("getReservationOccupiedRanges ignores slots without a date", () => {
 });
 
 test("computeActivityDiff reports only fields that actually changed", () => {
-  const oldAct = { name: "Réunion A", responsable: "M. Dupont", client_type: "interne" };
-  const newAct = { name: "Réunion A", responsable: "Mme Tremblay", client_type: "interne" };
+  const oldAct = { name: "Réunion A", responsable_last_name: "Dupont", client_type: "interne" };
+  const newAct = { name: "Réunion A", responsable_last_name: "Tremblay", client_type: "interne" };
 
   const diffs = computeActivityDiff(oldAct, newAct);
   assert.equal(diffs.length, 1);
-  assert.equal(diffs[0].label, "Responsable facturation");
-  assert.equal(diffs[0].oldVal, "M. Dupont");
-  assert.equal(diffs[0].newVal, "Mme Tremblay");
+  assert.equal(diffs[0].label, "Responsable facturation: Nom");
+  assert.equal(diffs[0].oldVal, "Dupont");
+  assert.equal(diffs[0].newVal, "Tremblay");
 });
 
 test("computeActivityDiff labels empty values as [Vide] instead of leaving them blank", () => {

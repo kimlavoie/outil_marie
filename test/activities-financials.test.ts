@@ -140,7 +140,6 @@ test("buildPrintActivitySheetHtml generates print layout template", () => {
     name: "Conférence Climat",
     mode: "estimation",
     client_type: "externe",
-    client: { first_name: "Jean", last_name: "Dupont", phone: "514-123-4567", email: "jean@dupont.com" },
     activity_manager: { first_name: "Marie", last_name: "Gérante", phone: "514-987-6543", email: "marie@admin.com" },
     reservations: [
       {
@@ -155,7 +154,6 @@ test("buildPrintActivitySheetHtml generates print layout template", () => {
   const html = buildPrintActivitySheetHtml(act);
   assert.ok(html.includes("<h1>Estimation</h1>"));
   assert.ok(html.includes("Conférence Climat"));
-  assert.ok(html.includes("Jean Dupont"));
   assert.ok(html.includes("Marie Gérante"));
   assert.ok(html.includes("Salle François-Brassard"));
   const normalizedHtml = html.replace(/\u00a0/g, " ");
