@@ -111,7 +111,7 @@ function renderAutoBackupStatus(status: string, filename?: string) {
 
   const badge = document.createElement("span");
   badge.className = status === "connected" ? "badge badge-success" : "badge badge-warning";
-  badge.textContent = status === "connected" ? "Actif" : "Permission requise";
+  badge.textContent = status === "connected" ? "Actif" : "Action requise";
   container.appendChild(badge);
 
   const info = document.createElement("span");
@@ -126,7 +126,7 @@ function renderAutoBackupStatus(status: string, filename?: string) {
     const reconnectBtn = document.createElement("button");
     reconnectBtn.id = "auto-backup-reconnect-btn";
     reconnectBtn.className = "btn btn-secondary";
-    reconnectBtn.textContent = "Reconnecter";
+    reconnectBtn.textContent = "Réactiver";
     container.appendChild(reconnectBtn);
   }
 
