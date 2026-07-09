@@ -13,7 +13,7 @@ import { generateUid, showToast, escapeHtml } from "../utils/utils.ts";
 import { commitActivityPatch } from "./form.ts";
 import { deriveActivityState } from "./render.ts";
 import { autoSaveActivityForm } from "./financials.ts";
-import { generateContractXlsx } from "../services/contract-generator.ts";
+import { generateContractXlsx, generateSoumissionXlsx } from "../services/contract-generator.ts";
 
 const FILE_LINKS_DB_NAME = "outil_marie_file_links";
 const FILE_LINKS_STORE_NAME = "links";
@@ -153,9 +153,15 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
       ? `<button type="button" class="btn btn-secondary" id="contract-generate-btn" style="padding: 6px 12px; font-size: 0.85rem;">Générer le contrat (xlsx)</button>`
       : "";
 
+  const generateSoumissionBtnHtml =
+    kind === "submission"
+      ? `<button type="button" class="btn btn-secondary" id="submission-generate-btn" style="padding: 6px 12px; font-size: 0.85rem;">Générer la soumission (xlsx)</button>`
+      : "";
+
   container.innerHTML = `
     ${linkedLabel}
     ${generateContractBtnHtml}
+    ${generateSoumissionBtnHtml}
     <button type="button" class="btn btn-secondary" id="${kind}-link-file-btn" style="padding: 6px 12px; font-size: 0.85rem;">${linkId ? "Changer le fichier lié" : "Lier un fichier"}</button>
     ${linkId ? `<button type="button" class="btn btn-secondary" id="${kind}-open-file-btn" style="padding: 6px 12px; font-size: 0.85rem;">Ouvrir</button>` : ""}
     ${transitionBtnHtml}
@@ -172,6 +178,14 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
       autoSaveActivityForm();
       const freshAct = appState.activities.find((a: any) => a.id === act.id) || act;
       generateContractXlsx(freshAct);
+    });
+  }
+  const generateSoumissionBtn = container.querySelector("#submission-generate-btn");
+  if (generateSoumissionBtn) {
+    generateSoumissionBtn.addEventListener("click", () => {
+      autoSaveActivityForm();
+      const freshAct = appState.activities.find((a: any) => a.id === act.id) || act;
+      generateSoumissionXlsx(freshAct);
     });
   }
 

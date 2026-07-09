@@ -69,6 +69,14 @@ const S = {
   sigName2: 156
 };
 
+// normalizeGridBorders() mutates S in place (see below) so buildSheetXml/buildDrawingXml always
+// see the current call's style ids. But generateXlsx() can run more than once in the same page
+// session (e.g. generating a contrat then a soumission without a reload) — without this snapshot,
+// a second call would look up xfEntries using indices already remapped by the first call, indices
+// that don't exist in that second call's freshly-fetched (unmutated) template, silently leaving S
+// pointing at stale ids and corrupting the workbook (Excel's "repaired records" prompt).
+const ORIGINAL_S: typeof S = { ...S };
+
 // Static "Information du fournisseur" block (CONTRAT.xlsx E19:J24) — the Cégep's own contact
 // info, constant across every contract.
 const SUPPLIER = {
@@ -252,7 +260,7 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
   let nextIndex = xfCount;
   let borderedResValue = "";
   GRID_ROLE_KEYS.forEach(key => {
-    const original = xfEntries[S[key]];
+    const original = xfEntries[ORIGINAL_S[key]];
     if (!original) return;
     const clone = withNewBorder(original);
     newEntries.push(clone);
@@ -413,16 +421,22 @@ function formatDateFr(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
-function buildSheetXml(act: any) {
+function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   const sb = new SheetBuilder();
   const manager = act.activity_manager || {};
 
-  // The header image (a fixed-size floating drawing, see buildDrawingXml) covers these rows
-  // regardless of row height — leave them empty so content starts right below it.
-  sb.blankRows(IMAGE_ROW_SPAN);
+  if (variant === "contrat") {
+    // The header image (a fixed-size floating drawing, see buildDrawingXml) covers these rows
+    // regardless of row height — leave them empty so content starts right below it.
+    sb.blankRows(IMAGE_ROW_SPAN);
 
-  sb.labelRow("N° de contrat", act.id);
-  sb.blankRows(1);
+    sb.labelRow("N° de contrat", act.id);
+    sb.blankRows(1);
+  } else {
+    // No header image for a soumission — a big title banner stands in for it instead.
+    sb.addRow(60, [{ col: "A", style: S.sectionTitle, value: "Soumission", mergeTo: "F" }]);
+    sb.blankRows(1);
+  }
 
   sb.titleRow("Identification du client");
   sb.labelRow("Responsable de l'activité", `${manager.first_name || ""} ${manager.last_name || ""}`.trim() || undefined);
@@ -532,49 +546,51 @@ function buildSheetXml(act: any) {
   });
   sb.blankRows(1);
 
-  sb.titleRow("Attestations");
-  ATTESTATIONS.forEach((text, i) => {
-    // A:D is 4 of the sheet's 6 columns (see buildSheetXml's <cols>); both styles are 16pt.
-    sb.addRow(wrapRowHeight(text, 88, 16), [
-      { col: "A", style: i === 0 ? S.attestation : S.urgency, value: text, mergeTo: "D" },
-      { col: "E", style: S.initialsLabel, value: "Initiales:", mergeTo: "F" }
-    ]);
-  });
-  sb.blankRows(1);
-
-  sb.titleRow("Clause d'annulation et de paiement");
-  sb.textBoxRow(CANCELLATION_CLAUSE, S.cancelBody, 14);
-  sb.blankRows(1);
-
-  sb.titleRow("Signatures");
-  sb.addRow(22, [
-    { col: "A", style: S.sectionTitle, value: "Client", mergeTo: "C" },
-    { col: "D", style: S.sectionTitleAlt, value: "Fournisseur", mergeTo: "F" }
-  ]);
-  sb.addRow(20, [
-    { col: "A", style: S.sigLabel, value: "Date:", mergeTo: "C" },
-    { col: "D", style: S.sigLabel, value: "Date:", mergeTo: "F" }
-  ]);
-  sb.blankRows(2, 30);
-  sb.addRow(20, [
-    { col: "A", style: S.sigLabel, value: "Signature:", mergeTo: "C" },
-    { col: "D", style: S.sigLabel, value: "Signature:", mergeTo: "F" }
-  ]);
-  sb.blankRows(1, 30);
-  sb.addRow(20, [{ col: "D", style: S.sigName1, value: "Marie-Ève Bouchard, technicienne en administration", mergeTo: "F" }]);
-  sb.addRow(20, [{ col: "D", style: S.sigLabel, value: "Signature :", mergeTo: "F" }]);
-  sb.blankRows(1, 30);
-  sb.addRow(20, [{ col: "D", style: S.sigName2, value: "Rébecca Audy, gestionnaire administrative des services communautaires", mergeTo: "F" }]);
-  sb.blankRows(1);
-
-  sb.titleRow("Annexe – Clauses de location");
-  LOCATION_CLAUSE_GROUPS.forEach(group => {
-    sb.textBoxRow(group.title, S.clauseGroup, 16);
-    group.clauses.forEach(clause => {
-      sb.addRow(wrapRowHeight(`Clause ${clause.num}`, 132, 18), [{ col: "A", style: S.clauseNum, value: `Clause ${clause.num}`, mergeTo: "F" }]);
-      sb.textBoxRow(clause.body, S.clauseBody, 16);
+  if (variant === "contrat") {
+    sb.titleRow("Attestations");
+    ATTESTATIONS.forEach((text, i) => {
+      // A:D is 4 of the sheet's 6 columns (see buildSheetXml's <cols>); both styles are 16pt.
+      sb.addRow(wrapRowHeight(text, 88, 16), [
+        { col: "A", style: i === 0 ? S.attestation : S.urgency, value: text, mergeTo: "D" },
+        { col: "E", style: S.initialsLabel, value: "Initiales:", mergeTo: "F" }
+      ]);
     });
-  });
+    sb.blankRows(1);
+
+    sb.titleRow("Clause d'annulation et de paiement");
+    sb.textBoxRow(CANCELLATION_CLAUSE, S.cancelBody, 14);
+    sb.blankRows(1);
+
+    sb.titleRow("Signatures");
+    sb.addRow(22, [
+      { col: "A", style: S.sectionTitle, value: "Client", mergeTo: "C" },
+      { col: "D", style: S.sectionTitleAlt, value: "Fournisseur", mergeTo: "F" }
+    ]);
+    sb.addRow(20, [
+      { col: "A", style: S.sigLabel, value: "Date:", mergeTo: "C" },
+      { col: "D", style: S.sigLabel, value: "Date:", mergeTo: "F" }
+    ]);
+    sb.blankRows(2, 30);
+    sb.addRow(20, [
+      { col: "A", style: S.sigLabel, value: "Signature:", mergeTo: "C" },
+      { col: "D", style: S.sigLabel, value: "Signature:", mergeTo: "F" }
+    ]);
+    sb.blankRows(1, 30);
+    sb.addRow(20, [{ col: "D", style: S.sigName1, value: "Marie-Ève Bouchard, technicienne en administration", mergeTo: "F" }]);
+    sb.addRow(20, [{ col: "D", style: S.sigLabel, value: "Signature :", mergeTo: "F" }]);
+    sb.blankRows(1, 30);
+    sb.addRow(20, [{ col: "D", style: S.sigName2, value: "Rébecca Audy, gestionnaire administrative des services communautaires", mergeTo: "F" }]);
+    sb.blankRows(1);
+
+    sb.titleRow("Annexe – Clauses de location");
+    LOCATION_CLAUSE_GROUPS.forEach(group => {
+      sb.textBoxRow(group.title, S.clauseGroup, 16);
+      group.clauses.forEach(clause => {
+        sb.addRow(wrapRowHeight(`Clause ${clause.num}`, 132, 18), [{ col: "A", style: S.clauseNum, value: `Clause ${clause.num}`, mergeTo: "F" }]);
+        sb.textBoxRow(clause.body, S.clauseBody, 16);
+      });
+    });
+  }
 
   const { sheetDataXml, mergeCellsXml } = sb.render();
   const cols = `<cols>${Array.from({ length: SHEET_COLS }, (_, i) => `<col min="${i + 1}" max="${i + 1}" customWidth="1" width="${COL_WIDTH_UNITS}"/>`).join("")}</cols>`;
@@ -587,7 +603,7 @@ function buildSheetXml(act: any) {
     cols +
     `<sheetData>${sheetDataXml}</sheetData>` +
     mergeCellsXml +
-    `<drawing r:id="rId1"/>` +
+    (variant === "contrat" ? `<drawing r:id="rId1"/>` : "") +
     `</worksheet>`
   );
 }
@@ -623,7 +639,9 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-async function generateContractXlsx(act: any) {
+async function generateXlsx(act: any, variant: "contrat" | "soumission") {
+  const hasImage = variant === "contrat";
+
   let templateBuffer: ArrayBuffer;
   try {
     const res = await fetch(`${import.meta.env.BASE_URL}${CONTRACT_TEMPLATE_PATH}`);
@@ -637,8 +655,8 @@ async function generateContractXlsx(act: any) {
   const templateZip = await JSZip.loadAsync(templateBuffer);
   const stylesXmlRaw = await templateZip.file("xl/styles.xml")?.async("uint8array");
   const themeXml = await templateZip.file("xl/theme/theme1.xml")?.async("uint8array");
-  const headerImage = await templateZip.file("xl/media/image2.png")?.async("uint8array");
-  if (!stylesXmlRaw || !themeXml || !headerImage) {
+  const headerImage = hasImage ? await templateZip.file("xl/media/image2.png")?.async("uint8array") : undefined;
+  if (!stylesXmlRaw || !themeXml || (hasImage && !headerImage)) {
     showToast("Le gabarit de contrat est invalide (styles ou image d'entête introuvables).", "error");
     return;
   }
@@ -651,12 +669,12 @@ async function generateContractXlsx(act: any) {
       `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
       `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
       `<Default Extension="xml" ContentType="application/xml"/>` +
-      `<Default Extension="png" ContentType="image/png"/>` +
+      (hasImage ? `<Default Extension="png" ContentType="image/png"/>` : "") +
       `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>` +
       `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
       `<Override PartName="/xl/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>` +
       `<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>` +
-      `<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>` +
+      (hasImage ? `<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>` : "") +
       `<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>` +
       `<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>` +
       `</Types>`
@@ -670,11 +688,12 @@ async function generateContractXlsx(act: any) {
       `<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>` +
       `</Relationships>`
   );
+  const docTitle = variant === "contrat" ? `Contrat ${act.id}` : `Soumission ${act.id}`;
   zip.file(
     "docProps/core.xml",
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
       `<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/">` +
-      `<dc:title>Contrat ${xmlEscapeText(String(act.id))}</dc:title>` +
+      `<dc:title>${xmlEscapeText(docTitle)}</dc:title>` +
       `</cp:coreProperties>`
   );
   zip.file(
@@ -686,7 +705,7 @@ async function generateContractXlsx(act: any) {
     "xl/workbook.xml",
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
       `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
-      `<sheets><sheet name="Contrat" sheetId="1" r:id="rId1"/></sheets>` +
+      `<sheets><sheet name="${variant === "contrat" ? "Contrat" : "Soumission"}" sheetId="1" r:id="rId1"/></sheets>` +
       `</workbook>`
   );
   zip.file(
@@ -700,27 +719,40 @@ async function generateContractXlsx(act: any) {
   );
   zip.file("xl/styles.xml", stylesXml);
   zip.file("xl/theme/theme1.xml", themeXml);
-  zip.file("xl/media/image2.png", headerImage);
-  zip.file("xl/drawings/drawing1.xml", buildDrawingXml());
-  zip.file(
-    "xl/drawings/_rels/drawing1.xml.rels",
-    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-      `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-      `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image2.png"/>` +
-      `</Relationships>`
-  );
-  zip.file("xl/worksheets/sheet1.xml", buildSheetXml(act));
-  zip.file(
-    "xl/worksheets/_rels/sheet1.xml.rels",
-    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-      `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-      `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>` +
-      `</Relationships>`
-  );
+  if (hasImage) {
+    zip.file("xl/media/image2.png", headerImage!);
+    zip.file("xl/drawings/drawing1.xml", buildDrawingXml());
+    zip.file(
+      "xl/drawings/_rels/drawing1.xml.rels",
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image2.png"/>` +
+        `</Relationships>`
+    );
+  }
+  zip.file("xl/worksheets/sheet1.xml", buildSheetXml(act, variant));
+  if (hasImage) {
+    zip.file(
+      "xl/worksheets/_rels/sheet1.xml.rels",
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>` +
+        `</Relationships>`
+    );
+  }
 
   const blob = await zip.generateAsync({ type: "blob" });
-  const filename = `Contrat_${act.id}_${(act.name || "activite").replace(/[^\w-]+/g, "_")}.xlsx`;
+  const prefix = variant === "contrat" ? "Contrat" : "Soumission";
+  const filename = `${prefix}_${act.id}_${(act.name || "activite").replace(/[^\w-]+/g, "_")}.xlsx`;
   downloadBlob(blob, filename);
 }
 
-export { generateContractXlsx };
+async function generateContractXlsx(act: any) {
+  return generateXlsx(act, "contrat");
+}
+
+async function generateSoumissionXlsx(act: any) {
+  return generateXlsx(act, "soumission");
+}
+
+export { generateContractXlsx, generateSoumissionXlsx };
