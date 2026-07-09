@@ -11,10 +11,11 @@
  * The workbook is hand-assembled with JSZip rather than through SheetJS: SheetJS's community
  * edition can't write real cell styling (fonts/fills/borders), and its writer also emits
  * malformed `t="str"` text cells — both cause Excel's "problem with content" repair prompt (see
- * git history for the full investigation). Styles here are instead *borrowed*: xl/styles.xml
- * and xl/theme/theme1.xml are copied byte-for-byte out of CONTRAT.xlsx, and every cell below
- * references one of that file's existing, already-valid style ids (see the `S` map) — nothing
- * about styles.xml is invented or regenerated, so nothing about it can be invalid.
+ * git history for the full investigation). Styles here are instead *borrowed*: every cell
+ * references one of CONTRAT.xlsx's existing, already-valid style ids (see the `S` map) for its
+ * font/fill/numFmt, so those are never invented or regenerated. Borders are the one exception —
+ * see normalizeGridBorders()'s doc comment for why they're patched into a handful of new,
+ * consistent styles instead of reused as-is.
  */
 import JSZip from "jszip";
 import { computeActivityFinancials } from "../activities/financials.ts";
@@ -52,6 +53,7 @@ const S = {
   supplierValue: 70,
   resLabel: 63,
   resValue: 96,
+  resValueNumeric: 96, // placeholder — overwritten by normalizeGridBorders() with a general-format, bordered variant
   tableHeader: 94,
   currency: 75,
   wrapValue: 69, // left-aligned + wrapText — for values that can run long (address, description, item labels)
@@ -208,22 +210,66 @@ function xmlEscapeText(str: string) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Appends one new cellXfs entry to xl/styles.xml — a clone of style 96 (S.resValue: the boxed
-// "Détail de la réservation" value cell) with its numFmtId switched from 14 (date) to 0 (general).
-// None of the 176 existing styles combine that exact fill/border with a general number format, so
-// rather than settle for a visually-inconsistent existing style, this adds one (styles.xml is
-// otherwise untouched, and appending never invalidates an existing style's index).
-function addNumericResValueStyle(stylesXmlBytes: Uint8Array): { patched: Uint8Array; styleIndex: number } {
-  const xmlText = new TextDecoder("utf-8").decode(stylesXmlBytes);
-  const match = xmlText.match(/<cellXfs count="(\d+)">/);
-  if (!match) return { patched: stylesXmlBytes, styleIndex: S.resValue };
+// The borrowed styles' borders (see the S map) were each designed for CONTRAT.xlsx's own much
+// wider merge geometry (17 columns, dozens of distinct cell spans) — borderId 6, 15, 16, 5, 2...
+// are mostly one- or two-sided edges meant to butt up against a *specific* neighboring cell in
+// that original layout. Reused as-is in this sheet's plain 6-column grid, those partial borders
+// don't line up into clean boxes anymore. This patches xl/styles.xml to:
+//   1. append one new, uniform thin-gray 4-sided border;
+//   2. clone every "grid" role in the S map (labels/values/table headers/item cells) with that
+//      border swapped in, keeping their original font/fill/numFmt/alignment untouched;
+//   3. mutate S in place to point at the new, consistent indices.
+// It also derives S.resValueNumeric (a general-number-format variant of the now-bordered
+// S.resValue, for "Nombre de personnes prévu" — no existing style combines that box with a
+// non-date number format).
+const GRID_ROLE_KEYS = ["label", "value", "supplierLabel", "supplierValue", "resLabel", "resValue", "tableHeader", "currency", "wrapValue"] as const;
 
-  const count = parseInt(match[1], 10);
-  const newXf =
-    `<xf numFmtId="0" fontId="5" fillId="7" borderId="16" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">` +
-    `<alignment horizontal="left"/></xf>`;
-  const patchedText = xmlText.replace(`<cellXfs count="${count}">`, `<cellXfs count="${count + 1}">`).replace("</cellXfs>", `${newXf}</cellXfs>`);
-  return { patched: new TextEncoder().encode(patchedText), styleIndex: count };
+function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
+  let xmlText = new TextDecoder("utf-8").decode(stylesXmlBytes);
+
+  const bordersMatch = xmlText.match(/<borders count="(\d+)">/);
+  const cellXfsMatch = xmlText.match(/<cellXfs count="(\d+)">([\s\S]*?)<\/cellXfs>/);
+  if (!bordersMatch || !cellXfsMatch) return stylesXmlBytes;
+
+  const borderCount = parseInt(bordersMatch[1], 10);
+  const thin = `<color rgb="FFB7B7B7"/>`;
+  const newBorder = `<border><left style="thin">${thin}</left><right style="thin">${thin}</right><top style="thin">${thin}</top><bottom style="thin">${thin}</bottom><diagonal/></border>`;
+  xmlText = xmlText
+    .replace(`<borders count="${borderCount}">`, `<borders count="${borderCount + 1}">`)
+    .replace("</borders>", `${newBorder}</borders>`);
+  const newBorderId = borderCount;
+
+  const xfCount = parseInt(cellXfsMatch[1], 10);
+  const xfEntries = cellXfsMatch[2].match(/<xf\b[^>]*\/>|<xf\b[^>]*>[\s\S]*?<\/xf>/g) || [];
+
+  const withNewBorder = (xf: string) => {
+    let clone = /applyBorder="\d"/.test(xf) ? xf.replace(/applyBorder="\d"/, 'applyBorder="1"') : xf.replace("<xf ", '<xf applyBorder="1" ');
+    clone = /borderId="\d+"/.test(clone) ? clone.replace(/borderId="\d+"/, `borderId="${newBorderId}"`) : clone.replace("<xf ", `<xf borderId="${newBorderId}" `);
+    return clone;
+  };
+
+  const newEntries: string[] = [];
+  let nextIndex = xfCount;
+  let borderedResValue = "";
+  GRID_ROLE_KEYS.forEach(key => {
+    const original = xfEntries[S[key]];
+    if (!original) return;
+    const clone = withNewBorder(original);
+    newEntries.push(clone);
+    S[key] = nextIndex;
+    if (key === "resValue") borderedResValue = clone;
+    nextIndex++;
+  });
+
+  if (borderedResValue) {
+    newEntries.push(borderedResValue.replace(/numFmtId="\d+"/, 'numFmtId="0"'));
+    S.resValueNumeric = nextIndex;
+    nextIndex++;
+  }
+
+  const patchedBody = cellXfsMatch[2] + newEntries.join("");
+  xmlText = xmlText.replace(cellXfsMatch[0], `<cellXfs count="${nextIndex}">${patchedBody}</cellXfs>`);
+  return new TextEncoder().encode(xmlText);
 }
 
 // Estimates a row height (points) that fits `text` wrapped across a cell `widthUnits` wide (in
@@ -367,7 +413,7 @@ function formatDateFr(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
-function buildSheetXml(act: any, numericResValueStyle: number) {
+function buildSheetXml(act: any) {
   const sb = new SheetBuilder();
   const manager = act.activity_manager || {};
 
@@ -404,7 +450,7 @@ function buildSheetXml(act: any, numericResValueStyle: number) {
   sb.labelRow("Date de la réservation", dateStr || undefined, S.resLabel, S.resValue);
   sb.labelRow("Titre de l'activité", act.name, S.resLabel, S.resValue);
   sb.labelRow("Description", act.description, S.resLabel, S.resValue);
-  sb.labelRow("Nombre de personnes prévu", act.attendees_count || undefined, S.resLabel, numericResValueStyle);
+  sb.labelRow("Nombre de personnes prévu", act.attendees_count || undefined, S.resLabel, S.resValueNumeric);
   sb.blankRows(1);
 
   const eventDateStart = dates.date_start;
@@ -596,7 +642,7 @@ async function generateContractXlsx(act: any) {
     showToast("Le gabarit de contrat est invalide (styles ou image d'entête introuvables).", "error");
     return;
   }
-  const { patched: stylesXml, styleIndex: numericResValueStyle } = addNumericResValueStyle(stylesXmlRaw);
+  const stylesXml = normalizeGridBorders(stylesXmlRaw);
 
   const zip = new JSZip();
   zip.file(
@@ -663,7 +709,7 @@ async function generateContractXlsx(act: any) {
       `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image2.png"/>` +
       `</Relationships>`
   );
-  zip.file("xl/worksheets/sheet1.xml", buildSheetXml(act, numericResValueStyle));
+  zip.file("xl/worksheets/sheet1.xml", buildSheetXml(act));
   zip.file(
     "xl/worksheets/_rels/sheet1.xml.rels",
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
