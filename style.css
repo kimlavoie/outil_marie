@@ -3049,4 +3049,60 @@ tr.activity-row.selected td {
   border-style: dashed !important;
 }
 
+/* Help Center styles */
+.help-section {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+  overflow: hidden;
+  transition: var(--transition-smooth);
+}
+
+.help-section[open] {
+  border-color: var(--primary);
+}
+
+.help-section-summary {
+  padding: 14px 18px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+
+.help-section-summary::-webkit-details-marker {
+  display: none;
+}
+
+.help-section-summary:hover {
+  background-color: var(--bg-main);
+}
+
+.help-section-content {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.help-section-content ol, .help-section-content ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.help-section-content li {
+  margin-bottom: 8px;
+}
+
+.help-section-content li:last-child {
+  margin-bottom: 0;
+}
+
+
 

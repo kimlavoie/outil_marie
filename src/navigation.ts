@@ -124,6 +124,45 @@ function initNavigation() {
     });
   }
 
+  // Help center modal triggers
+  const helpCenterModal = document.getElementById("help-center-modal");
+  const openHelpBtn = document.getElementById("help-center-btn");
+  const closeHelpBtn = document.getElementById("help-center-close-btn");
+  const closeHelpFooterBtn = document.getElementById("help-center-close-footer-btn");
+
+  const showHelp = () => {
+    if (helpCenterModal) {
+      helpCenterModal.style.display = "flex";
+      // Allow DOM update before adding transition class
+      setTimeout(() => {
+        helpCenterModal.classList.add("active");
+      }, 10);
+    }
+  };
+
+  const hideHelp = () => {
+    if (helpCenterModal) {
+      helpCenterModal.classList.remove("active");
+      // Wait for CSS transition (300ms) before hiding display
+      setTimeout(() => {
+        if (!helpCenterModal.classList.contains("active")) {
+          helpCenterModal.style.display = "none";
+        }
+      }, 300);
+    }
+  };
+
+  openHelpBtn?.addEventListener("click", showHelp);
+  closeHelpBtn?.addEventListener("click", hideHelp);
+  closeHelpFooterBtn?.addEventListener("click", hideHelp);
+
+  // Close when clicking outside modal content
+  helpCenterModal?.addEventListener("click", e => {
+    if (e.target === helpCenterModal) {
+      hideHelp();
+    }
+  });
+
   initQuickAccessDropdown();
   initGlobalSearch();
 }
