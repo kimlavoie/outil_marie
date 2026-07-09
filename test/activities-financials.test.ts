@@ -19,7 +19,8 @@ appState.settings = {
     { id: "svc-hourly", type: "hourly", rate_versions: [{ effective_date: "", rate: 10 }] },
     { id: "svc-flat", type: "flat", rate_versions: [{ effective_date: "", rate: 50 }] }
   ],
-  global_tasks: []
+  global_tasks: [],
+  schedulable_tasks: []
 };
 
 function makeActivity(reservationOverrides: any): any {

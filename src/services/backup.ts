@@ -408,12 +408,14 @@ function handleJsonBackupFile(file: File) {
             backup_reminder_days: 7,
             salaries: [],
             services: [],
-            global_tasks: []
+            global_tasks: [],
+            schedulable_tasks: []
           };
         }
         if (!appState.settings.rooms) appState.settings.rooms = [];
         if (!appState.settings.salaries) appState.settings.salaries = [];
         if (!appState.settings.services) appState.settings.services = [];
+        if (!appState.settings.schedulable_tasks) appState.settings.schedulable_tasks = [];
         if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
         appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days as any, 10);
         if (isNaN(appState.settings.backup_reminder_days)) {

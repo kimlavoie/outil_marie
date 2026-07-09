@@ -7,6 +7,7 @@ import { DepartmentsPanel, DeptModal } from "./departments.tsx";
 import { SalariesPanel, SalaryModal } from "./salaries.tsx";
 import { ServicesPanel, ServiceModal } from "./services.tsx";
 import { GlobalTasksPanel, GlobalTaskModal } from "./global-tasks.tsx";
+import { SchedulableTasksPanel, SchedulableTaskModal } from "./schedulable-tasks.tsx";
 
 type Command =
   | { type: "openPanel"; panel: string; seq: number }
@@ -26,6 +27,7 @@ function SettingsView({ command }: { command: Command }) {
   const [salaryModalId, setSalaryModalId] = useState<string | null | undefined>(undefined);
   const [serviceModalId, setServiceModalId] = useState<string | null | undefined>(undefined);
   const [globalTaskModalId, setGlobalTaskModalId] = useState<string | null | undefined>(undefined);
+  const [schedulableTaskModalId, setSchedulableTaskModalId] = useState<string | null | undefined>(undefined);
 
   const lastSeqRef = useRef(0);
   useEffect(() => {
@@ -46,6 +48,7 @@ function SettingsView({ command }: { command: Command }) {
       setSalaryModalId(undefined);
       setServiceModalId(undefined);
       setGlobalTaskModalId(undefined);
+      setSchedulableTaskModalId(undefined);
     }
   }, [command]);
 
@@ -55,7 +58,8 @@ function SettingsView({ command }: { command: Command }) {
     deptModalName !== undefined ||
     salaryModalId !== undefined ||
     serviceModalId !== undefined ||
-    globalTaskModalId !== undefined;
+    globalTaskModalId !== undefined ||
+    schedulableTaskModalId !== undefined;
   useSharedBackdrop(anyModalOpen);
 
   const tabs: { key: string; label: string }[] = [
@@ -64,7 +68,8 @@ function SettingsView({ command }: { command: Command }) {
     { key: "departments", label: "Départements" },
     { key: "salaries", label: "Salaires" },
     { key: "services", label: "Équipements" },
-    { key: "global-tasks", label: "Tâches globales" }
+    { key: "global-tasks", label: "Tâches globales" },
+    { key: "schedulable-tasks", label: "Tâches programmables" }
   ];
 
   return (
@@ -85,6 +90,7 @@ function SettingsView({ command }: { command: Command }) {
           <SalariesPanel active={activeTab === "salaries"} openModal={setSalaryModalId} bump={bump} />
           <ServicesPanel active={activeTab === "services"} openModal={setServiceModalId} bump={bump} />
           <GlobalTasksPanel active={activeTab === "global-tasks"} openModal={setGlobalTaskModalId} bump={bump} />
+          <SchedulableTasksPanel active={activeTab === "schedulable-tasks"} openModal={setSchedulableTaskModalId} bump={bump} />
         </div>
       </div>
 
@@ -94,6 +100,7 @@ function SettingsView({ command }: { command: Command }) {
       <SalaryModal id={salaryModalId} onClose={() => setSalaryModalId(undefined)} bump={bump} />
       <ServiceModal id={serviceModalId} onClose={() => setServiceModalId(undefined)} bump={bump} />
       <GlobalTaskModal id={globalTaskModalId} onClose={() => setGlobalTaskModalId(undefined)} bump={bump} />
+      <SchedulableTaskModal id={schedulableTaskModalId} onClose={() => setSchedulableTaskModalId(undefined)} bump={bump} />
     </>
   );
 }

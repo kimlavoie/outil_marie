@@ -24,6 +24,63 @@ const EVENT_TYPES = [
   { value: "autre", label: "Autre" }
 ];
 
+// Evaluates a single condition of a "tâche programmable" (Configuration > Tâches programmables)
+// against an activity. `room`, `technical_service` and `service` conditions match if ANY
+// reservation on the activity satisfies them (an activity can book more than one room).
+function evaluateTaskCondition(act: any, condition: any): boolean {
+  const { field, operator, value } = condition;
+  const reservations = act.reservations || [];
+
+  switch (field) {
+    case "event_type":
+      return operator === "not_equals" ? act.event_type !== value : act.event_type === value;
+    case "client_type":
+      return operator === "not_equals" ? act.client_type !== value : act.client_type === value;
+    case "department":
+      return operator === "not_equals" ? act.department !== value : act.department === value;
+    case "attendees_count": {
+      const count = act.attendees_count || 0;
+      const num = typeof value === "number" ? value : parseFloat(value);
+      if (operator === "gte") return count >= num;
+      if (operator === "lte") return count <= num;
+      return count === num;
+    }
+    case "room": {
+      const matches = reservations.some((r: any) => r.room_name === value);
+      return operator === "not_equals" ? !matches : matches;
+    }
+    case "technical_service": {
+      const matches = reservations.some((r: any) => (r.technical_services || []).includes(value));
+      return operator === "not_equals" ? !matches : matches;
+    }
+    case "service": {
+      const matches = reservations.some((r: any) => (r.services || []).some((s: any) => s.service_id === value));
+      return operator === "not_equals" ? !matches : matches;
+    }
+    default:
+      return false;
+  }
+}
+
+// Evaluates a whole "tâche programmable" against an activity: conditions combine within each
+// group per that group's `logic` (AND/OR), and groups combine with each other per `groups_logic`.
+// A task with no groups (or a group with no conditions) never matches — an empty condition
+// builder shouldn't silently behave like "always add this task".
+function activityMatchesTask(act: any, task: any): boolean {
+  const groups = task.groups || [];
+  if (groups.length === 0) return false;
+
+  const groupResults = groups.map((group: any) => {
+    const conditions = group.conditions || [];
+    if (conditions.length === 0) return false;
+    return group.logic === "OR"
+      ? conditions.some((c: any) => evaluateTaskCondition(act, c))
+      : conditions.every((c: any) => evaluateTaskCondition(act, c));
+  });
+
+  return task.groups_logic === "OR" ? groupResults.some(Boolean) : groupResults.every(Boolean);
+}
+
 export interface AppState {
   settings: {
     theme: string;
@@ -35,6 +92,7 @@ export interface AppState {
     salaries: any[];
     services: any[];
     global_tasks: any[];
+    schedulable_tasks: any[];
   };
   activities: any[];
   favorites: any[];
@@ -53,7 +111,8 @@ let appState: AppState = {
     backup_reminder_days: 7,
     salaries: [...DEFAULT_CONFIG.salaries],
     services: [...DEFAULT_CONFIG.services],
-    global_tasks: [...DEFAULT_CONFIG.global_tasks]
+    global_tasks: [...DEFAULT_CONFIG.global_tasks],
+    schedulable_tasks: [...DEFAULT_CONFIG.schedulable_tasks]
   },
   activities: [],
   favorites: [], // ids of activities pinned (by the user) to the "Accès rapide" list
@@ -387,6 +446,7 @@ async function loadDatabase(): Promise<void> {
       if (!appState.settings.services) appState.settings.services = [...DEFAULT_CONFIG.services];
       if (!appState.settings.global_tasks || appState.settings.global_tasks.length === 0)
         appState.settings.global_tasks = [...DEFAULT_CONFIG.global_tasks];
+      if (!appState.settings.schedulable_tasks) appState.settings.schedulable_tasks = [...DEFAULT_CONFIG.schedulable_tasks];
       if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
       appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days as any, 10);
       if (isNaN(appState.settings.backup_reminder_days)) {
@@ -889,7 +949,8 @@ async function seedDatabase(): Promise<void> {
     backup_reminder_days: 7,
     salaries: [...DEFAULT_CONFIG.salaries],
     services: [...DEFAULT_CONFIG.services],
-    global_tasks: [...DEFAULT_CONFIG.global_tasks]
+    global_tasks: [...DEFAULT_CONFIG.global_tasks],
+    schedulable_tasks: [...DEFAULT_CONFIG.schedulable_tasks]
   };
 
   appState.activities = [];
@@ -1013,6 +1074,7 @@ export {
   BAR_SERVICE_TYPES,
   HOST_DUTY_OPTIONS,
   EVENT_TYPES,
+  activityMatchesTask,
   appState,
   setAppState,
   isFavoriteActivity,

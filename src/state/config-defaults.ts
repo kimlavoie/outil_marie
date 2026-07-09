@@ -379,7 +379,8 @@ const DEFAULT_CONFIG = {
   global_tasks: [
     { id: "global-task-dossier-serveur", description: "Créer un dossier sur le serveur" },
     { id: "global-task-dossier-outlook", description: "Créer un dossier dans Outlook" }
-  ]
+  ],
+  schedulable_tasks: [] as any[]
 };
 
 export { DEFAULT_CONFIG };

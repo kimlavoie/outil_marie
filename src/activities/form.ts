@@ -8,7 +8,7 @@
  * js/datepicker.ts, js/activities-file-links.ts, js/activities-history.ts,
  * js/activities-financials.ts and js/activities-render.ts, this stays a plain TS module.
  */
-import { appState, saveDatabase } from "../state/state.ts";
+import { appState, saveDatabase, activityMatchesTask } from "../state/state.ts";
 import {
   debounce,
   generateUid,
@@ -557,7 +557,9 @@ function persistPlanningTasks() {
 // Derives the planning checklist from the Soumission tab's data: one room-reservation task per
 // réservation (naming any linked rooms that come along with it), a personnel-reservation task per
 // réservation that has staff attached, one task per linked "tâche du gestionnaire" on that room's
-// config, and one task per configured global task (Configuration > Tâches globales).
+// config, one task per configured global task (Configuration > Tâches globales), and one task per
+// configured schedulable task (Configuration > Tâches programmables) whose conditions match this
+// activity.
 function generatePlanningTasks(act: any) {
   if ((act.planning_tasks || []).length > 0) return;
 
@@ -583,6 +585,12 @@ function generatePlanningTasks(act: any) {
 
   (appState.settings.global_tasks || []).forEach((gt: any) => {
     tasks.push({ id: generateUid("task"), description: gt.description, done: false, auto_generated: true });
+  });
+
+  (appState.settings.schedulable_tasks || []).forEach((st: any) => {
+    if (activityMatchesTask(act, st)) {
+      tasks.push({ id: generateUid("task"), description: st.description, done: false, auto_generated: true });
+    }
   });
 
   commitActivityPatch(act.id, (a: any) => {

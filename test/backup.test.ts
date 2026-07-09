@@ -102,7 +102,8 @@ test("getDaysSinceLastBackup returns null when there is no last_backup_date", ()
       backup_reminder_days: 7,
       salaries: [],
       services: [],
-      global_tasks: []
+      global_tasks: [],
+      schedulable_tasks: []
     },
     activities: [],
     favorites: [],
@@ -123,7 +124,8 @@ test("getDaysSinceLastBackup returns null for a malformed date (wrong separator)
       backup_reminder_days: 7,
       salaries: [],
       services: [],
-      global_tasks: []
+      global_tasks: [],
+      schedulable_tasks: []
     },
     activities: [],
     favorites: [],
@@ -146,7 +148,8 @@ test("getDaysSinceLastBackup returns 0 for today and a negative count for a futu
       backup_reminder_days: 7,
       salaries: [],
       services: [],
-      global_tasks: []
+      global_tasks: [],
+      schedulable_tasks: []
     },
     activities: [],
     favorites: [],
@@ -165,7 +168,8 @@ test("getDaysSinceLastBackup returns 0 for today and a negative count for a futu
       backup_reminder_days: 7,
       salaries: [],
       services: [],
-      global_tasks: []
+      global_tasks: [],
+      schedulable_tasks: []
     },
     activities: [],
     favorites: [],
@@ -203,7 +207,8 @@ test("checkBackupReminder hides banner if no activities exist", () => {
       backup_reminder_days: 7,
       salaries: [],
       services: [],
-      global_tasks: []
+      global_tasks: [],
+      schedulable_tasks: []
     },
     activities: [],
     favorites: [],
@@ -235,7 +240,8 @@ test("checkBackupReminder shows banner if activities exist but no backup date", 
       backup_reminder_days: 7,
       salaries: [],
       services: [],
-      global_tasks: []
+      global_tasks: [],
+      schedulable_tasks: []
     },
     activities: [{ id: "act-1" }],
     favorites: [],
