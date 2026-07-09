@@ -30,7 +30,9 @@ import {
   getRoomsTariffTotal,
   showLoadingOverlay,
   hideLoadingOverlay,
-  showToast
+  showToast,
+  buildSearchableSelectHtml,
+  initSearchableSelectEl
 } from "../utils/utils.ts";
 import { isNonEmptyString } from "../utils/validation.ts";
 import { activitiesState, renderActivities, getActivityStateLabel } from "./render.ts";
@@ -555,17 +557,9 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "", detail
   const container = el("form-distribution-list");
   const rowId = "dist-row-" + Date.now() + Math.random().toString(36).substr(2, 5);
 
-  let optionsHtml = '<option value="">Choisir un compte...</option>';
-  appState.settings.accounts.forEach(acc => {
-    const isSelected = acc.code === accountCode ? "selected" : "";
-    optionsHtml += `<option value="${acc.code}" ${isSelected}>${acc.code} (${escapeHtml(acc.description)})</option>`;
-  });
-
   const rowHtml = `
     <div id="${rowId}" class="distribution-row" style="grid-template-columns: 1.3fr 0.8fr 1fr 1.3fr auto;">
-      <select id="${rowId}-account" class="select-input dist-account-select" style="padding: 8px 12px; font-size: 0.85rem;">
-        ${optionsHtml}
-      </select>
+      ${buildSearchableSelectHtml("dist-account-select-wrapper", "dist-account-select", "Choisir un compte...", `${rowId}-account`)}
       <input type="number" id="${rowId}-amount" class="form-input dist-amount-input" min="0" step="0.01" value="${amount > 0 ? amount : ""}" placeholder="Montant $" style="padding: 8px 12px; font-size: 0.85rem;">
       <input type="text" id="${rowId}-reference" class="form-input dist-reference-input" value="${escapeHtml(reference)}" placeholder="N° Facture, RI ou Encaissement" style="padding: 8px 12px; font-size: 0.85rem;">
       <input type="text" id="${rowId}-details" class="form-input dist-details-input" value="${escapeHtml(details)}" placeholder="Détails" style="padding: 8px 12px; font-size: 0.85rem;">
@@ -584,6 +578,20 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "", detail
     updateDistributionTotal();
     autoSaveActivityForm();
   });
+
+  const glItems = appState.settings.accounts.map(acc => ({
+    value: acc.code,
+    label: `${acc.code} (${acc.description})`
+  }));
+
+  initSearchableSelectEl(
+    newRow.querySelector<HTMLElement>(".dist-account-select-wrapper")!,
+    glItems,
+    value => {
+      autoSaveActivityForm();
+    },
+    accountCode
+  );
 
   newRow.querySelector(".dist-amount-input")!.addEventListener("input", updateDistributionTotal);
 
@@ -679,7 +687,7 @@ function autoSaveActivityForm() {
   // Build distributions array
   const distributions: any[] = [];
   document.querySelectorAll(".distribution-row").forEach(row => {
-    const acc = row.querySelector<HTMLInputElement>(".dist-account-select")?.value;
+    const acc = row.querySelector<HTMLInputElement>(".dist-account-select-wrapper .searchable-select-value")?.value;
     const amtStr = row.querySelector<HTMLInputElement>(".dist-amount-input")?.value.trim() || "";
     const amt = parseFloat(amtStr) || 0;
     const reference = row.querySelector<HTMLInputElement>(".dist-reference-input")?.value.trim();

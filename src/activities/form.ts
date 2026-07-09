@@ -663,7 +663,7 @@ function generateBillingLines(act: any) {
   });
 
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-fees-list .distribution-row").forEach(row => {
-    const glCode = row.querySelector<HTMLInputElement>(".fee-gl-select")!.value;
+    const glCode = row.querySelector<HTMLInputElement>(".fee-gl-select-wrapper .searchable-select-value")!.value;
     const amount = parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input")!.value) || 0;
     const description = row.querySelector<HTMLInputElement>(".fee-desc-input")?.value.trim() || "";
     if (glCode && amount > 0) addDistributionRow(glCode, amount, "", description);
