@@ -1972,6 +1972,8 @@ input[type="checkbox"] {
   cursor: pointer;
   user-select: none;
   transition: var(--transition-smooth);
+  position: relative;
+  padding-right: 24px;
 }
 
 .table-responsive th[data-sort]:hover {
@@ -1980,19 +1982,23 @@ input[type="checkbox"] {
 }
 
 .table-responsive th[data-sort]::after {
-  content: " ↕";
+  content: "↕";
   opacity: 0.3;
   font-size: 0.75rem;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .table-responsive th[data-sort].sort-asc::after {
-  content: " ▲";
+  content: "▲";
   opacity: 1;
   color: var(--primary);
 }
 
 .table-responsive th[data-sort].sort-desc::after {
-  content: " ▼";
+  content: "▼";
   opacity: 1;
   color: var(--primary);
 }

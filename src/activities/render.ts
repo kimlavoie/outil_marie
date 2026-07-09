@@ -23,7 +23,7 @@ import {
   toggleFavoriteActivity
 } from "../state/state.ts";
 import {
-  getReservationRoomLabel,
+  getReservationRoomAbbreviation,
   getActivityReferences,
   getRoomsTariffTotal,
   escapeHtml,
@@ -35,6 +35,7 @@ import {
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { openActivityDrawer, openActivityDetailsModal } from "./financials.ts";
 import { duplicateActivityAndOpen } from "./form.ts";
+import { TECHNICAL_DIRECTOR_SALARY_ID } from "./reservation-subrows.ts";
 
 // Typed shorthand for document.getElementById in this file's DOM-manipulation code — see
 // activities-financials.ts's `el` helper doc comment for why this cast is needed/safe.
@@ -197,8 +198,8 @@ function renderActivities() {
 
   // Sort filtered activities
   filtered.sort((a, b) => {
-    let valA = "";
-    let valB = "";
+    let valA: string | number = "";
+    let valB: string | number = "";
 
     switch (activitiesState.sortKey) {
       case "id":
@@ -218,8 +219,8 @@ function renderActivities() {
         valB = b.date_start || "";
         break;
       case "room_name":
-        valA = (a.reservations || []).map(getReservationRoomLabel).join(", ").toLowerCase();
-        valB = (b.reservations || []).map(getReservationRoomLabel).join(", ").toLowerCase();
+        valA = (a.reservations || []).map(getReservationRoomAbbreviation).join(", ").toLowerCase();
+        valB = (b.reservations || []).map(getReservationRoomAbbreviation).join(", ").toLowerCase();
         break;
       case "reference":
         valA = getActivityReferences(a).toLowerCase();
@@ -262,7 +263,7 @@ function renderActivities() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucune activité trouvée. Cliquez sur "+ Nouvelle Activité" pour en créer une.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucune activité trouvée. Cliquez sur "+ Nouvelle Activité" pour en créer une.</td></tr>`;
     renderPaginationBar(el("activities-pagination"), {
       page: activitiesState.page,
       pageSize: activitiesState.pageSize,
@@ -334,6 +335,9 @@ function renderActivities() {
 
     // Bar service active indicator & total hostess count
     const hasBarService = (act.reservations || []).some((r: any) => r.bar_service?.active);
+    const hasTechnicalDirector = (act.reservations || []).some((r: any) =>
+      (r.staff || []).some((s: any) => s.salary_id === TECHNICAL_DIRECTOR_SALARY_ID && s.count > 0)
+    );
     const totalHostesses = (act.reservations || []).reduce(
       (sum: number, r: any) => sum + (r.bar_service?.hostess_count || 0) + (r.host_duties?.hostess_count || 0),
       0
@@ -384,11 +388,12 @@ function renderActivities() {
           <span class="bold">${isFilled ? escapeHtml(act.name) : "Vierge"}</span> ${statusBadge}
           ${distHtml}
         </td>
-        <td>${isFilled ? `${escapeHtml((act.reservations || []).map(getReservationRoomLabel).join(", "))} (${act.client_type})` : "-"}</td>
+        <td>${isFilled ? escapeHtml((act.reservations || []).map(getReservationRoomAbbreviation).join(", ")) : "-"}</td>
         <td>${isFilled ? (hasBarService ? "Oui" : "") : "-"}</td>
         <td>${isFilled ? (totalHostesses > 0 ? totalHostesses : "") : "-"}</td>
         <td class="font-mono">${isFilled && activityReferences ? escapeHtml(activityReferences) : "-"}</td>
         <td class="bold">${isFilled ? formatCurrency(totalRev) : "-"}</td>
+        <td>${isFilled ? (hasTechnicalDirector ? "Oui" : "") : "-"}</td>
         <td>${stateCellHtml}</td>
         <td class="text-right" style="white-space: nowrap;">
           ${

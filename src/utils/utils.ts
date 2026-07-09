@@ -79,6 +79,15 @@ function getReservationRoomLabel(reservation: any) {
   return reservation.room_name || "";
 }
 
+// Short label for a reservation's room, for compact displays (activities list table): the
+// room's configured "Diminutif" if set, otherwise falls back to the full name/label
+function getReservationRoomAbbreviation(reservation: any) {
+  if (!reservation) return "";
+  if (reservation.room_name === OTHER_ROOM_VALUE) return reservation.room_other_details || "Autre";
+  const room = appState.settings.rooms.find((r: any) => r.name === reservation.room_name);
+  return (room && room.abbreviation) || reservation.room_name || "";
+}
+
 // Room color, with a stable fallback for rooms saved before the color picker existed
 const FALLBACK_ROOM_COLORS = ["#4f46e5", "#059669", "#d97706", "#db2777", "#0891b2", "#7c3aed", "#dc2626", "#65a30d"];
 function getRoomColor(name: string) {
@@ -633,6 +642,7 @@ export {
   getRoomsTariffTotal,
   OTHER_ROOM_VALUE,
   getReservationRoomLabel,
+  getReservationRoomAbbreviation,
   getRoomColor,
   FALLBACK_ROOM_COLORS,
   buildGlAccountOptionsHtml,

@@ -38,6 +38,7 @@ import {
   addServiceRow,
   addFeeRow,
   autoAddLinkedStaffAndFees,
+  autoAddTechnicalDirectorIfNeeded,
   collectStaffFromForm,
   collectServicesFromForm,
   collectFeesFromForm
@@ -685,7 +686,12 @@ function addReservationCard(reservationData: any = null) {
   const hostDutiesCountGroup = card.querySelector<HTMLInputElement>(".room-host-duties-count-group")!;
 
   initPillToggleEl(card.querySelector<HTMLInputElement>(".room-technical-services-group")!);
-  card.querySelector<HTMLInputElement>(".room-technical-services-group")!.addEventListener("click", () => {
+  card.querySelector<HTMLInputElement>(".room-technical-services-group")!.addEventListener("click", e => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>(".pill-toggle");
+    if (btn && btn.classList.contains("active")) {
+      autoAddTechnicalDirectorIfNeeded(staffList);
+      updateSubmissionFinancialSummary();
+    }
     autoSaveActivityForm();
   });
 
@@ -783,6 +789,10 @@ function addReservationCard(reservationData: any = null) {
       )
     );
     (reservationData.fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, f.gl_account_code, f.auto_generated));
+
+    if ((reservationData.technical_services || []).length > 0) {
+      autoAddTechnicalDirectorIfNeeded(staffList);
+    }
   }
 
   return card;

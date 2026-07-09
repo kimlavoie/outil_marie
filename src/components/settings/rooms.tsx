@@ -66,7 +66,7 @@ export function RoomsPanel({ active, openModal, bump }: { active: boolean; openM
         </button>
       </div>
       <div className="settings-list">
-        {appState.settings.rooms.map((r: { name: string; pricing_grids?: unknown[] }) => {
+        {appState.settings.rooms.map((r: { name: string; abbreviation?: string; pricing_grids?: unknown[] }) => {
           const tarifs = getFlattenedRoomTarifs(r, "");
           const tarifsDesc = tarifs.length
             ? tarifs.map((t: { description: string; amount: number }) => `${t.description}: ${formatCurrency(t.amount)}/jour`).join(" · ")
@@ -77,7 +77,10 @@ export function RoomsPanel({ active, openModal, bump }: { active: boolean; openM
             <div key={r.name} className="settings-list-item" onClick={() => openModal(r.name)}>
               <div className="settings-list-item-info">
                 <span className="room-color-swatch" style={{ backgroundColor: getRoomColor(r.name) }} title="Couleur de la salle" />
-                <span className="settings-list-item-code">{r.name}</span>
+                <span className="settings-list-item-code">
+                  {r.name}
+                  {r.abbreviation ? ` (${r.abbreviation})` : ""}
+                </span>
                 <span className="settings-list-item-desc">
                   {tarifsDesc}
                   {versionNote}
@@ -101,6 +104,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
   const originalName = name || "";
 
   const [roomName, setRoomName] = useState("");
+  const [abbreviation, setAbbreviation] = useState("");
   const [color, setColor] = useState("#4f46e5");
   const [grids, setGrids] = useState<PricingGrid[]>([]);
   const [activeGridIndex, setActiveGridIndex] = useState(0);
@@ -144,6 +148,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
     const room = originalName ? appState.settings.rooms.find((r: { name: string }) => r.name === originalName) : null;
 
     setRoomName(room ? room.name : "");
+    setAbbreviation((room && room.abbreviation) || "");
     setColor(room ? getRoomColor(room.name) : FALLBACK_ROOM_COLORS[appState.settings.rooms.length % FALLBACK_ROOM_COLORS.length]);
 
     let initialGrids: PricingGrid[] = room ? JSON.parse(JSON.stringify(room.pricing_grids || [])) : [];
@@ -310,6 +315,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
 
     const payload = {
       name: newName,
+      abbreviation: abbreviation.trim(),
       color,
       pricing_grids: grids,
       linked_rooms: linkedRooms,
@@ -382,6 +388,19 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
             placeholder="Ex: POLY"
             value={roomName}
             onChange={e => setRoomName(e.target.value)}
+          />
+        </div>
+        <div className="form-group" style={{ flexGrow: 0 }}>
+          <label htmlFor="form-room-abbreviation">Diminutif</label>
+          <input
+            type="text"
+            id="form-room-abbreviation"
+            className="form-input"
+            placeholder="Ex: POLY"
+            title="Utilisé dans le tableau de la liste des activités à la place du nom complet"
+            style={{ width: 100 }}
+            value={abbreviation}
+            onChange={e => setAbbreviation(e.target.value)}
           />
         </div>
         <div className="form-group" style={{ flexGrow: 0 }}>
