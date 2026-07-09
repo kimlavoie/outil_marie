@@ -544,19 +544,25 @@ function ReconciliationRow({
             {!r.reviewStatus && (
               <div style={{ display: "flex", gap: 4, marginTop: 6, justifyContent: "flex-end" }}>
                 <button
-                  className="btn btn-secondary"
-                  style={{ padding: "4px 8px", fontSize: "0.72rem" }}
+                  className="btn btn-secondary btn-recon-validate"
+                  style={{ padding: "4px 8px", fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
                   title="Marquer cet écart comme vérifié manuellement"
                   onClick={() => onSetReview(r.reviewKey, "validated")}
                 >
+                  <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, fill: "currentColor" }}>
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  </svg>
                   Valider
                 </button>
                 <button
-                  className="btn btn-secondary"
-                  style={{ padding: "4px 8px", fontSize: "0.72rem" }}
+                  className="btn btn-secondary btn-recon-ignore"
+                  style={{ padding: "4px 8px", fontSize: "0.72rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
                   title="Ignorer cet écart"
                   onClick={() => onSetReview(r.reviewKey, "ignored")}
                 >
+                  <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, fill: "currentColor" }}>
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
                   Ignorer
                 </button>
               </div>
@@ -579,6 +585,23 @@ function ReconciliationView() {
   const [mappingHeaders, setMappingHeaders] = useState<string[] | null>(null);
   const [pendingLedgerRows, setPendingLedgerRows] = useState<any[]>([]);
   const [detailRecord, setDetailRecord] = useState<any>(null);
+  const [showHelp, setShowHelp] = useState(() => {
+    try {
+      return localStorage.getItem("outil_marie_recon_show_help") !== "false";
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleHelp = () => {
+    const next = !showHelp;
+    setShowHelp(next);
+    try {
+      localStorage.setItem("outil_marie_recon_show_help", String(next));
+    } catch (e) {
+      logError("reconciliation", "sauvegarde de showHelp", e);
+    }
+  };
 
   const parseAndImportRows = (rawRows: any[]) => {
     if (!Array.isArray(rawRows) || rawRows.length === 0) {
@@ -732,6 +755,37 @@ function ReconciliationView() {
 
       {reconciliationState.imported && (
         <div id="reconciliation-panel" style={{ display: "grid" }} className="reconciliation-grid">
+          {showHelp && (
+            <div className="reconcile-help-banner">
+              <div className="reconcile-help-header">
+                <span className="reconcile-help-title">💡 Guide du Rapprochement Comptable</span>
+                <button className="btn-icon" onClick={toggleHelp} aria-label="Fermer le guide" style={{ width: 24, height: 24, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem" }}>
+                  &times;
+                </button>
+              </div>
+              <div className="reconcile-help-content">
+                <p style={{ margin: "0 0 10px 0" }}>Ce tableau compare vos <strong>Activités saisies</strong> dans l'application avec les lignes de votre <strong>Grand Livre (comptabilité externe)</strong>.</p>
+                <div className="reconcile-help-grid">
+                  <div className="reconcile-help-item">
+                    <span className="badge badge-success">Conforme</span>
+                    <p>Les montants et références correspondent parfaitement. Tout est en ordre !</p>
+                  </div>
+                  <div className="reconcile-help-item">
+                    <span className="badge badge-danger">Écart de montant</span>
+                    <p>La référence correspond, mais le montant saisi diffère de celui du Grand Livre. Vous pouvez vérifier ou forcer la validation.</p>
+                  </div>
+                  <div className="reconcile-help-item">
+                    <span className="badge badge-warning">Manquant dans le GL</span>
+                    <p>L'activité est dans l'application, mais aucun montant correspondant n'a été trouvé dans le Grand Livre comptable.</p>
+                  </div>
+                  <div className="reconcile-help-item">
+                    <span className="badge badge-info">Manquant dans l'App</span>
+                    <p>Cette ligne existe dans le Grand Livre mais n'est pas saisie dans l'application. Cliquez sur <strong>+ Créer activité</strong> pour l'ajouter.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="reconcile-summary-bar">
             <div className="summary-box" style={{ borderLeft: "4px solid var(--success)" }}>
               <div className="summary-box-val text-success">{valid}</div>
@@ -786,6 +840,9 @@ function ReconciliationView() {
                 </button>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
+                <button className="btn btn-secondary" onClick={toggleHelp}>
+                  {showHelp ? "Masquer l'aide" : "Afficher l'aide (?) "}
+                </button>
                 <button className="btn btn-secondary" onClick={exportReconciliationToExcel}>
                   Exporter le rapprochement
                 </button>
@@ -799,8 +856,14 @@ function ReconciliationView() {
               <table>
                 <thead>
                   <tr>
-                    <th>Poste Budgétaire / Description</th>
-                    <th>RI / Facture Réf.</th>
+                    <th>
+                      Poste Budgétaire / Description
+                      <span className="help-tooltip-trigger" title="Le numéro de compte comptable associé (ex: 4100) et son libellé">?</span>
+                    </th>
+                    <th>
+                      RI / Facture Réf.
+                      <span className="help-tooltip-trigger" title="La référence du reçu de versement ou de la facture pour rapprochement">?</span>
+                    </th>
                     <th>Montant Saisi</th>
                     <th>Montant Réel (GL)</th>
                     <th>Écart</th>

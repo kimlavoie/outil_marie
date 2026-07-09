@@ -2924,3 +2924,100 @@ tr.activity-row.selected td {
   fill: #d97706;
   margin-top: 2px;
 }
+
+/* Reconciliation Help Guide Banner */
+.reconcile-help-banner {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reconcile-help-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reconcile-help-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.reconcile-help-content {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.reconcile-help-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+}
+
+.reconcile-help-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reconcile-help-item .badge {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.reconcile-help-item p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Tooltip trigger in table headers */
+.help-tooltip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  font-weight: bold;
+  cursor: help;
+  margin-left: 4px;
+  vertical-align: middle;
+  transition: var(--transition-smooth);
+}
+
+.help-tooltip-trigger:hover {
+  background-color: var(--text-muted);
+  color: var(--bg-card);
+}
+
+/* Action buttons for manual reconciliation review */
+.btn-recon-validate:hover {
+  border-color: var(--success);
+  color: var(--success);
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.btn-recon-ignore:hover {
+  border-color: var(--text-muted);
+  color: var(--text-muted);
+  background-color: rgba(100, 116, 139, 0.1);
+}
+
