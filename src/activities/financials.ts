@@ -176,14 +176,14 @@ function buildPrintActivitySheetHtml(act: any) {
   const fin = computeActivityFinancials(act);
   const manager = act.activity_manager || {};
   const today = new Date();
-  const generatedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`;
+  const generatedDate = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}`;
 
   const roomsRows = (act.reservations || [])
     .map((r: any) => {
       const days = (r.slots || []).length;
       const slotsText =
         (r.slots || [])
-          .map((s: any) => `${s.date}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
+          .map((s: any) => `${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
           .join(", ") || "-";
       return `
         <tr>
@@ -218,6 +218,7 @@ function buildPrintActivitySheetHtml(act: any) {
           manager.type === "externe"
             ? `
         <div><strong>Entreprise :</strong> ${escapeHtml(manager.company_name) || "-"}</div>
+        <div><strong>Numéro de client (COBA) :</strong> ${escapeHtml(manager.coba_client_number) || "-"}</div>
         <div><strong>Adresse :</strong> ${escapeHtml(manager.address) || "-"}</div>
         <div><strong>Ville :</strong> ${escapeHtml(manager.city) || "-"}</div>
         <div><strong>Province :</strong> ${escapeHtml(manager.province) || "-"}</div>
@@ -284,6 +285,7 @@ function buildActivityDetailsHtml(act: any) {
     ...(manager.type === "externe"
       ? [
           ["Entreprise", manager.company_name],
+          ["Numéro de client (COBA Finance)", manager.coba_client_number],
           ["Adresse", manager.address],
           ["Ville", manager.city],
           ["Province", manager.province],
@@ -298,7 +300,7 @@ function buildActivityDetailsHtml(act: any) {
       const days = (r.slots || []).length;
       const slotsText =
         (r.slots || [])
-          .map((s: any) => `${s.date}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
+          .map((s: any) => `${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
           .join(", ") || "-";
       return `
         <tr>
@@ -697,6 +699,7 @@ function autoSaveActivityForm() {
   const managerPhone = el("form-activity-manager-phone").value.trim();
   const managerEmail = el("form-activity-manager-email").value.trim();
   const managerCompany = el("form-activity-manager-company").value.trim();
+  const managerCobaClientNumber = el("form-activity-manager-coba-client-number").value.trim();
   const managerAddress = el("form-activity-manager-address").value.trim();
   const managerCity = el("form-activity-manager-city").value.trim();
   const managerProvince = el("form-activity-manager-province").value.trim();
@@ -742,6 +745,7 @@ function autoSaveActivityForm() {
       phone: managerPhone,
       email: managerEmail,
       company_name: managerType === "externe" ? managerCompany : "",
+      coba_client_number: managerType === "externe" ? managerCobaClientNumber : "",
       address: managerType === "externe" ? managerAddress : "",
       city: managerType === "externe" ? managerCity : "",
       province: managerType === "externe" ? managerProvince : "",

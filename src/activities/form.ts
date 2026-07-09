@@ -359,6 +359,7 @@ function buildNewActivityRecord(id: string, name: string, mode: string) {
       phone: "",
       email: "",
       company_name: "",
+      coba_client_number: "",
       address: "",
       city: "",
       province: "",
@@ -949,6 +950,7 @@ function fillActivityFormFields(act: any) {
   el("form-activity-manager-phone").value = act.activity_manager?.phone || "";
   el("form-activity-manager-email").value = act.activity_manager?.email || "";
   el("form-activity-manager-company").value = act.activity_manager?.company_name || "";
+  el("form-activity-manager-coba-client-number").value = act.activity_manager?.coba_client_number || "";
   el("form-activity-manager-address").value = act.activity_manager?.address || "";
   el("form-activity-manager-city").value = act.activity_manager?.city || "";
   el("form-activity-manager-province").value = act.activity_manager?.province || "";

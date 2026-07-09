@@ -2868,7 +2868,7 @@ tr.activity-row.selected td {
 
 .print-sheet-table th,
 .print-sheet-table td {
-  border: 1px solid #999;
+  border: none;
   padding: 5px 8px;
   text-align: left;
 }
@@ -2882,6 +2882,7 @@ tr.activity-row.selected td {
 
 .print-sheet-total-table td {
   padding: 4px 8px;
+  text-align: right;
 }
 
 .print-sheet-total-table tr.print-sheet-grand-total td {

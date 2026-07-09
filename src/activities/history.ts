@@ -398,6 +398,7 @@ function computeActivityDiff(oldAct: any, newAct: any) {
   addDiff("Resp. Activité: Téléphone", oldManager.phone, newManager.phone);
   addDiff("Resp. Activité: Courriel", oldManager.email, newManager.email);
   addDiff("Resp. Activité: Entreprise", oldManager.company_name, newManager.company_name);
+  addDiff("Resp. Activité: No client (COBA)", oldManager.coba_client_number, newManager.coba_client_number);
   addDiff("Resp. Activité: Adresse", oldManager.address, newManager.address);
   addDiff("Resp. Activité: Ville", oldManager.city, newManager.city);
   addDiff("Resp. Activité: Province", oldManager.province, newManager.province);

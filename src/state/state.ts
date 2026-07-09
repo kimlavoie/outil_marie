@@ -833,6 +833,7 @@ function migrateActivities() {
         phone: "",
         email: "",
         company_name: "",
+        coba_client_number: "",
         address: "",
         city: "",
         province: "",
@@ -840,6 +841,7 @@ function migrateActivities() {
       };
     }
     if (act.activity_manager.company_name === undefined) act.activity_manager.company_name = "";
+    if (act.activity_manager.coba_client_number === undefined) act.activity_manager.coba_client_number = "";
     if (act.activity_manager.address === undefined) act.activity_manager.address = "";
     if (act.activity_manager.city === undefined) act.activity_manager.city = "";
     if (act.activity_manager.province === undefined) act.activity_manager.province = "";

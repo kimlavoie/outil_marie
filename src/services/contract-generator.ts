@@ -66,7 +66,8 @@ const S = {
   clauseBody: 69,
   sigLabel: 35,
   sigName1: 154,
-  sigName2: 156
+  sigName2: 156,
+  billingLabel: 77
 };
 
 // normalizeGridBorders() mutates S in place (see below) so buildSheetXml/buildDrawingXml always
@@ -263,13 +264,20 @@ const GRID_ROLE_KEYS = [
 function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
   let xmlText = new TextDecoder("utf-8").decode(stylesXmlBytes);
 
+  // Replace orange fills with pale blue fills in the styles template
+  xmlText = xmlText
+    .replace(/rgb="FFFF8B00"/g, 'rgb="FFD9E1F2"')
+    .replace(/rgb="FFFFC885"/g, 'rgb="FFF2F5FC"');
+
+  // Replace all borderId="N" with borderId="0" to remove all cell borders
+  xmlText = xmlText.replace(/borderId="\d+"/g, 'borderId="0"');
+
   const bordersMatch = xmlText.match(/<borders count="(\d+)">/);
   const cellXfsMatch = xmlText.match(/<cellXfs count="(\d+)">([\s\S]*?)<\/cellXfs>/);
   if (!bordersMatch || !cellXfsMatch) return stylesXmlBytes;
 
   const borderCount = parseInt(bordersMatch[1], 10);
-  const thin = `<color rgb="FFB7B7B7"/>`;
-  const newBorder = `<border><left style="thin">${thin}</left><right style="thin">${thin}</right><top style="thin">${thin}</top><bottom style="thin">${thin}</bottom><diagonal/></border>`;
+  const newBorder = `<border><left/><right/><top/><bottom/><diagonal/></border>`;
   xmlText = xmlText
     .replace(`<borders count="${borderCount}">`, `<borders count="${borderCount + 1}">`)
     .replace("</borders>", `${newBorder}</borders>`);
@@ -278,13 +286,24 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
   const xfCount = parseInt(cellXfsMatch[1], 10);
   const xfEntries = cellXfsMatch[2].match(/<xf\b[^>]*\/>|<xf\b[^>]*>[\s\S]*?<\/xf>/g) || [];
 
+  // Remove gray backgrounds from Attestations styles
+  const cleanFill = (xf: string) => {
+    if (!xf) return xf;
+    let clean = xf.replace(/fillId="\d+"/, 'fillId="0"');
+    clean = clean.replace(/applyFill="1"/, 'applyFill="0"');
+    return clean;
+  };
+  if (xfEntries[67]) xfEntries[67] = cleanFill(xfEntries[67]);
+  if (xfEntries[52]) xfEntries[52] = cleanFill(xfEntries[52]);
+  if (xfEntries[42]) xfEntries[42] = cleanFill(xfEntries[42]);
+
   const withNewBorder = (xf: string) => {
     let clone = /applyBorder="\d"/.test(xf)
-      ? xf.replace(/applyBorder="\d"/, 'applyBorder="1"')
-      : xf.replace("<xf ", '<xf applyBorder="1" ');
+      ? xf.replace(/applyBorder="\d"/, 'applyBorder="0"')
+      : xf.replace("<xf ", '<xf applyBorder="0" ');
     clone = /borderId="\d+"/.test(clone)
-      ? clone.replace(/borderId="\d+"/, `borderId="${newBorderId}"`)
-      : clone.replace("<xf ", `<xf borderId="${newBorderId}" `);
+      ? clone.replace(/borderId="\d+"/, `borderId="0"`)
+      : clone.replace("<xf ", `<xf borderId="0" `);
     return clone;
   };
 
@@ -307,7 +326,39 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
     nextIndex++;
   }
 
-  const patchedBody = cellXfsMatch[2] + newEntries.join("");
+  const withRightAlignment = (xf: string) => {
+    let clone = xf;
+    if (/applyAlignment="\d"/.test(clone)) {
+      clone = clone.replace(/applyAlignment="\d"/, 'applyAlignment="1"');
+    } else {
+      clone = clone.replace("<xf ", '<xf applyAlignment="1" ');
+    }
+    if (/<alignment\b/.test(clone)) {
+      if (/horizontal="\w+"/.test(clone)) {
+        clone = clone.replace(/horizontal="\w+"/, 'horizontal="right"');
+      } else {
+        clone = clone.replace("<alignment ", '<alignment horizontal="right" ');
+      }
+    } else {
+      if (clone.endsWith("/>")) {
+        clone = clone.slice(0, -2) + '><alignment horizontal="right"/></xf>';
+      } else {
+        clone = clone.replace("</xf>", '<alignment horizontal="right"/></xf>');
+      }
+    }
+    return clone;
+  };
+
+  const originalValueXf = xfEntries[ORIGINAL_S.value];
+  if (originalValueXf) {
+    const valueWithBorder = withNewBorder(originalValueXf);
+    const rightAligned = withRightAlignment(valueWithBorder);
+    newEntries.push(rightAligned);
+    S.billingLabel = nextIndex;
+    nextIndex++;
+  }
+
+  const patchedBody = xfEntries.join("") + newEntries.join("");
   xmlText = xmlText.replace(cellXfsMatch[0], `<cellXfs count="${nextIndex}">${patchedBody}</cellXfs>`);
   return new TextEncoder().encode(xmlText);
 }
@@ -341,6 +392,14 @@ class SheetBuilder {
   private rowXmls: string[] = [];
   private merges: string[] = [];
   private rowNum = 0;
+
+  getCurrentRow() {
+    return this.rowNum;
+  }
+
+  addCustomMerge(range: string) {
+    this.merges.push(range);
+  }
 
   private cellXml(addr: string, style: number, value?: string | number) {
     if (value === undefined || value === null || value === "") return `<c r="${addr}" s="${style}"/>`;
@@ -450,7 +509,7 @@ class SheetBuilder {
 function formatDateFr(iso: string) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
+  return `${y}/${m}/${d}`;
 }
 
 function buildSheetXml(act: any, variant: "contrat" | "soumission") {
@@ -462,7 +521,8 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     // regardless of row height — leave them empty so content starts right below it.
     sb.blankRows(IMAGE_ROW_SPAN);
 
-    sb.labelRow("N° de contrat", act.id);
+    sb.labelRow("N° de contrat", act.id, S.supplierLabel, S.supplierValue);
+    sb.labelRow("N° de client", manager.coba_client_number, S.supplierLabel, S.supplierValue);
     sb.blankRows(1);
   } else {
     // No header image for a soumission — a big title banner stands in for it instead.
@@ -471,17 +531,19 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   }
 
   sb.titleRow("Identification du client");
-  sb.labelRow("Responsable de l'activité", `${manager.first_name || ""} ${manager.last_name || ""}`.trim() || undefined);
+  sb.labelRow("Responsable de l'activité", `${manager.first_name || ""} ${manager.last_name || ""}`.trim() || undefined, S.supplierLabel, S.supplierValue);
   sb.labelRow(
     "Responsable de la facturation",
-    `${act.responsable_first_name || ""} ${act.responsable_last_name || ""}`.trim() || undefined
+    `${act.responsable_first_name || ""} ${act.responsable_last_name || ""}`.trim() || undefined,
+    S.supplierLabel,
+    S.supplierValue
   );
   const addressLines = [manager.address, [manager.city, manager.province, manager.postal_code].filter(Boolean).join(" ")]
     .filter(Boolean)
     .join("\n");
-  sb.labelRow("Adresse", addressLines || undefined);
-  sb.labelRow("Téléphone", manager.phone);
-  sb.labelRow("Courriel", manager.email);
+  sb.labelRow("Adresse", addressLines || undefined, S.supplierLabel, S.supplierValue);
+  sb.labelRow("Téléphone", manager.phone, S.supplierLabel, S.supplierValue);
+  sb.labelRow("Courriel", manager.email, S.supplierLabel, S.supplierValue);
   sb.blankRows(1);
 
   sb.titleRow("Information du fournisseur");
@@ -591,31 +653,46 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   ];
   financeRows.forEach(([label, amount]) => {
     sb.addRow(null, [
-      { col: "A", style: S.value, value: label, mergeTo: "D" },
+      { col: "A", style: S.billingLabel, value: label, mergeTo: "D" },
       { col: "E", style: S.currency, value: amount, mergeTo: "F" }
     ]);
   });
   sb.blankRows(1);
 
   if (variant === "contrat") {
-    sb.titleRow("Attestations");
-    ATTESTATIONS.forEach((text, i) => {
-      // A:D is 4 of the sheet's 6 columns (see buildSheetXml's <cols>); both styles are 16pt.
-      sb.addRow(wrapRowHeight(text, 88, 16), [
-        { col: "A", style: i === 0 ? S.attestation : S.urgency, value: text, mergeTo: "D" },
-        { col: "E", style: S.initialsLabel, value: "Initiales:", mergeTo: "F" }
-      ]);
-    });
+    sb.titleRow("Clause d'annulation et de paiement");
+    sb.addRow(22, [
+      { col: "A", style: S.supplierLabel, value: "Acompte (50% du grand total) :", mergeTo: "D" },
+      { col: "E", style: S.currency, value: fin.total * 0.5, mergeTo: "F" }
+    ]);
+    sb.addRow(20, [
+      { col: "A", style: S.supplierValue, value: "* La facture d'acompte vous parviendra par courriel avec un spécimen de chèque.", mergeTo: "F" }
+    ]);
+    sb.blankRows(1);
+    sb.textBoxRow(CANCELLATION_CLAUSE, S.cancelBody, 14);
     sb.blankRows(1);
 
-    sb.titleRow("Clause d'annulation et de paiement");
-    sb.textBoxRow(CANCELLATION_CLAUSE, S.cancelBody, 14);
+    sb.titleRow("Attestations (à remplir par le client)");
+    sb.addRow(22, [
+      { col: "A", style: S.supplierLabel, value: "Numéro d'Entreprise du Québec (NEQ) :", mergeTo: "C" },
+      { col: "D", style: S.supplierValue, value: "", mergeTo: "F" }
+    ]);
+    sb.blankRows(1);
+    ATTESTATIONS.forEach((text, i) => {
+      // Column A: Checkbox ☐. Columns B:F: Affirmation text merged.
+      // Row height adjusted to actual merge width (110) and respective font sizes (16 for bold, 11 for normal)
+      const h = wrapRowHeight(text, 110, i === 0 ? 16 : 11);
+      sb.addRow(h, [
+        { col: "A", style: S.initialsLabel, value: "☐" },
+        { col: "B", style: i === 0 ? S.attestation : S.urgency, value: text, mergeTo: "F" }
+      ]);
+    });
     sb.blankRows(1);
 
     sb.titleRow("Signatures");
     sb.addRow(22, [
       { col: "A", style: S.sectionTitle, value: "Client", mergeTo: "C" },
-      { col: "D", style: S.sectionTitleAlt, value: "Fournisseur", mergeTo: "F" }
+      { col: "D", style: S.sectionTitle, value: "Fournisseur", mergeTo: "F" }
     ]);
     sb.addRow(20, [
       { col: "A", style: S.sigLabel, value: "Date:", mergeTo: "C" },
@@ -627,12 +704,23 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
       { col: "D", style: S.sigLabel, value: "Signature:", mergeTo: "F" }
     ]);
     sb.blankRows(1, 30);
-    sb.addRow(20, [{ col: "D", style: S.sigName1, value: "Marie-Ève Bouchard, technicienne en administration", mergeTo: "F" }]);
-    sb.addRow(20, [{ col: "D", style: S.sigLabel, value: "Signature :", mergeTo: "F" }]);
+
+    const startRow = sb.getCurrentRow() + 1;
+    sb.addRow(20, [
+      { col: "A", style: S.sigLabel, value: "" },
+      { col: "D", style: S.sigName1, value: "Marie-Ève Bouchard, technicienne en administration", mergeTo: "F" }
+    ]);
+    sb.addRow(20, [
+      { col: "A", style: S.sigLabel, value: "" },
+      { col: "D", style: S.sigLabel, value: "Signature :", mergeTo: "F" }
+    ]);
     sb.blankRows(1, 30);
     sb.addRow(20, [
+      { col: "A", style: S.sigLabel, value: "" },
       { col: "D", style: S.sigName2, value: "Rébecca Audy, gestionnaire administrative des services communautaires", mergeTo: "F" }
     ]);
+    const endRow = sb.getCurrentRow();
+    sb.addCustomMerge(`A${startRow}:C${endRow}`);
     sb.blankRows(1);
 
     sb.titleRow("Annexe – Clauses de location");

@@ -156,6 +156,7 @@ test("buildPrintActivitySheetHtml generates print layout template", () => {
   assert.ok(html.includes("Conférence Climat"));
   assert.ok(html.includes("Marie Gérante"));
   assert.ok(html.includes("Salle François-Brassard"));
+  assert.ok(html.includes("2025/08/01"));
   const normalizedHtml = html.replace(/\u00a0/g, " ");
   assert.ok(normalizedHtml.includes("150,00 $") || normalizedHtml.includes("150.00 $") || (normalizedHtml.includes("150") && normalizedHtml.includes("$")));
 });
