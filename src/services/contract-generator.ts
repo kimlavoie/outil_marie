@@ -191,9 +191,16 @@ function xmlEscapeText(str: string) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function wrapRowHeight(text: string, charsPerLine = 128, lineHeight = 14) {
+// Estimates a row height (points) that fits `text` wrapped across a cell `widthUnits` wide (in
+// Excel's <col width> units — see buildSheetXml's <cols>) at a given `fontSize` (points). The
+// borrowed styles here run from 14pt to 20pt (see xl/styles.xml font ids), much larger than the
+// 11pt default a naive fixed-chars-per-line estimate would assume — using the real font size
+// keeps rows tall enough that wrapped text doesn't get vertically clipped.
+function wrapRowHeight(text: string, widthUnits: number, fontSize = 16) {
+  const charsPerLine = Math.max(8, Math.floor((widthUnits * 1.8 * 11) / fontSize));
+  const lineHeight = fontSize * 1.3;
   const lines = text.split("\n").reduce((sum, seg) => sum + Math.max(1, Math.ceil(seg.length / charsPerLine)), 0);
-  return Math.max(20, lines * lineHeight + 6);
+  return Math.max(20, Math.round(lines * lineHeight + 6));
 }
 
 interface CellSpec {
@@ -238,7 +245,7 @@ class SheetBuilder {
   }
 
   titleRow(text: string) {
-    this.addRow(22, [{ col: "A", style: S.sectionTitle, value: text, mergeTo: "F" }]);
+    this.addRow(wrapRowHeight(text, 132, 20), [{ col: "A", style: S.sectionTitle, value: text, mergeTo: "F" }]);
   }
 
   // Long/multi-line values (address, description...) switch to a wrap-enabled style and get a
@@ -248,21 +255,23 @@ class SheetBuilder {
     if (value === undefined || value === "") return;
     const isLong = typeof value === "string" && (value.length > 40 || value.includes("\n"));
     const effectiveStyle = isLong ? S.wrapValue : valueStyle;
-    const height = isLong ? wrapRowHeight(value as string, 90) : null;
+    // C:F is 4 of the sheet's 6 columns (see buildSheetXml's <cols>, each 22 units wide).
+    const height = isLong ? wrapRowHeight(value as string, 88) : null;
     this.addRow(height, [
       { col: "A", style: labelStyle, value: label, mergeTo: "B" },
       { col: "C", style: effectiveStyle, value, mergeTo: "F" }
     ]);
   }
 
-  textBoxRow(text: string, style: number, height?: number) {
-    this.addRow(height ?? wrapRowHeight(text), [{ col: "A", style, value: text, mergeTo: "F" }]);
+  textBoxRow(text: string, style: number, fontSize = 16) {
+    // A:F is the full 6-column width (see buildSheetXml's <cols>).
+    this.addRow(wrapRowHeight(text, 132, fontSize), [{ col: "A", style, value: text, mergeTo: "F" }]);
   }
 
   // A table header row split A:B / C / D / E:F (used for the itemized rooms/personnel/services
   // tables — 4 logical columns over the sheet's 6-column grid).
   itemTableHeader(col1: string, col2: string, col3: string, col4: string) {
-    this.addRow(20, [
+    this.addRow(26, [
       { col: "A", style: S.tableHeader, value: col1, mergeTo: "B" },
       { col: "C", style: S.tableHeader, value: col2 },
       { col: "D", style: S.tableHeader, value: col3 },
@@ -271,7 +280,8 @@ class SheetBuilder {
   }
 
   itemRow(label: string, col2: string | number, col3: string | number, amount: number) {
-    const height = label.length > 40 ? wrapRowHeight(label, 40) : null;
+    // A:B is 2 of the sheet's 6 columns (see buildSheetXml's <cols>).
+    const height = label.length > 20 ? wrapRowHeight(label, 44) : null;
     this.addRow(height, [
       { col: "A", style: S.wrapValue, value: label, mergeTo: "B" },
       { col: "C", style: S.value, value: col2 },
@@ -344,7 +354,7 @@ function buildSheetXml(act: any) {
   }
   sb.labelRow("Titre de l'activité", act.name, S.resLabel, S.resValue);
   sb.labelRow("Description", act.description, S.resLabel, S.resValue);
-  sb.labelRow("Nombre de personnes prévu", act.attendees_count || undefined, S.resLabel, S.resValue);
+  sb.labelRow("Nombre de personnes prévu", act.attendees_count || undefined, S.resLabel, S.value);
   sb.blankRows(1);
 
   const eventDateStart = dates.date_start;
@@ -416,7 +426,8 @@ function buildSheetXml(act: any) {
 
   sb.titleRow("Attestations");
   ATTESTATIONS.forEach((text, i) => {
-    sb.addRow(wrapRowHeight(text), [
+    // A:D is 4 of the sheet's 6 columns (see buildSheetXml's <cols>); both styles are 16pt.
+    sb.addRow(wrapRowHeight(text, 88, 16), [
       { col: "A", style: i === 0 ? S.attestation : S.urgency, value: text, mergeTo: "D" },
       { col: "E", style: S.initialsLabel, value: "Initiales:", mergeTo: "F" }
     ]);
@@ -424,7 +435,7 @@ function buildSheetXml(act: any) {
   sb.blankRows(1);
 
   sb.titleRow("Clause d'annulation et de paiement");
-  sb.textBoxRow(CANCELLATION_CLAUSE, S.cancelBody, wrapRowHeight(CANCELLATION_CLAUSE, 200));
+  sb.textBoxRow(CANCELLATION_CLAUSE, S.cancelBody, 14);
   sb.blankRows(1);
 
   sb.titleRow("Signatures");
@@ -450,10 +461,10 @@ function buildSheetXml(act: any) {
 
   sb.titleRow("Annexe – Clauses de location");
   LOCATION_CLAUSE_GROUPS.forEach(group => {
-    sb.textBoxRow(group.title, S.clauseGroup, 22);
+    sb.textBoxRow(group.title, S.clauseGroup, 16);
     group.clauses.forEach(clause => {
-      sb.addRow(18, [{ col: "A", style: S.clauseNum, value: `Clause ${clause.num}`, mergeTo: "F" }]);
-      sb.textBoxRow(clause.body, S.clauseBody);
+      sb.addRow(wrapRowHeight(`Clause ${clause.num}`, 132, 18), [{ col: "A", style: S.clauseNum, value: `Clause ${clause.num}`, mergeTo: "F" }]);
+      sb.textBoxRow(clause.body, S.clauseBody, 16);
     });
   });
 

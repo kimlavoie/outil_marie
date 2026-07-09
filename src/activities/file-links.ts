@@ -12,6 +12,7 @@ import { openVersionedDb } from "../state/db-utils.ts";
 import { generateUid, showToast, escapeHtml } from "../utils/utils.ts";
 import { commitActivityPatch } from "./form.ts";
 import { deriveActivityState } from "./render.ts";
+import { autoSaveActivityForm } from "./financials.ts";
 import { generateContractXlsx } from "../services/contract-generator.ts";
 
 const FILE_LINKS_DB_NAME = "outil_marie_file_links";
@@ -164,7 +165,15 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
   const openBtn = container.querySelector(`#${kind}-open-file-btn`);
   if (openBtn) openBtn.addEventListener("click", () => openLinkedFile(linkId));
   const generateBtn = container.querySelector("#contract-generate-btn");
-  if (generateBtn) generateBtn.addEventListener("click", () => generateContractXlsx(act));
+  if (generateBtn) {
+    // Persist whatever's currently on the form first — otherwise the contract would be built
+    // from the last-saved record and silently miss any not-yet-saved room price/reservation edit.
+    generateBtn.addEventListener("click", () => {
+      autoSaveActivityForm();
+      const freshAct = appState.activities.find((a: any) => a.id === act.id) || act;
+      generateContractXlsx(freshAct);
+    });
+  }
 
   if (kind === "submission") {
     const btn = container.querySelector<HTMLButtonElement>("#mark-submitted-btn");
