@@ -476,6 +476,80 @@ function renderActivityStateBar(act: any) {
         : ""
     }
   `;
+  updateFormTabIndicators(act);
+}
+
+function updateFormTabIndicators(act: any) {
+  if (!act) return;
+
+  // 1. Formulaire tab
+  const formInd = document.getElementById("tab-ind-form");
+  if (formInd) {
+    const hasForm = !!act.form?.file_link_id;
+    formInd.innerHTML = hasForm ? "🟢" : "⚪";
+    formInd.title = hasForm ? "Formulaire PDF lié" : "Aucun formulaire lié";
+  }
+
+  // 2. Soumission et contrat tab
+  const subInd = document.getElementById("tab-ind-submission");
+  if (subInd) {
+    const mode = act.mode || "estimation";
+    const nameFilled = !!act.name?.trim();
+    const hasReservations = act.reservations && act.reservations.length > 0;
+    
+    let isComplete = false;
+    if (mode === "estimation") {
+      isComplete = nameFilled && hasReservations;
+    } else {
+      const clientLastFilled = !!act.client?.last_name?.trim();
+      const clientFirstFilled = !!act.client?.first_name?.trim();
+      isComplete = nameFilled && hasReservations && (clientLastFilled || clientFirstFilled);
+    }
+    
+    subInd.innerHTML = isComplete ? "🟢" : "🟡";
+    subInd.title = isComplete ? "Données complètes" : "Données incomplètes (nom du client ou réservation manquante)";
+  }
+
+  // 3. Planification tab
+  const planInd = document.getElementById("tab-ind-planning");
+  if (planInd) {
+    const progress = getPlanningProgress(act);
+    if (progress.total === 0) {
+      planInd.innerHTML = "⚪";
+      planInd.title = "Aucune tâche de planification";
+    } else if (progress.done === progress.total) {
+      planInd.innerHTML = "🟢";
+      planInd.title = "Toutes les tâches terminées";
+    } else {
+      planInd.innerHTML = "🟡";
+      planInd.title = `${progress.done}/${progress.total} tâches terminées (${progress.percent}%)`;
+    }
+  }
+
+  // 4. Facturation tab
+  const billInd = document.getElementById("tab-ind-billing");
+  if (billInd) {
+    const isBilled = !!act.billed_at;
+    const hasDistributions = act.distributions && act.distributions.length > 0;
+    if (isBilled) {
+      billInd.innerHTML = "🟢";
+      billInd.title = "Facturée";
+    } else if (hasDistributions) {
+      billInd.innerHTML = "🟡";
+      billInd.title = "En attente de facturation (ventilation saisie)";
+    } else {
+      billInd.innerHTML = "⚪";
+      billInd.title = "Non facturée";
+    }
+  }
+
+  // 5. Notes tab
+  const notesInd = document.getElementById("tab-ind-notes");
+  if (notesInd) {
+    const hasNotes = !!act.notes?.trim();
+    notesInd.innerHTML = hasNotes ? "📝" : "";
+    notesInd.title = hasNotes ? "Contient des notes" : "Aucune note";
+  }
 }
 
 // Applies `patchFn` to the activity `id`, persists it, and refreshes the state bar / list —
@@ -814,6 +888,7 @@ export {
   switchActivityTab,
   renderActivityStateBar,
   commitActivityPatch,
+  updateFormTabIndicators,
   fillActivityFormFields,
   WEEKDAY_PILL_OPTIONS
 };

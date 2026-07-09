@@ -3021,3 +3021,32 @@ tr.activity-row.selected td {
   background-color: rgba(100, 116, 139, 0.1);
 }
 
+/* Tab indicator styles in drawer */
+.tab-indicator {
+  margin-left: 6px;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+/* Auto-calculated/filled fields styling */
+.badge-auto {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  vertical-align: middle;
+  text-transform: none;
+}
+
+.input-auto {
+  background-color: var(--bg-main) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed !important;
+  border-style: dashed !important;
+}
+
+

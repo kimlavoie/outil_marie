@@ -597,12 +597,12 @@
       </div>
 
       <div class="activity-tabs">
-        <button type="button" class="activity-tab-btn" data-activity-tab="form">Formulaire</button>
-        <button type="button" class="activity-tab-btn active" data-activity-tab="submission">Soumission et contrat</button>
-        <button type="button" class="activity-tab-btn" data-activity-tab="planning">Planification</button>
-        <button type="button" class="activity-tab-btn" data-activity-tab="billing">Facturation</button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="form">Formulaire <span class="tab-indicator" id="tab-ind-form"></span></button>
+        <button type="button" class="activity-tab-btn active" data-activity-tab="submission">Soumission <span class="tab-indicator" id="tab-ind-submission"></span></button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="planning">Planification <span class="tab-indicator" id="tab-ind-planning"></span></button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="billing">Facturation <span class="tab-indicator" id="tab-ind-billing"></span></button>
         <button type="button" class="activity-tab-btn" data-activity-tab="history">Historique</button>
-        <button type="button" class="activity-tab-btn" data-activity-tab="notes">Notes</button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="notes">Notes <span class="tab-indicator" id="tab-ind-notes"></span></button>
       </div>
 
       <div class="drawer-content">
@@ -637,8 +637,10 @@
             </div>
 
             <div class="form-group">
-              <label for="form-activity-id">Numéro d'activité (Généré automatiquement, ex: 2627-001)</label>
-              <input type="text" id="form-activity-id" class="form-input" placeholder="Généré automatiquement" disabled />
+              <label for="form-activity-id" style="display: flex; align-items: center; gap: 6px;">
+                Numéro d'activité <span class="badge badge-auto">Généré automatiquement</span>
+              </label>
+              <input type="text" id="form-activity-id" class="form-input input-auto" placeholder="Généré automatiquement" disabled />
             </div>
 
             <div class="form-group">

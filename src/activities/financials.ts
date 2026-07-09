@@ -39,7 +39,7 @@ import { activitiesState, renderActivities, getActivityStateLabel } from "./rend
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations.ts";
 import { updateStaffRowSubtotal, updateServiceRowSubtotal } from "./reservation-subrows.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
-import { fillActivityFormFields, renderActivityStateBar, switchActivityTab, getActivityFormMode } from "./form.ts";
+import { fillActivityFormFields, renderActivityStateBar, switchActivityTab, getActivityFormMode, updateFormTabIndicators } from "./form.ts";
 import { updateFormDatesHelper, saveActivityVersion, scheduleActivityUndoSnapshot } from "./history.ts";
 
 // Typed shorthand for document.getElementById in this file's heavy DOM-manipulation code:
@@ -741,6 +741,7 @@ function autoSaveActivityForm() {
 
   renderActivities();
   showAutoSaveStatus("saved");
+  updateFormTabIndicators(appState.activities[idx]);
 
   // Any new edit invalidates whatever "future" the redo stack held, but the undo snapshot itself
   // is debounced (see scheduleActivityUndoSnapshot): a burst of saves from one continuous edit
