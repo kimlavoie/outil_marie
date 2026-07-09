@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { computeDashboardStats } from "../src/dashboard.ts";
+import { computeDashboardStats, computeEmployeeStats } from "../src/dashboard.ts";
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];
@@ -75,4 +75,96 @@ test("ignores activities that are marked as deleted", () => {
   assert.equal(stats.totalRevenue, 100);
   assert.equal(stats.filledCount, 1);
 });
+
+test("computeEmployeeStats calculates normal hours, overtime hours and amounts accurately", () => {
+  const salariesList = [
+    {
+      id: "salary-dt",
+      job: "Directeur technique",
+      tarifs: [
+        {
+          id: "tarif-dt",
+          rate_versions: [
+            { id: "rv-dt", effective_date: "", rate: 50, overtime_rate: 75 }
+          ]
+        }
+      ]
+    }
+  ];
+
+  const activities = [
+    {
+      name: "Activité A",
+      date_start: "2025-08-01", // Q1
+      reservations: [
+        {
+          staff: [
+            {
+              salary_id: "salary-dt",
+              count: 2,
+              hours: 5,
+              overtime_hours: 2,
+              tarif_id: "tarif-dt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Activité B",
+      date_start: "2025-11-01", // Q2
+      reservations: [
+        {
+          staff: [
+            {
+              salary_id: "salary-dt",
+              count: 1,
+              hours: 10,
+              overtime_hours: 0,
+              tarif_id: "tarif-dt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Activité C (autre employé)",
+      date_start: "2025-08-01",
+      reservations: [
+        {
+          staff: [
+            {
+              salary_id: "salary-hote",
+              count: 1,
+              hours: 4,
+              overtime_hours: 0,
+              tarif_id: "tarif-hote"
+            }
+          ]
+        }
+      ]
+    }
+  ];
+
+  const result = computeEmployeeStats("salary-dt", activities as any[], "2025-2026", [1], salariesList);
+
+  assert.equal(result.totalNormalHours, 10);
+  assert.equal(result.totalOvertimeHours, 4);
+  assert.equal(result.totalAmount, 800);
+
+  assert.equal(result.quarterDetails[1].normalHours, 10);
+  assert.equal(result.quarterDetails[1].overtimeHours, 4);
+  assert.equal(result.quarterDetails[1].amount, 800);
+
+  assert.equal(result.quarterDetails[2].normalHours, 10);
+  assert.equal(result.quarterDetails[2].overtimeHours, 0);
+  assert.equal(result.quarterDetails[2].amount, 500);
+
+  assert.equal(result.contributingActivities.length, 1);
+  assert.equal(result.contributingActivities[0].name, "Activité A");
+  assert.equal(result.contributingActivities[0].normalHours, 10);
+  assert.equal(result.contributingActivities[0].overtimeHours, 4);
+  assert.equal(result.contributingActivities[0].amount, 800);
+});
+
 export {};
