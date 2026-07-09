@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc",
+    "typecheck": "node node_modules/typescript-native/bin/tsc",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.{js,ts,tsx}\" \"*.html\" \"*.css\"",
@@ -23,7 +23,8 @@
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",
     "prettier": "^3.9.4",
-    "typescript": "^6.0.3",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript-native": "npm:typescript@^7.0.2",
     "typescript-eslint": "^8.63.0",
     "vite": "^8.1.3"
   },
