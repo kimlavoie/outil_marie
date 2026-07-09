@@ -330,6 +330,24 @@ class SheetBuilder {
     ]);
   }
 
+  // Same 4-column shape as itemRow, but without the currency-formatted last column — used for
+  // non-monetary detail rows (e.g. a room's reserved date/time slots).
+  detailRow(label: string, col2: string, col3: string, col4: string) {
+    const height = label.length > 20 ? wrapRowHeight(label, 44) : null;
+    this.addRow(height, [
+      { col: "A", style: S.wrapValue, value: label, mergeTo: "B" },
+      { col: "C", style: S.value, value: col2 },
+      { col: "D", style: S.value, value: col3 },
+      { col: "E", style: S.value, value: col4, mergeTo: "F" }
+    ]);
+  }
+
+  // Small highlighted single-line label (e.g. "Personnel" inside a room's block) — a lighter
+  // break than titleRow's big section banner.
+  subHeader(text: string) {
+    this.addRow(wrapRowHeight(text, 132, 16), [{ col: "A", style: S.clauseGroup, value: text, mergeTo: "F" }]);
+  }
+
   get lastRow() {
     return this.rowNum;
   }
@@ -379,19 +397,11 @@ function buildSheetXml(act: any, numericResValueStyle: number) {
 
   sb.titleRow("Détail de la réservation");
   const reservations = act.reservations || [];
+  // Spans every room's slots, not just one — the activity's overall reservation period.
   const dates = getAggregateEventDates(reservations);
   const dateStr =
     dates.date_start === dates.date_end ? formatDateFr(dates.date_start) : `${formatDateFr(dates.date_start)} - ${formatDateFr(dates.date_end)}`;
   sb.labelRow("Date de la réservation", dateStr || undefined, S.resLabel, S.resValue);
-  const firstSlot = reservations.flatMap((r: any) => r.slots || [])[0];
-  if (firstSlot?.start_time || firstSlot?.end_time) {
-    sb.labelRow("Heure de l'activité", `${firstSlot.start_time || "?"} à ${firstSlot.end_time || "?"}`, S.resLabel, S.resValue);
-  }
-  const firstInstall = reservations.map((r: any) => r.install).find((i: any) => i && i.start_time);
-  const firstDismantle = reservations.map((r: any) => r.dismantle).find((i: any) => i && i.end_time);
-  if (firstInstall || firstDismantle) {
-    sb.labelRow("Occupation des lieux", `${firstInstall?.start_time || "?"} à ${firstDismantle?.end_time || "?"}`, S.resLabel, S.resValue);
-  }
   sb.labelRow("Titre de l'activité", act.name, S.resLabel, S.resValue);
   sb.labelRow("Description", act.description, S.resLabel, S.resValue);
   sb.labelRow("Nombre de personnes prévu", act.attendees_count || undefined, S.resLabel, numericResValueStyle);
@@ -399,53 +409,65 @@ function buildSheetXml(act: any, numericResValueStyle: number) {
 
   const eventDateStart = dates.date_start;
 
+  // One block per room: its own reserved slots (date/heures), rate, and the staff/equipment/fees
+  // tied to that specific room — mirrors how the app itself organizes a reservation's sub-rows.
   if (reservations.length > 0) {
     sb.titleRow("Salles réservées");
-    sb.itemTableHeader("Salle", "Tarif/jour", "Jours", "Sous-total");
     reservations.forEach((r: any) => {
-      const days = (r.slots || []).length;
-      sb.itemRow(getReservationRoomLabel(r) || "(salle non définie)", r.tariff_amount || 0, days, (r.tariff_amount || 0) * days);
-    });
-    sb.blankRows(1);
-  }
+      sb.subHeader(getReservationRoomLabel(r) || "(salle non définie)");
 
-  const staffLines = reservations.flatMap((r: any) => r.staff || []);
-  if (staffLines.length > 0) {
-    sb.titleRow("Personnel");
-    sb.itemTableHeader("Rôle", "Nombre", "Heures", "Sous-total");
-    staffLines.forEach((s: any) => {
-      const salary = (appState.settings.salaries || []).find((sal: any) => sal.id === s.salary_id);
-      const rate = salary ? getActiveSalaryRate(salary, eventDateStart, s.tarif_id) : 0;
-      const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, s.tarif_id) : 0;
-      const amount = rate * (s.hours || 0) * (s.count || 0) + overtimeRate * (s.overtime_hours || 0) * (s.count || 0);
-      const heures = s.overtime_hours ? `${s.hours || 0} (+${s.overtime_hours} sup.)` : String(s.hours || 0);
-      sb.itemRow(salary?.job || "(rôle non défini)", s.count || 0, heures, amount);
-    });
-    sb.blankRows(1);
-  }
+      const slots = r.slots || [];
+      if (slots.length > 0) {
+        sb.itemTableHeader("Date", "Début", "Fin", "");
+        slots.forEach((slot: any) => {
+          sb.detailRow(formatDateFr(slot.date) || "?", slot.start_time || "?", slot.end_time || "?", "");
+        });
+      }
+      if (r.install?.start_time || r.install?.end_time) {
+        sb.detailRow("Installation", r.install.start_time || "?", r.install.end_time || "?", "");
+      }
+      if (r.dismantle?.start_time || r.dismantle?.end_time) {
+        sb.detailRow("Démontage", r.dismantle.start_time || "?", r.dismantle.end_time || "?", "");
+      }
 
-  const serviceLines = reservations.flatMap((r: any) => r.services || []);
-  if (serviceLines.length > 0) {
-    sb.titleRow("Location et équipements");
-    sb.itemTableHeader("Service", "Nombre", "Heures", "Sous-total");
-    serviceLines.forEach((s: any) => {
-      const service = (appState.settings.services || []).find((sv: any) => sv.id === s.service_id);
-      const rate = service ? getActiveServiceRate(service, eventDateStart, s.tarif_id) : 0;
-      const isHourly = service && service.type === "hourly";
-      const amount = isHourly ? rate * (s.hours || 0) * (s.count || 0) : rate * (s.count || 0);
-      sb.itemRow(service?.name || "(service non défini)", s.count || 0, isHourly ? s.hours || 0 : "-", amount);
-    });
-    sb.blankRows(1);
-  }
+      sb.itemTableHeader("Tarification", "Taux/jour", "Jours", "Sous-total");
+      sb.itemRow("Location de la salle", r.tariff_amount || 0, slots.length, (r.tariff_amount || 0) * slots.length);
 
-  const feeLines = reservations.flatMap((r: any) => r.fees || []);
-  if (feeLines.length > 0) {
-    sb.titleRow("Autres frais");
-    sb.itemTableHeader("Description", "", "", "Montant");
-    feeLines.forEach((f: any) => {
-      sb.itemRow(f.description || "(frais)", "", "", f.amount || 0);
+      const staff = r.staff || [];
+      if (staff.length > 0) {
+        sb.itemTableHeader("Personnel", "Nombre", "Heures", "Sous-total");
+        staff.forEach((s: any) => {
+          const salary = (appState.settings.salaries || []).find((sal: any) => sal.id === s.salary_id);
+          const rate = salary ? getActiveSalaryRate(salary, eventDateStart, s.tarif_id) : 0;
+          const overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, s.tarif_id) : 0;
+          const amount = rate * (s.hours || 0) * (s.count || 0) + overtimeRate * (s.overtime_hours || 0) * (s.count || 0);
+          const heures = s.overtime_hours ? `${s.hours || 0} (+${s.overtime_hours} sup.)` : String(s.hours || 0);
+          sb.itemRow(salary?.job || "(rôle non défini)", s.count || 0, heures, amount);
+        });
+      }
+
+      const services = r.services || [];
+      if (services.length > 0) {
+        sb.itemTableHeader("Équipements", "Nombre", "Heures", "Sous-total");
+        services.forEach((s: any) => {
+          const service = (appState.settings.services || []).find((sv: any) => sv.id === s.service_id);
+          const rate = service ? getActiveServiceRate(service, eventDateStart, s.tarif_id) : 0;
+          const isHourly = service && service.type === "hourly";
+          const amount = isHourly ? rate * (s.hours || 0) * (s.count || 0) : rate * (s.count || 0);
+          sb.itemRow(service?.name || "(service non défini)", s.count || 0, isHourly ? s.hours || 0 : "-", amount);
+        });
+      }
+
+      const fees = r.fees || [];
+      if (fees.length > 0) {
+        sb.itemTableHeader("Autres frais", "", "", "Montant");
+        fees.forEach((f: any) => {
+          sb.itemRow(f.description || "(frais)", "", "", f.amount || 0);
+        });
+      }
+
+      sb.blankRows(1);
     });
-    sb.blankRows(1);
   }
 
   sb.titleRow("Facturation");
