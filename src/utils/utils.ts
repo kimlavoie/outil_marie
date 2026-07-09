@@ -289,10 +289,24 @@ function updateMultiSelectLabel(panelId: string) {
 
   if (checked.length === 0 || checked.length === checkboxes.length) {
     btn.textContent = defaultLabel;
-  } else if (checked.length === 1) {
-    btn.textContent = (checked[0].closest("label")?.textContent || defaultLabel).trim();
+    btn.classList.remove("filter-active");
   } else {
-    btn.textContent = `${checked.length} sélectionnés`;
+    let suffix = "sélectionnés";
+    if (panelId.includes("salle")) {
+      suffix = "salles";
+    } else if (panelId.includes("status")) {
+      suffix = "états";
+    } else if (panelId.includes("client-type")) {
+      suffix = "types client";
+    }
+
+    if (checked.length === 1) {
+      const text = (checked[0].closest("label")?.textContent || defaultLabel).trim();
+      btn.textContent = text;
+    } else {
+      btn.textContent = `${checked.length} ${suffix}`;
+    }
+    btn.classList.add("filter-active");
   }
 }
 

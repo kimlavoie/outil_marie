@@ -656,6 +656,51 @@ body {
   opacity: 0.6;
 }
 
+.multi-select-btn.filter-active {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.btn-reset-filters {
+  background-color: transparent;
+  color: var(--danger);
+  border: 1px dashed var(--danger);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  transition: var(--transition-smooth);
+}
+
+.btn-reset-filters .reset-icon {
+  transition: transform 0.4s ease;
+}
+
+.btn-reset-filters:hover:not(:disabled) {
+  background-color: rgba(244, 63, 94, 0.1);
+  border-style: solid;
+  color: var(--danger);
+  transform: translateY(-1px);
+}
+
+.btn-reset-filters:hover:not(:disabled) .reset-icon {
+  transform: rotate(-180deg);
+}
+
+.btn-reset-filters:disabled {
+  opacity: 0.4;
+  border-color: var(--border-color);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  background-color: transparent;
+  transform: none;
+  box-shadow: none;
+}
+
+
+
 .multi-select-panel {
   position: absolute;
   top: 100%;

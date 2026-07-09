@@ -150,6 +150,17 @@ function renderActivities() {
   const filterClientTypes = getMultiSelectValues("filter-client-type-panel");
   const filterStatuses = getMultiSelectValues("filter-status-panel");
 
+  // Enable or disable the reset filters button based on active filters
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 ||
+    filterSalles.length > 0 ||
+    filterClientTypes.length > 0 ||
+    filterStatuses.length > 0;
+  const resetBtn = document.getElementById("reset-filters-btn") as HTMLButtonElement | null;
+  if (resetBtn) {
+    resetBtn.disabled = !hasActiveFilters;
+  }
+
   tbody.innerHTML = "";
 
   // Filter activities

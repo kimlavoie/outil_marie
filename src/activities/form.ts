@@ -137,13 +137,40 @@ function initFormHandlers() {
     activitiesState.selectedIds.clear();
     renderActivities();
   };
-  // Debounced on the free-text search box only: typing fires an "input" event per
-  // keystroke, and each one re-filters/re-sorts/re-renders the whole table.
-  // Filter dropdowns fire one discrete "change" event per checkbox toggle, so they stay immediate.
   el("activity-search").addEventListener("input", debounce(resetActivitiesPageAndRender, 250));
   initMultiSelectDropdown("filter-salle-btn", "filter-salle-panel", resetActivitiesPageAndRender);
   initMultiSelectDropdown("filter-client-type-btn", "filter-client-type-panel", resetActivitiesPageAndRender);
   initMultiSelectDropdown("filter-status-btn", "filter-status-panel", resetActivitiesPageAndRender);
+
+  // Reset filters button handler
+  const resetFiltersBtn = document.getElementById("reset-filters-btn");
+  if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener("click", () => {
+      // Clear search query
+      el("activity-search").value = "";
+
+      // Uncheck all checkboxes in the multi-select panels
+      const panels = ["filter-salle-panel", "filter-client-type-panel", "filter-status-panel"];
+      panels.forEach(panelId => {
+        const panel = document.getElementById(panelId);
+        if (panel) {
+          panel.querySelectorAll<HTMLInputElement>("input[type=checkbox]").forEach(cb => {
+            cb.checked = false;
+          });
+          // Update the label on the dropdown button to its default
+          const btn = document.getElementById(panelId.replace(/-panel$/, "-btn"));
+          if (btn) {
+            btn.textContent = btn.dataset.defaultLabel || "";
+            btn.classList.remove("filter-active");
+          }
+        }
+      });
+
+      // Re-render
+      resetActivitiesPageAndRender();
+    });
+  }
+
 
   // Account distributions buttons
   el("form-add-distribution-btn").addEventListener("click", () => {
