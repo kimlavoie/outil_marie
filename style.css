@@ -241,6 +241,7 @@ body {
 .period-selector-widget {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
 }
 
@@ -281,6 +282,9 @@ body {
 
 /* Quarter Toggle Buttons */
 .quarter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background-color: var(--bg-main);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
@@ -293,6 +297,16 @@ body {
   transition: var(--transition-smooth);
 }
 
+.quarter-toggle::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--text-secondary);
+  transition: background-color var(--transition-smooth), transform var(--transition-smooth);
+}
+
 .quarter-toggle:hover {
   background-color: var(--border-color);
   color: var(--text-primary);
@@ -303,6 +317,24 @@ body {
   border-color: var(--primary);
   color: #ffffff;
   box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+}
+
+.quarter-toggle.active::before {
+  background-color: #ffffff;
+  transform: scale(1.2);
+}
+
+.active-period-description {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Pill Toggle Buttons (form multi-select: salles, services techniques) */

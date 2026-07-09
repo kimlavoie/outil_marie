@@ -461,6 +461,9 @@ function renderAll() {
   // Refreshes the global quick access dropdown (visible from every view)
   renderQuickAccessAll();
 
+  // Update active period description label
+  updateActivePeriodDescription();
+
   // Render currently active view
   const activeNav = document.querySelector(".nav-item.active");
   if (activeNav) {
@@ -521,6 +524,74 @@ function populateDropdowns() {
 /* ==========================================================================
    PERIOD SELECTOR (fiscal year + quarters)
    ========================================================================== */
+
+function updateActivePeriodDescription() {
+  const descEl = document.getElementById("active-period-description");
+  if (!descEl) return;
+
+  const fy = appState.selected_year;
+  const qs = appState.selected_quarters;
+
+  if (!fy) {
+    descEl.innerHTML = "Aucune année financière sélectionnée.";
+    return;
+  }
+
+  if (qs.length === 0) {
+    descEl.innerHTML = `⚠️ <span style="color: var(--danger-text, #f43f5e);">Aucun trimestre sélectionné</span>`;
+    return;
+  }
+
+  const match = /^(\d{4})-(\d{4})$/.exec(fy);
+  if (!match) {
+    descEl.innerHTML = `Période : ${fy}`;
+    return;
+  }
+
+  const y1 = match[1];
+  const y2 = match[2];
+
+  const sortedQs = [...qs].sort((a, b) => a - b);
+
+  const isContiguous = (() => {
+    for (let i = 0; i < sortedQs.length - 1; i++) {
+      if (sortedQs[i + 1] !== sortedQs[i] + 1) return false;
+    }
+    return true;
+  })();
+
+  let dateRangeStr = "";
+  if (sortedQs.length === 4) {
+    dateRangeStr = `du <strong>1er juillet ${y1}</strong> au <strong>30 juin ${y2}</strong>`;
+  } else if (isContiguous) {
+    const startQ = sortedQs[0];
+    const endQ = sortedQs[sortedQs.length - 1];
+
+    let startStr = "";
+    if (startQ === 1) startStr = `1er juillet ${y1}`;
+    else if (startQ === 2) startStr = `1er octobre ${y1}`;
+    else if (startQ === 3) startStr = `1er janvier ${y2}`;
+    else startStr = `1er avril ${y2}`;
+
+    let endStr = "";
+    if (endQ === 1) endStr = `30 septembre ${y1}`;
+    else if (endQ === 2) endStr = `31 décembre ${y1}`;
+    else if (endQ === 3) endStr = `31 mars ${y2}`;
+    else endStr = `30 juin ${y2}`;
+
+    dateRangeStr = `du <strong>${startStr}</strong> au <strong>${endStr}</strong>`;
+  } else {
+    const qDetails = sortedQs.map(q => {
+      if (q === 1) return `T1 (Juil-Sept ${y1})`;
+      if (q === 2) return `T2 (Oct-Déc ${y1})`;
+      if (q === 3) return `T3 (Janv-Mars ${y2})`;
+      return `T4 (Avr-Juin ${y2})`;
+    });
+    dateRangeStr = `trimestres ${qDetails.join(", ")}`;
+  }
+
+  descEl.innerHTML = `📅 Activités affichées : ${dateRangeStr}`;
+}
 
 function initPeriodSelector() {
   // Populate dropdown
