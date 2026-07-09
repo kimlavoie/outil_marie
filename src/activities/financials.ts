@@ -178,7 +178,11 @@ function buildPrintActivitySheetHtml(act: any) {
   const today = new Date();
   const generatedDate = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}`;
 
-  const roomsRows = (act.reservations || [])
+  const reservations = act.reservations || [];
+  const hasBarService = reservations.some((r: any) => r.bar_service?.active);
+  const barReservations = reservations.filter((r: any) => r.bar_service?.active);
+
+  const roomsRows = reservations
     .map((r: any) => {
       const days = (r.slots || []).length;
       const slotsText =
@@ -198,6 +202,36 @@ function buildPrintActivitySheetHtml(act: any) {
     })
     .join("");
 
+  const barSectionHtml = barReservations.length > 0
+    ? `
+    <div class="print-sheet-section">
+      <h2>Détails du service de bar</h2>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        ${barReservations.map((r: any) => {
+          const roomLabel = getReservationRoomLabel(r);
+          const bs = r.bar_service;
+          const detailsList = [];
+          if (bs.drink_type) detailsList.push(`<strong>Type de boisson :</strong> ${escapeHtml(bs.drink_type)}`);
+          if (bs.service_type) detailsList.push(`<strong>Type de service :</strong> ${escapeHtml(bs.service_type)}`);
+          if (bs.hostess_count && bs.hostess_count > 0 && (bs.service_type === "Service d'hôtesses" || bs.service_type === "Distribution de breuvages et nettoyage de coupes")) {
+            detailsList.push(`<strong>Nombre d'hôtesses :</strong> ${bs.hostess_count}`);
+          }
+          if (bs.special_order) detailsList.push(`<strong>Commande spéciale :</strong> ${escapeHtml(bs.special_order)}`);
+          
+          return `
+            <div style="border-left: 3px solid var(--primary, #3b82f6); padding-left: 10px; margin-bottom: 8px;">
+              <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; color: var(--text-color);">${escapeHtml(roomLabel)}</div>
+              <div class="print-sheet-grid">
+                ${detailsList.map(detail => `<div>${detail}</div>`).join("")}
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+    `
+    : "";
+
   return `
     <div class="print-sheet-header">
       <div>
@@ -214,6 +248,7 @@ function buildPrintActivitySheetHtml(act: any) {
         <div><strong>Type de client :</strong> ${act.client_type === "interne" ? "Interne" : "Externe"}</div>
         <div><strong>Téléphone :</strong> ${escapeHtml(manager.phone) || "-"}</div>
         <div><strong>Courriel :</strong> ${escapeHtml(manager.email) || "-"}</div>
+        <div><strong>Service de bar :</strong> ${hasBarService ? "Oui" : "Non"}</div>
         ${
           manager.type === "externe"
             ? `
@@ -239,6 +274,8 @@ function buildPrintActivitySheetHtml(act: any) {
       </table>
     </div>
 
+    ${barSectionHtml}
+
     <div class="print-sheet-section">
       <h2>Sommaire financier</h2>
       <table class="print-sheet-total-table">
@@ -255,9 +292,6 @@ function buildPrintActivitySheetHtml(act: any) {
   `;
 }
 
-// Builds the read-only "view details" modal content for an activity. Unlike
-// buildPrintActivitySheetHtml, every section/field is only rendered when it was actually filled
-// in on the form — an activity with no client contact info, no notes, etc. simply omits those
 // rows instead of showing empty placeholders.
 function buildActivityDetailsHtml(act: any) {
   const manager = act.activity_manager || {};
@@ -268,6 +302,10 @@ function buildActivityDetailsHtml(act: any) {
     return found ? found.label : act.event_type;
   })();
 
+  const reservations = act.reservations || [];
+  const hasBarService = reservations.some((r: any) => r.bar_service?.active);
+  const barReservations = reservations.filter((r: any) => r.bar_service?.active);
+
   const infoRows = [
     ["Statut", getActivityStateLabel(act.state)],
     ["Références COBA", act.coba],
@@ -275,7 +313,8 @@ function buildActivityDetailsHtml(act: any) {
     ["Nombre de personnes", act.attendees_count ? String(act.attendees_count) : ""],
     ["Type d'événement", eventTypeLabel],
     ["Responsable facturation", act.responsable],
-    ["Type de client", act.client_type === "interne" ? "Interne" : act.client_type === "externe" ? "Externe" : ""]
+    ["Type de client", act.client_type === "interne" ? "Interne" : act.client_type === "externe" ? "Externe" : ""],
+    ["Service de bar", hasBarService ? "Oui" : "Non"]
   ].filter(([, value]) => isNonEmptyString(value));
 
   const managerRows = [
@@ -294,7 +333,6 @@ function buildActivityDetailsHtml(act: any) {
       : [])
   ].filter(([, value]) => isNonEmptyString(value));
 
-  const reservations = act.reservations || [];
   const roomsRows = reservations
     .map((r: any) => {
       const days = (r.slots || []).length;
@@ -311,6 +349,36 @@ function buildActivityDetailsHtml(act: any) {
       `;
     })
     .join("");
+
+  const barSectionHtml = barReservations.length > 0
+    ? `
+    <div class="print-sheet-section">
+      <h2>Détails du service de bar</h2>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        ${barReservations.map((r: any) => {
+          const roomLabel = getReservationRoomLabel(r);
+          const bs = r.bar_service;
+          const detailsList = [];
+          if (bs.drink_type) detailsList.push(`<strong>Type de boisson :</strong> ${escapeHtml(bs.drink_type)}`);
+          if (bs.service_type) detailsList.push(`<strong>Type de service :</strong> ${escapeHtml(bs.service_type)}`);
+          if (bs.hostess_count && bs.hostess_count > 0 && (bs.service_type === "Service d'hôtesses" || bs.service_type === "Distribution de breuvages et nettoyage de coupes")) {
+            detailsList.push(`<strong>Nombre d'hôtesses :</strong> ${bs.hostess_count}`);
+          }
+          if (bs.special_order) detailsList.push(`<strong>Commande spéciale :</strong> ${escapeHtml(bs.special_order)}`);
+          
+          return `
+            <div style="border-left: 3px solid var(--primary, #3b82f6); padding-left: 10px; margin-bottom: 8px;">
+              <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; color: var(--text-color);">${escapeHtml(roomLabel)}</div>
+              <div class="print-sheet-grid">
+                ${detailsList.map(detail => `<div>${detail}</div>`).join("")}
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+    `
+    : "";
 
   const fin = reservations.length > 0 ? computeActivityFinancials(act) : null;
 
@@ -385,6 +453,8 @@ function buildActivityDetailsHtml(act: any) {
     `
         : ""
     }
+
+    ${barSectionHtml}
 
     ${
       fin

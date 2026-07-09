@@ -229,6 +229,20 @@ function renderActivities() {
         valA = (a.coba || "").toLowerCase();
         valB = (b.coba || "").toLowerCase();
         break;
+      case "bar":
+        valA = (a.reservations || []).some((r: any) => r.bar_service?.active) ? 1 : 0;
+        valB = (b.reservations || []).some((r: any) => r.bar_service?.active) ? 1 : 0;
+        break;
+      case "hostess":
+        valA = (a.reservations || []).reduce(
+          (sum: number, r: any) => sum + (r.bar_service?.hostess_count || 0) + (r.host_duties?.hostess_count || 0),
+          0
+        );
+        valB = (b.reservations || []).reduce(
+          (sum: number, r: any) => sum + (r.bar_service?.hostess_count || 0) + (r.host_duties?.hostess_count || 0),
+          0
+        );
+        break;
       case "totalRev":
         valA = a.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
         valB = b.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
@@ -318,11 +332,12 @@ function renderActivities() {
       }
     }
 
-    // Sans Frais estimated cost if internal client
-    let sansFraisText = "-";
-    if (act.client_type === "interne" && isFilled) {
-      sansFraisText = formatCurrency(getRoomsTariffTotal(act));
-    }
+    // Bar service active indicator & total hostess count
+    const hasBarService = (act.reservations || []).some((r: any) => r.bar_service?.active);
+    const totalHostesses = (act.reservations || []).reduce(
+      (sum: number, r: any) => sum + (r.bar_service?.hostess_count || 0) + (r.host_duties?.hostess_count || 0),
+      0
+    );
 
     // Reconciliation badge if ledger file has been uploaded
     const activityReferences = getActivityReferences(act);
@@ -370,10 +385,10 @@ function renderActivities() {
           ${distHtml}
         </td>
         <td>${isFilled ? `${escapeHtml((act.reservations || []).map(getReservationRoomLabel).join(", "))} (${act.client_type})` : "-"}</td>
-        <td>${isFilled && act.responsable ? escapeHtml(act.responsable) : "-"}</td>
+        <td>${isFilled ? (hasBarService ? "Oui" : "") : "-"}</td>
+        <td>${isFilled ? (totalHostesses > 0 ? totalHostesses : "") : "-"}</td>
         <td class="font-mono">${isFilled && activityReferences ? escapeHtml(activityReferences) : "-"}</td>
         <td class="bold">${isFilled ? formatCurrency(totalRev) : "-"}</td>
-        <td style="color: var(--text-muted);">${sansFraisText}</td>
         <td>${stateCellHtml}</td>
         <td class="text-right" style="white-space: nowrap;">
           ${

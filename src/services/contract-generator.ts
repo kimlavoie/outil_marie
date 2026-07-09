@@ -771,16 +771,6 @@ function buildDrawingXml() {
   );
 }
 
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
 
 async function generateXlsx(act: any, variant: "contrat" | "soumission") {
   const hasImage = variant === "contrat";
@@ -889,7 +879,7 @@ async function generateXlsx(act: any, variant: "contrat" | "soumission") {
   const blob = await zip.generateAsync({ type: "blob" });
   const prefix = variant === "contrat" ? "Contrat" : "Soumission";
   const filename = `${prefix}_${act.id}_${(act.name || "activite").replace(/[^\w-]+/g, "_")}.xlsx`;
-  downloadBlob(blob, filename);
+  return { blob, filename };
 }
 
 async function generateContractXlsx(act: any) {

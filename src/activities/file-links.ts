@@ -98,6 +98,100 @@ async function pickAndLinkFile(activityId: string, kind: "submission" | "contrac
   );
 }
 
+async function generateAndLinkFile(act: any, kind: "contract" | "submission") {
+  const prefix = kind === "contract" ? "Contrat" : "Soumission";
+  const filename = `${prefix}_${act.id}_${(act.name || "activite").replace(/[^\w-]+/g, "_")}.xlsx`;
+
+  if ((window as any).showSaveFilePicker) {
+    let handle;
+    try {
+      handle = await (window as any).showSaveFilePicker({
+        suggestedName: filename,
+        types: [
+          {
+            description: "Fichier Excel (*.xlsx)",
+            accept: {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"]
+            }
+          }
+        ],
+        excludeAcceptAllOption: true
+      });
+    } catch {
+      return; // user cancelled or browser dismissed
+    }
+
+    let result;
+    try {
+      if (kind === "contract") {
+        result = await generateContractXlsx(act);
+      } else {
+        result = await generateSoumissionXlsx(act);
+      }
+    } catch (err: any) {
+      showToast("Erreur lors de la génération : " + err.message, "error");
+      return;
+    }
+
+    if (!result) return;
+
+    try {
+      const writable = await handle.createWritable();
+      await writable.write(result.blob);
+      await writable.close();
+    } catch (err: any) {
+      showToast("Impossible d'écrire le fichier sur le disque : " + err.message, "error");
+      return;
+    }
+
+    const linkId = generateUid("filelink");
+    await idbSetFileLink(linkId, { handle, name: handle.name });
+
+    commitActivityPatch(act.id, (a: any) => {
+      a[kind].file_link_id = linkId;
+      if (kind === "submission") {
+        a.submission.generated_at = new Date().toISOString().split("T")[0];
+      }
+    });
+
+    showToast(
+      kind === "contract"
+        ? "Contrat généré et lié avec succès !"
+        : "Soumission générée et liée avec succès !",
+      "success"
+    );
+
+    const updated = appState.activities.find((a: any) => a.id === act.id) || act;
+    renderFileLinkStatus(kind, updated);
+  } else {
+    // Fallback: Standard browser download
+    let result;
+    try {
+      if (kind === "contract") {
+        result = await generateContractXlsx(act);
+      } else {
+        result = await generateSoumissionXlsx(act);
+      }
+    } catch (err: any) {
+      showToast("Erreur lors de la génération : " + err.message, "error");
+      return;
+    }
+
+    if (!result) return;
+
+    const url = URL.createObjectURL(result.blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = result.filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    showToast("Fichier généré et téléchargé (la liaison automatique nécessite Chrome ou Edge).", "warning");
+  }
+}
+
 async function openLinkedFile(linkId: string) {
   const record = await idbGetFileLink(linkId);
   if (!record) {
@@ -116,6 +210,30 @@ async function openLinkedFile(linkId: string) {
     window.open(url, "_blank");
   } catch (e: any) {
     showToast("Impossible d'ouvrir le fichier : " + e.message, "error");
+  }
+}
+
+async function unlinkFile(activityId: string, kind: "submission" | "contract" | "form") {
+  commitActivityPatch(activityId, (act: any) => {
+    act[kind].file_link_id = "";
+    if (kind === "submission") {
+      act.submission.generated_at = "";
+      act.submission.sent_at = "";
+    } else if (kind === "contract") {
+      act.contract.approved_at = "";
+    } else if (kind === "form") {
+      act.form.linked_at = "";
+    }
+    act.state = deriveActivityState(act);
+  });
+  showToast("Le lien vers le fichier a été retiré.", "success");
+  const updated = appState.activities.find((a: any) => a.id === activityId);
+  if (updated) {
+    renderFileLinkStatus(kind, updated);
+    if (kind === "submission" || kind === "contract") {
+      renderFileLinkStatus("submission", updated);
+      renderFileLinkStatus("contract", updated);
+    }
   }
 }
 
@@ -164,28 +282,31 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
     ${generateSoumissionBtnHtml}
     <button type="button" class="btn btn-secondary" id="${kind}-link-file-btn" style="padding: 6px 12px; font-size: 0.85rem;">${linkId ? "Changer le fichier lié" : "Lier un fichier"}</button>
     ${linkId ? `<button type="button" class="btn btn-secondary" id="${kind}-open-file-btn" style="padding: 6px 12px; font-size: 0.85rem;">Ouvrir</button>` : ""}
+    ${linkId ? `<button type="button" class="btn btn-danger" id="${kind}-unlink-file-btn" style="padding: 6px 12px; font-size: 0.85rem;">Retirer le lien</button>` : ""}
     ${transitionBtnHtml}
   `;
 
   container.querySelector(`#${kind}-link-file-btn`)!.addEventListener("click", () => pickAndLinkFile(act.id, kind));
   const openBtn = container.querySelector(`#${kind}-open-file-btn`);
   if (openBtn) openBtn.addEventListener("click", () => openLinkedFile(linkId));
+  const unlinkBtn = container.querySelector(`#${kind}-unlink-file-btn`);
+  if (unlinkBtn) unlinkBtn.addEventListener("click", () => unlinkFile(act.id, kind));
   const generateBtn = container.querySelector("#contract-generate-btn");
   if (generateBtn) {
     // Persist whatever's currently on the form first — otherwise the contract would be built
     // from the last-saved record and silently miss any not-yet-saved room price/reservation edit.
-    generateBtn.addEventListener("click", () => {
+    generateBtn.addEventListener("click", async () => {
       autoSaveActivityForm();
       const freshAct = appState.activities.find((a: any) => a.id === act.id) || act;
-      generateContractXlsx(freshAct);
+      await generateAndLinkFile(freshAct, "contract");
     });
   }
   const generateSoumissionBtn = container.querySelector("#submission-generate-btn");
   if (generateSoumissionBtn) {
-    generateSoumissionBtn.addEventListener("click", () => {
+    generateSoumissionBtn.addEventListener("click", async () => {
       autoSaveActivityForm();
       const freshAct = appState.activities.find((a: any) => a.id === act.id) || act;
-      generateSoumissionXlsx(freshAct);
+      await generateAndLinkFile(freshAct, "submission");
     });
   }
 
@@ -253,7 +374,7 @@ async function renderPdfPreview(act: any) {
   }
 
   try {
-    let perm = await record.handle.queryPermission({ mode: "read" });
+    const perm = await record.handle.queryPermission({ mode: "read" });
     if (perm === "granted") {
       const file = await record.handle.getFile();
 
@@ -300,7 +421,7 @@ async function renderPdfPreview(act: any) {
         </div>
       `;
       previewContainer.querySelector("#btn-request-pdf-permission")!.addEventListener("click", async () => {
-        let newPerm = await record.handle.requestPermission({ mode: "read" });
+        const newPerm = await record.handle.requestPermission({ mode: "read" });
         if (newPerm === "granted") {
           renderPdfPreview(act);
         } else {

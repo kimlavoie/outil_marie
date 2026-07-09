@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 // object) rather than reading it as a global, so we set up its test fixture by mutating that same
 // imported object's .settings rather than replacing the binding.
 import { appState } from "../src/state/state.ts";
-import { computeActivityFinancials, generateNextActivityId, buildPrintActivitySheetHtml } from "../src/activities/financials.ts";
+import { computeActivityFinancials, generateNextActivityId, buildPrintActivitySheetHtml, buildActivityDetailsHtml } from "../src/activities/financials.ts";
 
 appState.settings = {
   theme: "dark",
@@ -176,6 +176,48 @@ test("computeActivityFinancials uses custom staff and service rates when tarif_i
   // service custom: 15 * 3 * 2 = 90
   assert.equal(fin.staffTotal, 270);
   assert.equal(fin.servicesTotal, 90);
+});
+
+test("buildActivityDetailsHtml and buildPrintActivitySheetHtml include bar service details", () => {
+  const actWithBar = {
+    id: "2526-002",
+    name: "Soirée Cocktail",
+    mode: "estimation",
+    client_type: "externe",
+    activity_manager: { first_name: "Jean", last_name: "Organisateur" },
+    reservations: [
+      {
+        room_name: "Gymnase",
+        slots: [{ date: "2025-08-05" }],
+        bar_service: {
+          active: true,
+          drink_type: "Avec alcool",
+          service_type: "Service d'hôtesses",
+          hostess_count: 3,
+          special_order: "Besoin de gin québécois"
+        }
+      }
+    ]
+  };
+
+  // Test details modal HTML
+  const detailsHtml = buildActivityDetailsHtml(actWithBar);
+  assert.ok(detailsHtml.includes("Service de bar"));
+  assert.ok(detailsHtml.includes("Oui"));
+  assert.ok(detailsHtml.includes("Gymnase"));
+  assert.ok(detailsHtml.includes("Type de boisson :</strong> Avec alcool"));
+  assert.ok(detailsHtml.includes("Type de service :</strong> Service d&#039;hôtesses"));
+  assert.ok(detailsHtml.includes("Nombre d'hôtesses :</strong> 3"));
+  assert.ok(detailsHtml.includes("Commande spéciale :</strong> Besoin de gin québécois"));
+
+  // Test print layout HTML
+  const printHtml = buildPrintActivitySheetHtml(actWithBar);
+  assert.ok(printHtml.includes("Service de bar :</strong> Oui"));
+  assert.ok(printHtml.includes("Gymnase"));
+  assert.ok(printHtml.includes("Type de boisson :</strong> Avec alcool"));
+  assert.ok(printHtml.includes("Type de service :</strong> Service d&#039;hôtesses"));
+  assert.ok(printHtml.includes("Nombre d'hôtesses :</strong> 3"));
+  assert.ok(printHtml.includes("Commande spéciale :</strong> Besoin de gin québécois"));
 });
 
 export {};
