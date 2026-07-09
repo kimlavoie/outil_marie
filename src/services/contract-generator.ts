@@ -110,12 +110,18 @@ const LOCATION_CLAUSE_GROUPS: { title: string; clauses: { num: number; body: str
   {
     title: "Communication et image",
     clauses: [
-      { num: 1, body: "Le locataire n’est pas autorisé à utiliser l’image du Cégep de Jonquière à des fins publicitaires ou dans toute autre forme de communication." },
+      {
+        num: 1,
+        body: "Le locataire n’est pas autorisé à utiliser l’image du Cégep de Jonquière à des fins publicitaires ou dans toute autre forme de communication."
+      },
       {
         num: 2,
         body: "Le Cégep de Jonquière n’est en aucun cas affilié aux activités du locataire. Il est donc interdit d’utiliser son nom dans toute communication, qu’elle soit écrite ou verbale. Seuls le nom de la salle et l’adresse civique peuvent être mentionnés pour indiquer le lieu de l’activité."
       },
-      { num: 3, body: "Une exception à la clause 2 s’applique uniquement aux projets réalisés en partenariat officiel avec le Cégep de Jonquière." }
+      {
+        num: 3,
+        body: "Une exception à la clause 2 s’applique uniquement aux projets réalisés en partenariat officiel avec le Cégep de Jonquière."
+      }
     ]
   },
   {
@@ -134,7 +140,10 @@ const LOCATION_CLAUSE_GROUPS: { title: string; clauses: { num: number; body: str
         num: 7,
         body: "En cas de force majeure, le Cégep de Jonquière peut mettre fin à la location sur simple avis au locataire. Dans une telle situation, un remboursement de l’acompte versé pourra être envisagé, selon l’évaluation du contexte et des frais déjà engagés."
       },
-      { num: 8, body: "Le Cégep se réserve le droit d’annuler toute location qui pourrait nuire au bon déroulement des activités étudiantes." },
+      {
+        num: 8,
+        body: "Le Cégep se réserve le droit d’annuler toute location qui pourrait nuire au bon déroulement des activités étudiantes."
+      },
       { num: 9, body: "En cas d’intempéries, le locataire doit vérifier sur le site du Cégep si l’établissement est ouvert." }
     ]
   },
@@ -145,10 +154,16 @@ const LOCATION_CLAUSE_GROUPS: { title: string; clauses: { num: number; body: str
         num: 10,
         body: "Le locataire accepte de payer tous les frais additionnels liés à la location, y compris ceux non prévus au contrat initial. Les coûts présentés dans le présent contrat sont fournis à titre estimatif et pourront être ajustés en fonction des besoins réels et spécifiques de l’événement."
       },
-      { num: 11, body: "Le Cégep de Jonquière peut résilier le contrat si les paiements ne sont pas effectués selon les modalités convenues." },
+      {
+        num: 11,
+        body: "Le Cégep de Jonquière peut résilier le contrat si les paiements ne sont pas effectués selon les modalités convenues."
+      },
       { num: 12, body: "Des frais d’administration de 50 $ seront ajoutés pour tout chèque retourné pour provision insuffisante." },
       { num: 13, body: "Les factures sont payables dès leur réception." },
-      { num: 14, body: "Les paiements doivent être effectués par carte ou par chèque. Les paiements en argent comptant ne sont pas acceptés." }
+      {
+        num: 14,
+        body: "Les paiements doivent être effectués par carte ou par chèque. Les paiements en argent comptant ne sont pas acceptés."
+      }
     ]
   },
   {
@@ -176,7 +191,10 @@ const LOCATION_CLAUSE_GROUPS: { title: string; clauses: { num: number; body: str
   {
     title: "Règlements et conformité",
     clauses: [
-      { num: 20, body: "Le Cégep de Jonquière se réserve le droit de vérifier la nature de l’activité mentionnée dans la demande de location." },
+      {
+        num: 20,
+        body: "Le Cégep de Jonquière se réserve le droit de vérifier la nature de l’activité mentionnée dans la demande de location."
+      },
       {
         num: 21,
         body: "Le Cégep peut émettre des directives aux locataires, qui sont tenus de les respecter. Par exemple, il peut exiger la tenue d’un registre des inscriptions et sa transmission."
@@ -230,7 +248,17 @@ function xmlEscapeText(str: string) {
 // It also derives S.resValueNumeric (a general-number-format variant of the now-bordered
 // S.resValue, for "Nombre de personnes prévu" — no existing style combines that box with a
 // non-date number format).
-const GRID_ROLE_KEYS = ["label", "value", "supplierLabel", "supplierValue", "resLabel", "resValue", "tableHeader", "currency", "wrapValue"] as const;
+const GRID_ROLE_KEYS = [
+  "label",
+  "value",
+  "supplierLabel",
+  "supplierValue",
+  "resLabel",
+  "resValue",
+  "tableHeader",
+  "currency",
+  "wrapValue"
+] as const;
 
 function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
   let xmlText = new TextDecoder("utf-8").decode(stylesXmlBytes);
@@ -251,8 +279,12 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
   const xfEntries = cellXfsMatch[2].match(/<xf\b[^>]*\/>|<xf\b[^>]*>[\s\S]*?<\/xf>/g) || [];
 
   const withNewBorder = (xf: string) => {
-    let clone = /applyBorder="\d"/.test(xf) ? xf.replace(/applyBorder="\d"/, 'applyBorder="1"') : xf.replace("<xf ", '<xf applyBorder="1" ');
-    clone = /borderId="\d+"/.test(clone) ? clone.replace(/borderId="\d+"/, `borderId="${newBorderId}"`) : clone.replace("<xf ", `<xf borderId="${newBorderId}" `);
+    let clone = /applyBorder="\d"/.test(xf)
+      ? xf.replace(/applyBorder="\d"/, 'applyBorder="1"')
+      : xf.replace("<xf ", '<xf applyBorder="1" ');
+    clone = /borderId="\d+"/.test(clone)
+      ? clone.replace(/borderId="\d+"/, `borderId="${newBorderId}"`)
+      : clone.replace("<xf ", `<xf borderId="${newBorderId}" `);
     return clone;
   };
 
@@ -440,8 +472,13 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
 
   sb.titleRow("Identification du client");
   sb.labelRow("Responsable de l'activité", `${manager.first_name || ""} ${manager.last_name || ""}`.trim() || undefined);
-  sb.labelRow("Responsable de la facturation", `${act.responsable_first_name || ""} ${act.responsable_last_name || ""}`.trim() || undefined);
-  const addressLines = [manager.address, [manager.city, manager.province, manager.postal_code].filter(Boolean).join(" ")].filter(Boolean).join("\n");
+  sb.labelRow(
+    "Responsable de la facturation",
+    `${act.responsable_first_name || ""} ${act.responsable_last_name || ""}`.trim() || undefined
+  );
+  const addressLines = [manager.address, [manager.city, manager.province, manager.postal_code].filter(Boolean).join(" ")]
+    .filter(Boolean)
+    .join("\n");
   sb.labelRow("Adresse", addressLines || undefined);
   sb.labelRow("Téléphone", manager.phone);
   sb.labelRow("Courriel", manager.email);
@@ -460,7 +497,9 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   // Spans every room's slots, not just one — the activity's overall reservation period.
   const dates = getAggregateEventDates(reservations);
   const dateStr =
-    dates.date_start === dates.date_end ? formatDateFr(dates.date_start) : `${formatDateFr(dates.date_start)} - ${formatDateFr(dates.date_end)}`;
+    dates.date_start === dates.date_end
+      ? formatDateFr(dates.date_start)
+      : `${formatDateFr(dates.date_start)} - ${formatDateFr(dates.date_end)}`;
   sb.labelRow("Date de la réservation", dateStr || undefined, S.resLabel, S.resValue);
   sb.labelRow("Titre de l'activité", act.name, S.resLabel, S.resValue);
   sb.labelRow("Description", act.description, S.resLabel, S.resValue);
@@ -591,14 +630,18 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     sb.addRow(20, [{ col: "D", style: S.sigName1, value: "Marie-Ève Bouchard, technicienne en administration", mergeTo: "F" }]);
     sb.addRow(20, [{ col: "D", style: S.sigLabel, value: "Signature :", mergeTo: "F" }]);
     sb.blankRows(1, 30);
-    sb.addRow(20, [{ col: "D", style: S.sigName2, value: "Rébecca Audy, gestionnaire administrative des services communautaires", mergeTo: "F" }]);
+    sb.addRow(20, [
+      { col: "D", style: S.sigName2, value: "Rébecca Audy, gestionnaire administrative des services communautaires", mergeTo: "F" }
+    ]);
     sb.blankRows(1);
 
     sb.titleRow("Annexe – Clauses de location");
     LOCATION_CLAUSE_GROUPS.forEach(group => {
       sb.textBoxRow(group.title, S.clauseGroup, 16);
       group.clauses.forEach(clause => {
-        sb.addRow(wrapRowHeight(`Clause ${clause.num}`, 132, 18), [{ col: "A", style: S.clauseNum, value: `Clause ${clause.num}`, mergeTo: "F" }]);
+        sb.addRow(wrapRowHeight(`Clause ${clause.num}`, 132, 18), [
+          { col: "A", style: S.clauseNum, value: `Clause ${clause.num}`, mergeTo: "F" }
+        ]);
         sb.textBoxRow(clause.body, S.clauseBody, 16);
       });
     });
@@ -686,7 +729,9 @@ async function generateXlsx(act: any, variant: "contrat" | "soumission") {
       `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
       `<Override PartName="/xl/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>` +
       `<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>` +
-      (hasImage ? `<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>` : "") +
+      (hasImage
+        ? `<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>`
+        : "") +
       `<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>` +
       `<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>` +
       `</Types>`

@@ -531,8 +531,8 @@ function addReservationCard(reservationData: any = null) {
           <span class="field-label">Personnel requis</span>
           <button type="button" class="btn btn-secondary room-add-staff-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
-        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.4fr 0.6fr 0.6fr 0.6fr 1fr auto; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; padding: 0 12px; margin-bottom: 4px;">
-          <span>Emploi</span><span>Qté</span><span>Heures</span><span title="Heures en temps supplémentaire">Heures sup.</span><span>Sous-total</span><span></span>
+        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.2fr 0.6fr 0.6fr 0.6fr 1fr 1fr 50px 38px; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px;">
+          <span>Emploi</span><span>Qté</span><span>Heures</span><span title="Heures en temps supplémentaire">Heures sup.</span><span>Code budgétaire</span><span>Sous-total</span><span></span><span></span>
         </div>
         <div class="distribution-list room-staff-list"></div>
       </div>
@@ -542,8 +542,8 @@ function addReservationCard(reservationData: any = null) {
           <span class="field-label">Équipements</span>
           <button type="button" class="btn btn-secondary room-add-service-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
-        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.3fr 0.6fr 0.6fr 1fr 1fr auto; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; padding: 0 12px; margin-bottom: 4px;">
-          <span>Équipement</span><span>Qté</span><span title="Utilisé seulement pour les équipements facturés à l'heure">Heures</span><span>Compte à facturer</span><span>Sous-total</span><span></span>
+        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.3fr 0.6fr 0.6fr 1fr 1fr 50px 38px; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px;">
+          <span>Équipement</span><span>Qté</span><span title="Utilisé seulement pour les équipements facturés à l'heure">Heures</span><span>Compte à facturer</span><span>Sous-total</span><span></span><span></span>
         </div>
         <div class="distribution-list room-services-list"></div>
       </div>
@@ -633,7 +633,7 @@ function addReservationCard(reservationData: any = null) {
     updateSubmissionFinancialSummary();
     autoSaveActivityForm();
   });
-  
+
   card.querySelectorAll(".room-tariff-custom-group input, .room-tariff-custom-group select").forEach(input => {
     input.addEventListener("input", () => {
       updateSubmissionFinancialSummary();

@@ -152,10 +152,7 @@ function renderActivities() {
 
   // Enable or disable the reset filters button based on active filters
   const hasActiveFilters =
-    searchQuery.trim().length > 0 ||
-    filterSalles.length > 0 ||
-    filterClientTypes.length > 0 ||
-    filterStatuses.length > 0;
+    searchQuery.trim().length > 0 || filterSalles.length > 0 || filterClientTypes.length > 0 || filterStatuses.length > 0;
   const resetBtn = document.getElementById("reset-filters-btn") as HTMLButtonElement | null;
   if (resetBtn) {
     resetBtn.disabled = !hasActiveFilters;
@@ -177,8 +174,7 @@ function renderActivities() {
       );
 
     // Salle filter
-    const matchesSalle =
-      filterSalles.length === 0 || (act.reservations || []).some((r: any) => filterSalles.includes(r.room_name));
+    const matchesSalle = filterSalles.length === 0 || (act.reservations || []).some((r: any) => filterSalles.includes(r.room_name));
 
     // Client type filter
     const matchesClientType = filterClientTypes.length === 0 || filterClientTypes.includes(act.client_type);

@@ -91,9 +91,20 @@
         </nav>
 
         <div class="sidebar-footer">
-          <button id="help-center-btn" class="theme-toggle-btn" style="margin-bottom: 8px; background-color: var(--primary-light); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.2);">
-            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 8px;">
-              <path d="M12 2C6.48 2 2 6.48 2 12s6.48 10 10 10 10-6.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+          <button
+            id="help-center-btn"
+            class="theme-toggle-btn"
+            style="
+              margin-bottom: 8px;
+              background-color: var(--primary-light);
+              color: var(--primary);
+              border: 1px solid rgba(59, 130, 246, 0.2);
+            "
+          >
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 8px">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s6.48 10 10 10 10-6.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"
+              />
             </svg>
             <span>Guide d'utilisation</span>
           </button>
@@ -221,9 +232,18 @@
             <svg viewBox="0 0 24 24" class="alert-icon" style="fill: var(--warning-text); margin-right: 8px">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
             </svg>
-            <span>La sauvegarde automatique vers le fichier <strong id="auto-backup-reminder-filename"></strong> a expiré. Cliquez sur <strong>Réactiver</strong> pour autoriser à nouveau l'écriture et sécuriser votre travail.</span>
+            <span
+              >La sauvegarde automatique vers le fichier <strong id="auto-backup-reminder-filename"></strong> a expiré. Cliquez sur
+              <strong>Réactiver</strong> pour autoriser à nouveau l'écriture et sécuriser votre travail.</span
+            >
           </span>
-          <button id="auto-backup-reminder-btn" class="btn-warning-outline" title="Réactiver la sauvegarde automatique pour protéger votre travail">Réactiver</button>
+          <button
+            id="auto-backup-reminder-btn"
+            class="btn-warning-outline"
+            title="Réactiver la sauvegarde automatique pour protéger votre travail"
+          >
+            Réactiver
+          </button>
         </div>
 
         <!-- View Containers -->
@@ -311,8 +331,14 @@
                     disabled
                     title="Réinitialiser tous les filtres de recherche et critères de sélection"
                   >
-                    <svg viewBox="0 0 24 24" class="reset-icon" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px;">
-                      <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="reset-icon"
+                      style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px; vertical-align: -3px"
+                    >
+                      <path
+                        d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
+                      />
                     </svg>
                     Réinitialiser les filtres
                   </button>
@@ -603,12 +629,22 @@
       </div>
 
       <div class="activity-tabs">
-        <button type="button" class="activity-tab-btn" data-activity-tab="form">Formulaire <span class="tab-indicator" id="tab-ind-form"></span></button>
-        <button type="button" class="activity-tab-btn active" data-activity-tab="submission">Soumission <span class="tab-indicator" id="tab-ind-submission"></span></button>
-        <button type="button" class="activity-tab-btn" data-activity-tab="planning">Planification <span class="tab-indicator" id="tab-ind-planning"></span></button>
-        <button type="button" class="activity-tab-btn" data-activity-tab="billing">Facturation <span class="tab-indicator" id="tab-ind-billing"></span></button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="form">
+          Formulaire <span class="tab-indicator" id="tab-ind-form"></span>
+        </button>
+        <button type="button" class="activity-tab-btn active" data-activity-tab="submission">
+          Soumission <span class="tab-indicator" id="tab-ind-submission"></span>
+        </button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="planning">
+          Planification <span class="tab-indicator" id="tab-ind-planning"></span>
+        </button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="billing">
+          Facturation <span class="tab-indicator" id="tab-ind-billing"></span>
+        </button>
         <button type="button" class="activity-tab-btn" data-activity-tab="history">Historique</button>
-        <button type="button" class="activity-tab-btn" data-activity-tab="notes">Notes <span class="tab-indicator" id="tab-ind-notes"></span></button>
+        <button type="button" class="activity-tab-btn" data-activity-tab="notes">
+          Notes <span class="tab-indicator" id="tab-ind-notes"></span>
+        </button>
       </div>
 
       <div class="drawer-content">
@@ -627,7 +663,7 @@
               <div id="form-file-status" class="file-link-status"></div>
             </div>
             <!-- Dynamic PDF preview container -->
-            <div id="form-pdf-preview" style="margin-top: 20px;"></div>
+            <div id="form-pdf-preview" style="margin-top: 20px"></div>
           </div>
 
           <!-- ============ TAB: Soumission et contrat ============ -->
@@ -651,7 +687,7 @@
               <div class="form-accordion-content">
                 <div class="form-group-row">
                   <div class="form-group">
-                    <label for="form-activity-id" style="display: flex; align-items: center; gap: 6px;">
+                    <label for="form-activity-id" style="display: flex; align-items: center; gap: 6px">
                       Numéro d'activité <span class="badge badge-auto">Auto</span>
                     </label>
                     <input type="text" id="form-activity-id" class="form-input input-auto" placeholder="Généré automatiquement" disabled />
@@ -1027,25 +1063,70 @@
     <!-- Printable / PDF export sheet for a single activity (populated on demand, hidden on
          screen, only shown by the @media print rule when window.print() is triggered) -->
     <!-- Help Center Modal -->
-    <div id="help-center-modal" class="modal-backdrop" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center;">
-      <div class="modal-content" style="width: 90%; max-width: 700px; max-height: 85vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: var(--radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-lg); background-color: var(--bg-card);">
-        
+    <div
+      id="help-center-modal"
+      class="modal-backdrop"
+      style="
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        class="modal-content"
+        style="
+          width: 90%;
+          max-width: 700px;
+          max-height: 85vh;
+          display: flex;
+          flex-direction: column;
+          padding: 0;
+          overflow: hidden;
+          border-radius: var(--radius-lg);
+          border: 1px solid var(--border-color);
+          box-shadow: var(--shadow-lg);
+          background-color: var(--bg-card);
+        "
+      >
         <!-- Header -->
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-main);">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.3rem;">📖</span>
-            <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-primary);">Guide d'aide pour Marie</h2>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-main);
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="font-size: 1.3rem">📖</span>
+            <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-primary)">Guide d'aide pour Marie</h2>
           </div>
-          <button id="help-center-close-btn" class="btn-icon" style="font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--text-muted); background: none; border: none;">&times;</button>
+          <button
+            id="help-center-close-btn"
+            class="btn-icon"
+            style="font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--text-muted); background: none; border: none"
+          >
+            &times;
+          </button>
         </div>
 
         <!-- Scrollable content -->
-        <div style="padding: 24px; overflow-y: auto; flex-grow: 1;">
-          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0; margin-bottom: 20px;">
-            Bienvenue dans votre guide d'aide. Ce centre est conçu pour vous expliquer simplement comment utiliser l'application au quotidien.
+        <div style="padding: 24px; overflow-y: auto; flex-grow: 1">
+          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0; margin-bottom: 20px">
+            Bienvenue dans votre guide d'aide. Ce centre est conçu pour vous expliquer simplement comment utiliser l'application au
+            quotidien.
           </p>
 
-          <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 16px">
             <!-- Section 1 -->
             <details class="help-section" open>
               <summary class="help-section-summary">
@@ -1056,15 +1137,28 @@
                 <ol>
                   <li>Cliquez sur le bouton bleu <strong>+ Nouvelle activité</strong> en haut à droite du journal.</li>
                   <li>Saisissez le nom de l'activité, puis cliquez sur <strong>Créer</strong>.</li>
-                  <li>Le formulaire s'ouvre :
+                  <li>
+                    Le formulaire s'ouvre :
                     <ul>
                       <li><strong>Étape 1 (Formulaire)</strong> : Permet de lier le document PDF papier pour référence.</li>
-                      <li><strong>Étape 2 (Soumission)</strong> : Saisissez le nom du client et ajoutez les réservations de salles en indiquant les dates, heures, tarifs et personnel requis.</li>
-                      <li><strong>Étape 3 (Planification)</strong> : Suivez les tâches à faire (les tâches se génèrent d'elles-mêmes selon les salles réservées).</li>
-                      <li><strong>Étape 4 (Facturation)</strong> : Une fois l'activité terminée, ajoutez la ventilation des comptes comptables (distributions).</li>
+                      <li>
+                        <strong>Étape 2 (Soumission)</strong> : Saisissez le nom du client et ajoutez les réservations de salles en
+                        indiquant les dates, heures, tarifs et personnel requis.
+                      </li>
+                      <li>
+                        <strong>Étape 3 (Planification)</strong> : Suivez les tâches à faire (les tâches se génèrent d'elles-mêmes selon les
+                        salles réservées).
+                      </li>
+                      <li>
+                        <strong>Étape 4 (Facturation)</strong> : Une fois l'activité terminée, ajoutez la ventilation des comptes comptables
+                        (distributions).
+                      </li>
                     </ul>
                   </li>
-                  <li>Tout s'enregistre automatiquement dès que vous saisissez ou modifiez un champ. Vous pouvez fermer l'activité en toute sécurité.</li>
+                  <li>
+                    Tout s'enregistre automatiquement dès que vous saisissez ou modifiez un champ. Vous pouvez fermer l'activité en toute
+                    sécurité.
+                  </li>
                 </ol>
               </div>
             </details>
@@ -1076,16 +1170,30 @@
                 <strong>Faire le rapprochement bancaire (Grand Livre GL)</strong>
               </summary>
               <div class="help-section-content">
-                <p>Cette étape sert à s'assurer que les montants saisis dans l'application correspondent bien aux écritures comptables officielles du Cégep (le Grand Livre).</p>
+                <p>
+                  Cette étape sert à s'assurer que les montants saisis dans l'application correspondent bien aux écritures comptables
+                  officielles du Cégep (le Grand Livre).
+                </p>
                 <ol>
                   <li>Rendez-vous dans la section <strong>Rapprochement GL</strong> dans la barre latérale.</li>
                   <li>Glissez-déposez le fichier Excel du Grand Livre extrait du système financier dans la zone prévue.</li>
-                  <li>L'application associe automatiquement les écritures. Regardez les pastilles de couleur :
+                  <li>
+                    L'application associe automatiquement les écritures. Regardez les pastilles de couleur :
                     <ul>
                       <li><span class="badge badge-success">Conforme</span> : Tout correspond. Aucune action requise.</li>
-                      <li><span class="badge badge-danger">Écart de montant</span> : L'activité existe, mais les montants diffèrent. Vous pouvez cliquer sur <em>Valider</em> pour forcer la conformité ou corriger le montant dans l'onglet Facturation de l'activité.</li>
-                      <li><span class="badge badge-warning">Non dans GL</span> : L'activité est saisie mais n'apparait pas encore dans la comptabilité officielle.</li>
-                      <li><span class="badge badge-info">Non saisis</span> : Écriture présente dans le Grand Livre mais absente de l'application. Cliquez sur <strong>+ Créer activité</strong> à droite de la ligne pour l'ajouter en un clic.</li>
+                      <li>
+                        <span class="badge badge-danger">Écart de montant</span> : L'activité existe, mais les montants diffèrent. Vous
+                        pouvez cliquer sur <em>Valider</em> pour forcer la conformité ou corriger le montant dans l'onglet Facturation de
+                        l'activité.
+                      </li>
+                      <li>
+                        <span class="badge badge-warning">Non dans GL</span> : L'activité est saisie mais n'apparait pas encore dans la
+                        comptabilité officielle.
+                      </li>
+                      <li>
+                        <span class="badge badge-info">Non saisis</span> : Écriture présente dans le Grand Livre mais absente de
+                        l'application. Cliquez sur <strong>+ Créer activité</strong> à droite de la ligne pour l'ajouter en un clic.
+                      </li>
                     </ul>
                   </li>
                 </ol>
@@ -1102,9 +1210,18 @@
                 <p>Pour éviter de perdre vos données si votre ordinateur a un problème, configurez la sauvegarde automatique :</p>
                 <ol>
                   <li>Allez dans l'onglet <strong>Configuration</strong>.</li>
-                  <li>Dans la section <em>Sauvegarde automatique</em>, cliquez sur <strong>Choisir un fichier de sauvegarde automatique</strong>.</li>
-                  <li>Créez ou sélectionnez un fichier vide (ex: <code>sauvegarde_outil_marie.json</code>) sur votre bureau ou vos documents.</li>
-                  <li><strong>Important</strong> : De temps en temps, le navigateur vous affichera une bannière jaune indiquant que la sauvegarde a expiré. C'est une sécurité standard de Chrome. Cliquez simplement sur le bouton <strong>Réactiver</strong> dans la bannière pour autoriser à nouveau l'écriture.</li>
+                  <li>
+                    Dans la section <em>Sauvegarde automatique</em>, cliquez sur
+                    <strong>Choisir un fichier de sauvegarde automatique</strong>.
+                  </li>
+                  <li>
+                    Créez ou sélectionnez un fichier vide (ex: <code>sauvegarde_outil_marie.json</code>) sur votre bureau ou vos documents.
+                  </li>
+                  <li>
+                    <strong>Important</strong> : De temps en temps, le navigateur vous affichera une bannière jaune indiquant que la
+                    sauvegarde a expiré. C'est une sécurité standard de Chrome. Cliquez simplement sur le bouton
+                    <strong>Réactiver</strong> dans la bannière pour autoriser à nouveau l'écriture.
+                  </li>
                 </ol>
               </div>
             </details>
@@ -1117,8 +1234,14 @@
               </summary>
               <div class="help-section-content">
                 <ul>
-                  <li><strong>Poste budgétaire / Code GL</strong> : C'est le numéro de compte de comptabilité générale (ex : 4100 pour des locations de salles, 4200 pour du personnel).</li>
-                  <li><strong>RI / Facture Réf.</strong> : C'est le numéro de référence unique de l'encaissement ou de la facture du Cégep (permettant d'associer la saisie au Grand Livre).</li>
+                  <li>
+                    <strong>Poste budgétaire / Code GL</strong> : C'est le numéro de compte de comptabilité générale (ex : 4100 pour des
+                    locations de salles, 4200 pour du personnel).
+                  </li>
+                  <li>
+                    <strong>RI / Facture Réf.</strong> : C'est le numéro de référence unique de l'encaissement ou de la facture du Cégep
+                    (permettant d'associer la saisie au Grand Livre).
+                  </li>
                   <li><strong>COBA</strong> : Système du cégep où sont enregistrées les réservations scolaires officielles.</li>
                 </ul>
               </div>
@@ -1127,7 +1250,15 @@
         </div>
 
         <!-- Footer -->
-        <div style="display: flex; justify-content: flex-end; padding: 12px 24px; border-top: 1px solid var(--border-color); background-color: var(--bg-main);">
+        <div
+          style="
+            display: flex;
+            justify-content: flex-end;
+            padding: 12px 24px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-main);
+          "
+        >
           <button id="help-center-close-footer-btn" class="btn btn-primary">J'ai compris</button>
         </div>
       </div>

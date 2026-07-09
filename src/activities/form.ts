@@ -171,7 +171,6 @@ function initFormHandlers() {
     });
   }
 
-
   // Account distributions buttons
   el("form-add-distribution-btn").addEventListener("click", () => {
     addDistributionRow("", 0);
@@ -513,7 +512,7 @@ function updateFormTabIndicators(act: any) {
     const mode = act.mode || "estimation";
     const nameFilled = !!act.name?.trim();
     const hasReservations = act.reservations && act.reservations.length > 0;
-    
+
     let isComplete = false;
     if (mode === "estimation") {
       isComplete = nameFilled && hasReservations;
@@ -581,18 +580,12 @@ function updateFormAccordionCompletion(act: any) {
   const isSoumission = (act.mode || "estimation") !== "estimation";
 
   const nameFilled = !!act.name?.trim();
-  const generalComplete = isSoumission
-    ? nameFilled && !!act.attendees_count && !!act.description?.trim()
-    : nameFilled;
+  const generalComplete = isSoumission ? nameFilled && !!act.attendees_count && !!act.description?.trim() : nameFilled;
   setAccordionCheckComplete("accordion-check-general", generalComplete);
 
   const manager = act.activity_manager || {};
   let managerComplete =
-    !!manager.first_name?.trim() &&
-    !!manager.last_name?.trim() &&
-    !!manager.type &&
-    !!manager.phone?.trim() &&
-    !!manager.email?.trim();
+    !!manager.first_name?.trim() && !!manager.last_name?.trim() && !!manager.type && !!manager.phone?.trim() && !!manager.email?.trim();
   if (managerComplete && manager.type === "externe") {
     managerComplete =
       !!manager.company_name?.trim() &&

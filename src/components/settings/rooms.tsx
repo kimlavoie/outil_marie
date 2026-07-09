@@ -397,9 +397,23 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
         </div>
       </div>
 
-      <div className="distribution-section" style={{ border: "1px solid var(--border-color)", padding: 16, borderRadius: "var(--radius-md)", background: "var(--bg-main)", marginBottom: 20 }}>
-        <div className="distribution-header" style={{ marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span className="field-label" style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--text-primary)" }}>⚙️ Configuration des Tarifs</span>
+      <div
+        className="distribution-section"
+        style={{
+          border: "1px solid var(--border-color)",
+          padding: 16,
+          borderRadius: "var(--radius-md)",
+          background: "var(--bg-main)",
+          marginBottom: 20
+        }}
+      >
+        <div
+          className="distribution-header"
+          style={{ marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <span className="field-label" style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--text-primary)" }}>
+            ⚙️ Configuration des Tarifs
+          </span>
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "0.8rem" }} onClick={addVersion}>
               + Nouvelle version
@@ -435,41 +449,58 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
             onClick={() => setShowHelp(!showHelp)}
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style={{ color: "var(--primary)", flexShrink: 0 }}>
-              <path d="M11 18h2v-6h-2v6zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2V5h-2v2z"/>
+              <path d="M11 18h2v-6h-2v6zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2V5h-2v2z" />
             </svg>
             <span>{showHelp ? "Masquer le guide d'utilisation" : "Besoin d'aide ? Comment configurer la grille tarifaire"}</span>
           </button>
-          
+
           {showHelp && (
-            <div className="pricing-help-content" style={{
-              marginTop: 10,
-              padding: 14,
-              background: "var(--primary-light)",
-              borderLeft: "4px solid var(--primary)",
-              borderRadius: "var(--radius-sm)",
-              fontSize: "0.8rem",
-              color: "var(--text-secondary)",
-              lineHeight: 1.5
-            }}>
-              <p style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: 6 }}>
-                💡 Guide rapide pour la grille tarifaire :
-              </p>
+            <div
+              className="pricing-help-content"
+              style={{
+                marginTop: 10,
+                padding: 14,
+                background: "var(--primary-light)",
+                borderLeft: "4px solid var(--primary)",
+                borderRadius: "var(--radius-sm)",
+                fontSize: "0.8rem",
+                color: "var(--text-secondary)",
+                lineHeight: 1.5
+              }}
+            >
+              <p style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: 6 }}>💡 Guide rapide pour la grille tarifaire :</p>
               <ul style={{ paddingLeft: 18, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
                 <li>
-                  <strong>Gestion des versions :</strong> Les tarifs peuvent évoluer dans le temps. Le système sélectionne la version active correspondant à la date de début de l'activité. Une version sans date sert de tarif par défaut (<em>Depuis toujours</em>).
+                  <strong>Gestion des versions :</strong> Les tarifs peuvent évoluer dans le temps. Le système sélectionne la version active
+                  correspondant à la date de début de l'activité. Une version sans date sert de tarif par défaut (<em>Depuis toujours</em>).
                 </li>
                 <li>
-                  <strong>1. Configurations / Types d'événement (Lignes) :</strong> Ce sont les agencements de la salle (ex: <em>Parterre</em>, <em>Demi-parterre</em>) ou les types d'activités (ex: <em>Spectacle</em>, <em>Réunion</em>, <em>Réception</em>).
+                  <strong>1. Configurations / Types d'événement (Lignes) :</strong> Ce sont les agencements de la salle (ex:{" "}
+                  <em>Parterre</em>, <em>Demi-parterre</em>) ou les types d'activités (ex: <em>Spectacle</em>, <em>Réunion</em>,{" "}
+                  <em>Réception</em>).
                 </li>
                 <li>
-                  <strong>2. Types de client (Colonnes) :</strong> Catégories de locataires (ex: <em>Interne</em>, <em>Privé</em>, <em>OBNL</em>, <em>Partenaire</em>). Liez-y un compte GL de facturation pour comptabiliser automatiquement les revenus de la salle.
+                  <strong>2. Types de client (Colonnes) :</strong> Catégories de locataires (ex: <em>Interne</em>, <em>Privé</em>,{" "}
+                  <em>OBNL</em>, <em>Partenaire</em>). Liez-y un compte GL de facturation pour comptabiliser automatiquement les revenus de
+                  la salle.
                 </li>
                 <li>
-                  <strong>3. Saisie des tarifs :</strong> Remplissez les prix journaliers en dollars ($) dans la table générée à l'intersection de chaque ligne et colonne.
+                  <strong>3. Saisie des tarifs :</strong> Remplissez les prix journaliers en dollars ($) dans la table générée à
+                  l'intersection de chaque ligne et colonne.
                 </li>
               </ul>
-              <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid var(--border-color)", fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.4 }}>
-                💡 <strong>Recommandation :</strong> S'il n'y a pas de configuration ou de type d'événement particulier pour cette salle, nous vous recommandons de créer une seule ligne nommée <em>"Tarif unique"</em> ou <em>"Standard"</em>.
+              <div
+                style={{
+                  marginTop: 10,
+                  paddingTop: 8,
+                  borderTop: "1px solid var(--border-color)",
+                  fontSize: "0.78rem",
+                  color: "var(--text-muted)",
+                  lineHeight: 1.4
+                }}
+              >
+                💡 <strong>Recommandation :</strong> S'il n'y a pas de configuration ou de type d'événement particulier pour cette salle,
+                nous vous recommandons de créer une seule ligne nommée <em>"Tarif unique"</em> ou <em>"Standard"</em>.
               </div>
             </div>
           )}
@@ -499,33 +530,50 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
         </div>
 
         {/* Date d'entrée en vigueur de la version active */}
-        <div className="form-group" style={{ position: "relative", background: "var(--bg-card)", padding: 12, borderRadius: "var(--radius-sm)", border: "1px solid var(--border-color)", marginBottom: 16 }}>
-          <label htmlFor="room-grid-effective-date" style={{ fontWeight: 600, fontSize: "0.8rem", display: "flex", alignItems: "center", marginBottom: 6 }}>
+        <div
+          className="form-group"
+          style={{
+            position: "relative",
+            background: "var(--bg-card)",
+            padding: 12,
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--border-color)",
+            marginBottom: 16
+          }}
+        >
+          <label
+            htmlFor="room-grid-effective-date"
+            style={{ fontWeight: 600, fontSize: "0.8rem", display: "flex", alignItems: "center", marginBottom: 6 }}
+          >
             <span>Date d'entrée en vigueur de cette version</span>
             {renderHelpButton("versions")}
           </label>
           {activeHelpPopup === "versions" && (
-            <div style={{
-              position: "absolute",
-              top: "44px",
-              left: "12px",
-              right: "12px",
-              zIndex: 100,
-              padding: 12,
-              background: "var(--bg-card)",
-              border: "1px solid var(--primary)",
-              boxShadow: "var(--shadow-md)",
-              borderRadius: "var(--radius-sm)",
-              fontSize: "0.8rem",
-              color: "var(--text-secondary)",
-              lineHeight: 1.4,
-              pointerEvents: "none"
-            }}>
+            <div
+              style={{
+                position: "absolute",
+                top: "44px",
+                left: "12px",
+                right: "12px",
+                zIndex: 100,
+                padding: 12,
+                background: "var(--bg-card)",
+                border: "1px solid var(--primary)",
+                boxShadow: "var(--shadow-md)",
+                borderRadius: "var(--radius-sm)",
+                fontSize: "0.8rem",
+                color: "var(--text-secondary)",
+                lineHeight: 1.4,
+                pointerEvents: "none"
+              }}
+            >
               <div style={{ marginBottom: 4 }}>
                 <strong style={{ color: "var(--primary)" }}>📅 Aide : Gestion des versions</strong>
               </div>
               <p style={{ margin: 0 }}>
-                Les tarifs peuvent changer avec le temps. Le système applique automatiquement la grille dont la date d'entrée en vigueur est la plus récente et antérieure ou égale à la date de début de l'activité. Une version sans date sert de tarif par défaut (toujours active).
+                Les tarifs peuvent changer avec le temps. Le système applique automatiquement la grille dont la date d'entrée en vigueur est
+                la plus récente et antérieure ou égale à la date de début de l'activité. Une version sans date sert de tarif par défaut
+                (toujours active).
               </p>
             </div>
           )}
@@ -552,27 +600,37 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
         {/* Configuration pas à pas - Étapes 1 & 2 (empilées verticalement) */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 }}>
           {/* Étape 1 : Configurations / Types d'événement (Lignes) */}
-          <div className="form-group" style={{
-            position: "relative",
-            padding: 14,
-            border: "1px solid var(--border-color)",
-            borderRadius: "var(--radius-md)",
-            background: "var(--bg-card)"
-          }}>
-            <div className="distribution-header" style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div
+            className="form-group"
+            style={{
+              position: "relative",
+              padding: 14,
+              border: "1px solid var(--border-color)",
+              borderRadius: "var(--radius-md)",
+              background: "var(--bg-card)"
+            }}
+          >
+            <div
+              className="distribution-header"
+              style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+            >
               <span className="field-label" style={{ fontSize: "0.85rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{
-                  background: "var(--primary-light)",
-                  color: "var(--primary)",
-                  borderRadius: "50%",
-                  width: 20,
-                  height: 20,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "0.75rem",
-                  fontWeight: "bold"
-                }}>1</span>
+                <span
+                  style={{
+                    background: "var(--primary-light)",
+                    color: "var(--primary)",
+                    borderRadius: "50%",
+                    width: 20,
+                    height: 20,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "0.75rem",
+                    fontWeight: "bold"
+                  }}
+                >
+                  1
+                </span>
                 <span>Configurations / Types d'événement (Lignes)</span>
                 {renderHelpButton("configs")}
               </span>
@@ -585,46 +643,67 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
                 + Ajouter
               </button>
             </div>
-            
+
             {activeHelpPopup === "configs" && (
-              <div style={{
-                position: "absolute",
-                top: "40px",
-                left: "14px",
-                right: "14px",
-                zIndex: 100,
-                padding: 12,
-                background: "var(--bg-card)",
-                border: "1px solid var(--primary)",
-                boxShadow: "var(--shadow-md)",
-                borderRadius: "var(--radius-sm)",
-                fontSize: "0.8rem",
-                color: "var(--text-secondary)",
-                lineHeight: 1.4,
-                pointerEvents: "none"
-              }}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: "40px",
+                  left: "14px",
+                  right: "14px",
+                  zIndex: 100,
+                  padding: 12,
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--primary)",
+                  boxShadow: "var(--shadow-md)",
+                  borderRadius: "var(--radius-sm)",
+                  fontSize: "0.8rem",
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.4,
+                  pointerEvents: "none"
+                }}
+              >
                 <div style={{ marginBottom: 4 }}>
                   <strong style={{ color: "var(--primary)" }}>💡 Aide : Configurations / Événements</strong>
                 </div>
                 <p style={{ margin: 0 }}>
-                  Représentent l'usage ou l'agencement de la salle (ex: <em>Spectacle</em>, <em>Réunion</em>, <em>Réception</em>, <em>Parterre</em>, <em>Demi-parterre</em>).
+                  Représentent l'usage ou l'agencement de la salle (ex: <em>Spectacle</em>, <em>Réunion</em>, <em>Réception</em>,{" "}
+                  <em>Parterre</em>, <em>Demi-parterre</em>).
                 </p>
                 <p style={{ margin: "6px 0 0 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                  <strong>Conseil :</strong> S'il n'y a pas d'agencement particulier pour cette salle, créez une seule ligne nommée <em>"Tarif unique"</em>.
+                  <strong>Conseil :</strong> S'il n'y a pas d'agencement particulier pour cette salle, créez une seule ligne nommée{" "}
+                  <em>"Tarif unique"</em>.
                 </p>
               </div>
             )}
 
             {activeGrid.parameters.length === 0 ? (
-              <div style={{ color: "var(--text-muted)", fontSize: "0.8rem", textAlign: "center", padding: "16px 0", border: "1px dashed var(--border-color)", borderRadius: "var(--radius-sm)" }}>
+              <div
+                style={{
+                  color: "var(--text-muted)",
+                  fontSize: "0.8rem",
+                  textAlign: "center",
+                  padding: "16px 0",
+                  border: "1px dashed var(--border-color)",
+                  borderRadius: "var(--radius-sm)"
+                }}
+              >
                 Aucun élément défini. Cliquez sur "+ Ajouter" (ex: Spectacle, Réunion, Demi-parterre).
               </div>
             ) : (
               <div className="distribution-list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {activeGrid.parameters.map((p, i) => (
-                  <div key={p.id} className="distribution-row room-tarif-row" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}>
+                  <div
+                    key={p.id}
+                    className="distribution-row room-tarif-row"
+                    style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}
+                  >
                     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                      <span style={{ position: "absolute", left: 10, color: "var(--text-muted)", fontSize: "0.85rem", pointerEvents: "none" }}>☰</span>
+                      <span
+                        style={{ position: "absolute", left: 10, color: "var(--text-muted)", fontSize: "0.85rem", pointerEvents: "none" }}
+                      >
+                        ☰
+                      </span>
                       <input
                         type="text"
                         name={`${p.id}-name`}
@@ -645,27 +724,37 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
           </div>
 
           {/* Étape 2 : Types de client (Colonnes) */}
-          <div className="form-group" style={{
-            position: "relative",
-            padding: 14,
-            border: "1px solid var(--border-color)",
-            borderRadius: "var(--radius-md)",
-            background: "var(--bg-card)"
-          }}>
-            <div className="distribution-header" style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div
+            className="form-group"
+            style={{
+              position: "relative",
+              padding: 14,
+              border: "1px solid var(--border-color)",
+              borderRadius: "var(--radius-md)",
+              background: "var(--bg-card)"
+            }}
+          >
+            <div
+              className="distribution-header"
+              style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+            >
               <span className="field-label" style={{ fontSize: "0.85rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{
-                  background: "var(--primary-light)",
-                  color: "var(--primary)",
-                  borderRadius: "50%",
-                  width: 20,
-                  height: 20,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "0.75rem",
-                  fontWeight: "bold"
-                }}>2</span>
+                <span
+                  style={{
+                    background: "var(--primary-light)",
+                    color: "var(--primary)",
+                    borderRadius: "50%",
+                    width: 20,
+                    height: 20,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "0.75rem",
+                    fontWeight: "bold"
+                  }}
+                >
+                  2
+                </span>
                 <span>Types de client (Colonnes)</span>
                 {renderHelpButton("clients")}
               </span>
@@ -678,41 +767,57 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
                 + Ajouter
               </button>
             </div>
-            
+
             {activeHelpPopup === "clients" && (
-              <div style={{
-                position: "absolute",
-                top: "40px",
-                left: "14px",
-                right: "14px",
-                zIndex: 100,
-                padding: 12,
-                background: "var(--bg-card)",
-                border: "1px solid var(--primary)",
-                boxShadow: "var(--shadow-md)",
-                borderRadius: "var(--radius-sm)",
-                fontSize: "0.8rem",
-                color: "var(--text-secondary)",
-                lineHeight: 1.4,
-                pointerEvents: "none"
-              }}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: "40px",
+                  left: "14px",
+                  right: "14px",
+                  zIndex: 100,
+                  padding: 12,
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--primary)",
+                  boxShadow: "var(--shadow-md)",
+                  borderRadius: "var(--radius-sm)",
+                  fontSize: "0.8rem",
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.4,
+                  pointerEvents: "none"
+                }}
+              >
                 <div style={{ marginBottom: 4 }}>
                   <strong style={{ color: "var(--primary)" }}>💡 Aide : Types de client</strong>
                 </div>
                 <p style={{ margin: 0 }}>
-                  Catégories de locataires (ex: <em>Interne</em>, <em>Privé</em>, <em>OBNL</em>, <em>Partenaire</em>). Liez-y un compte GL de facturation pour comptabiliser automatiquement les revenus de la salle.
+                  Catégories de locataires (ex: <em>Interne</em>, <em>Privé</em>, <em>OBNL</em>, <em>Partenaire</em>). Liez-y un compte GL
+                  de facturation pour comptabiliser automatiquement les revenus de la salle.
                 </p>
               </div>
             )}
 
             {activeGrid.client_types.length === 0 ? (
-              <div style={{ color: "var(--text-muted)", fontSize: "0.8rem", textAlign: "center", padding: "16px 0", border: "1px dashed var(--border-color)", borderRadius: "var(--radius-sm)" }}>
+              <div
+                style={{
+                  color: "var(--text-muted)",
+                  fontSize: "0.8rem",
+                  textAlign: "center",
+                  padding: "16px 0",
+                  border: "1px dashed var(--border-color)",
+                  borderRadius: "var(--radius-sm)"
+                }}
+              >
                 Aucun type de client défini. Cliquez sur "+ Ajouter" (ex: Interne, Privé).
               </div>
             ) : (
               <div className="distribution-list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {activeGrid.client_types.map((ct, i) => (
-                  <div key={ct.id} className="distribution-row room-tarif-row" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr auto", gap: 8, alignItems: "center" }}>
+                  <div
+                    key={ct.id}
+                    className="distribution-row room-tarif-row"
+                    style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr auto", gap: 8, alignItems: "center" }}
+                  >
                     <input
                       type="text"
                       name={`${ct.id}-name`}
@@ -743,49 +848,57 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
         </div>
 
         {/* Étape 3 : Saisie des Tarifs (Matrice) */}
-        <div style={{
-          position: "relative",
-          padding: 14,
-          border: "1px solid var(--border-color)",
-          borderRadius: "var(--radius-md)",
-          background: "var(--bg-card)"
-        }}>
+        <div
+          style={{
+            position: "relative",
+            padding: 14,
+            border: "1px solid var(--border-color)",
+            borderRadius: "var(--radius-md)",
+            background: "var(--bg-card)"
+          }}
+        >
           <div className="distribution-header" style={{ marginBottom: 10 }}>
             <span className="field-label" style={{ fontSize: "0.85rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{
-                background: "var(--primary-light)",
-                color: "var(--primary)",
-                borderRadius: "50%",
-                width: 20,
-                height: 20,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "0.75rem",
-                fontWeight: "bold"
-              }}>3</span>
+              <span
+                style={{
+                  background: "var(--primary-light)",
+                  color: "var(--primary)",
+                  borderRadius: "50%",
+                  width: 20,
+                  height: 20,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "0.75rem",
+                  fontWeight: "bold"
+                }}
+              >
+                3
+              </span>
               <span>Grille des tarifs ($/jour)</span>
               {renderHelpButton("tarifs")}
             </span>
           </div>
 
           {activeHelpPopup === "tarifs" && (
-            <div style={{
-              position: "absolute",
-              top: "40px",
-              left: "14px",
-              right: "14px",
-              zIndex: 100,
-              padding: 12,
-              background: "var(--bg-card)",
-              border: "1px solid var(--primary)",
-              boxShadow: "var(--shadow-md)",
-              borderRadius: "var(--radius-sm)",
-              fontSize: "0.8rem",
-              color: "var(--text-secondary)",
-              lineHeight: 1.4,
-              pointerEvents: "none"
-            }}>
+            <div
+              style={{
+                position: "absolute",
+                top: "40px",
+                left: "14px",
+                right: "14px",
+                zIndex: 100,
+                padding: 12,
+                background: "var(--bg-card)",
+                border: "1px solid var(--primary)",
+                boxShadow: "var(--shadow-md)",
+                borderRadius: "var(--radius-sm)",
+                fontSize: "0.8rem",
+                color: "var(--text-secondary)",
+                lineHeight: 1.4,
+                pointerEvents: "none"
+              }}
+            >
               <div style={{ marginBottom: 4 }}>
                 <strong style={{ color: "var(--primary)" }}>💡 Aide : Grille des tarifs</strong>
               </div>
@@ -797,8 +910,18 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
 
           <div style={{ overflowX: "auto" }}>
             {activeGrid.parameters.length === 0 || activeGrid.client_types.length === 0 ? (
-              <div style={{ color: "var(--text-muted)", fontSize: "0.8rem", textAlign: "center", padding: "20px 0", border: "1px dashed var(--border-color)", borderRadius: "var(--radius-sm)" }}>
-                💡 Remplissez d'abord les étapes 1 (Configurations / Types d'événement) et 2 (Types de client) ci-dessus pour générer la grille des tarifs.
+              <div
+                style={{
+                  color: "var(--text-muted)",
+                  fontSize: "0.8rem",
+                  textAlign: "center",
+                  padding: "20px 0",
+                  border: "1px dashed var(--border-color)",
+                  borderRadius: "var(--radius-sm)"
+                }}
+              >
+                💡 Remplissez d'abord les étapes 1 (Configurations / Types d'événement) et 2 (Types de client) ci-dessus pour générer la
+                grille des tarifs.
               </div>
             ) : (
               <div>
@@ -810,24 +933,29 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
                     <tr>
                       <th style={{ background: "transparent", borderBottom: "2px solid var(--border-color)" }}></th>
                       {activeGrid.client_types.map(ct => (
-                        <th key={ct.id} style={{
-                          textAlign: "center",
-                          fontSize: "0.8rem",
-                          fontWeight: 600,
-                          color: "var(--text-primary)",
-                          padding: "10px 8px",
-                          borderBottom: "2px solid var(--border-color)",
-                          background: "var(--bg-main)"
-                        }}>
+                        <th
+                          key={ct.id}
+                          style={{
+                            textAlign: "center",
+                            fontSize: "0.8rem",
+                            fontWeight: 600,
+                            color: "var(--text-primary)",
+                            padding: "10px 8px",
+                            borderBottom: "2px solid var(--border-color)",
+                            background: "var(--bg-main)"
+                          }}
+                        >
                           {ct.name || "(Sans nom)"}
                           {ct.gl_account_code && (
-                            <span style={{
-                              display: "block",
-                              fontSize: "0.7rem",
-                              color: "var(--text-muted)",
-                              fontWeight: "normal",
-                              marginTop: 2
-                            }}>
+                            <span
+                              style={{
+                                display: "block",
+                                fontSize: "0.7rem",
+                                color: "var(--text-muted)",
+                                fontWeight: "normal",
+                                marginTop: 2
+                              }}
+                            >
                               GL: {ct.gl_account_code}
                             </span>
                           )}
@@ -838,37 +966,49 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
                   <tbody>
                     {activeGrid.parameters.map(p => (
                       <tr key={p.id}>
-                        <td className="bold" style={{
-                          whiteSpace: "nowrap",
-                          padding: "12px 10px",
-                          fontWeight: 600,
-                          color: "var(--text-primary)",
-                          borderBottom: "1px solid var(--border-color)"
-                        }}>
+                        <td
+                          className="bold"
+                          style={{
+                            whiteSpace: "nowrap",
+                            padding: "12px 10px",
+                            fontWeight: 600,
+                            color: "var(--text-primary)",
+                            borderBottom: "1px solid var(--border-color)"
+                          }}
+                        >
                           {p.name || "(Sans nom)"}
                         </td>
                         {activeGrid.client_types.map(ct => {
                           const cell = activeGrid.cells.find(c => c.parameter_id === p.id && c.client_type_id === ct.id);
                           return (
-                            <td key={ct.id} style={{
-                              textAlign: "center",
-                              padding: "8px",
-                              borderBottom: "1px solid var(--border-color)"
-                            }}>
-                              <div style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                position: "relative",
-                                width: "100%",
-                                maxWidth: 120
-                              }}>
-                                <span style={{
-                                  position: "absolute",
-                                  left: 10,
-                                  color: "var(--text-muted)",
-                                  fontSize: "0.85rem",
-                                  pointerEvents: "none"
-                                }}>$</span>
+                            <td
+                              key={ct.id}
+                              style={{
+                                textAlign: "center",
+                                padding: "8px",
+                                borderBottom: "1px solid var(--border-color)"
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  position: "relative",
+                                  width: "100%",
+                                  maxWidth: 120
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    position: "absolute",
+                                    left: 10,
+                                    color: "var(--text-muted)",
+                                    fontSize: "0.85rem",
+                                    pointerEvents: "none"
+                                  }}
+                                >
+                                  $
+                                </span>
                                 <input
                                   type="number"
                                   name={`cell-${p.id}-${ct.id}`}
@@ -960,11 +1100,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
                 onChange={e => setLinkedStaff(linkedStaff.map((r, idx) => (idx === i ? { ...r, count: e.target.value } : r)))}
               />
               <div></div>
-              <button
-                type="button"
-                className="btn-icon"
-                onClick={() => setLinkedStaff(linkedStaff.filter((_, idx) => idx !== i))}
-              >
+              <button type="button" className="btn-icon" onClick={() => setLinkedStaff(linkedStaff.filter((_, idx) => idx !== i))}>
                 <DeleteIcon />
               </button>
             </div>
@@ -1016,11 +1152,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
               >
                 <GlAccountOptions />
               </select>
-              <button
-                type="button"
-                className="btn-icon"
-                onClick={() => setLinkedFees(linkedFees.filter((_, idx) => idx !== i))}
-              >
+              <button type="button" className="btn-icon" onClick={() => setLinkedFees(linkedFees.filter((_, idx) => idx !== i))}>
                 <DeleteIcon />
               </button>
             </div>
@@ -1052,11 +1184,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
                 style={{ padding: "8px 12px", fontSize: "0.85rem" }}
                 onChange={e => setLinkedTasks(linkedTasks.map((r, idx) => (idx === i ? { ...r, desc: e.target.value } : r)))}
               />
-              <button
-                type="button"
-                className="btn-icon"
-                onClick={() => setLinkedTasks(linkedTasks.filter((_, idx) => idx !== i))}
-              >
+              <button type="button" className="btn-icon" onClick={() => setLinkedTasks(linkedTasks.filter((_, idx) => idx !== i))}>
                 <DeleteIcon />
               </button>
             </div>

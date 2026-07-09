@@ -11,7 +11,12 @@ import { checkBackupReminder, scheduleAutoBackupWrite } from "../services/backup
 // Free technical services (no fee): paid technical items (location de projecteur, piano à
 // queue, projecteur / équipement informatique) live in appState.settings.services instead, so
 // their amounts stay modifiable from the Équipements settings tab.
-const TECHNICAL_SERVICES: string[] = ["Microphone", "Éclairage de scène", "Musique d'ambiance", "Fichier audio, vidéo ou présentation PowerPoint"];
+const TECHNICAL_SERVICES: string[] = [
+  "Microphone",
+  "Éclairage de scène",
+  "Musique d'ambiance",
+  "Fichier audio, vidéo ou présentation PowerPoint"
+];
 const BAR_DRINK_TYPES: string[] = ["Avec alcool", "Sans alcool"];
 const BAR_SERVICE_TYPES: string[] = ["Service autonome", "Service d'hôtesses", "Distribution de breuvages et nettoyage de coupes"];
 const HOST_DUTY_OPTIONS: string[] = ["Distribution de bouchées"];
@@ -559,7 +564,8 @@ function migrateServicesConfig() {
       if (svc.billing_accounts === undefined) {
         svc.billing_accounts = svc.gl_account_code ? [{ id: generateUid("billing"), label: "", gl_account_code: svc.gl_account_code }] : [];
       }
-      const accounts = svc.billing_accounts.length > 0 ? svc.billing_accounts : [{ id: generateUid("billing"), label: "", gl_account_code: "" }];
+      const accounts =
+        svc.billing_accounts.length > 0 ? svc.billing_accounts : [{ id: generateUid("billing"), label: "", gl_account_code: "" }];
       svc.tarifs = accounts.map((a: any) => ({
         id: a.id,
         label: a.label || "",

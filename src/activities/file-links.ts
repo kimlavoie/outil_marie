@@ -256,7 +256,7 @@ async function renderPdfPreview(act: any) {
     let perm = await record.handle.queryPermission({ mode: "read" });
     if (perm === "granted") {
       const file = await record.handle.getFile();
-      
+
       if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
         previewContainer.innerHTML = `
           <div class="pdf-preview-error">
@@ -266,7 +266,7 @@ async function renderPdfPreview(act: any) {
         `;
         return;
       }
-      
+
       const url = URL.createObjectURL(file);
       previewContainer.innerHTML = `
         <div class="pdf-preview-wrapper">

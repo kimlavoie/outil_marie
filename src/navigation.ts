@@ -519,10 +519,7 @@ function populateDropdowns() {
   if (filterSallePanel) {
     const previousSalleValues = getMultiSelectValues("filter-salle-panel");
     filterSallePanel.innerHTML = appState.settings.rooms
-      .map(
-        r =>
-          `<label class="multi-select-option"><input type="checkbox" value="${escapeHtml(r.name)}" /> ${escapeHtml(r.name)}</label>`
-      )
+      .map(r => `<label class="multi-select-option"><input type="checkbox" value="${escapeHtml(r.name)}" /> ${escapeHtml(r.name)}</label>`)
       .join("");
     setMultiSelectValues("filter-salle-panel", previousSalleValues);
   }

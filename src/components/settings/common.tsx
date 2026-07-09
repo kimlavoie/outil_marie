@@ -203,7 +203,11 @@ export function TarifsEditor({
   return (
     <div className="distribution-list">
       {rows.map((row, i) => (
-        <div key={row.key} className="tarif-editor-block" style={{ border: "1px solid var(--border)", borderRadius: 6, padding: 8, marginBottom: 8 }}>
+        <div
+          key={row.key}
+          className="tarif-editor-block"
+          style={{ border: "1px solid var(--border)", borderRadius: 6, padding: 8, marginBottom: 8 }}
+        >
           <div className="distribution-row" style={{ gridTemplateColumns: "1fr 1.4fr auto", marginBottom: 8 }}>
             <input
               type="text"

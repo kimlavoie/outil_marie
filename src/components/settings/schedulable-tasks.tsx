@@ -178,9 +178,7 @@ export function SchedulableTasksPanel({
             </div>
           </div>
         ))}
-        {tasks.length === 0 && (
-          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Aucune tâche programmable configurée.</p>
-        )}
+        {tasks.length === 0 && <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Aucune tâche programmable configurée.</p>}
       </div>
     </div>
   );
@@ -302,11 +300,7 @@ export function SchedulableTaskModal({ id, onClose, bump }: { id: string | null 
               </div>
 
               {group.conditions.map(cond => (
-                <div
-                  key={cond.id}
-                  className="distribution-row"
-                  style={{ gridTemplateColumns: "1.2fr 1fr 1.2fr auto", marginBottom: 6 }}
-                >
+                <div key={cond.id} className="distribution-row" style={{ gridTemplateColumns: "1.2fr 1fr 1.2fr auto", marginBottom: 6 }}>
                   <select
                     className="select-input"
                     style={{ padding: "8px 12px", fontSize: "0.85rem" }}
