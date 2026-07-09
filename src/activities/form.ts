@@ -593,9 +593,12 @@ function addPlanningTaskRow(task: any) {
   container.insertAdjacentHTML(
     "beforeend",
     `
-    <div id="${rowId}" class="distribution-row" data-task-id="${task.id}" data-auto-generated="${task.auto_generated ? "1" : ""}" style="grid-template-columns: auto 1fr auto; align-items: center;">
+    <div id="${rowId}" class="distribution-row" data-task-id="${task.id}" data-auto-generated="${task.auto_generated ? "1" : ""}" style="grid-template-columns: auto 1fr auto auto; align-items: center;">
       <input type="checkbox" id="${rowId}-done" class="task-done-checkbox" ${task.done ? "checked" : ""}>
       <input type="text" id="${rowId}-desc" class="form-input task-desc-input" value="${escapeHtml(task.description)}" placeholder="Description de la tâche" style="padding: 8px 12px; font-size: 0.85rem; ${doneStyle}">
+      <div style="display: flex; align-items: center; justify-content: center; min-width: 50px;">
+        ${task.auto_generated ? `<span class="badge badge-auto" style="white-space: nowrap;" title="Généré automatiquement par l'application">Généré</span>` : ""}
+      </div>
       <button type="button" class="btn-icon delete-task-row-btn" data-row-id="${rowId}">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
@@ -725,7 +728,7 @@ function generateBillingLines(act: any) {
     if (r.tariff_gl_account_code && r.tariff_amount > 0) {
       const days = r.slots.length;
       const details = `Location salle ${r.room_name} - ${days} jour${days > 1 ? "s" : ""} à ${formatCurrency(r.tariff_amount)}`;
-      addDistributionRow(r.tariff_gl_account_code, r.tariff_amount * days, "", details);
+      addDistributionRow(r.tariff_gl_account_code, r.tariff_amount * days, "", details, true);
     }
   });
 
@@ -747,7 +750,7 @@ function generateBillingLines(act: any) {
       if (overtimeHours > 0) {
         details += ` + ${overtimeHours}h sup. à ${formatCurrency(overtimeRate)}/h`;
       }
-      addDistributionRow(glAccountCode, amount, "", details);
+      addDistributionRow(glAccountCode, amount, "", details, true);
     }
   });
 
@@ -767,7 +770,7 @@ function generateBillingLines(act: any) {
       const details = isHourly
         ? `${count} x ${service.name} de ${hours}h à ${formatCurrency(rate)}/h`
         : `${count} x ${service.name} à ${formatCurrency(rate)}`;
-      addDistributionRow(glAccountCode, amount, "", details);
+      addDistributionRow(glAccountCode, amount, "", details, true);
     }
   });
 
@@ -775,7 +778,7 @@ function generateBillingLines(act: any) {
     const glCode = row.querySelector<HTMLInputElement>(".fee-gl-select-wrapper .searchable-select-value")!.value;
     const amount = parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input")!.value) || 0;
     const description = row.querySelector<HTMLInputElement>(".fee-desc-input")?.value.trim() || "";
-    if (glCode && amount > 0) addDistributionRow(glCode, amount, "", description);
+    if (glCode && amount > 0) addDistributionRow(glCode, amount, "", description, true);
   });
 
   if (document.querySelectorAll("#form-distribution-list .distribution-row").length === 0) {
@@ -851,7 +854,7 @@ function fillActivityFormFields(act: any) {
 
   // Load distributions
   (act.distributions || []).forEach((d: any) => {
-    addDistributionRow(d.account_code, d.amount, d.reference, d.details);
+    addDistributionRow(d.account_code, d.amount, d.reference, d.details, d.auto_generated);
   });
 
   renderFileLinkStatus("form", act);

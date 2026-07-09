@@ -73,7 +73,7 @@ async function pickAndLinkFile(activityId: string, kind: "submission" | "contrac
   }
   let handle;
   try {
-    [handle] = await window.showOpenFilePicker(pickerOptions);
+    [handle] = await (window as any).showOpenFilePicker(pickerOptions);
   } catch {
     return; // user cancelled the picker
   }
