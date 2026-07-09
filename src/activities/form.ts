@@ -234,7 +234,12 @@ function initFormHandlers() {
 
   // Phone number masks
   maskPhoneInput(el("form-activity-manager-phone"));
-  maskPhoneInput(el("form-activity-client-phone"));
+
+  // Manager "Fonction" = Externe reveals company/address fields
+  el("form-activity-manager-type").addEventListener("change", e => {
+    const externalGroup = el("form-activity-manager-external-group");
+    externalGroup.style.display = (e.target as HTMLInputElement).value === "externe" ? "block" : "none";
+  });
 
   // Estimation / Soumission mode toggle
   initActivityModeToggle();
@@ -340,13 +345,26 @@ function buildNewActivityRecord(id: string, name: string, mode: string) {
   return {
     id,
     responsable: "",
+    responsable_first_name: "",
+    responsable_last_name: "",
     name,
     attendees_count: 0,
     date_start: "",
     date_end: "",
     description: "",
     coba: "",
-    activity_manager: { first_name: "", last_name: "", type: "employe", phone: "", email: "" },
+    activity_manager: {
+      first_name: "",
+      last_name: "",
+      type: "employe",
+      phone: "",
+      email: "",
+      company_name: "",
+      address: "",
+      city: "",
+      province: "",
+      postal_code: ""
+    },
     client_type: "",
     reservations: [],
     department: "",
@@ -355,7 +373,6 @@ function buildNewActivityRecord(id: string, name: string, mode: string) {
     distributions: [],
     state: "brouillon",
     mode,
-    client: { first_name: "", last_name: "", phone: "", email: "" },
     submission: { file_link_id: "", generated_at: "", sent_at: "" },
     contract: { file_link_id: "", approved_at: "" },
     form: { file_link_id: "", linked_at: "" },
@@ -432,7 +449,7 @@ function applyActivityFormMode(mode: string, locked: boolean) {
   });
   toggle.classList.toggle("locked", locked);
   panel.classList.toggle("mode-estimation", mode === "estimation");
-  el("activity-mode-locked-hint").style.display = locked ? "block" : "none";
+  el("activity-mode-group").style.display = locked ? "none" : "block";
 }
 
 function getActivityFormMode() {
@@ -501,13 +518,13 @@ function updateFormTabIndicators(act: any) {
     if (mode === "estimation") {
       isComplete = nameFilled && hasReservations;
     } else {
-      const clientLastFilled = !!act.client?.last_name?.trim();
-      const clientFirstFilled = !!act.client?.first_name?.trim();
-      isComplete = nameFilled && hasReservations && (clientLastFilled || clientFirstFilled);
+      const managerLastFilled = !!act.activity_manager?.last_name?.trim();
+      const managerFirstFilled = !!act.activity_manager?.first_name?.trim();
+      isComplete = nameFilled && hasReservations && (managerLastFilled || managerFirstFilled);
     }
-    
+
     subInd.innerHTML = isComplete ? "🟢" : "🟡";
-    subInd.title = isComplete ? "Données complètes" : "Données incomplètes (nom du client ou réservation manquante)";
+    subInd.title = isComplete ? "Données complètes" : "Données incomplètes (responsable de l'activité ou réservation manquante)";
   }
 
   // 3. Planification tab
@@ -550,6 +567,54 @@ function updateFormTabIndicators(act: any) {
     notesInd.innerHTML = hasNotes ? "📝" : "";
     notesInd.title = hasNotes ? "Contient des notes" : "Aucune note";
   }
+
+  updateFormAccordionCompletion(act);
+}
+
+// Marks each accordion section's summary with a checkmark once all of its fields are filled in.
+function setAccordionCheckComplete(checkId: string, complete: boolean) {
+  const check = document.getElementById(checkId);
+  if (check) check.classList.toggle("complete", complete);
+}
+
+function updateFormAccordionCompletion(act: any) {
+  const isSoumission = (act.mode || "estimation") !== "estimation";
+
+  const nameFilled = !!act.name?.trim();
+  const generalComplete = isSoumission
+    ? nameFilled && !!act.attendees_count && !!act.description?.trim()
+    : nameFilled;
+  setAccordionCheckComplete("accordion-check-general", generalComplete);
+
+  const manager = act.activity_manager || {};
+  let managerComplete =
+    !!manager.first_name?.trim() &&
+    !!manager.last_name?.trim() &&
+    !!manager.type &&
+    !!manager.phone?.trim() &&
+    !!manager.email?.trim();
+  if (managerComplete && manager.type === "externe") {
+    managerComplete =
+      !!manager.company_name?.trim() &&
+      !!manager.address?.trim() &&
+      !!manager.city?.trim() &&
+      !!manager.province?.trim() &&
+      !!manager.postal_code?.trim();
+  }
+  setAccordionCheckComplete("accordion-check-manager", managerComplete);
+
+  const billingComplete =
+    !!act.responsable_first_name?.trim() && !!act.responsable_last_name?.trim() && !!act.client_type && !!act.department;
+  setAccordionCheckComplete("accordion-check-billing", billingComplete);
+
+  const roomsComplete = (act.reservations || []).length > 0;
+  setAccordionCheckComplete("accordion-check-rooms", roomsComplete);
+
+  let eventComplete = !!act.event_type;
+  if (eventComplete && act.event_type === "autre") {
+    eventComplete = !!act.event_type_other?.trim();
+  }
+  setAccordionCheckComplete("accordion-check-eventtype", eventComplete);
 }
 
 // Applies `patchFn` to the activity `id`, persists it, and refreshes the state bar / list —
@@ -856,11 +921,8 @@ function fillActivityFormFields(act: any) {
   el("form-activity-coba").value = act.coba || "";
   el("form-activity-name").value = act.name;
   el("form-activity-attendees").value = act.attendees_count || "";
-  el("form-activity-client-firstname").value = act.client?.first_name || "";
-  el("form-activity-client-lastname").value = act.client?.last_name || "";
-  el("form-activity-client-phone").value = act.client?.phone || "";
-  el("form-activity-client-email").value = act.client?.email || "";
-  el("form-activity-responsable").value = act.responsable;
+  el("form-activity-responsable-firstname").value = act.responsable_first_name || "";
+  el("form-activity-responsable-lastname").value = act.responsable_last_name || "";
   el("form-activity-client-type").value = act.client_type;
   el("form-activity-description").value = act.description || "";
   el("form-activity-notes").value = act.notes || "";
@@ -869,6 +931,12 @@ function fillActivityFormFields(act: any) {
   el("form-activity-manager-type").value = act.activity_manager?.type || "employe";
   el("form-activity-manager-phone").value = act.activity_manager?.phone || "";
   el("form-activity-manager-email").value = act.activity_manager?.email || "";
+  el("form-activity-manager-company").value = act.activity_manager?.company_name || "";
+  el("form-activity-manager-address").value = act.activity_manager?.address || "";
+  el("form-activity-manager-city").value = act.activity_manager?.city || "";
+  el("form-activity-manager-province").value = act.activity_manager?.province || "";
+  el("form-activity-manager-postal-code").value = act.activity_manager?.postal_code || "";
+  el("form-activity-manager-external-group").style.display = act.activity_manager?.type === "externe" ? "block" : "none";
   el("form-activity-reservations").innerHTML = "";
   (act.reservations || []).forEach((r: any) => addReservationCard(r));
   // A brand-new activity starts with one réservation and one créneau pre-filled, so the user

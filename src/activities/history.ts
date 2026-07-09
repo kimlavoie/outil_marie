@@ -356,7 +356,8 @@ function computeActivityDiff(oldAct: any, newAct: any) {
 
   // 1. Core text fields
   addDiff("Nom de l'activité", oldAct.name, newAct.name);
-  addDiff("Responsable facturation", oldAct.responsable, newAct.responsable);
+  addDiff("Responsable facturation: Prénom", oldAct.responsable_first_name, newAct.responsable_first_name);
+  addDiff("Responsable facturation: Nom", oldAct.responsable_last_name, newAct.responsable_last_name);
   addDiff("Références COBA", oldAct.coba, newAct.coba);
   addDiff("Département", oldAct.department, newAct.department);
 
@@ -389,23 +390,20 @@ function computeActivityDiff(oldAct: any, newAct: any) {
   };
   addDiff("Mode", getModeLabel(oldAct.mode), getModeLabel(newAct.mode));
 
-  // 2. Client contact info
-  const oldClient = oldAct.client || {};
-  const newClient = newAct.client || {};
-  addDiff("Client: Prénom", oldClient.first_name, newClient.first_name);
-  addDiff("Client: Nom", oldClient.last_name, newClient.last_name);
-  addDiff("Client: Téléphone", oldClient.phone, newClient.phone);
-  addDiff("Client: Courriel", oldClient.email, newClient.email);
-
-  // 3. Activity manager contact info
+  // 2. Activity manager contact info
   const oldManager = oldAct.activity_manager || {};
   const newManager = newAct.activity_manager || {};
   addDiff("Resp. Activité: Prénom", oldManager.first_name, newManager.first_name);
   addDiff("Resp. Activité: Nom", oldManager.last_name, newManager.last_name);
   addDiff("Resp. Activité: Téléphone", oldManager.phone, newManager.phone);
   addDiff("Resp. Activité: Courriel", oldManager.email, newManager.email);
+  addDiff("Resp. Activité: Entreprise", oldManager.company_name, newManager.company_name);
+  addDiff("Resp. Activité: Adresse", oldManager.address, newManager.address);
+  addDiff("Resp. Activité: Ville", oldManager.city, newManager.city);
+  addDiff("Resp. Activité: Province", oldManager.province, newManager.province);
+  addDiff("Resp. Activité: Code postal", oldManager.postal_code, newManager.postal_code);
 
-  // 4. Reservations summary
+  // 3. Reservations summary
   const getReservationsSummary = (act: any) => {
     if (!act.reservations || act.reservations.length === 0) return "Aucune salle";
     return act.reservations
@@ -418,7 +416,7 @@ function computeActivityDiff(oldAct: any, newAct: any) {
   };
   addDiff("Réservations de salles", getReservationsSummary(oldAct), getReservationsSummary(newAct));
 
-  // 5. Distributions summary
+  // 4. Distributions summary
   const getDistributionsSummary = (act: any) => {
     if (!act.distributions || act.distributions.length === 0) return "Aucune ventilation";
     return act.distributions

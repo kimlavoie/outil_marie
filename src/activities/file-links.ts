@@ -140,9 +140,11 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
   if (kind === "submission") {
     const sent = act.submission.sent_at;
     transitionBtnHtml = `<button type="button" id="mark-submitted-btn" class="btn ${sent ? "btn-secondary" : "btn-primary"}">${sent ? "Annuler Soumise au client" : "Marquer comme Soumise au client"}</button>`;
+    document.getElementById("accordion-check-submission-file")?.classList.toggle("complete", !!sent);
   } else if (kind === "contract") {
     const approved = act.contract.approved_at;
     transitionBtnHtml = `<button type="button" id="mark-approved-btn" class="btn ${approved ? "btn-secondary" : "btn-primary"}">${approved ? "Annuler Approuvée" : "Marquer comme Approuvée"}</button>`;
+    document.getElementById("accordion-check-contract-file")?.classList.toggle("complete", !!approved);
   }
 
   container.innerHTML = `

@@ -3051,6 +3051,77 @@ tr.activity-row.selected td {
   border-style: dashed !important;
 }
 
+/* Activity form accordion sections */
+.form-accordion-section {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+  overflow: hidden;
+  transition: var(--transition-smooth);
+  margin-bottom: 12px;
+}
+
+.form-accordion-section[open] {
+  border-color: var(--primary);
+}
+
+.form-accordion-summary {
+  padding: 14px 18px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+
+.form-accordion-summary::-webkit-details-marker {
+  display: none;
+}
+
+.form-accordion-summary:hover {
+  background-color: var(--bg-main);
+}
+
+.form-accordion-content {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.form-accordion-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-color);
+  color: transparent;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+  transition: var(--transition-smooth);
+}
+
+.form-accordion-check-spacer {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.form-accordion-check.complete {
+  border-color: var(--success);
+  background-color: var(--success);
+  color: #fff;
+}
+
+.form-accordion-check.complete::before {
+  content: "✓";
+}
+
 /* Help Center styles */
 .help-section {
   border: 1px solid var(--border-color);

@@ -147,7 +147,6 @@ function computeActivityFinancials(act: any) {
 // financier), rendered offscreen into #print-activity-sheet and shown only via @media print.
 function buildPrintActivitySheetHtml(act: any) {
   const fin = computeActivityFinancials(act);
-  const client = act.client || {};
   const manager = act.activity_manager || {};
   const today = new Date();
   const generatedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`;
@@ -182,21 +181,23 @@ function buildPrintActivitySheetHtml(act: any) {
     </div>
 
     <div class="print-sheet-section">
-      <h2>Informations client</h2>
-      <div class="print-sheet-grid">
-        <div><strong>Nom :</strong> ${escapeHtml(client.first_name)} ${escapeHtml(client.last_name)}</div>
-        <div><strong>Type de client :</strong> ${act.client_type === "interne" ? "Interne" : "Externe"}</div>
-        <div><strong>Téléphone :</strong> ${escapeHtml(client.phone) || "-"}</div>
-        <div><strong>Courriel :</strong> ${escapeHtml(client.email) || "-"}</div>
-      </div>
-    </div>
-
-    <div class="print-sheet-section">
       <h2>Gestionnaire responsable</h2>
       <div class="print-sheet-grid">
         <div><strong>Nom :</strong> ${escapeHtml(manager.first_name)} ${escapeHtml(manager.last_name)}</div>
+        <div><strong>Type de client :</strong> ${act.client_type === "interne" ? "Interne" : "Externe"}</div>
         <div><strong>Téléphone :</strong> ${escapeHtml(manager.phone) || "-"}</div>
         <div><strong>Courriel :</strong> ${escapeHtml(manager.email) || "-"}</div>
+        ${
+          manager.type === "externe"
+            ? `
+        <div><strong>Entreprise :</strong> ${escapeHtml(manager.company_name) || "-"}</div>
+        <div><strong>Adresse :</strong> ${escapeHtml(manager.address) || "-"}</div>
+        <div><strong>Ville :</strong> ${escapeHtml(manager.city) || "-"}</div>
+        <div><strong>Province :</strong> ${escapeHtml(manager.province) || "-"}</div>
+        <div><strong>Code postal :</strong> ${escapeHtml(manager.postal_code) || "-"}</div>
+        `
+            : ""
+        }
       </div>
     </div>
 
@@ -231,7 +232,6 @@ function buildPrintActivitySheetHtml(act: any) {
 // in on the form — an activity with no client contact info, no notes, etc. simply omits those
 // rows instead of showing empty placeholders.
 function buildActivityDetailsHtml(act: any) {
-  const client = act.client || {};
   const manager = act.activity_manager || {};
   const eventTypeLabel = (() => {
     if (!act.event_type) return "";
@@ -250,16 +250,19 @@ function buildActivityDetailsHtml(act: any) {
     ["Type de client", act.client_type === "interne" ? "Interne" : act.client_type === "externe" ? "Externe" : ""]
   ].filter(([, value]) => isNonEmptyString(value));
 
-  const clientRows = [
-    ["Nom", [client.first_name, client.last_name].filter(Boolean).join(" ")],
-    ["Téléphone", client.phone],
-    ["Courriel", client.email]
-  ].filter(([, value]) => isNonEmptyString(value));
-
   const managerRows = [
     ["Nom", [manager.first_name, manager.last_name].filter(Boolean).join(" ")],
     ["Téléphone", manager.phone],
-    ["Courriel", manager.email]
+    ["Courriel", manager.email],
+    ...(manager.type === "externe"
+      ? [
+          ["Entreprise", manager.company_name],
+          ["Adresse", manager.address],
+          ["Ville", manager.city],
+          ["Province", manager.province],
+          ["Code postal", manager.postal_code]
+        ]
+      : [])
   ].filter(([, value]) => isNonEmptyString(value));
 
   const reservations = act.reservations || [];
@@ -297,19 +300,6 @@ function buildActivityDetailsHtml(act: any) {
       <h2>Informations générales</h2>
       <div class="print-sheet-grid">
         ${infoRows.map(([label, value]) => `<div><strong>${label} :</strong> ${escapeHtml(value)}</div>`).join("")}
-      </div>
-    </div>
-    `
-        : ""
-    }
-
-    ${
-      clientRows.length > 0
-        ? `
-    <div class="print-sheet-section">
-      <h2>Informations client</h2>
-      <div class="print-sheet-grid">
-        ${clientRows.map(([label, value]) => `<div><strong>${label} :</strong> ${escapeHtml(value)}</div>`).join("")}
       </div>
     </div>
     `
@@ -667,11 +657,9 @@ function autoSaveActivityForm() {
 
   const attendeesInput = el("form-activity-attendees").value.trim();
   const attendeesCount = parseInt(attendeesInput) || 0;
-  const clientFirstName = el("form-activity-client-firstname").value.trim();
-  const clientLastName = el("form-activity-client-lastname").value.trim();
-  const clientPhone = el("form-activity-client-phone").value.trim();
-  const clientEmail = el("form-activity-client-email").value.trim();
-  const responsable = el("form-activity-responsable").value.trim();
+  const responsableFirstName = el("form-activity-responsable-firstname").value.trim();
+  const responsableLastName = el("form-activity-responsable-lastname").value.trim();
+  const responsable = [responsableFirstName, responsableLastName].filter(Boolean).join(" ");
   const clientType = el("form-activity-client-type").value;
   const description = el("form-activity-description").value.trim();
   const notes = el("form-activity-notes").value.trim();
@@ -681,6 +669,11 @@ function autoSaveActivityForm() {
   const managerType = el("form-activity-manager-type").value;
   const managerPhone = el("form-activity-manager-phone").value.trim();
   const managerEmail = el("form-activity-manager-email").value.trim();
+  const managerCompany = el("form-activity-manager-company").value.trim();
+  const managerAddress = el("form-activity-manager-address").value.trim();
+  const managerCity = el("form-activity-manager-city").value.trim();
+  const managerProvince = el("form-activity-manager-province").value.trim();
+  const managerPostalCode = el("form-activity-manager-postal-code").value.trim();
   const reservations = collectReservationsFromForm();
   const { date_start: start, date_end: end } = getAggregateEventDates(reservations);
   const dept = el("form-activity-dept").value;
@@ -707,9 +700,10 @@ function autoSaveActivityForm() {
     mode: getActivityFormMode(),
     coba,
     responsable,
+    responsable_first_name: responsableFirstName,
+    responsable_last_name: responsableLastName,
     name,
     attendees_count: attendeesCount,
-    client: { first_name: clientFirstName, last_name: clientLastName, phone: clientPhone, email: clientEmail },
     date_start: start,
     date_end: end,
     description,
@@ -719,7 +713,12 @@ function autoSaveActivityForm() {
       last_name: managerLastName,
       type: managerType,
       phone: managerPhone,
-      email: managerEmail
+      email: managerEmail,
+      company_name: managerType === "externe" ? managerCompany : "",
+      address: managerType === "externe" ? managerAddress : "",
+      city: managerType === "externe" ? managerCity : "",
+      province: managerType === "externe" ? managerProvince : "",
+      postal_code: managerType === "externe" ? managerPostalCode : ""
     },
     client_type: clientType,
     reservations,

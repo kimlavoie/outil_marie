@@ -402,6 +402,8 @@ function sanitizeActivitiesList(rawActivities: any[]): any[] {
     .map(act => {
       if (typeof act.name !== "string") act.name = "";
       if (typeof act.responsable !== "string") act.responsable = "";
+      if (typeof act.responsable_first_name !== "string") act.responsable_first_name = "";
+      if (typeof act.responsable_last_name !== "string") act.responsable_last_name = "";
       if (!Array.isArray(act.distributions)) act.distributions = [];
       if (!Array.isArray(act.reservations)) act.reservations = [];
       act.distributions = act.distributions.filter((d: any) => d && typeof d === "object");
@@ -807,9 +809,35 @@ function migrateActivities() {
 
     if (act.description === undefined) act.description = "";
     if (act.coba === undefined) act.coba = "";
-    if (!act.activity_manager) {
-      act.activity_manager = { first_name: "", last_name: "", type: "employe", phone: "", email: "" };
+
+    // Legacy: "responsable" (billing responsable) was a single free-text name field, now split
+    // into first/last name. Best-effort split on the first space so existing data isn't lost.
+    if (act.responsable_first_name === undefined || act.responsable_last_name === undefined) {
+      const legacyName = (act.responsable || "").trim();
+      const spaceIdx = legacyName.indexOf(" ");
+      act.responsable_first_name = spaceIdx === -1 ? legacyName : legacyName.slice(0, spaceIdx);
+      act.responsable_last_name = spaceIdx === -1 ? "" : legacyName.slice(spaceIdx + 1);
     }
+
+    if (!act.activity_manager) {
+      act.activity_manager = {
+        first_name: "",
+        last_name: "",
+        type: "employe",
+        phone: "",
+        email: "",
+        company_name: "",
+        address: "",
+        city: "",
+        province: "",
+        postal_code: ""
+      };
+    }
+    if (act.activity_manager.company_name === undefined) act.activity_manager.company_name = "";
+    if (act.activity_manager.address === undefined) act.activity_manager.address = "";
+    if (act.activity_manager.city === undefined) act.activity_manager.city = "";
+    if (act.activity_manager.province === undefined) act.activity_manager.province = "";
+    if (act.activity_manager.postal_code === undefined) act.activity_manager.postal_code = "";
 
     if (act.event_type === undefined) act.event_type = "";
     if (act.event_type_other === undefined) act.event_type_other = "";
@@ -833,7 +861,7 @@ function migrateActivities() {
     // Legacy activities predate the Estimation/Soumission mode toggle and already carry full
     // submission data, so they default to "soumission" rather than the lighter estimation mode.
     if (act.mode === undefined) act.mode = "soumission";
-    if (!act.client) act.client = { first_name: "", last_name: "", phone: "", email: "" };
+    delete act.client;
     (act.rooms || []).forEach((r: any) => {
       (r.staff || []).forEach((s: any) => {
         if (s.overtime_hours === undefined) s.overtime_hours = 0;

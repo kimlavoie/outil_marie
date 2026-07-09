@@ -335,11 +335,11 @@
                         <label for="activities-select-all" class="sr-only">Tout sélectionner</label>
                         <input type="checkbox" id="activities-select-all" style="cursor: pointer" />
                       </th>
-                      <th data-sort="id">N° Activité</th>
-                      <th data-sort="name">Nom de l'Activité</th>
-                      <th data-sort="responsable">Responsable</th>
                       <th data-sort="date_start">Dates / Occ.</th>
+                      <th data-sort="coba">COBA</th>
+                      <th data-sort="name">Nom de l'Activité</th>
                       <th data-sort="room_name">Salle</th>
+                      <th data-sort="responsable">Responsable</th>
                       <th data-sort="reference">RI / Facture</th>
                       <th data-sort="totalRev">Revenu Saisi</th>
                       <th data-sort="sansFrais">Sans Frais</th>
@@ -632,73 +632,137 @@
 
           <!-- ============ TAB: Soumission et contrat ============ -->
           <div id="activity-tab-panel-submission" class="activity-tab-panel active">
-            <!-- Mode: Estimation (calcul allégé) vs Soumission (formulaire complet) -->
-            <div class="form-group">
+            <!-- Mode: Estimation (calcul allégé) vs Soumission (formulaire complet) — hidden once
+                 the activity has moved past Brouillon, since the mode is then locked to Soumission. -->
+            <div class="form-group" id="activity-mode-group">
               <span class="field-label" id="activity-mode-toggle-label">Mode</span>
               <div id="activity-mode-toggle" class="pill-toggle-group" role="group" aria-labelledby="activity-mode-toggle-label">
                 <button type="button" class="pill-toggle" data-mode="estimation">Estimation</button>
                 <button type="button" class="pill-toggle" data-mode="soumission">Soumission</button>
               </div>
-              <div id="activity-mode-locked-hint" style="margin-top: 6px; font-size: 0.78rem; color: var(--text-muted); display: none">
-                Le mode est verrouillé sur « Soumission » une fois l'activité soumise ou approuvée.
-              </div>
             </div>
 
-            <div class="form-group">
-              <label for="form-activity-id" style="display: flex; align-items: center; gap: 6px;">
-                Numéro d'activité <span class="badge badge-auto">Généré automatiquement</span>
-              </label>
-              <input type="text" id="form-activity-id" class="form-input input-auto" placeholder="Généré automatiquement" disabled />
-            </div>
-
-            <div class="form-group">
-              <label for="form-activity-coba">Références COBA collégial</label>
-              <input type="text" id="form-activity-coba" class="form-input" placeholder="Ex: 123456; 789012" />
-            </div>
-
-            <div class="form-group">
-              <label for="form-activity-name">Nom de l'activité *</label>
-              <input type="text" id="form-activity-name" class="form-input" required placeholder="Ex: Réunion SCOUTS" />
-            </div>
-
-            <div class="form-group estimation-hide">
-              <label for="form-activity-attendees">Nombre de personnes attendues</label>
-              <input type="number" id="form-activity-attendees" class="form-input" min="0" placeholder="Ex: 50" />
-            </div>
-
-            <!-- Identification du client -->
-            <div class="estimation-hide">
-              <div class="form-section-title">Identification du client</div>
-              <div class="form-group-row">
-                <div class="form-group">
-                  <label for="form-activity-client-firstname">Prénom du responsable</label>
-                  <input type="text" id="form-activity-client-firstname" class="form-input" placeholder="Prénom" />
+            <!-- Informations générales -->
+            <details class="form-accordion-section" id="accordion-section-general">
+              <summary class="form-accordion-summary">
+                <span class="form-accordion-check" id="accordion-check-general"></span>
+                <span>Informations générales</span>
+              </summary>
+              <div class="form-accordion-content">
+                <div class="form-group-row">
+                  <div class="form-group">
+                    <label for="form-activity-id" style="display: flex; align-items: center; gap: 6px;">
+                      Numéro d'activité <span class="badge badge-auto">Auto</span>
+                    </label>
+                    <input type="text" id="form-activity-id" class="form-input input-auto" placeholder="Généré automatiquement" disabled />
+                  </div>
+                  <div class="form-group">
+                    <label for="form-activity-coba">Références COBA collégial</label>
+                    <input type="text" id="form-activity-coba" class="form-input" placeholder="Ex: 123456; 789012" />
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label for="form-activity-client-lastname">Nom du responsable</label>
-                  <input type="text" id="form-activity-client-lastname" class="form-input" placeholder="Nom" />
+
+                <div class="form-group-row">
+                  <div class="form-group">
+                    <label for="form-activity-name">Nom de l'activité *</label>
+                    <input type="text" id="form-activity-name" class="form-input" required placeholder="Ex: Réunion SCOUTS" />
+                  </div>
+                  <div class="form-group estimation-hide">
+                    <label for="form-activity-attendees">Nombre de personnes attendues</label>
+                    <input type="number" id="form-activity-attendees" class="form-input" min="0" placeholder="Ex: 50" />
+                  </div>
+                </div>
+
+                <div class="form-group estimation-hide">
+                  <label for="form-activity-description">Description de l'activité</label>
+                  <textarea id="form-activity-description" class="form-input" rows="2" placeholder="Décrivez l'activité..."></textarea>
                 </div>
               </div>
-              <div class="form-group-row">
-                <div class="form-group">
-                  <label for="form-activity-client-phone">Téléphone</label>
-                  <input type="tel" id="form-activity-client-phone" class="form-input" placeholder="Ex: 514-555-1234" />
+            </details>
+
+            <!-- Responsable de l'activité -->
+            <details class="form-accordion-section estimation-hide" id="accordion-section-manager">
+              <summary class="form-accordion-summary">
+                <span class="form-accordion-check" id="accordion-check-manager"></span>
+                <span>Responsable de l'activité</span>
+              </summary>
+              <div class="form-accordion-content">
+                <div class="form-group-row">
+                  <div class="form-group">
+                    <label for="form-activity-manager-firstname">Prénom</label>
+                    <input type="text" id="form-activity-manager-firstname" class="form-input" placeholder="Prénom" />
+                  </div>
+                  <div class="form-group">
+                    <label for="form-activity-manager-lastname">Nom</label>
+                    <input type="text" id="form-activity-manager-lastname" class="form-input" placeholder="Nom" />
+                  </div>
+                </div>
+                <div class="form-group-row">
+                  <div class="form-group">
+                    <label for="form-activity-manager-type">Fonction</label>
+                    <select id="form-activity-manager-type" class="select-input" style="padding: 10px 14px">
+                      <option value="">Sélectionner...</option>
+                      <option value="employe">Employé</option>
+                      <option value="etudiant">Étudiant</option>
+                      <option value="externe">Externe</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="form-activity-manager-phone">Numéro de téléphone</label>
+                    <input type="tel" id="form-activity-manager-phone" class="form-input" placeholder="Ex: 514-555-1234" />
+                  </div>
                 </div>
                 <div class="form-group">
-                  <label for="form-activity-client-email">Courriel</label>
-                  <input type="email" id="form-activity-client-email" class="form-input" placeholder="nom@exemple.com" />
+                  <label for="form-activity-manager-email">Courriel</label>
+                  <input type="email" id="form-activity-manager-email" class="form-input" placeholder="nom@exemple.com" />
+                </div>
+
+                <!-- Shown only when Fonction = Externe -->
+                <div id="form-activity-manager-external-group" style="display: none">
+                  <div class="form-group">
+                    <label for="form-activity-manager-company">Nom de l'entreprise</label>
+                    <input type="text" id="form-activity-manager-company" class="form-input" placeholder="Ex: Entreprise inc." />
+                  </div>
+                  <div class="form-group">
+                    <label for="form-activity-manager-address">Adresse</label>
+                    <input type="text" id="form-activity-manager-address" class="form-input" placeholder="Ex: 123 rue Principale" />
+                  </div>
+                  <div class="form-group-row">
+                    <div class="form-group">
+                      <label for="form-activity-manager-city">Ville</label>
+                      <input type="text" id="form-activity-manager-city" class="form-input" placeholder="Ex: Montréal" />
+                    </div>
+                    <div class="form-group">
+                      <label for="form-activity-manager-province">Province</label>
+                      <input type="text" id="form-activity-manager-province" class="form-input" placeholder="Ex: QC" />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="form-activity-manager-postal-code">Code postal</label>
+                    <input type="text" id="form-activity-manager-postal-code" class="form-input" placeholder="Ex: H1A 1A1" />
+                  </div>
                 </div>
               </div>
-            </div>
+            </details>
 
-            <!-- Facturation -->
-            <div class="estimation-hide">
-              <div class="form-section-title">Facturation</div>
-              <div class="form-group-row">
-                <div class="form-group">
-                  <label for="form-activity-responsable">Responsable Facturation</label>
-                  <input type="text" id="form-activity-responsable" class="form-input" placeholder="Ex: M. Dupont" />
+            <!-- Responsable de la facturation -->
+            <details class="form-accordion-section estimation-hide" id="accordion-section-billing">
+              <summary class="form-accordion-summary">
+                <span class="form-accordion-check" id="accordion-check-billing"></span>
+                <span>Responsable de la facturation</span>
+              </summary>
+              <div class="form-accordion-content">
+                <div class="form-group-row">
+                  <div class="form-group">
+                    <label for="form-activity-responsable-firstname">Prénom du responsable</label>
+                    <input type="text" id="form-activity-responsable-firstname" class="form-input" placeholder="Prénom" />
+                  </div>
+                  <div class="form-group">
+                    <label for="form-activity-responsable-lastname">Nom du responsable</label>
+                    <input type="text" id="form-activity-responsable-lastname" class="form-input" placeholder="Nom" />
+                  </div>
                 </div>
+
                 <div class="form-group">
                   <label for="form-activity-client-type">Client interne ou externe</label>
                   <select id="form-activity-client-type" class="select-input" style="padding: 10px 14px">
@@ -707,130 +771,112 @@
                     <option value="externe">Externe</option>
                   </select>
                 </div>
-              </div>
 
-              <div class="form-group">
-                <label for="form-activity-dept">Département</label>
-                <select id="form-activity-dept" class="select-input" style="padding: 10px 14px">
-                  <!-- Populated dynamically -->
-                </select>
-              </div>
-            </div>
-
-            <!-- Description -->
-            <div class="form-group estimation-hide">
-              <label for="form-activity-description">Description de l'activité</label>
-              <textarea id="form-activity-description" class="form-input" rows="3" placeholder="Décrivez l'activité..."></textarea>
-            </div>
-
-            <!-- Responsable de l'activité -->
-            <div class="estimation-hide">
-              <div class="form-section-title">Responsable de l'activité</div>
-              <div class="form-group-row">
                 <div class="form-group">
-                  <label for="form-activity-manager-firstname">Prénom</label>
-                  <input type="text" id="form-activity-manager-firstname" class="form-input" placeholder="Prénom" />
-                </div>
-                <div class="form-group">
-                  <label for="form-activity-manager-lastname">Nom</label>
-                  <input type="text" id="form-activity-manager-lastname" class="form-input" placeholder="Nom" />
-                </div>
-              </div>
-              <div class="form-group-row">
-                <div class="form-group">
-                  <label for="form-activity-manager-type">Fonction</label>
-                  <select id="form-activity-manager-type" class="select-input" style="padding: 10px 14px">
-                    <option value="">Sélectionner...</option>
-                    <option value="employe">Employé</option>
-                    <option value="etudiant">Étudiant</option>
-                    <option value="externe">Externe</option>
+                  <label for="form-activity-dept">Département</label>
+                  <select id="form-activity-dept" class="select-input" style="padding: 10px 14px">
+                    <!-- Populated dynamically -->
                   </select>
                 </div>
-                <div class="form-group">
-                  <label for="form-activity-manager-phone">Numéro de téléphone</label>
-                  <input type="tel" id="form-activity-manager-phone" class="form-input" placeholder="Ex: 514-555-1234" />
-                </div>
               </div>
-              <div class="form-group">
-                <label for="form-activity-manager-email">Courriel</label>
-                <input type="email" id="form-activity-manager-email" class="form-input" placeholder="nom@exemple.com" />
-              </div>
-            </div>
+            </details>
 
             <!-- Réservations de salle -->
-            <div class="form-section-title">Réservations de salle</div>
-            <div id="form-activity-reservations">
-              <!-- One reservation card per réservation, populated dynamically -->
-            </div>
-            <div id="form-activity-room-conflicts" style="display: none; margin-top: 8px; margin-bottom: 4px"></div>
-            <div style="margin-top: 8px; margin-bottom: 12px">
-              <button type="button" id="add-reservation-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
-                + Ajouter une réservation
-              </button>
-            </div>
+            <details class="form-accordion-section" id="accordion-section-rooms">
+              <summary class="form-accordion-summary">
+                <span class="form-accordion-check" id="accordion-check-rooms"></span>
+                <span>Réservation de salles</span>
+              </summary>
+              <div class="form-accordion-content">
+                <div id="form-activity-reservations">
+                  <!-- One reservation card per réservation, populated dynamically -->
+                </div>
+                <div id="form-activity-room-conflicts" style="display: none; margin-top: 8px; margin-bottom: 4px"></div>
+                <div style="margin-top: 8px; margin-bottom: 12px">
+                  <button type="button" id="add-reservation-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem">
+                    + Ajouter une réservation
+                  </button>
+                </div>
 
-            <!-- Help text for days of the week (based on the overall span across all réservations) -->
-            <div
-              id="form-activity-dates-helper"
-              style="
-                margin-top: -8px;
-                margin-bottom: 12px;
-                font-size: 0.78rem;
-                color: var(--text-secondary);
-                display: none;
-                align-items: center;
-                gap: 6px;
-              "
-            >
-              <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: var(--primary)">
-                <path
-                  d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm3.3 14.3L11 12.5V7h1.5v4.7l3.7 2.2-.7 1.4z"
-                />
-              </svg>
-              <span
-                ><strong>Jours de la semaine :</strong> <span id="form-activity-days-list" style="color: var(--text-primary)"></span
-              ></span>
-            </div>
+                <!-- Help text for days of the week (based on the overall span across all réservations) -->
+                <div
+                  id="form-activity-dates-helper"
+                  style="
+                    margin-top: -8px;
+                    margin-bottom: 12px;
+                    font-size: 0.78rem;
+                    color: var(--text-secondary);
+                    display: none;
+                    align-items: center;
+                    gap: 6px;
+                  "
+                >
+                  <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: var(--primary)">
+                    <path
+                      d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm3.3 14.3L11 12.5V7h1.5v4.7l3.7 2.2-.7 1.4z"
+                    />
+                  </svg>
+                  <span
+                    ><strong>Jours de la semaine :</strong> <span id="form-activity-days-list" style="color: var(--text-primary)"></span
+                  ></span>
+                </div>
+              </div>
+            </details>
 
-            <!-- Type d'événement -->
-            <div class="estimation-hide">
-              <div class="form-group">
-                <label for="form-activity-event-type">Type d'événement</label>
-                <select id="form-activity-event-type" class="select-input" style="padding: 10px 14px">
+            <!-- Type d'événements -->
+            <details class="form-accordion-section estimation-hide" id="accordion-section-eventtype">
+              <summary class="form-accordion-summary">
+                <span class="form-accordion-check" id="accordion-check-eventtype"></span>
+                <span>Type d'événements</span>
+              </summary>
+              <div class="form-accordion-content">
+                <div class="form-group">
+                  <label for="form-activity-event-type">Type d'événement</label>
+                  <select id="form-activity-event-type" class="select-input" style="padding: 10px 14px">
+                    <!-- Populated dynamically -->
+                  </select>
+                </div>
+                <div class="form-group" id="form-activity-event-type-other-group" style="display: none">
+                  <label for="form-activity-event-type-other">Précisez le type d'événement</label>
+                  <input type="text" id="form-activity-event-type-other" class="form-input" placeholder="Précisez..." />
+                </div>
+              </div>
+            </details>
+
+            <!-- Estimation des coûts (taxes québécoises) -->
+            <details class="form-accordion-section" id="accordion-section-financial-summary">
+              <summary class="form-accordion-summary">
+                <span class="form-accordion-check-spacer"></span>
+                <span>Estimation des coûts</span>
+              </summary>
+              <div class="form-accordion-content">
+                <div id="submission-financial-summary" class="financial-summary">
                   <!-- Populated dynamically -->
-                </select>
+                </div>
               </div>
-              <div class="form-group" id="form-activity-event-type-other-group" style="display: none">
-                <label for="form-activity-event-type-other">Précisez le type d'événement</label>
-                <input type="text" id="form-activity-event-type-other" class="form-input" placeholder="Précisez..." />
-              </div>
-            </div>
-
-            <!-- Récapitulatif financier (taxes québécoises) -->
-            <div class="distribution-section">
-              <div class="distribution-header">
-                <span class="field-label">Récapitulatif financier</span>
-              </div>
-              <div id="submission-financial-summary" class="financial-summary">
-                <!-- Populated dynamically -->
-              </div>
-            </div>
+            </details>
 
             <!-- Soumission -->
-            <div class="distribution-section estimation-hide">
-              <div class="distribution-header">
-                <span class="field-label">Soumission</span>
+            <details class="form-accordion-section estimation-hide" id="accordion-section-submission-file">
+              <summary class="form-accordion-summary">
+                <span class="form-accordion-check" id="accordion-check-submission-file"></span>
+                <span>Soumission</span>
+              </summary>
+              <div class="form-accordion-content">
+                <div id="submission-file-status" class="file-link-status"></div>
               </div>
-              <div id="submission-file-status" class="file-link-status"></div>
-            </div>
+            </details>
 
             <!-- Contrat -->
-            <div class="distribution-section estimation-hide">
-              <div class="distribution-header">
-                <span class="field-label">Contrat</span>
+            <details class="form-accordion-section estimation-hide" id="accordion-section-contract-file">
+              <summary class="form-accordion-summary">
+                <span class="form-accordion-check" id="accordion-check-contract-file"></span>
+                <span>Contrat</span>
+              </summary>
+              <div class="form-accordion-content">
+                <div id="contract-file-status" class="file-link-status"></div>
               </div>
-              <div id="contract-file-status" class="file-link-status"></div>
-            </div>
+            </details>
           </div>
 
           <!-- ============ TAB: Planification ============ -->

@@ -229,6 +229,10 @@ function renderActivities() {
         valA = getActivityReferences(a).toLowerCase();
         valB = getActivityReferences(b).toLowerCase();
         break;
+      case "coba":
+        valA = (a.coba || "").toLowerCase();
+        valB = (b.coba || "").toLowerCase();
+        break;
       case "totalRev":
         valA = a.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
         valB = b.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
@@ -363,14 +367,14 @@ function renderActivities() {
             <input type="checkbox" id="activity-select-${act.id}" class="activity-select-checkbox" data-id="${act.id}" ${activitiesState.selectedIds.has(act.id) ? "checked" : ""} style="cursor: pointer;" />
           </label>
         </td>
-        <td class="font-mono bold">${act.id}</td>
+        <td>${datesText}</td>
+        <td class="font-mono">${isFilled && act.coba ? escapeHtml(act.coba) : "-"}</td>
         <td>
           <span class="bold">${isFilled ? escapeHtml(act.name) : "Vierge"}</span> ${statusBadge}
           ${distHtml}
         </td>
-        <td>${isFilled && act.responsable ? escapeHtml(act.responsable) : "-"}</td>
-        <td>${datesText}</td>
         <td>${isFilled ? `${escapeHtml((act.reservations || []).map(getReservationRoomLabel).join(", "))} (${act.client_type})` : "-"}</td>
+        <td>${isFilled && act.responsable ? escapeHtml(act.responsable) : "-"}</td>
         <td class="font-mono">${isFilled && activityReferences ? escapeHtml(activityReferences) : "-"}</td>
         <td class="bold">${isFilled ? formatCurrency(totalRev) : "-"}</td>
         <td style="color: var(--text-muted);">${sansFraisText}</td>
