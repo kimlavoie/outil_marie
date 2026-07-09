@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { appState, saveDatabase } from "../../state/state.ts";
 import { showToast } from "../../utils/utils.ts";
 import { populateDropdowns } from "../../navigation.ts";
-import { EditIcon, DeleteIcon, Modal } from "./common.tsx";
+import { DeleteIcon, Modal } from "./common.tsx";
 
 export function AccountsPanel({
   active,
@@ -38,15 +38,12 @@ export function AccountsPanel({
       </div>
       <div className="settings-list">
         {appState.settings.accounts.map(acc => (
-          <div key={acc.code} className="settings-list-item">
+          <div key={acc.code} className="settings-list-item" onClick={() => openModal(acc.code)}>
             <div className="settings-list-item-info">
               <span className="settings-list-item-code">{acc.code}</span>
               <span className="settings-list-item-desc">{acc.description}</span>
             </div>
-            <div className="flex gap-2">
-              <button className="btn-icon" title="Modifier" onClick={() => openModal(acc.code)}>
-                <EditIcon />
-              </button>
+            <div className="flex gap-2" onClick={e => e.stopPropagation()}>
               <button className="btn-icon" title="Supprimer" style={{ color: "var(--danger)" }} onClick={() => deleteAccount(acc.code)}>
                 <DeleteIcon />
               </button>

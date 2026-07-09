@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { appState, saveDatabase, getActiveServiceRate } from "../../state/state.ts";
 import { showToast, generateUid, newRateVersionRow } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
-import { EditIcon, DeleteIcon, Modal, TarifsEditor, TarifRow } from "./common.tsx";
+import { DeleteIcon, Modal, TarifsEditor, TarifRow } from "./common.tsx";
 
 export function ServicesPanel({ active, openModal, bump }: { active: boolean; openModal: (id: string | null) => void; bump: () => void }) {
   const services = appState.settings.services || [];
@@ -34,7 +34,7 @@ export function ServicesPanel({ active, openModal, bump }: { active: boolean; op
           const unit = svc.type === "hourly" ? "$ / heure" : "$";
           const tarifNote = tarifs.length > 1 ? ` (${tarifs.length} tarifs)` : "";
           return (
-            <div key={svc.id} className="settings-list-item">
+            <div key={svc.id} className="settings-list-item" onClick={() => openModal(svc.id)}>
               <div className="settings-list-item-info">
                 <span className="settings-list-item-code" style={{ fontFamily: "inherit" }}>
                   {svc.name}
@@ -44,10 +44,7 @@ export function ServicesPanel({ active, openModal, bump }: { active: boolean; op
                   {tarifNote}
                 </span>
               </div>
-              <div className="flex gap-2">
-                <button className="btn-icon" title="Modifier" onClick={() => openModal(svc.id)}>
-                  <EditIcon />
-                </button>
+              <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                 <button className="btn-icon" title="Supprimer" style={{ color: "var(--danger)" }} onClick={() => deleteService(svc.id)}>
                   <DeleteIcon />
                 </button>

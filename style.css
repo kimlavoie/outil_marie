@@ -1734,10 +1734,12 @@ input[type="checkbox"] {
   border-radius: var(--radius-md);
   background-color: var(--bg-main);
   transition: var(--transition-smooth);
+  cursor: pointer;
 }
 
 .settings-list-item:hover {
-  border-color: var(--text-muted);
+  border-color: var(--primary);
+  background-color: var(--primary-light);
 }
 
 .settings-list-item-info {

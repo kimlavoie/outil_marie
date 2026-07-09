@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { appState, saveDatabase, getActiveSalaryRate, getActiveSalaryOvertimeRate } from "../../state/state.ts";
 import { showToast, generateUid, newRateVersionRow } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
-import { EditIcon, DeleteIcon, Modal, TarifsEditor, TarifRow } from "./common.tsx";
+import { DeleteIcon, Modal, TarifsEditor, TarifRow } from "./common.tsx";
 
 export function SalariesPanel({ active, openModal, bump }: { active: boolean; openModal: (id: string | null) => void; bump: () => void }) {
   const salaries: any[] = appState.settings.salaries || [];
@@ -35,7 +35,7 @@ export function SalariesPanel({ active, openModal, bump }: { active: boolean; op
           const overtimeNote = currentOvertimeRate > 0 ? ` · ${currentOvertimeRate.toFixed(2)} $ / heure (temps sup.)` : "";
           const tarifNote = tarifs.length > 1 ? ` (${tarifs.length} tarifs)` : "";
           return (
-            <div key={sal.id} className="settings-list-item">
+            <div key={sal.id} className="settings-list-item" onClick={() => openModal(sal.id)}>
               <div className="settings-list-item-info">
                 <span className="settings-list-item-code" style={{ fontFamily: "inherit" }}>
                   {sal.job}
@@ -45,10 +45,7 @@ export function SalariesPanel({ active, openModal, bump }: { active: boolean; op
                   {tarifNote}
                 </span>
               </div>
-              <div className="flex gap-2">
-                <button className="btn-icon" title="Modifier" onClick={() => openModal(sal.id)}>
-                  <EditIcon />
-                </button>
+              <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                 <button className="btn-icon" title="Supprimer" style={{ color: "var(--danger)" }} onClick={() => deleteSalary(sal.id)}>
                   <DeleteIcon />
                 </button>

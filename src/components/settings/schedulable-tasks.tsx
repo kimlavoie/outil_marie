@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { appState, saveDatabase, EVENT_TYPES, TECHNICAL_SERVICES } from "../../state/state.ts";
 import { showToast, generateUid } from "../../utils/utils.ts";
-import { EditIcon, DeleteIcon, Modal } from "./common.tsx";
+import { DeleteIcon, Modal } from "./common.tsx";
 
 interface TaskCondition {
   id: string;
@@ -166,15 +166,12 @@ export function SchedulableTasksPanel({
       </p>
       <div className="settings-list">
         {tasks.map(t => (
-          <div key={t.id} className="settings-list-item">
+          <div key={t.id} className="settings-list-item" onClick={() => openModal(t.id)}>
             <div className="settings-list-item-info">
               <span className="settings-list-item-desc">{t.description}</span>
               <span style={{ display: "block", fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: 2 }}>{taskSummary(t)}</span>
             </div>
-            <div className="flex gap-2">
-              <button className="btn-icon" title="Modifier" onClick={() => openModal(t.id)}>
-                <EditIcon />
-              </button>
+            <div className="flex gap-2" onClick={e => e.stopPropagation()}>
               <button className="btn-icon" title="Supprimer" style={{ color: "var(--danger)" }} onClick={() => deleteTask(t.id)}>
                 <DeleteIcon />
               </button>

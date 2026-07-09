@@ -3,7 +3,7 @@ import { appState, saveDatabase } from "../../state/state.ts";
 import { showToast } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
 import { populateDropdowns } from "../../navigation.ts";
-import { EditIcon, DeleteIcon, Modal } from "./common.tsx";
+import { DeleteIcon, Modal } from "./common.tsx";
 
 export function DepartmentsPanel({
   active,
@@ -36,16 +36,13 @@ export function DepartmentsPanel({
       </div>
       <div className="settings-list">
         {appState.settings.departments.map((dept: string) => (
-          <div key={dept} className="settings-list-item">
+          <div key={dept} className="settings-list-item" onClick={() => openModal(dept)}>
             <div className="settings-list-item-info">
               <span className="settings-list-item-code" style={{ fontFamily: "inherit" }}>
                 {dept}
               </span>
             </div>
-            <div className="flex gap-2">
-              <button className="btn-icon" title="Modifier" onClick={() => openModal(dept)}>
-                <EditIcon />
-              </button>
+            <div className="flex gap-2" onClick={e => e.stopPropagation()}>
               <button className="btn-icon" title="Supprimer" style={{ color: "var(--danger)" }} onClick={() => deleteDept(dept)}>
                 <DeleteIcon />
               </button>

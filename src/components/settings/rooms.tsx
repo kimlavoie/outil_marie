@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { appState, saveDatabase, getFlattenedRoomTarifs } from "../../state/state.ts";
 import { generateUid, formatCurrency, formatDateMask, getRoomColor, FALLBACK_ROOM_COLORS, showToast } from "../../utils/utils.ts";
 import { populateDropdowns } from "../../navigation.ts";
-import { EditIcon, DeleteIcon, Modal, GlAccountOptions } from "./common.tsx";
+import { DeleteIcon, Modal, GlAccountOptions } from "./common.tsx";
 
 interface GridParam {
   id: string;
@@ -74,7 +74,7 @@ export function RoomsPanel({ active, openModal, bump }: { active: boolean; openM
           const versionCount = (r.pricing_grids || []).length;
           const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
           return (
-            <div key={r.name} className="settings-list-item">
+            <div key={r.name} className="settings-list-item" onClick={() => openModal(r.name)}>
               <div className="settings-list-item-info">
                 <span className="room-color-swatch" style={{ backgroundColor: getRoomColor(r.name) }} title="Couleur de la salle" />
                 <span className="settings-list-item-code">{r.name}</span>
@@ -83,10 +83,7 @@ export function RoomsPanel({ active, openModal, bump }: { active: boolean; openM
                   {versionNote}
                 </span>
               </div>
-              <div className="flex gap-2">
-                <button className="btn-icon" title="Modifier" onClick={() => openModal(r.name)}>
-                  <EditIcon />
-                </button>
+              <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                 <button className="btn-icon" title="Supprimer" style={{ color: "var(--danger)" }} onClick={() => deleteRoom(r.name)}>
                   <DeleteIcon />
                 </button>

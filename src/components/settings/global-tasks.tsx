@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { appState, saveDatabase } from "../../state/state.ts";
 import { showToast, generateUid } from "../../utils/utils.ts";
-import { EditIcon, DeleteIcon, Modal } from "./common.tsx";
+import { DeleteIcon, Modal } from "./common.tsx";
 
 export function GlobalTasksPanel({
   active,
@@ -37,14 +37,11 @@ export function GlobalTasksPanel({
       </p>
       <div className="settings-list">
         {globalTasks.map((t: { id: string; description: string }) => (
-          <div key={t.id} className="settings-list-item">
+          <div key={t.id} className="settings-list-item" onClick={() => openModal(t.id)}>
             <div className="settings-list-item-info">
               <span className="settings-list-item-desc">{t.description}</span>
             </div>
-            <div className="flex gap-2">
-              <button className="btn-icon" title="Modifier" onClick={() => openModal(t.id)}>
-                <EditIcon />
-              </button>
+            <div className="flex gap-2" onClick={e => e.stopPropagation()}>
               <button className="btn-icon" title="Supprimer" style={{ color: "var(--danger)" }} onClick={() => deleteGlobalTask(t.id)}>
                 <DeleteIcon />
               </button>
