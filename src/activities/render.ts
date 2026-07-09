@@ -143,6 +143,101 @@ function buildProgressBarHtml(percent: number) {
   `;
 }
 
+// Right-click context menu for activity row actions (favorite, open in new tab, view details,
+// duplicate, delete) — replaces the dedicated "Actions" column to save horizontal space.
+function closeActivityContextMenu() {
+  const existing = document.getElementById("activity-context-menu");
+  if (existing) existing.remove();
+}
+
+function showActivityContextMenu(e: MouseEvent, id: string) {
+  closeActivityContextMenu();
+
+  const act = appState.activities.find((a: any) => a.id === id);
+  if (!act) return;
+  const isFilled = act.name.trim() !== "";
+
+  const items: { label: string; danger?: boolean; onClick: () => void }[] = [];
+
+  if (isFilled) {
+    items.push({
+      label: isFavoriteActivity(id) ? "Retirer des accès rapides" : "Ajouter aux accès rapides",
+      onClick: () => {
+        toggleFavoriteActivity(id);
+        renderActivities();
+        // Dynamic import: navigation.js pulls in the .tsx views (Paramètres/Tableau de bord/...),
+        // and this module must stay importable by plain `node --test` (Node can't load .tsx).
+        import("../navigation.ts").then(m => m.renderQuickAccessAll());
+      }
+    });
+    items.push({
+      label: "Ouvrir dans un nouvel onglet",
+      onClick: () => {
+        const url = new URL(window.location.href);
+        url.search = `?activity=${encodeURIComponent(id)}`;
+        window.open(url.toString(), "_blank");
+      }
+    });
+    items.push({
+      label: "Voir les détails",
+      onClick: () => openActivityDetailsModal(id)
+    });
+    items.push({
+      label: "Dupliquer",
+      onClick: () => duplicateActivityAndOpen(id)
+    });
+  }
+
+  items.push({
+    label: "Supprimer",
+    danger: true,
+    onClick: () => {
+      if (confirm(`Voulez-vous vraiment supprimer l'activité ${id} ?`)) {
+        const target = appState.activities.find((a: any) => a.id === id);
+        if (target) {
+          target.deleted = true;
+        }
+        appState.favorites = (appState.favorites || []).filter((f: any) => f !== id);
+        saveDatabase();
+        if (reconciliationState.ledgerTransactions.length > 0) {
+          reconcileLedger();
+        }
+        import("../navigation.ts").then(m => m.renderAll());
+      }
+    }
+  });
+
+  const menu = document.createElement("div");
+  menu.id = "activity-context-menu";
+  menu.className = "row-actions-menu";
+  menu.style.position = "fixed";
+  menu.style.left = `${e.clientX}px`;
+  menu.style.top = `${e.clientY}px`;
+
+  items.forEach(item => {
+    const btn = document.createElement("button");
+    btn.className = `row-actions-item${item.danger ? " danger" : ""}`;
+    btn.textContent = item.label;
+    btn.addEventListener("click", ev => {
+      ev.stopPropagation();
+      closeActivityContextMenu();
+      item.onClick();
+    });
+    menu.appendChild(btn);
+  });
+
+  document.body.appendChild(menu);
+
+  // Clamp menu position so it doesn't overflow the viewport
+  const rect = menu.getBoundingClientRect();
+  if (rect.right > window.innerWidth) {
+    menu.style.left = `${Math.max(0, window.innerWidth - rect.width - 8)}px`;
+  }
+  if (rect.bottom > window.innerHeight) {
+    menu.style.top = `${Math.max(0, window.innerHeight - rect.height - 8)}px`;
+  }
+}
+
 function renderActivities() {
   saveUiState();
   const tbody = el("activities-table-body");
@@ -263,7 +358,7 @@ function renderActivities() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="12" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucune activité trouvée. Cliquez sur "+ Nouvelle Activité" pour en créer une.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucune activité trouvée. Cliquez sur "+ Nouvelle Activité" pour en créer une.</td></tr>`;
     renderPaginationBar(el("activities-pagination"), {
       page: activitiesState.page,
       pageSize: activitiesState.pageSize,
@@ -395,47 +490,6 @@ function renderActivities() {
         <td class="bold">${isFilled ? formatCurrency(totalRev) : "-"}</td>
         <td>${isFilled ? (hasTechnicalDirector ? "Oui" : "") : "-"}</td>
         <td>${stateCellHtml}</td>
-        <td class="text-right" style="white-space: nowrap;">
-          ${
-            isFilled
-              ? `
-          <button class="btn-icon favorite-act-btn" data-id="${act.id}" title="${isFavoriteActivity(act.id) ? "Retirer des accès rapides" : "Ajouter aux accès rapides"}" style="margin-right: 4px; color: ${isFavoriteActivity(act.id) ? "var(--warning-text, #f59e0b)" : "inherit"};">
-            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;">${isFavoriteActivity(act.id) ? '<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' : '<path d="M12 15.39l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.09l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.39zM12 2L9.19 8.62 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24l-7.19-.62L12 2z"/>'}</svg>
-          </button>
-          `
-              : ""
-          }
-          ${
-            isFilled
-              ? `
-          <button class="btn-icon open-act-tab-btn" data-id="${act.id}" title="Ouvrir dans un nouvel onglet" style="margin-right: 4px;">
-            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7zM5 5h5V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-5h-2v5H5V5z"/></svg>
-          </button>
-          `
-              : ""
-          }
-          ${
-            isFilled
-              ? `
-          <button class="btn-icon view-act-btn" data-id="${act.id}" title="Voir les détails" style="margin-right: 4px;">
-            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-          </button>
-          `
-              : ""
-          }
-          ${
-            isFilled
-              ? `
-          <button class="btn-icon duplicate-act-btn" data-id="${act.id}" title="Dupliquer" style="margin-right: 4px;">
-            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-          </button>
-          `
-              : ""
-          }
-          <button class="btn-icon delete-act-list-btn" data-id="${act.id}" title="Supprimer" style="color: var(--danger);">
-            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-          </button>
-        </td>
       </tr>
     `;
   });
@@ -455,69 +509,15 @@ function renderActivities() {
     });
   });
 
-  // Attach row click listeners to open the activity record (tabbed lifecycle view)
-  document.querySelectorAll(".activity-row").forEach(row => {
+  // Attach row click/right-click listeners: left click opens the activity record (tabbed
+  // lifecycle view), right click opens the row's actions context menu.
+  document.querySelectorAll<HTMLElement>(".activity-row").forEach(row => {
     row.addEventListener("click", () => {
       openActivityDrawer(row.getAttribute("data-id") || "");
     });
-  });
-
-  // Attach favorite (accès rapide) toggle buttons event listeners
-  document.querySelectorAll(".favorite-act-btn").forEach(btn => {
-    btn.addEventListener("click", e => {
-      e.stopPropagation();
-      toggleFavoriteActivity(btn.getAttribute("data-id") || "");
-      renderActivities();
-      // Dynamic import: navigation.js pulls in the .tsx views (Paramètres/Tableau de bord/...),
-      // and this module must stay importable by plain `node --test` (Node can't load .tsx).
-      import("../navigation.ts").then(m => m.renderQuickAccessAll());
-    });
-  });
-
-  // Attach "open in new tab" buttons event listeners
-  document.querySelectorAll(".open-act-tab-btn").forEach(btn => {
-    btn.addEventListener("click", e => {
-      e.stopPropagation();
-      const id = btn.getAttribute("data-id") || "";
-      const url = new URL(window.location.href);
-      url.search = `?activity=${encodeURIComponent(id)}`;
-      window.open(url.toString(), "_blank");
-    });
-  });
-
-  // Attach "view details" (read-only) buttons event listeners
-  document.querySelectorAll(".view-act-btn").forEach(btn => {
-    btn.addEventListener("click", e => {
-      e.stopPropagation();
-      openActivityDetailsModal(btn.getAttribute("data-id") || "");
-    });
-  });
-
-  // Attach duplicate buttons event listeners
-  document.querySelectorAll(".duplicate-act-btn").forEach(btn => {
-    btn.addEventListener("click", e => {
-      e.stopPropagation();
-      duplicateActivityAndOpen(btn.getAttribute("data-id") || "");
-    });
-  });
-
-  // Attach delete buttons event listeners
-  document.querySelectorAll(".delete-act-list-btn").forEach(btn => {
-    btn.addEventListener("click", e => {
-      e.stopPropagation();
-      const id = btn.getAttribute("data-id");
-      if (confirm(`Voulez-vous vraiment supprimer l'activité ${id} ?`)) {
-        const act = appState.activities.find(a => a.id === id);
-        if (act) {
-          act.deleted = true;
-        }
-        appState.favorites = (appState.favorites || []).filter(f => f !== id);
-        saveDatabase();
-        if (reconciliationState.ledgerTransactions.length > 0) {
-          reconcileLedger();
-        }
-        import("../navigation.ts").then(m => m.renderAll());
-      }
+    row.addEventListener("contextmenu", e => {
+      e.preventDefault();
+      showActivityContextMenu(e as MouseEvent, row.getAttribute("data-id") || "");
     });
   });
 
@@ -662,6 +662,18 @@ function initBulkActionsHandlers() {
     if (stateMenu && stateBtn && !stateBtn.contains(e.target as Node) && !stateMenu.contains(e.target as Node)) {
       stateMenu.classList.add("hidden");
     }
+  });
+
+  // Close the activity row context menu when clicking outside of it, scrolling, or pressing Escape
+  document.addEventListener("click", e => {
+    const menu = document.getElementById("activity-context-menu");
+    if (menu && !menu.contains(e.target as Node)) {
+      closeActivityContextMenu();
+    }
+  });
+  document.addEventListener("scroll", () => closeActivityContextMenu(), true);
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeActivityContextMenu();
   });
 }
 

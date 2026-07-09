@@ -2717,6 +2717,46 @@ input[type="checkbox"] {
   color: var(--primary);
 }
 
+/* Activity row context menu (right-click on an activities list row) */
+.row-actions-menu {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 0;
+  z-index: 1001;
+}
+
+.row-actions-item {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 100%;
+  transition: var(--transition-smooth);
+}
+
+.row-actions-item:hover {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.row-actions-item.danger {
+  color: var(--danger);
+}
+
+.row-actions-item.danger:hover {
+  background-color: var(--danger);
+  color: white;
+}
+
 /* Alternating row colors for activities list */
 tr.activity-row:nth-child(even) td {
   background-color: rgba(0, 0, 0, 0.02);
