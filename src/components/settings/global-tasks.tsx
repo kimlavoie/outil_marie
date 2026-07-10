@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabase } from "../../state/state.ts";
+import { appState, saveDatabaseOrRollback } from "../../state/state.ts";
 import { showToast, generateUid } from "../../utils/utils.ts";
 import { DeleteIcon, Modal } from "./common.tsx";
 
@@ -15,9 +15,11 @@ export function GlobalTasksPanel({
   const globalTasks = appState.settings.global_tasks || [];
   const deleteGlobalTask = (id: string) => {
     if (!confirm("Voulez-vous vraiment supprimer cette tâche globale ?")) return;
+    const prevGlobalTasks = appState.settings.global_tasks;
     appState.settings.global_tasks = globalTasks.filter((t: { id: string }) => t.id !== id);
-    saveDatabase();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.global_tasks = prevGlobalTasks;
+    }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => bump());
   };
 
   return (
@@ -72,17 +74,25 @@ export function GlobalTaskModal({ id, onClose, bump }: { id: string | null | und
     }
 
     const globalTasks = appState.settings.global_tasks || [];
+    const prevGlobalTasks = [...globalTasks];
     if (originalId) {
       const idx = globalTasks.findIndex((t: { id: string }) => t.id === originalId);
-      if (idx !== -1) globalTasks[idx].description = description;
+      if (idx !== -1) globalTasks[idx] = { ...globalTasks[idx], description };
     } else {
       globalTasks.push({ id: generateUid("global-task"), description });
     }
     appState.settings.global_tasks = globalTasks;
 
-    saveDatabase();
-    onClose();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.global_tasks = prevGlobalTasks;
+    }, "L'enregistrement de la tâche a échoué. Réessayez.").then(saved => {
+      if (!saved) {
+        bump();
+        return;
+      }
+      onClose();
+      bump();
+    });
   };
 
   return (

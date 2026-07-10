@@ -1,7 +1,38 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import "./indexeddb-mock.ts";
 
-import { migrateActivities, migrateRoomsConfig, appState } from "../src/state/state.ts";
+// Mock document: showToast() no-ops without a #toast-container, and setAppState/loadDatabase
+// don't otherwise touch the DOM in these tests.
+(globalThis as any).document = { getElementById: () => null };
+
+import {
+  migrateActivities,
+  migrateRoomsConfig,
+  migrateSalariesConfig,
+  migrateServicesConfig,
+  loadDatabase,
+  saveAppStateToDb,
+  getSafetyBackupsFromDb,
+  appState,
+  DEFAULT_CONFIG
+} from "../src/state/state.ts";
+
+function freshSettings(overrides: any = {}) {
+  return {
+    theme: "dark",
+    rooms: [],
+    salaries: [],
+    services: [],
+    global_tasks: [],
+    schedulable_tasks: [],
+    departments: [],
+    accounts: [],
+    last_backup_date: "",
+    backup_reminder_days: 7,
+    ...overrides
+  };
+}
 
 test("migrateActivities correctly migrates legacy room_name to reservations format", () => {
   // Setup legacy settings
@@ -240,4 +271,184 @@ test("migrateRoomsConfig always ensures linked_* arrays exist", () => {
   assert.deepEqual(room.linked_fees, []);
   assert.deepEqual(room.linked_tasks, []);
 });
+
+// --- migrateSalariesConfig ---
+
+test("migrateSalariesConfig moves legacy rate/gl_account_code into tarifs[], defaulting overtime_rate to 0", () => {
+  appState.settings = freshSettings({
+    salaries: [{ name: "Hôte", rate: 20, gl_account_code: "892-001" } as any]
+  });
+
+  migrateSalariesConfig();
+
+  const sal = appState.settings.salaries[0];
+  assert.equal((sal as any).rate, undefined);
+  assert.equal((sal as any).gl_account_code, undefined);
+  assert.equal((sal as any).rate_versions, undefined); // moved under the tarif, not left at top level
+  assert.equal(sal.tarifs.length, 1);
+  const tarif = sal.tarifs[0];
+  assert.equal(tarif.gl_account_code, "892-001");
+  assert.equal(tarif.rate_versions.length, 1);
+  assert.equal(tarif.rate_versions[0].rate, 20);
+  assert.equal(tarif.rate_versions[0].overtime_rate, 0);
+});
+
+test("migrateSalariesConfig fills in missing overtime_rate on existing rate_versions without a gl_account_code", () => {
+  appState.settings = freshSettings({
+    salaries: [{ name: "Sauveteur", rate_versions: [{ effective_date: "", rate: 25 }] } as any]
+  });
+
+  migrateSalariesConfig();
+
+  const tarif = appState.settings.salaries[0].tarifs[0];
+  assert.equal(tarif.gl_account_code, "");
+  assert.equal(tarif.rate_versions[0].rate, 25);
+  assert.equal(tarif.rate_versions[0].overtime_rate, 0);
+});
+
+test("migrateSalariesConfig leaves a salary that already has tarifs untouched", () => {
+  const existingTarifs = [{ id: "t1", label: "", gl_account_code: "111", rate_versions: [{ effective_date: "", rate: 99 }] }];
+  appState.settings = freshSettings({
+    salaries: [{ name: "Déjà migré", tarifs: existingTarifs } as any]
+  });
+
+  migrateSalariesConfig();
+
+  assert.strictEqual(appState.settings.salaries[0].tarifs, existingTarifs);
+});
+
+// --- migrateServicesConfig ---
+
+test("migrateServicesConfig adds missing default services without touching an already-customized one", () => {
+  const customizedDefault = JSON.parse(JSON.stringify(DEFAULT_CONFIG.services[0]));
+  customizedDefault.tarifs[0].rate_versions[0].rate = 12345; // user-edited amount
+
+  appState.settings = freshSettings({ services: [customizedDefault] });
+
+  migrateServicesConfig();
+
+  const services = appState.settings.services;
+  // Every default service id is present...
+  DEFAULT_CONFIG.services.forEach(def => {
+    assert.ok(services.some((s: any) => s.id === def.id));
+  });
+  // ...but the customized one keeps the user's amount instead of being overwritten.
+  const kept = services.find((s: any) => s.id === customizedDefault.id);
+  assert.equal(kept.tarifs[0].rate_versions[0].rate, 12345);
+});
+
+test("migrateServicesConfig migrates a legacy single gl_account_code into tarifs[]", () => {
+  appState.settings = freshSettings({
+    services: [{ id: "svc-custom", name: "Service perso", gl_account_code: "700-100", rate_versions: [{ effective_date: "", rate: 40 }] } as any]
+  });
+
+  migrateServicesConfig();
+
+  const svc = appState.settings.services.find((s: any) => s.id === "svc-custom");
+  assert.equal(svc.gl_account_code, undefined);
+  assert.equal(svc.billing_accounts, undefined);
+  assert.equal(svc.rate_versions, undefined);
+  assert.equal(svc.tarifs.length, 1);
+  assert.equal(svc.tarifs[0].gl_account_code, "700-100");
+  assert.equal(svc.tarifs[0].rate_versions[0].rate, 40);
+});
+
+test("migrateServicesConfig migrates several legacy billing_accounts into one tarif each, sharing the same rate history", () => {
+  appState.settings = freshSettings({
+    services: [
+      {
+        id: "svc-multi",
+        name: "Service multi-comptes",
+        billing_accounts: [
+          { id: "b1", label: "Interne", gl_account_code: "111" },
+          { id: "b2", label: "Externe", gl_account_code: "222" }
+        ],
+        rate_versions: [{ effective_date: "", rate: 60 }]
+      } as any
+    ]
+  });
+
+  migrateServicesConfig();
+
+  const svc = appState.settings.services.find((s: any) => s.id === "svc-multi");
+  assert.equal(svc.tarifs.length, 2);
+  assert.deepEqual(
+    svc.tarifs.map((t: any) => t.gl_account_code),
+    ["111", "222"]
+  );
+  assert.equal(svc.tarifs[0].rate_versions[0].rate, 60);
+  assert.equal(svc.tarifs[1].rate_versions[0].rate, 60);
+  // Each tarif's rate_versions is its own copy, not a shared reference (later edits to one
+  // tarif's rate history must not silently change the other's).
+  assert.notStrictEqual(svc.tarifs[0].rate_versions, svc.tarifs[1].rate_versions);
+});
+
+// --- loadDatabase: the migration guard-rail (state.ts) ---
+//
+// migrateRoomsConfig/migrateSalariesConfig/migrateServicesConfig/migrateActivities all run
+// inside their own try/catch in loadDatabase(), separate from the outer one that falls back to
+// seedDatabase() (which wipes everything). A migration bug must instead roll appState back to
+// the as-loaded, unmigrated data — these tests exercise that guard end-to-end through the real
+// IndexedDB read/write path (mocked), not just the individual migration functions in isolation.
+
+test("loadDatabase rolls back to pre-migration data when a migration throws", async () => {
+  const legacyActivity = { id: "act-1", name: "Legacy Event", distributions: [], reservations: [] };
+  await saveAppStateToDb({
+    // A null entry in rooms isn't a shape migrateRoomsConfig guards against (it only checks
+    // room.tarifs/room.pricing_grids on the assumption room is an object) - a realistic stand-in
+    // for "a migration throws on corrupted/unexpected data" without needing to fake a bug.
+    settings: freshSettings({ rooms: [null] }),
+    activities: [legacyActivity],
+    favorites: [],
+    selected_quarters: [1, 2, 3, 4]
+  });
+
+  await loadDatabase();
+
+  // Rolled back: the corrupted room is still there verbatim (never reached migrateActivities,
+  // so it never got the chance to touch anything else either).
+  assert.equal(appState.settings.rooms.length, 1);
+  assert.equal(appState.settings.rooms[0], null);
+  assert.equal(appState.activities.length, 1);
+  assert.equal(appState.activities[0].id, "act-1");
+  // Confirms the migration never ran: a successfully migrated activity would have `rooms: []`.
+  assert.equal((appState.activities[0] as any).rooms, undefined);
+});
+
+test("loadDatabase takes a safety backup before attempting migration, even when migration then fails", async () => {
+  await saveAppStateToDb({
+    settings: freshSettings({ rooms: [null] }),
+    activities: [{ id: "act-2", name: "Another Event", distributions: [], reservations: [] }],
+    favorites: [],
+    selected_quarters: [1, 2, 3, 4]
+  });
+
+  const before = (await getSafetyBackupsFromDb()).length;
+  await loadDatabase();
+  const after = await getSafetyBackupsFromDb();
+
+  assert.equal(after.length, before + 1);
+  assert.equal(after[0].label, "migration");
+});
+
+test("loadDatabase applies migrations normally end-to-end when nothing is corrupted", async () => {
+  await saveAppStateToDb({
+    settings: freshSettings(),
+    activities: [
+      { id: "act-3", name: "Clean legacy activity", room_name: "", distributions: [], reservations: undefined as any }
+    ],
+    favorites: [],
+    selected_quarters: [1, 2, 3, 4]
+  });
+
+  await loadDatabase();
+
+  const migrated = appState.activities.find(a => a.id === "act-3");
+  assert.ok(migrated);
+  // room_name -> rooms is one of migrateActivities' jobs; seeing it applied confirms the guard
+  // didn't roll back a migration that actually succeeded.
+  assert.equal((migrated as any).room_name, undefined);
+  assert.deepEqual((migrated as any).rooms, []);
+});
+
 export {};

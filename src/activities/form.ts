@@ -8,7 +8,7 @@
  * js/datepicker.ts, js/activities-file-links.ts, js/activities-history.ts,
  * js/activities-financials.ts and js/activities-render.ts, this stays a plain TS module.
  */
-import { appState, saveDatabase, activityMatchesTask } from "../state/state.ts";
+import { appState, saveDatabase, saveDatabaseOrRollback, activityMatchesTask } from "../state/state.ts";
 import {
   debounce,
   generateUid,
@@ -630,19 +630,29 @@ function updateFormAccordionCompletion(act: any) {
 function commitActivityPatch(id: string, patchFn: (act: any) => void) {
   const idx = appState.activities.findIndex((a: any) => a.id === id);
   if (idx === -1) return;
+  const previous = JSON.parse(JSON.stringify(appState.activities[idx]));
   patchFn(appState.activities[idx]);
-  saveDatabase();
-  renderActivityStateBar(appState.activities[idx]);
-  renderActivities();
-
-  // Save version on lifecycle patch and update the open snapshot to match
-  const updatedAct = appState.activities[idx];
-  saveActivityVersion(updatedAct).then(() => {
-    // If the drawer is currently open on this activity, update the initial snapshot to match this new state
-    const currentOpenId = el("form-activity-internal-id").value;
-    if (currentOpenId === id) {
-      activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(updatedAct));
+  saveDatabaseOrRollback(() => {
+    appState.activities[idx] = previous;
+    renderActivityStateBar(previous);
+  }, "La modification n'a pas été enregistrée. Réessayez.").then(saved => {
+    if (!saved) {
+      renderActivities();
+      return;
     }
+
+    renderActivityStateBar(appState.activities[idx]);
+    renderActivities();
+
+    // Save version on lifecycle patch and update the open snapshot to match
+    const updatedAct = appState.activities[idx];
+    saveActivityVersion(updatedAct).then(() => {
+      // If the drawer is currently open on this activity, update the initial snapshot to match this new state
+      const currentOpenId = el("form-activity-internal-id").value;
+      if (currentOpenId === id) {
+        activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(updatedAct));
+      }
+    });
   });
 }
 

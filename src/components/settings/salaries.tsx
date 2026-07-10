@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabase, getActiveSalaryRate, getActiveSalaryOvertimeRate } from "../../state/state.ts";
+import { appState, saveDatabaseOrRollback, getActiveSalaryRate, getActiveSalaryOvertimeRate } from "../../state/state.ts";
 import { showToast, generateUid, newRateVersionRow } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
 import { DeleteIcon, Modal, TarifsEditor, TarifRow } from "./common.tsx";
@@ -10,9 +10,11 @@ export function SalariesPanel({ active, openModal, bump }: { active: boolean; op
     const sal = salaries.find((s: { id: string }) => s.id === id);
     const jobName = sal ? sal.job : "";
     if (!confirm(`Voulez-vous vraiment supprimer l'emploi "${jobName}" ?`)) return;
+    const prevSalaries = appState.settings.salaries;
     appState.settings.salaries = salaries.filter((s: { id: string }) => s.id !== id);
-    saveDatabase();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.salaries = prevSalaries;
+    }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => bump());
   };
 
   return (
@@ -135,6 +137,7 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
       return;
     }
 
+    const prevSalaries = [...salaries];
     if (originalId) {
       const idx = salaries.findIndex((s: { id: string }) => s.id === originalId);
       if (idx !== -1) salaries[idx] = { id: originalId, job: jobName, tarifs: tarifsResult };
@@ -144,9 +147,16 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
     salaries.sort((a: { job: string }, b: { job: string }) => a.job.localeCompare(b.job));
     appState.settings.salaries = salaries;
 
-    saveDatabase();
-    onClose();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.salaries = prevSalaries;
+    }, "L'enregistrement de l'emploi a échoué. Réessayez.").then(saved => {
+      if (!saved) {
+        bump();
+        return;
+      }
+      onClose();
+      bump();
+    });
   };
 
   return (

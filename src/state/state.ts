@@ -1123,6 +1123,24 @@ async function saveDatabase(): Promise<boolean> {
   return success;
 }
 
+// Calls saveDatabase(), and if persistence fails, invokes restore() to revert the in-memory
+// mutation the caller already applied (plus an optional re-render) instead of leaving the UI
+// showing a change that never made it to disk. Mirrors the pattern used by the bulk
+// delete/state-change handlers (src/activities/render.ts).
+async function saveDatabaseOrRollback(
+  restore: () => void,
+  errorMessage = "La modification n'a pas été enregistrée. Réessayez.",
+  rerender?: () => void
+): Promise<boolean> {
+  const saved = await saveDatabase();
+  if (!saved) {
+    restore();
+    showToast(errorMessage, "error", 8000);
+    rerender?.();
+  }
+  return saved;
+}
+
 // Persist search/filter/sort/pagination state per view, so reloading the
 // page or coming back later drops the user exactly where they left off.
 const UI_STATE_KEY = "outil_marie_ui_state";
@@ -1250,6 +1268,7 @@ export {
   migrateActivities,
   seedDatabase,
   saveDatabase,
+  saveDatabaseOrRollback,
   saveUiState,
   restoreUiState
 };

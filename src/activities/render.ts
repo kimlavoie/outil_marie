@@ -18,6 +18,7 @@ import {
   getQuarterNumber,
   parseLocalDateStr,
   saveDatabase,
+  saveDatabaseOrRollback,
   saveUiState,
   isFavoriteActivity,
   toggleFavoriteActivity
@@ -195,15 +196,24 @@ function showActivityContextMenu(e: MouseEvent, id: string) {
     onClick: () => {
       if (confirm(`Voulez-vous vraiment supprimer l'activité ${id} ?`)) {
         const target = appState.activities.find((a: any) => a.id === id);
+        const prevDeleted = target?.deleted;
+        const prevFavorites = appState.favorites ? [...appState.favorites] : [];
         if (target) {
           target.deleted = true;
         }
         appState.favorites = (appState.favorites || []).filter((f: any) => f !== id);
-        saveDatabase();
-        if (reconciliationState.ledgerTransactions.length > 0) {
-          reconcileLedger();
-        }
-        import("../navigation.ts").then(m => m.renderAll());
+        saveDatabaseOrRollback(
+          () => {
+            if (target) target.deleted = prevDeleted;
+            appState.favorites = prevFavorites;
+          },
+          "La suppression n'a pas été enregistrée. Réessayez."
+        ).then(() => {
+          if (reconciliationState.ledgerTransactions.length > 0) {
+            reconcileLedger();
+          }
+          import("../navigation.ts").then(m => m.renderAll());
+        });
       }
     }
   });

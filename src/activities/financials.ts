@@ -16,7 +16,7 @@
 import { clearDateFieldErrors } from "./datepicker.ts";
 import {
   appState,
-  saveDatabase,
+  saveDatabaseOrRollback,
   getActiveSalaryRate,
   getActiveSalaryOvertimeRate,
   getActiveServiceRate,
@@ -680,11 +680,17 @@ function cancelActivityDrawer() {
   if (nameInput && !nameInput.value.trim()) {
     const isDraft = activitiesState.draftActivityId === id;
     if (isDraft) {
+      const prevActivities = appState.activities;
+      const prevDraftId = activitiesState.draftActivityId;
       appState.activities = appState.activities.filter(a => a.id !== id);
       activitiesState.draftActivityId = null;
-      saveDatabase();
-      closeActivityDrawer();
-      renderActivities();
+      saveDatabaseOrRollback(() => {
+        appState.activities = prevActivities;
+        activitiesState.draftActivityId = prevDraftId;
+      }, "L'annulation n'a pas été enregistrée. Réessayez.").then(() => {
+        closeActivityDrawer();
+        renderActivities();
+      });
       return;
     } else {
       showToast("Le nom de l'activité ne peut pas être vide.", "warning");
@@ -905,21 +911,28 @@ function autoSaveActivityForm() {
 
   const idx = appState.activities.findIndex(a => a.id === internalId);
   if (idx === -1) return;
+  const previous = appState.activities[idx];
+  const prevDraftId = activitiesState.draftActivityId;
   appState.activities[idx] = { ...appState.activities[idx], ...payload };
 
   if (activitiesState.draftActivityId === internalId) {
     activitiesState.draftActivityId = null;
   }
 
-  saveDatabase();
+  saveDatabaseOrRollback(() => {
+    appState.activities[idx] = previous;
+    activitiesState.draftActivityId = prevDraftId;
+  }, "Les modifications n'ont pas été enregistrées. Réessayez.").then(saved => {
+    if (!saved) return;
 
-  if (reconciliationState.ledgerTransactions.length > 0) {
-    reconcileLedger();
-  }
+    if (reconciliationState.ledgerTransactions.length > 0) {
+      reconcileLedger();
+    }
 
-  renderActivities();
-  showAutoSaveStatus("saved");
-  updateFormTabIndicators(appState.activities[idx]);
+    renderActivities();
+    showAutoSaveStatus("saved");
+    updateFormTabIndicators(appState.activities[idx]);
+  });
 
   // Any new edit invalidates whatever "future" the redo stack held, but the undo snapshot itself
   // is debounced (see scheduleActivityUndoSnapshot): a burst of saves from one continuous edit

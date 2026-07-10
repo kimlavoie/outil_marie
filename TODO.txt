@@ -1,70 +1,60 @@
-TODO - Avant mise en production (impact sur les données)
+TODO - Suggestions d'amélioration (suite du travail sur la sécurité des données)
 
-[FAIT] Transactions atomiques sur les opérations en masse
-- Problème : le bulk delete/update (src/activities/render.ts:601-649) modifiait l'état en mémoire
-  puis appelait saveDatabase() une seule fois. Si l'écriture échouait en cours de route (quota
-  IndexedDB, crash), l'état en mémoire et celui persisté divergeaient silencieusement.
-- Correction appliquée : saveDatabase() (src/state/state.ts) retourne maintenant un booléen de
-  succès. Les deux handlers de bulk (suppression et changement d'état) sauvegardent l'état
-  précédent avant mutation, tentent la sauvegarde, et annulent la mutation en mémoire + affichent
-  un toast d'erreur si l'écriture échoue, au lieu de laisser l'UI afficher un changement jamais
-  persisté.
-
-[FAIT] Backup automatique avant opérations destructrices
-- Problème : aucun backup n'était forcé juste avant un import (qui écrase tout), un reset de la
-  base, ou une migration de schéma automatique au premier lancement post-déploiement.
-- Correction appliquée : nouveau store IndexedDB "safety_backups" (src/state/state.ts, DB
-  version 4). Un instantané horodaté de l'état est sauvegardé automatiquement et silencieusement
-  avant : la restauration d'un fichier JSON, la réinitialisation de la base, et les migrations de
-  schéma au chargement (src/state/state.ts loadDatabase(), src/services/backup.ts). Les 5 plus
-  récents sont conservés (purge automatique des plus anciens). Visibles et téléchargeables
-  (fichier JSON, réutilisable via la restauration existante) dans l'écran "Sauvegarde & Export".
-
-[FAIT] Validation métier sur les montants
-- Problème : les taux personnalisés du personnel/services et les montants de frais
-  (src/activities/reservation-subrows.ts) acceptaient des valeurs négatives sans avertissement
-  (contrairement aux lignes de distribution qui, elles, ignoraient silencieusement un montant <= 0
-  au lieu de le signaler). Aucune vérification que la somme des distributions saisies correspond
-  au total réel calculé de l'activité.
+[FAIT] Généraliser la vérification du succès de saveDatabase()
+- Problème : saveDatabase() (src/state/state.ts) retourne un booléen de succès depuis les
+  correctifs sur le bulk delete/update, mais seuls les handlers de bulk (src/activities/render.ts:
+  622, 668) vérifiaient ce retour et annulaient la mutation en cas d'échec. Une trentaine d'autres
+  appels (formulaire d'activité src/activities/form.ts, historique/undo src/activities/history.ts,
+  financials.ts, tous les écrans de src/components/settings/*, reconciliation-view.tsx,
+  navigation.ts, accounts.tsx) l'utilisaient en mode "fire-and-forget" : si l'écriture IndexedDB
+  échoue (quota atteint, onglet en arrière-plan, etc.), l'UI restait optimiste sans que le
+  changement affiché corresponde à ce qui est réellement persisté.
 - Correction appliquée :
-  - Nouvelle fonction partagée rejectNegativeAmountOnBlur() (src/utils/utils.ts) : au blur d'un
-    champ montant, une valeur négative est corrigée à 0 avec un toast d'avertissement. Appliquée à
-    fee-amount-input, staff-custom-rate-input, staff-custom-overtime-rate-input,
-    service-custom-rate-input (src/activities/reservation-subrows.ts) et dist-amount-input
-    (src/activities/financials.ts), en plus du `min="0"` déjà présent (qui n'est qu'une
-    indication visuelle côté navigateur, pas un vrai blocage).
-  - Le total des distributions saisies ("Total saisi", src/activities/financials.ts
-    updateDistributionTotal()) est maintenant comparé au sous-total réel de l'activité
-    (computeFormRevenueSubtotal(), factorisé depuis updateSubmissionFinancialSummary()) : un
-    écart de plus de 0,01 $ affiche un avertissement non bloquant sous le total (l'écart peut être
-    volontaire, ex. facturation partielle).
+  - Nouveau helper saveDatabaseOrRollback(restore, message) dans src/state/state.ts : appelle
+    saveDatabase(), et si ça échoue, invoque restore() (fourni par l'appelant pour annuler sa
+    mutation en mémoire) puis affiche un toast d'erreur explicite (en plus du toast générique déjà
+    affiché par saveDatabase() lui-même).
+  - Appliqué aux mutations d'activités existantes (suppression depuis le menu contextuel, undo/redo,
+    restauration de version, autosauvegarde du formulaire, patch de cycle de vie
+    commitActivityPatch(), annulation d'un brouillon), au rapprochement GL (mise à jour de
+    référence), aux préférences de navigation (thème, trimestres, année sélectionnés), et à tous les
+    écrans de configuration (salles, salaires, équipements, comptes GL, départements, tâches
+    globales/programmables) — y compris les cascades (ex. suppression d'un compte GL qui efface les
+    ventilations liées, renommage d'une salle qui met à jour les réservations existantes).
+  - Non traité délibérément : createActivity()/duplicateActivityAndOpen() (src/activities/form.ts)
+    et les autosaves fire-and-forget dans backup.ts. Ces créations ouvrent immédiatement le tiroir
+    d'édition sur l'enregistrement créé ; annuler la mutation en cas d'échec de sauvegarde
+    fermerait/viderait un formulaire que l'utilisateur est en train de remplir, ce qui est pire que
+    laisser l'enregistrement en mémoire (retenté à la prochaine sauvegarde) avec le toast d'erreur
+    générique déjà affiché par saveDatabase().
 
 [MAJEUR] Piste d'audit minimale
 - Problème : aucune trace de qui/quand une suppression ou modification significative a eu lieu.
   Pas d'authentification donc pas de "qui", mais on peut tracer "quand + quoi".
-- Correction : étendre le store activity_versions (déjà utilisé pour l'undo) avec un log
-  d'événements horodatés pour les suppressions/modifications importantes.
+- Piste : étendre le store activity_versions (déjà utilisé pour l'undo) avec un log d'événements
+  horodatés pour les suppressions/modifications importantes.
 
-[FAIT] Garde-fou avant migrations irréversibles
-- Problème : les migrations (src/state/state.ts:674-975) sont complexes et non réversibles. Pire :
-  si une migration levait une exception au chargement, le catch englobant de loadDatabase()
-  appelait seedDatabase(), qui efface TOUTES les activités et réinitialise les paramètres — un bug
-  de migration pouvait donc se traduire par une perte totale de données, pas juste une erreur.
-- Correction appliquée :
-  - loadDatabase() (src/state/state.ts) exécute maintenant les migrations dans leur propre
-    try/catch, séparé de celui qui déclenche seedDatabase() (réservé aux cas où la base est
-    réellement illisible).
-  - Si une migration échoue, ou si le nombre d'activités tombe à 0 après migration alors qu'il y
-    en avait avant (signe d'un bug silencieux), l'état revient aux données telles que chargées
-    (non migrées) au lieu de persister un résultat corrompu ou vide ; un toast d'erreur explicite
-    est affiché à l'utilisateur.
-  - Même garde appliquée à la restauration d'un fichier JSON (src/services/backup.ts) : si les
-    migrations post-restauration échouent, l'état revient à ce qu'il était avant la restauration
-    (rien n'est écrasé sur le disque) plutôt que de continuer avec des données à moitié migrées.
-  - Dans les deux cas, la sauvegarde de sécurité automatique (point précédent) reste disponible en
-    complément.
-  - Reste à faire manuellement avant la mise en prod : tester les migrations sur une copie réelle
-    des données de prod (pas seulement les fixtures de test), en plus de ce garde-fou.
+[À FAIRE] Validation du schéma à la restauration d'un backup/import
+- Problème : la restauration d'un fichier JSON (src/services/backup.ts) applique le contenu du
+  fichier tel quel, avec pour seul filet le garde-fou de migration déjà en place (qui revient en
+  arrière si la migration échoue). Un fichier corrompu, tronqué, ou modifié à la main pourrait
+  passer les migrations sans erreur mais avec une forme inattendue.
+- Piste : valider la structure du JSON (présence des champs attendus, types) avant d'appliquer la
+  restauration, en plus du garde-fou de migration existant.
+
+[À FAIRE] Utilisation multi-onglets
+- Problème : l'app tourne sur IndexedDB dans le navigateur. Si l'utilisateur ouvre l'app dans deux
+  onglets, le second peut écraser silencieusement les changements du premier au prochain
+  saveDatabase(), sans avertissement.
+- Piste : utiliser un BroadcastChannel (ou équivalent) pour détecter qu'une donnée a été modifiée
+  dans un autre onglet et avertir l'utilisateur avant d'écraser.
+
+[À FAIRE] Couverture de tests du rapprochement GL et du générateur de contrat
+- Problème : src/services/reconciliation.ts (379 lignes) et src/services/contract-generator.ts
+  (898 lignes) sont deux des plus gros modules métier, sans qu'on sache s'ils ont une couverture de
+  cas limites comparable à celle de test/activities-financials.test.ts (montants à zéro, comptes GL
+  manquants, dates invalides, etc.).
+- Piste : auditer la couverture actuelle et ajouter des tests pour les cas limites identifiés.
 
 Hors scope pour l'instant :
 - Authentification / autorisation : à revoir selon qui utilisera l'app en production

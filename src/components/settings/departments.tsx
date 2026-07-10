@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabase } from "../../state/state.ts";
+import { appState, saveDatabaseOrRollback } from "../../state/state.ts";
 import { showToast } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
 import { populateDropdowns } from "../../navigation.ts";
@@ -16,10 +16,14 @@ export function DepartmentsPanel({
 }) {
   const deleteDept = (name: string) => {
     if (!confirm(`Voulez-vous vraiment supprimer le département "${name}" ?`)) return;
+    const prevDepartments = appState.settings.departments;
     appState.settings.departments = appState.settings.departments.filter((d: string) => d !== name);
-    saveDatabase();
-    populateDropdowns();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.departments = prevDepartments;
+    }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => {
+      populateDropdowns();
+      bump();
+    });
   };
 
   return (
@@ -80,12 +84,18 @@ export function DeptModal({ name, onClose, bump }: { name: string | null | undef
       return;
     }
 
+    const prevDepartments = [...appState.settings.departments];
+    const touchedActivities: { act: { department: string }; prevDepartment: string }[] = [];
+
     if (originalName) {
       const idx = appState.settings.departments.findIndex((d: string) => d === originalName);
       if (idx !== -1) {
         appState.settings.departments[idx] = newName;
         appState.activities.forEach(act => {
-          if (act.department === originalName) act.department = newName;
+          if (act.department === originalName) {
+            touchedActivities.push({ act, prevDepartment: act.department });
+            act.department = newName;
+          }
         });
       }
     } else {
@@ -93,10 +103,20 @@ export function DeptModal({ name, onClose, bump }: { name: string | null | undef
     }
 
     appState.settings.departments.sort();
-    saveDatabase();
-    onClose();
-    populateDropdowns();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.departments = prevDepartments;
+      touchedActivities.forEach(({ act, prevDepartment }) => {
+        act.department = prevDepartment;
+      });
+    }, "L'enregistrement du département a échoué. Réessayez.").then(saved => {
+      if (!saved) {
+        bump();
+        return;
+      }
+      onClose();
+      populateDropdowns();
+      bump();
+    });
   };
 
   return (

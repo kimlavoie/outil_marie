@@ -4,7 +4,7 @@
  */
 import {
   appState,
-  saveDatabase,
+  saveDatabaseOrRollback,
   getFiscalYear,
   parseLocalDateStr,
   EVENT_TYPES,
@@ -102,13 +102,15 @@ function initNavigation() {
 
   // Theme toggle button
   document.getElementById("theme-toggle")?.addEventListener("click", () => {
-    const currentTheme = appState.settings.theme === "light" ? "dark" : "light";
+    const previousTheme = appState.settings.theme;
+    const currentTheme = previousTheme === "light" ? "dark" : "light";
     applyTheme(currentTheme);
-    saveDatabase();
-    // Re-draw charts in case colors need to adjust (Chart.js respects theme context changes if redrawn)
-    if (document.getElementById("view-dashboard")?.classList.contains("active")) {
-      renderDashboardCharts();
-    }
+    saveDatabaseOrRollback(() => applyTheme(previousTheme), "Le changement de thème n'a pas été enregistré. Réessayez.").then(() => {
+      // Re-draw charts in case colors need to adjust (Chart.js respects theme context changes if redrawn)
+      if (document.getElementById("view-dashboard")?.classList.contains("active")) {
+        renderDashboardCharts();
+      }
+    });
   });
 
   // Quick Export Excel Header button
@@ -647,23 +649,30 @@ function initPeriodSelector() {
     btn.addEventListener("click", () => {
       btn.classList.toggle("active");
       const isActive = btn.classList.contains("active");
+      const prevQuarters = appState.selected_quarters;
 
       if (isActive) {
         if (!appState.selected_quarters.includes(q)) {
-          appState.selected_quarters.push(q);
+          appState.selected_quarters = [...appState.selected_quarters, q];
         }
       } else {
         appState.selected_quarters = appState.selected_quarters.filter(x => x !== q);
       }
 
-      saveDatabase();
+      saveDatabaseOrRollback(
+        () => {
+          appState.selected_quarters = prevQuarters;
+          btn.classList.toggle("active");
+        },
+        "La sélection de trimestre n'a pas été enregistrée. Réessayez."
+      ).then(() => {
+        // Re-run validation if ledger has been loaded to update statuses immediately!
+        if (reconciliationState.ledgerTransactions.length > 0) {
+          reconcileLedger();
+        }
 
-      // Re-run validation if ledger has been loaded to update statuses immediately!
-      if (reconciliationState.ledgerTransactions.length > 0) {
-        reconcileLedger();
-      }
-
-      renderAll();
+        renderAll();
+      });
     });
   });
 
@@ -671,15 +680,19 @@ function initPeriodSelector() {
   const yearSelect = document.getElementById("top-fiscal-year") as HTMLSelectElement | null;
   if (yearSelect) {
     yearSelect.addEventListener("change", e => {
+      const prevYear = appState.selected_year;
       appState.selected_year = (e.target as HTMLSelectElement).value;
-      saveDatabase();
+      saveDatabaseOrRollback(() => {
+        appState.selected_year = prevYear;
+        yearSelect.value = prevYear;
+      }, "Le changement d'année n'a pas été enregistré. Réessayez.").then(() => {
+        // Re-run validation if ledger has been loaded to update statuses immediately!
+        if (reconciliationState.ledgerTransactions.length > 0) {
+          reconcileLedger();
+        }
 
-      // Re-run validation if ledger has been loaded to update statuses immediately!
-      if (reconciliationState.ledgerTransactions.length > 0) {
-        reconcileLedger();
-      }
-
-      renderAll();
+        renderAll();
+      });
     });
   }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabase } from "../../state/state.ts";
+import { appState, saveDatabaseOrRollback } from "../../state/state.ts";
 import { showToast } from "../../utils/utils.ts";
 import { populateDropdowns } from "../../navigation.ts";
 import { DeleteIcon, Modal } from "./common.tsx";
@@ -15,13 +15,21 @@ export function AccountsPanel({
 }) {
   const deleteAccount = (code: string) => {
     if (!confirm(`Voulez-vous vraiment supprimer le compte ${code} ? Les ventilations liées à ce compte seront effacées.`)) return;
+    const prevAccounts = appState.settings.accounts;
+    const prevDistributions = appState.activities.map(act => ({ act, distributions: act.distributions }));
     appState.settings.accounts = appState.settings.accounts.filter(a => a.code !== code);
     appState.activities.forEach(act => {
       act.distributions = act.distributions.filter((d: { account_code: string }) => d.account_code !== code);
     });
-    saveDatabase();
-    populateDropdowns();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.accounts = prevAccounts;
+      prevDistributions.forEach(({ act, distributions }) => {
+        act.distributions = distributions;
+      });
+    }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => {
+      populateDropdowns();
+      bump();
+    });
   };
 
   return (
@@ -83,6 +91,8 @@ export function AccountModal({ code, onClose, bump }: { code: string | null | un
     }
 
     const payload = { code: newCode, description };
+    const prevAccounts = [...appState.settings.accounts];
+    const touchedDistributions: { dist: { account_code: string }; prevCode: string }[] = [];
 
     if (originalCode) {
       const idx = appState.settings.accounts.findIndex(a => a.code === originalCode);
@@ -90,7 +100,10 @@ export function AccountModal({ code, onClose, bump }: { code: string | null | un
         appState.settings.accounts[idx] = payload;
         appState.activities.forEach(act => {
           act.distributions.forEach((dist: { account_code: string }) => {
-            if (dist.account_code === originalCode) dist.account_code = newCode;
+            if (dist.account_code === originalCode) {
+              touchedDistributions.push({ dist, prevCode: dist.account_code });
+              dist.account_code = newCode;
+            }
           });
         });
       }
@@ -103,10 +116,20 @@ export function AccountModal({ code, onClose, bump }: { code: string | null | un
     }
 
     appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
-    saveDatabase();
-    onClose();
-    populateDropdowns();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.accounts = prevAccounts;
+      touchedDistributions.forEach(({ dist, prevCode }) => {
+        dist.account_code = prevCode;
+      });
+    }, "L'enregistrement du compte a échoué. Réessayez.").then(saved => {
+      if (!saved) {
+        bump();
+        return;
+      }
+      onClose();
+      populateDropdowns();
+      bump();
+    });
   };
 
   return (

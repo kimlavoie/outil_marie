@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabase, getActiveServiceRate } from "../../state/state.ts";
+import { appState, saveDatabaseOrRollback, getActiveServiceRate } from "../../state/state.ts";
 import { showToast, generateUid, newRateVersionRow } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
 import { DeleteIcon, Modal, TarifsEditor, TarifRow } from "./common.tsx";
@@ -10,9 +10,11 @@ export function ServicesPanel({ active, openModal, bump }: { active: boolean; op
     const svc = services.find((s: { id: string }) => s.id === id);
     const serviceName = svc ? svc.name : "";
     if (!confirm(`Voulez-vous vraiment supprimer l'équipement "${serviceName}" ?`)) return;
+    const prevServices = appState.settings.services;
     appState.settings.services = services.filter((s: { id: string }) => s.id !== id);
-    saveDatabase();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.services = prevServices;
+    }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => bump());
   };
 
   return (
@@ -131,6 +133,7 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
       return;
     }
 
+    const prevServices = [...services];
     if (originalId) {
       const idx = services.findIndex((s: { id: string }) => s.id === originalId);
       if (idx !== -1) {
@@ -147,9 +150,16 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
     services.sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
     appState.settings.services = services;
 
-    saveDatabase();
-    onClose();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.services = prevServices;
+    }, "L'enregistrement de l'équipement a échoué. Réessayez.").then(saved => {
+      if (!saved) {
+        bump();
+        return;
+      }
+      onClose();
+      bump();
+    });
   };
 
   return (

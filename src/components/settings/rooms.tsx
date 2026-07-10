@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabase, getFlattenedRoomTarifs } from "../../state/state.ts";
+import { appState, saveDatabaseOrRollback, getFlattenedRoomTarifs } from "../../state/state.ts";
 import { generateUid, formatCurrency, formatDateMask, getRoomColor, FALLBACK_ROOM_COLORS, showToast } from "../../utils/utils.ts";
 import { populateDropdowns } from "../../navigation.ts";
 import { DeleteIcon, Modal, GlAccountOptions } from "./common.tsx";
@@ -44,13 +44,21 @@ interface LinkedTaskRow {
 export function RoomsPanel({ active, openModal, bump }: { active: boolean; openModal: (name: string | null) => void; bump: () => void }) {
   const deleteRoom = (name: string) => {
     if (!confirm(`Voulez-vous vraiment supprimer la salle ${name} ?`)) return;
+    const prevRooms = appState.settings.rooms;
+    const prevLinkedRooms = appState.settings.rooms.map((r: { linked_rooms?: string[] }) => ({ r, linked_rooms: r.linked_rooms }));
     appState.settings.rooms = appState.settings.rooms.filter((r: { name: string }) => r.name !== name);
     appState.settings.rooms.forEach((r: { linked_rooms?: string[] }) => {
       r.linked_rooms = (r.linked_rooms || []).filter((n: string) => n !== name);
     });
-    saveDatabase();
-    populateDropdowns();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.rooms = prevRooms;
+      prevLinkedRooms.forEach(({ r, linked_rooms }) => {
+        r.linked_rooms = linked_rooms;
+      });
+    }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => {
+      populateDropdowns();
+      bump();
+    });
   };
 
   return (
@@ -324,13 +332,20 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
       linked_tasks: linkedTasksPayload
     };
 
+    const prevRooms = [...appState.settings.rooms];
+    const touchedReservations: { r: { room_name: string }; prevRoomName: string }[] = [];
+    const prevLinkedRooms = appState.settings.rooms.map((r: { linked_rooms?: string[] }) => ({ r, linked_rooms: r.linked_rooms }));
+
     if (originalName) {
       const idx = appState.settings.rooms.findIndex((r: { name: string }) => r.name === originalName);
       if (idx !== -1) {
         appState.settings.rooms[idx] = payload;
         appState.activities.forEach(act => {
           (act.reservations || []).forEach((r: { room_name: string }) => {
-            if (r.room_name === originalName) r.room_name = newName;
+            if (r.room_name === originalName) {
+              touchedReservations.push({ r, prevRoomName: r.room_name });
+              r.room_name = newName;
+            }
           });
         });
         appState.settings.rooms.forEach((r: { linked_rooms?: string[] }) => {
@@ -345,10 +360,23 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
       appState.settings.rooms.push(payload);
     }
 
-    saveDatabase();
-    onClose();
-    populateDropdowns();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.rooms = prevRooms;
+      touchedReservations.forEach(({ r, prevRoomName }) => {
+        r.room_name = prevRoomName;
+      });
+      prevLinkedRooms.forEach(({ r, linked_rooms }) => {
+        r.linked_rooms = linked_rooms;
+      });
+    }, "L'enregistrement de la salle a échoué. Réessayez.").then(saved => {
+      if (!saved) {
+        bump();
+        return;
+      }
+      onClose();
+      populateDropdowns();
+      bump();
+    });
   };
 
   if (!isOpen || !activeGrid) {

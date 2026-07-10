@@ -11,7 +11,7 @@ import {
   appState,
   parseLocalDateStr,
   EVENT_TYPES,
-  saveDatabase,
+  saveDatabaseOrRollback,
   getActivityVersionsFromDb,
   addActivityVersionToDb,
   pruneActivityVersions
@@ -69,6 +69,7 @@ function restoreActivitySnapshot(snapshot: any) {
   // can't fire afterwards and silently push a stale state back onto the stack.
   clearTimeout(activityUndoSnapshotTimer ?? undefined);
 
+  const previous = appState.activities[idx];
   appState.activities[idx] = JSON.parse(JSON.stringify(snapshot));
 
   document.getElementById("activity-drawer-title")!.textContent =
@@ -80,11 +81,19 @@ function restoreActivitySnapshot(snapshot: any) {
   fillActivityFormFields(appState.activities[idx]);
   renderActivityStateBar(appState.activities[idx]);
 
-  saveDatabase();
-  if (reconciliationState.ledgerTransactions.length > 0) {
-    reconcileLedger();
-  }
-  renderActivities();
+  saveDatabaseOrRollback(
+    () => {
+      appState.activities[idx] = previous;
+      fillActivityFormFields(previous);
+      renderActivityStateBar(previous);
+    },
+    "L'annulation/rétablissement n'a pas été enregistré. Réessayez."
+  ).then(() => {
+    if (reconciliationState.ledgerTransactions.length > 0) {
+      reconcileLedger();
+    }
+    renderActivities();
+  });
 }
 
 // Ctrl+Z: reverts to the previous auto-saved state of the activity currently open in the drawer.
@@ -554,28 +563,35 @@ function restoreActivityVersion(versionRecord: any) {
   if (idx === -1) return;
 
   // Restore the activity data
+  const previous = appState.activities[idx];
   appState.activities[idx] = JSON.parse(JSON.stringify(versionRecord.activityData));
 
   // Re-save DB
-  saveDatabase();
+  saveDatabaseOrRollback(() => {
+    appState.activities[idx] = previous;
+    fillActivityFormFields(previous);
+    renderActivityStateBar(previous);
+  }, "La restauration de version n'a pas été enregistrée. Réessayez.").then(saved => {
+    if (!saved) return;
 
-  // Refresh the drawer fields and state bar
-  fillActivityFormFields(appState.activities[idx]);
-  renderActivityStateBar(appState.activities[idx]);
+    // Refresh the drawer fields and state bar
+    fillActivityFormFields(appState.activities[idx]);
+    renderActivityStateBar(appState.activities[idx]);
 
-  // Update openedActivitySnapshot to prevent saving immediately a new version upon closing
-  activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(appState.activities[idx]));
+    // Update openedActivitySnapshot to prevent saving immediately a new version upon closing
+    activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(appState.activities[idx]));
 
-  // Save a new version to the history representing the restored state
-  saveActivityVersion(appState.activities[idx]).then(() => {
-    // Reload history list
-    loadAndRenderActivityHistory(currentId);
+    // Save a new version to the history representing the restored state
+    saveActivityVersion(appState.activities[idx]).then(() => {
+      // Reload history list
+      loadAndRenderActivityHistory(currentId);
+    });
+
+    // Close the drawer and refresh activities list to reflect the restored state
+    renderActivities();
+
+    showToast("Version restaurée avec succès !", "success");
   });
-
-  // Close the drawer and refresh activities list to reflect the restored state
-  renderActivities();
-
-  showToast("Version restaurée avec succès !", "success");
 }
 
 export {

@@ -14,7 +14,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { appState, saveDatabase } from "../state/state.ts";
+import { appState, saveDatabaseOrRollback } from "../state/state.ts";
 import { showToast, showLoadingOverlay, hideLoadingOverlay, formatCurrency, renderPaginationBar } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
 import {
@@ -732,11 +732,19 @@ function ReconciliationView() {
   const acceptSuggestion = (result: any, newReference: string) => {
     const act = appState.activities.find((a: any) => a.id === result.activityId);
     if (!act || !act.distributions[result.distIndex]) return;
+    const prevReference = act.distributions[result.distIndex].reference;
     act.distributions[result.distIndex].reference = newReference;
-    saveDatabase();
-    reconcileLedger();
-    bump();
-    showToast(`Référence mise à jour pour « ${act.name} ».`, "success");
+    saveDatabaseOrRollback(() => {
+      act.distributions[result.distIndex].reference = prevReference;
+    }, "La mise à jour de la référence n'a pas été enregistrée. Réessayez.").then(saved => {
+      if (!saved) {
+        bump();
+        return;
+      }
+      reconcileLedger();
+      bump();
+      showToast(`Référence mise à jour pour « ${act.name} ».`, "success");
+    });
   };
 
   const results = reconciliationState.results;

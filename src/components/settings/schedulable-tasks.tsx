@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabase, EVENT_TYPES, TECHNICAL_SERVICES } from "../../state/state.ts";
+import { appState, saveDatabaseOrRollback, EVENT_TYPES, TECHNICAL_SERVICES } from "../../state/state.ts";
 import { showToast, generateUid } from "../../utils/utils.ts";
 import { DeleteIcon, Modal } from "./common.tsx";
 
@@ -143,9 +143,11 @@ export function SchedulableTasksPanel({
   const tasks: SchedulableTask[] = appState.settings.schedulable_tasks || [];
   const deleteTask = (id: string) => {
     if (!confirm("Voulez-vous vraiment supprimer cette tâche programmable ?")) return;
+    const prevTasks = appState.settings.schedulable_tasks;
     appState.settings.schedulable_tasks = tasks.filter(t => t.id !== id);
-    saveDatabase();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.schedulable_tasks = prevTasks;
+    }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => bump());
   };
 
   return (
@@ -239,6 +241,7 @@ export function SchedulableTaskModal({ id, onClose, bump }: { id: string | null 
     }
 
     const tasks: SchedulableTask[] = appState.settings.schedulable_tasks || [];
+    const prevTasks = [...tasks];
     const record: SchedulableTask = { id: originalId || generateUid("schedulable-task"), description, groups_logic: groupsLogic, groups };
     if (originalId) {
       const idx = tasks.findIndex(t => t.id === originalId);
@@ -248,9 +251,16 @@ export function SchedulableTaskModal({ id, onClose, bump }: { id: string | null 
     }
     appState.settings.schedulable_tasks = tasks;
 
-    saveDatabase();
-    onClose();
-    bump();
+    saveDatabaseOrRollback(() => {
+      appState.settings.schedulable_tasks = prevTasks;
+    }, "L'enregistrement de la tâche a échoué. Réessayez.").then(saved => {
+      if (!saved) {
+        bump();
+        return;
+      }
+      onClose();
+      bump();
+    });
   };
 
   return (
