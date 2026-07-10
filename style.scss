@@ -75,6 +75,142 @@
   --info-text: #c084fc;
 }
 
+/* Shared mixins to avoid repeating the same declaration blocks across
+   similarly-shaped components (cards, badges, backdrops, dropdown menus,
+   accordions, viewers, icons). Kept purely presentational — no selector
+   or specificity changes versus the plain-CSS version. */
+@mixin card-surface($radius: var(--radius-lg)) {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: $radius;
+  box-shadow: var(--shadow-sm);
+}
+
+@mixin icon-svg($size) {
+  width: $size;
+  height: $size;
+  fill: currentColor;
+}
+
+@mixin overlay-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition-smooth);
+
+  &.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
+
+@mixin badge-variant($bg, $text) {
+  background-color: $bg;
+  color: $text;
+}
+
+@mixin dropdown-menu-panel($min-width) {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  min-width: $min-width;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 0;
+  z-index: 1001;
+}
+
+@mixin dropdown-menu-item {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 100%;
+  transition: var(--transition-smooth);
+
+  &:hover {
+    background-color: var(--primary-light);
+    color: var(--primary);
+  }
+}
+
+@mixin accordion-section {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+  overflow: hidden;
+  transition: var(--transition-smooth);
+
+  &[open] {
+    border-color: var(--primary);
+  }
+}
+
+@mixin accordion-summary {
+  padding: 14px 18px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &:hover {
+    background-color: var(--bg-main);
+  }
+}
+
+@mixin accordion-content {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+@mixin viewer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@mixin viewer-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@mixin custom-viewer-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  border-radius: 0;
+}
+
 /* Reset and Core Layout */
 * {
   box-sizing: border-box;
@@ -133,8 +269,7 @@ body {
 }
 
 .sidebar-logo svg {
-  width: 22px;
-  height: 22px;
+  @include icon-svg(22px);
   fill: #ffffff;
 }
 
@@ -186,9 +321,7 @@ body {
 }
 
 .nav-item svg {
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
+  @include icon-svg(20px);
 }
 
 .sidebar-footer {
@@ -275,9 +408,7 @@ body {
 }
 
 .theme-toggle-btn svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
+  @include icon-svg(16px);
 }
 
 /* Quarter Toggle Buttons */
@@ -455,14 +586,11 @@ body {
 }
 
 .stat-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  @include card-surface;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  box-shadow: var(--shadow-sm);
   transition: var(--transition-smooth);
 }
 
@@ -504,11 +632,8 @@ body {
 }
 
 .chart-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  @include card-surface;
   padding: 24px;
-  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -535,10 +660,7 @@ body {
 
 /* Data Table Styles */
 .table-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  @include card-surface;
   display: flex;
   flex-direction: column;
 }
@@ -786,7 +908,7 @@ body {
 }
 
 .btn-success:hover {
-  background-opacity: 0.9;
+  opacity: 0.9;
 }
 
 .btn-danger {
@@ -817,9 +939,7 @@ body {
 }
 
 .btn-icon svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
+  @include icon-svg(16px);
 }
 
 .table-responsive {
@@ -928,43 +1048,24 @@ tr:hover td {
 }
 
 .badge-success {
-  background-color: var(--success-light);
-  color: var(--success-text);
+  @include badge-variant(var(--success-light), var(--success-text));
 }
 
 .badge-danger {
-  background-color: var(--danger-light);
-  color: var(--danger-text);
+  @include badge-variant(var(--danger-light), var(--danger-text));
 }
 
 .badge-warning {
-  background-color: var(--warning-light);
-  color: var(--warning-text);
+  @include badge-variant(var(--warning-light), var(--warning-text));
 }
 
 .badge-info {
-  background-color: var(--info-light);
-  color: var(--info-text);
+  @include badge-variant(var(--info-light), var(--info-text));
 }
 
 /* Form Styles and Form Drawer */
 .drawer-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  z-index: 99;
-  opacity: 0;
-  pointer-events: none;
-  transition: var(--transition-smooth);
-}
-
-.drawer-backdrop.active {
-  opacity: 1;
-  pointer-events: all;
+  @include overlay-backdrop;
 }
 
 .drawer {
@@ -1406,12 +1507,9 @@ input[type="checkbox"] {
 }
 
 .summary-box {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  @include card-surface(var(--radius-md));
   padding: 16px;
   text-align: center;
-  box-shadow: var(--shadow-sm);
 }
 
 .summary-box-val {
@@ -1429,22 +1527,7 @@ input[type="checkbox"] {
 
 /* Modal styling */
 .modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  z-index: 99;
-  opacity: 0;
-  pointer-events: none;
-  transition: var(--transition-smooth);
-}
-
-.modal-backdrop.active {
-  opacity: 1;
-  pointer-events: all;
+  @include overlay-backdrop;
 }
 
 .modal {
@@ -1645,14 +1728,11 @@ input[type="checkbox"] {
 
 /* Settings Tabbed Section */
 .settings-container {
+  @include card-surface;
   display: grid;
   grid-template-columns: 200px 1fr;
   gap: 32px;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
   padding: 32px;
-  box-shadow: var(--shadow-sm);
 }
 
 @media (max-width: 768px) {
@@ -2694,15 +2774,7 @@ input[type="checkbox"] {
   bottom: 100%;
   left: 0;
   margin-bottom: 8px;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  min-width: 180px;
-  display: flex;
-  flex-direction: column;
-  padding: 6px 0;
-  z-index: 1001;
+  @include dropdown-menu-panel(180px);
 }
 
 .bulk-state-menu.hidden {
@@ -2710,52 +2782,16 @@ input[type="checkbox"] {
 }
 
 .bulk-state-item {
-  background: none;
-  border: none;
-  padding: 8px 16px;
-  text-align: left;
-  font-family: var(--font-sans);
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-  width: 100%;
-  transition: var(--transition-smooth);
-}
-
-.bulk-state-item:hover {
-  background-color: var(--primary-light);
-  color: var(--primary);
+  @include dropdown-menu-item;
 }
 
 /* Activity row context menu (right-click on an activities list row) */
 .row-actions-menu {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  min-width: 200px;
-  display: flex;
-  flex-direction: column;
-  padding: 6px 0;
-  z-index: 1001;
+  @include dropdown-menu-panel(200px);
 }
 
 .row-actions-item {
-  background: none;
-  border: none;
-  padding: 8px 16px;
-  text-align: left;
-  font-family: var(--font-sans);
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-  width: 100%;
-  transition: var(--transition-smooth);
-}
-
-.row-actions-item:hover {
-  background-color: var(--primary-light);
-  color: var(--primary);
+  @include dropdown-menu-item;
 }
 
 .row-actions-item.danger {
@@ -3151,42 +3187,16 @@ tr.activity-row:hover .activity-select-checkbox,
 
 /* Activity form accordion sections */
 .form-accordion-section {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background-color: var(--bg-card);
-  overflow: hidden;
-  transition: var(--transition-smooth);
   margin-bottom: 12px;
-}
-
-.form-accordion-section[open] {
-  border-color: var(--primary);
+  @include accordion-section;
 }
 
 .form-accordion-summary {
-  padding: 14px 18px;
-  font-weight: 600;
-  font-size: 0.92rem;
-  color: var(--text-primary);
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  user-select: none;
-}
-
-.form-accordion-summary::-webkit-details-marker {
-  display: none;
-}
-
-.form-accordion-summary:hover {
-  background-color: var(--bg-main);
+  @include accordion-summary;
 }
 
 .form-accordion-content {
-  padding: 16px 20px;
-  border-top: 1px solid var(--border-color);
+  @include accordion-content;
 }
 
 .form-accordion-check {
@@ -3222,41 +3232,15 @@ tr.activity-row:hover .activity-select-checkbox,
 
 /* Help Center styles */
 .help-section {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background-color: var(--bg-card);
-  overflow: hidden;
-  transition: var(--transition-smooth);
-}
-
-.help-section[open] {
-  border-color: var(--primary);
+  @include accordion-section;
 }
 
 .help-section-summary {
-  padding: 14px 18px;
-  font-weight: 600;
-  font-size: 0.92rem;
-  color: var(--text-primary);
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  user-select: none;
-}
-
-.help-section-summary::-webkit-details-marker {
-  display: none;
-}
-
-.help-section-summary:hover {
-  background-color: var(--bg-main);
+  @include accordion-summary;
 }
 
 .help-section-content {
-  padding: 16px 20px;
-  border-top: 1px solid var(--border-color);
+  @include accordion-content;
   font-size: 0.85rem;
   line-height: 1.6;
   color: var(--text-secondary);
@@ -3434,13 +3418,7 @@ tr.activity-row:hover .activity-select-checkbox,
 }
 
 .pdf-custom-viewer.pdf-fullscreen-mode {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 9999;
-  border-radius: 0;
+  @include custom-viewer-fullscreen;
 }
 
 .pdf-custom-viewer.pdf-fullscreen-mode .pdf-viewport {
@@ -3449,20 +3427,11 @@ tr.activity-row:hover .activity-select-checkbox,
 }
 
 .pdf-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background-color: var(--bg-card);
-  border-bottom: 1px solid var(--border-color);
-  gap: 12px;
-  flex-wrap: wrap;
+  @include viewer-toolbar;
 }
 
 .pdf-toolbar-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  @include viewer-toolbar-group;
 }
 
 .pdf-page-indicator {
@@ -3550,13 +3519,7 @@ tr.activity-row:hover .activity-select-checkbox,
 }
 
 .xlsx-custom-viewer.xlsx-fullscreen-mode {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 9999;
-  border-radius: 0;
+  @include custom-viewer-fullscreen;
 }
 
 .xlsx-custom-viewer.xlsx-fullscreen-mode .xlsx-viewport {
@@ -3566,20 +3529,11 @@ tr.activity-row:hover .activity-select-checkbox,
 }
 
 .xlsx-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background-color: var(--bg-card);
-  border-bottom: 1px solid var(--border-color);
-  gap: 12px;
-  flex-wrap: wrap;
+  @include viewer-toolbar;
 }
 
 .xlsx-toolbar-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  @include viewer-toolbar-group;
 }
 
 .xlsx-sheet-tabs {
