@@ -3,14 +3,6 @@ TODO - Suggestions d'amélioration (suite du travail sur la sécurité des donn�
 [NE PAS FAIRE] Piste d'audit minimale
 - Décision : ne sera pas implémentée.
 
-[MOYEN] Tarif de salle à 0 $ si le montant personnalisé est invalide
-- Problème : dans collectReservationsFromForm() (src/activities/reservations.ts:~819), pour un
-  tarif "custom", `tariffAmount = parseFloat(...) || 0` — si le champ est vide ou mal saisi,
-  parseFloat retourne NaN et `|| 0` transforme ça en tarif gratuit sans avertissement. La salle est
-  facturée 0 $ alors que l'utilisateur voulait probablement un montant précis.
-- Piste : distinguer "0 $ voulu" de "montant manquant/invalide" — avertir ou bloquer la sauvegarde
-  si une description de tarif custom est remplie mais le montant est vide/NaN.
-
 [MOYEN] Compte GL introuvable non détecté (tarif custom et grille de prix)
 - Problème : deux chemins dans reservations.ts affectent un tariff_gl_account_code sans vérifier
   qu'il existe dans appState.settings.accounts : le sélecteur `.room-tariff-custom-gl` pour un tarif
@@ -53,3 +45,9 @@ Historique des correctifs appliqués (archivé, voir git log pour le détail com
     une ligne exclue avait des données saisies (heures, taux, montant, compte GL...) et le
     signalent via un toast d'avertissement affiché par autoSaveActivityForm() plutôt que de
     disparaître silencieusement.
+- [FAIT] Tarif de salle à 0 $ si le montant personnalisé est invalide
+  - Correction : collectReservationsFromForm() (src/activities/reservations.ts) détecte le cas où
+    une description de tarif custom est remplie mais le champ montant est vide/invalide (tariffAmount
+    tombe quand même à 0 via `parseFloat(...) || 0`, le comportement de facturation ne change pas)
+    et pousse un avertissement (via le même mécanisme pushIncompleteRowWarning/getIncompleteRowWarnings
+    que les lignes de personnel/services/frais) affiché en toast par autoSaveActivityForm().

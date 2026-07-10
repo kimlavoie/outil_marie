@@ -42,7 +42,8 @@ import {
   collectStaffFromForm,
   collectServicesFromForm,
   collectFeesFromForm,
-  resetIncompleteRowWarnings
+  resetIncompleteRowWarnings,
+  pushIncompleteRowWarning
 } from "./reservation-subrows.ts";
 
 function el<T extends Element = HTMLInputElement>(id: string): T {
@@ -818,8 +819,16 @@ function collectReservationsFromForm() {
 
     if (paramVal === "__custom__") {
       tariffDescription = card.querySelector<HTMLInputElement>(".room-tariff-custom-desc")!.value.trim();
-      tariffAmount = parseFloat(card.querySelector<HTMLInputElement>(".room-tariff-custom-amount")!.value) || 0;
+      const rawAmount = card.querySelector<HTMLInputElement>(".room-tariff-custom-amount")!.value.trim();
+      tariffAmount = parseFloat(rawAmount) || 0;
       tariffGlAccountCode = card.querySelector<HTMLSelectElement>(".room-tariff-custom-gl")!.value;
+      // A filled-in description with a missing/invalid amount silently defaulted to a free ($0)
+      // tariff — warn instead so the user notices before the activity gets saved that way.
+      if (tariffDescription && (!rawAmount || isNaN(parseFloat(rawAmount)))) {
+        pushIncompleteRowWarning(
+          `Le tarif personnalisé "${tariffDescription}" n'a pas de montant valide : la salle sera facturée 0 $.`
+        );
+      }
     } else if (paramVal && clientTypeVal && !isOther) {
       const roomConfig = appState.settings.rooms.find(r => r.name === roomName);
       const slots = collectSlotsFromCard(card);

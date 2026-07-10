@@ -379,6 +379,10 @@ export function getIncompleteRowWarnings() {
   return incompleteRowWarnings;
 }
 
+export function pushIncompleteRowWarning(message: string) {
+  incompleteRowWarnings.push(message);
+}
+
 export function collectStaffFromForm(card: HTMLElement) {
   const rows = Array.from(card.querySelectorAll<HTMLInputElement>(".room-staff-list .distribution-row")!).map(row => {
     const wrapper = row.closest(".distribution-row-wrapper");
