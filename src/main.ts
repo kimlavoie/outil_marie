@@ -14,6 +14,7 @@ import { initCalendarModal, initViewCalendarButtons } from "./components/calenda
 import { initActivitiesSort } from "./activities/history.ts";
 import { openActivityDrawer, initActivityDetailsModal, getSavedDrawerUiState } from "./activities/financials.ts";
 import { switchActivityTab } from "./activities/form.ts";
+import { renderHelpCenter } from "./help-center.ts";
 
 // Global safety net: an uncaught exception or rejected promise anywhere in the app would
 // otherwise fail silently (no console visible to the user, no indication a feature broke).
@@ -33,6 +34,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   applyTheme(appState.settings.theme || "dark");
   initPeriodSelector();
   initNavigation();
+  renderHelpCenter();
   initFormHandlers();
   initNewActivityModal();
   initActivityDetailsModal();
