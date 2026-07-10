@@ -15,6 +15,7 @@ import { initActivitiesSort } from "./activities/history.ts";
 import { openActivityDrawer, initActivityDetailsModal, getSavedDrawerUiState } from "./activities/financials.ts";
 import { switchActivityTab } from "./activities/form.ts";
 import { renderHelpCenter } from "./help-center.ts";
+import { renderActivityDrawerShell } from "./activities/drawer-template.ts";
 
 // Global safety net: an uncaught exception or rejected promise anywhere in the app would
 // otherwise fail silently (no console visible to the user, no indication a feature broke).
@@ -32,6 +33,7 @@ window.addEventListener("unhandledrejection", e => {
 document.addEventListener("DOMContentLoaded", async () => {
   await loadDatabase();
   applyTheme(appState.settings.theme || "dark");
+  renderActivityDrawerShell();
   initPeriodSelector();
   initNavigation();
   renderHelpCenter();
