@@ -42,6 +42,30 @@ import { reconciliationState, reconcileLedger } from "../services/reconciliation
 import { fillActivityFormFields, renderActivityStateBar, switchActivityTab, getActivityFormMode, updateFormTabIndicators } from "./form.ts";
 import { updateFormDatesHelper, saveActivityVersion, scheduleActivityUndoSnapshot } from "./history.ts";
 
+// Persists which activity record (and which of its tabs) is currently open in the drawer, so
+// reloading/reopening the app can drop the user back exactly where they left off. Kept in its own
+// localStorage key (rather than folded into state.ts's saveUiState/UI_STATE_KEY) since it's read
+// once at startup by main.ts before the activities view even exists, not re-derived from the DOM
+// on every render like the activities list filters are.
+const DRAWER_UI_KEY = "outil_marie_drawer_ui";
+
+function persistDrawerUiState(id: string, tab: string) {
+  localStorage.setItem(DRAWER_UI_KEY, JSON.stringify({ id, tab }));
+}
+
+function clearDrawerUiState() {
+  localStorage.removeItem(DRAWER_UI_KEY);
+}
+
+function getSavedDrawerUiState(): { id: string; tab: string } | null {
+  try {
+    const raw = localStorage.getItem(DRAWER_UI_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 // Typed shorthand for document.getElementById in this file's heavy DOM-manipulation code:
 // getElementById returns plain Element, which lacks .value/.disabled/.style/.focus() etc. Since
 // this file predates any type annotations on the actual markup, casting to HTMLInputElement (a
@@ -595,12 +619,12 @@ function openActivityDrawer(id: string, calendarReturn: any = null) {
   activitiesState.calendarReturn = calendarReturn;
   el("activity-drawer-back-to-calendar-btn").style.display = calendarReturn ? "inline-flex" : "none";
 
+  drawer.classList.add("active");
+  backdrop.classList.add("active");
+
   switchActivityTab("submission");
   updateFormDatesHelper();
   clearDateFieldErrors();
-
-  drawer.classList.add("active");
-  backdrop.classList.add("active");
 
   // Set cursor focus directly on the first editable field (Références COBA)
   setTimeout(() => {
@@ -628,6 +652,7 @@ function closeActivityDrawer() {
   activitiesState.openedActivitySnapshot = null;
   activitiesState.undoStack = [];
   activitiesState.redoStack = [];
+  clearDrawerUiState();
 
   el("activity-drawer").classList.remove("active");
   el("drawer-backdrop").classList.remove("active");
@@ -903,5 +928,8 @@ export {
   autoSaveActivityForm,
   activityUndoSnapshotTimer,
   ACTIVITY_UNDO_DEBOUNCE_MS,
-  setActivityUndoSnapshotTimer
+  setActivityUndoSnapshotTimer,
+  persistDrawerUiState,
+  clearDrawerUiState,
+  getSavedDrawerUiState
 };

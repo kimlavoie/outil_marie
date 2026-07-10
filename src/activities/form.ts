@@ -40,7 +40,8 @@ import {
   addDistributionRow,
   updateDistributionTotal,
   showAutoSaveStatus,
-  updateSubmissionFinancialSummary
+  updateSubmissionFinancialSummary,
+  persistDrawerUiState
 } from "./financials.ts";
 import {
   undoActivityFormChange,
@@ -477,6 +478,13 @@ function switchActivityTab(tabName: string) {
   document.querySelectorAll(".activity-tab-panel").forEach(panel => {
     panel.classList.toggle("active", panel.id === `activity-tab-panel-${tabName}`);
   });
+
+  // Remember which tab of which activity is open so a reload/reopen can restore it exactly
+  // (see financials.ts's persistDrawerUiState/getSavedDrawerUiState, read back in main.ts).
+  if (el("activity-drawer").classList.contains("active")) {
+    const id = el("form-activity-internal-id").value;
+    if (id) persistDrawerUiState(id, tabName);
+  }
 }
 
 // Renders the state badge + planning progress atop the activity record. Transition buttons

@@ -16,18 +16,70 @@ type Command =
   | { type: "closeAll"; seq: number }
   | null;
 
+// Remembers which settings tab (and, if any, which entity modal within it) the user had open, so
+// reloading/reopening the app drops them back exactly where they left off — same intent as
+// financials.ts's drawer UI persistence, kept local to this file since it's the only place that
+// knows about settings tabs/modals.
+const SETTINGS_UI_KEY = "outil_marie_settings_ui";
+
+type SettingsModalPanel = "accounts" | "rooms" | "departments" | "salaries" | "services" | "global-tasks" | "schedulable-tasks";
+
+function loadSavedSettingsUi(): { tab: string; modal: { panel: SettingsModalPanel; key: string | null } | null } {
+  try {
+    const raw = localStorage.getItem(SETTINGS_UI_KEY);
+    if (!raw) return { tab: "accounts", modal: null };
+    const parsed = JSON.parse(raw);
+    return { tab: parsed.tab || "accounts", modal: parsed.modal || null };
+  } catch {
+    return { tab: "accounts", modal: null };
+  }
+}
+
+function persistSettingsUi(tab: string, modal: { panel: SettingsModalPanel; key: string | null } | null) {
+  localStorage.setItem(SETTINGS_UI_KEY, JSON.stringify({ tab, modal }));
+}
+
 function SettingsView({ command }: { command: Command }) {
   const [, setVersion] = useState(0);
   const bump = () => setVersion(v => v + 1);
 
-  const [activeTab, setActiveTab] = useState("accounts");
-  const [accountModalCode, setAccountModalCode] = useState<string | null | undefined>(undefined);
-  const [roomModalName, setRoomModalName] = useState<string | null | undefined>(undefined);
-  const [deptModalName, setDeptModalName] = useState<string | null | undefined>(undefined);
-  const [salaryModalId, setSalaryModalId] = useState<string | null | undefined>(undefined);
-  const [serviceModalId, setServiceModalId] = useState<string | null | undefined>(undefined);
-  const [globalTaskModalId, setGlobalTaskModalId] = useState<string | null | undefined>(undefined);
-  const [schedulableTaskModalId, setSchedulableTaskModalId] = useState<string | null | undefined>(undefined);
+  const savedUiRef = useRef(loadSavedSettingsUi());
+  const savedModal = savedUiRef.current.modal;
+
+  const [activeTab, setActiveTabRaw] = useState(savedUiRef.current.tab);
+  const [accountModalCode, setAccountModalCode] = useState<string | null | undefined>(
+    savedModal?.panel === "accounts" ? savedModal.key : undefined
+  );
+  const [roomModalName, setRoomModalName] = useState<string | null | undefined>(savedModal?.panel === "rooms" ? savedModal.key : undefined);
+  const [deptModalName, setDeptModalName] = useState<string | null | undefined>(
+    savedModal?.panel === "departments" ? savedModal.key : undefined
+  );
+  const [salaryModalId, setSalaryModalId] = useState<string | null | undefined>(
+    savedModal?.panel === "salaries" ? savedModal.key : undefined
+  );
+  const [serviceModalId, setServiceModalId] = useState<string | null | undefined>(
+    savedModal?.panel === "services" ? savedModal.key : undefined
+  );
+  const [globalTaskModalId, setGlobalTaskModalId] = useState<string | null | undefined>(
+    savedModal?.panel === "global-tasks" ? savedModal.key : undefined
+  );
+  const [schedulableTaskModalId, setSchedulableTaskModalId] = useState<string | null | undefined>(
+    savedModal?.panel === "schedulable-tasks" ? savedModal.key : undefined
+  );
+
+  // Wraps setActiveTab so every tab switch is persisted immediately (any modal open on the
+  // previous tab is dropped, since a modal is only ever opened from its own tab's panel).
+  const setActiveTab = (tab: string) => {
+    setActiveTabRaw(tab);
+    persistSettingsUi(tab, null);
+  };
+
+  // Generic modal setter used by every panel/modal below: updates the given panel's modal state
+  // and persists it (or clears the persisted modal when closed) in one place.
+  function setModal(panel: SettingsModalPanel, setter: (v: string | null | undefined) => void, value: string | null | undefined) {
+    setter(value);
+    persistSettingsUi(activeTab, value === undefined ? null : { panel, key: value });
+  }
 
   const lastSeqRef = useRef(0);
   useEffect(() => {
@@ -36,11 +88,11 @@ function SettingsView({ command }: { command: Command }) {
     if (command.type === "openPanel") {
       setActiveTab(command.panel);
     } else if (command.type === "openAccountModal") {
-      setActiveTab("accounts");
-      setAccountModalCode(command.code);
+      setActiveTabRaw("accounts");
+      setModal("accounts", setAccountModalCode, command.code);
     } else if (command.type === "openDeptModal") {
-      setActiveTab("departments");
-      setDeptModalName(command.name);
+      setActiveTabRaw("departments");
+      setModal("departments", setDeptModalName, command.name);
     } else if (command.type === "closeAll") {
       setAccountModalCode(undefined);
       setRoomModalName(undefined);
@@ -49,6 +101,7 @@ function SettingsView({ command }: { command: Command }) {
       setServiceModalId(undefined);
       setGlobalTaskModalId(undefined);
       setSchedulableTaskModalId(undefined);
+      persistSettingsUi(activeTab, null);
     }
   }, [command]);
 
@@ -84,23 +137,35 @@ function SettingsView({ command }: { command: Command }) {
         </aside>
 
         <div className="settings-content">
-          <AccountsPanel active={activeTab === "accounts"} bump={bump} openModal={setAccountModalCode} />
-          <RoomsPanel active={activeTab === "rooms"} openModal={setRoomModalName} bump={bump} />
-          <DepartmentsPanel active={activeTab === "departments"} openModal={setDeptModalName} bump={bump} />
-          <SalariesPanel active={activeTab === "salaries"} openModal={setSalaryModalId} bump={bump} />
-          <ServicesPanel active={activeTab === "services"} openModal={setServiceModalId} bump={bump} />
-          <GlobalTasksPanel active={activeTab === "global-tasks"} openModal={setGlobalTaskModalId} bump={bump} />
-          <SchedulableTasksPanel active={activeTab === "schedulable-tasks"} openModal={setSchedulableTaskModalId} bump={bump} />
+          <AccountsPanel active={activeTab === "accounts"} bump={bump} openModal={v => setModal("accounts", setAccountModalCode, v)} />
+          <RoomsPanel active={activeTab === "rooms"} openModal={v => setModal("rooms", setRoomModalName, v)} bump={bump} />
+          <DepartmentsPanel active={activeTab === "departments"} openModal={v => setModal("departments", setDeptModalName, v)} bump={bump} />
+          <SalariesPanel active={activeTab === "salaries"} openModal={v => setModal("salaries", setSalaryModalId, v)} bump={bump} />
+          <ServicesPanel active={activeTab === "services"} openModal={v => setModal("services", setServiceModalId, v)} bump={bump} />
+          <GlobalTasksPanel
+            active={activeTab === "global-tasks"}
+            openModal={v => setModal("global-tasks", setGlobalTaskModalId, v)}
+            bump={bump}
+          />
+          <SchedulableTasksPanel
+            active={activeTab === "schedulable-tasks"}
+            openModal={v => setModal("schedulable-tasks", setSchedulableTaskModalId, v)}
+            bump={bump}
+          />
         </div>
       </div>
 
-      <AccountModal code={accountModalCode} onClose={() => setAccountModalCode(undefined)} bump={bump} />
-      <RoomModal name={roomModalName} onClose={() => setRoomModalName(undefined)} bump={bump} />
-      <DeptModal name={deptModalName} onClose={() => setDeptModalName(undefined)} bump={bump} />
-      <SalaryModal id={salaryModalId} onClose={() => setSalaryModalId(undefined)} bump={bump} />
-      <ServiceModal id={serviceModalId} onClose={() => setServiceModalId(undefined)} bump={bump} />
-      <GlobalTaskModal id={globalTaskModalId} onClose={() => setGlobalTaskModalId(undefined)} bump={bump} />
-      <SchedulableTaskModal id={schedulableTaskModalId} onClose={() => setSchedulableTaskModalId(undefined)} bump={bump} />
+      <AccountModal code={accountModalCode} onClose={() => setModal("accounts", setAccountModalCode, undefined)} bump={bump} />
+      <RoomModal name={roomModalName} onClose={() => setModal("rooms", setRoomModalName, undefined)} bump={bump} />
+      <DeptModal name={deptModalName} onClose={() => setModal("departments", setDeptModalName, undefined)} bump={bump} />
+      <SalaryModal id={salaryModalId} onClose={() => setModal("salaries", setSalaryModalId, undefined)} bump={bump} />
+      <ServiceModal id={serviceModalId} onClose={() => setModal("services", setServiceModalId, undefined)} bump={bump} />
+      <GlobalTaskModal id={globalTaskModalId} onClose={() => setModal("global-tasks", setGlobalTaskModalId, undefined)} bump={bump} />
+      <SchedulableTaskModal
+        id={schedulableTaskModalId}
+        onClose={() => setModal("schedulable-tasks", setSchedulableTaskModalId, undefined)}
+        bump={bump}
+      />
     </>
   );
 }

@@ -12,7 +12,8 @@ import { initBackupHandlers } from "./services/backup.ts";
 import { initCustomDatepickers } from "./activities/datepicker.ts";
 import { initCalendarModal, initViewCalendarButtons } from "./components/calendar-view.tsx";
 import { initActivitiesSort } from "./activities/history.ts";
-import { openActivityDrawer, initActivityDetailsModal } from "./activities/financials.ts";
+import { openActivityDrawer, initActivityDetailsModal, getSavedDrawerUiState } from "./activities/financials.ts";
+import { switchActivityTab } from "./activities/form.ts";
 
 // Global safety net: an uncaught exception or rejected promise anywhere in the app would
 // otherwise fail silently (no console visible to the user, no indication a feature broke).
@@ -64,5 +65,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (activityId && appState.activities.some(a => a.id === activityId && !a.deleted)) {
     switchToView("activities");
     openActivityDrawer(activityId);
+  } else {
+    // Otherwise, restore whichever activity record (and tab within it) was left open before
+    // leaving/reloading the app (see financials.ts's persistDrawerUiState).
+    const savedDrawer = getSavedDrawerUiState();
+    if (savedDrawer && appState.activities.some(a => a.id === savedDrawer.id && !a.deleted)) {
+      switchToView("activities");
+      openActivityDrawer(savedDrawer.id);
+      switchActivityTab(savedDrawer.tab);
+    }
   }
 });
