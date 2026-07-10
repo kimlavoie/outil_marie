@@ -292,6 +292,22 @@ function initBackupHandlers() {
       const file = files ? files[0] : null;
       if (file) handleJsonBackupFile(file);
     });
+
+    jsonDropZone.addEventListener("dragover", e => {
+      e.preventDefault();
+      jsonDropZone.classList.add("dragover");
+    });
+
+    jsonDropZone.addEventListener("dragleave", () => {
+      jsonDropZone.classList.remove("dragover");
+    });
+
+    jsonDropZone.addEventListener("drop", e => {
+      e.preventDefault();
+      jsonDropZone.classList.remove("dragover");
+      const file = e.dataTransfer?.files[0];
+      if (file) handleJsonBackupFile(file);
+    });
   }
 
   // Export Excel
