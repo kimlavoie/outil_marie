@@ -1,15 +1,13 @@
 /**
- * dashboard-view.tsx - Phase 3 of the Vite/React/TS migration (see TODO.txt): the dashboard view's
- * KPI stats and Chart.js visualizations, ported from dashboard.js's renderDashboard()/
- * renderDashboardCharts() to React. Same computations, same Chart.js configs — only the DOM
- * writing changed (JSX + refs instead of getElementById/textContent, one Chart.js instance
- * created/destroyed per render via useEffect instead of the module-level `dashboardCharts` map).
+ * dashboard-view.tsx - The dashboard view's KPI stats and Chart.js visualizations.
+ * Uses Chart.js configs rendered in React via JSX + refs (one Chart.js instance
+ * created/destroyed per render via useEffect).
  *
- * appState isn't reactive: renderDashboardReact() is called imperatively by navigation.js
- * whenever the dashboard becomes the active view or something it displays changes (same trigger
- * points the old renderDashboard()/renderDashboardCharts() had), and each call fully re-renders
- * from the current appState snapshot — mirroring the app's existing render-on-demand model
- * rather than introducing a separate reactive state layer.
+ * appState isn't reactive: renderDashboardReact() is called imperatively by navigation.ts
+ * whenever the dashboard becomes the active view or something it displays changes,
+ * and each call fully re-renders from the current appState snapshot — mirroring
+ * the app's existing render-on-demand model rather than introducing a separate
+ * reactive state layer.
  */
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { appState, getFiscalYear, getQuarterNumber, getQuarter } from "../state/state.ts";
@@ -322,7 +320,6 @@ export function DashboardView() {
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px" }}>
-                {/* Quarterly breakdown */}
                 <div>
                   <h4
                     style={{
@@ -365,7 +362,6 @@ export function DashboardView() {
                   </div>
                 </div>
 
-                {/* Contributing activities list */}
                 <div>
                   <h4
                     style={{

@@ -6,7 +6,7 @@
  * scheduleActivityUndoSnapshot (defined in activities-history.ts, which itself imports
  * autoSaveActivityForm/activityUndoSnapshotTimer/ACTIVITY_UNDO_DEBOUNCE_MS/setActivityUndoSnapshotTimer
  * from here) is a real import — a circular import between the two, same as the several others
- * already in this codebase (see TODO.txt): safe since nothing runs during either module's
+ * already in this codebase: safe since nothing runs during either module's
  * top-level evaluation.
  */
 import { appState, saveDatabaseOrRollback } from "../state/state.ts";
@@ -59,7 +59,6 @@ function autoSaveActivityForm() {
   const internalId = elById("form-activity-internal-id").value;
   if (!internalId) return;
 
-  // Do not auto-save draft activities until they have been saved once manually!
   if (activitiesState.draftActivityId === internalId) {
     return;
   }
@@ -67,7 +66,6 @@ function autoSaveActivityForm() {
   const rawId = elById("form-activity-id").value.trim();
   const name = elById("form-activity-name").value.trim();
 
-  // The activity name cannot be empty. If it is, we don't save.
   if (!isNonEmptyString(name)) {
     return;
   }
@@ -110,7 +108,6 @@ function autoSaveActivityForm() {
   const eventType = elById("form-activity-event-type").value;
   const eventTypeOther = elById("form-activity-event-type-other").value.trim();
 
-  // Build distributions array
   const distributions: any[] = [];
   document.querySelectorAll("#form-distribution-list .distribution-row").forEach(row => {
     const acc = row.querySelector<HTMLInputElement>(".dist-account-select-wrapper .searchable-select-value")?.value;

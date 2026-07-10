@@ -22,7 +22,6 @@ import { reconciliationState, reconcileLedger } from "./services/reconciliation.
 import { renderAccountReport } from "./services/account-report.ts";
 import { exportToExcel, renderBackupView, checkBackupReminder } from "./services/backup.ts";
 
-// Theme management
 function applyTheme(theme: string) {
   document.documentElement.setAttribute("data-theme", theme);
   appState.settings.theme = theme;
@@ -44,7 +43,6 @@ function applyTheme(theme: string) {
   }
 }
 
-// Navigation switcher
 function switchToView(view: string) {
   const navItems = document.querySelectorAll(".nav-item");
   const sections = document.querySelectorAll(".view-section");
@@ -52,7 +50,6 @@ function switchToView(view: string) {
   const targetSection = document.getElementById(`view-${view}`);
   if (!targetSection || !viewTitle) return;
 
-  // Clear activity selections if we leave the activities view
   if (view !== "activities" && activitiesState.selectedIds) {
     activitiesState.selectedIds.clear();
     const selectAllCheckbox = document.getElementById("activities-select-all") as HTMLInputElement | null;
@@ -66,14 +63,11 @@ function switchToView(view: string) {
     }
   }
 
-  // Update active nav item
   navItems.forEach(i => i.classList.toggle("active", i.getAttribute("data-view") === view));
 
-  // Switch active section
   sections.forEach(s => s.classList.remove("active"));
   targetSection.classList.add("active");
 
-  // Set top bar title
   const labels: Record<string, string> = {
     dashboard: "Tableau de bord",
     activities: "Journal des Activités",
@@ -87,7 +81,6 @@ function switchToView(view: string) {
   // Remember the last visited view so it can be restored on reload
   localStorage.setItem("outil_marie_last_view", view);
 
-  // Render the entered view
   renderView(view);
 }
 
@@ -100,7 +93,6 @@ function initNavigation() {
     });
   });
 
-  // Theme toggle button
   document.getElementById("theme-toggle")?.addEventListener("click", () => {
     const previousTheme = appState.settings.theme;
     const currentTheme = previousTheme === "light" ? "dark" : "light";
@@ -113,12 +105,10 @@ function initNavigation() {
     });
   });
 
-  // Quick Export Excel Header button
   document.getElementById("quick-export-excel")?.addEventListener("click", () => {
     exportToExcel();
   });
 
-  // Account report dropdown filter listener
   const filterRepSelect = document.getElementById("filter-report-account");
   if (filterRepSelect) {
     filterRepSelect.addEventListener("change", () => {
@@ -126,7 +116,6 @@ function initNavigation() {
     });
   }
 
-  // Help center modal triggers
   const helpCenterModal = document.getElementById("help-center-modal");
   const openHelpBtn = document.getElementById("help-center-btn");
   const closeHelpBtn = document.getElementById("help-center-close-btn");
@@ -135,7 +124,6 @@ function initNavigation() {
   const showHelp = () => {
     if (helpCenterModal) {
       helpCenterModal.style.display = "flex";
-      // Allow DOM update before adding transition class
       setTimeout(() => {
         helpCenterModal.classList.add("active");
       }, 10);
@@ -145,7 +133,6 @@ function initNavigation() {
   const hideHelp = () => {
     if (helpCenterModal) {
       helpCenterModal.classList.remove("active");
-      // Wait for CSS transition (300ms) before hiding display
       setTimeout(() => {
         if (!helpCenterModal.classList.contains("active")) {
           helpCenterModal.style.display = "none";
@@ -158,7 +145,6 @@ function initNavigation() {
   closeHelpBtn?.addEventListener("click", hideHelp);
   closeHelpFooterBtn?.addEventListener("click", hideHelp);
 
-  // Close when clicking outside modal content
   helpCenterModal?.addEventListener("click", e => {
     if (e.target === helpCenterModal) {
       hideHelp();
@@ -168,10 +154,6 @@ function initNavigation() {
   initQuickAccessDropdown();
   initGlobalSearch();
 }
-
-/* ==========================================================================
-   GLOBAL SEARCH — searches activities, GL accounts, and departments at once
-   ========================================================================== */
 
 const GLOBAL_SEARCH_MAX_PER_CATEGORY = 5;
 const GLOBAL_SEARCH_FUZZY_MIN_SCORE = 0.5;
@@ -198,21 +180,17 @@ function initGlobalSearch() {
     if (input.value.trim()) resultsPanel.classList.add("active");
   });
 
-  // Close on outside click, keep open on clicks inside the panel itself
   document.addEventListener("click", e => {
     if (resultsPanel.classList.contains("active") && !resultsPanel.contains(e.target as Node) && e.target !== input) {
       resultsPanel.classList.remove("active");
     }
   });
 
-  // Close on Escape, alongside the app's other drawers/modals
   window.addEventListener("keydown", e => {
     if (e.key === "Escape") resultsPanel.classList.remove("active");
   });
 }
 
-// Builds one labeled results section (skipped entirely if empty, so an empty category leaves
-// no dangling header behind).
 function buildGlobalSearchSectionHtml(label: string, itemsHtml: string): string {
   if (!itemsHtml) return "";
   return `
@@ -232,8 +210,6 @@ function buildGlobalSearchItemHtml({ type, id, title, subtitle }: { type: string
   `;
 }
 
-// Opens the result the user clicked: jumps to the right view (and, for settings entities, the
-// right tab panel) then opens the matching edit modal/drawer directly.
 function openGlobalSearchResult(type: string, id: string) {
   if (type === "activity") {
     switchToView("activities");
@@ -320,10 +296,6 @@ function renderGlobalSearchResults(query: string) {
   });
 }
 
-/* ==========================================================================
-   QUICK ACCESS (ACCÈS RAPIDE) — global dropdown, available from every view
-   ========================================================================== */
-
 function initQuickAccessDropdown() {
   const toggleBtn = document.getElementById("quick-access-toggle-btn");
   const panel = document.getElementById("quick-access-dropdown-panel");
@@ -334,14 +306,12 @@ function initQuickAccessDropdown() {
     panel.classList.toggle("active");
   });
 
-  // Close on outside click, keep open on clicks inside the panel itself
   document.addEventListener("click", e => {
     if (panel.classList.contains("active") && !panel.contains(e.target as Node) && e.target !== toggleBtn) {
       panel.classList.remove("active");
     }
   });
 
-  // Close on Escape, alongside the app's other drawers/modals
   window.addEventListener("keydown", e => {
     if (e.key === "Escape") panel.classList.remove("active");
   });
@@ -352,12 +322,9 @@ function closeQuickAccessDropdown() {
   if (panel) panel.classList.remove("active");
 }
 
-// Upcoming activities (soon) window/limit for the "À venir bientôt" quick access category
 const UPCOMING_ACTIVITY_WINDOW_DAYS = 30;
 const UPCOMING_ACTIVITY_LIMIT = 5;
 
-// Ids of filled activities starting today or within the next UPCOMING_ACTIVITY_WINDOW_DAYS days,
-// soonest first.
 function getUpcomingActivityIds(): string[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -373,9 +340,9 @@ function getUpcomingActivityIds(): string[] {
     .map(entry => entry.id);
 }
 
-// Builds one activity row. `category` controls the action button: pinned entries ("favorite")
-// get an unpin (x) button, entries surfaced automatically ("recent"/"upcoming") get a pin
-// (star) button so the user can promote them to the permanent list in one click.
+// `category` controls the action button: pinned entries ("favorite") get an unpin (x) button,
+// entries surfaced automatically ("recent"/"upcoming") get a pin (star) button so the user can
+// promote them to the permanent list in one click.
 function buildQuickAccessItemHtml(act: any, category: string): string {
   const actionBtnHtml =
     category === "favorite"
@@ -402,8 +369,6 @@ function buildQuickAccessItemHtml(act: any, category: string): string {
   `;
 }
 
-// Builds one labeled section (skipped entirely if empty, so an empty category leaves no
-// dangling header behind).
 function buildQuickAccessSectionHtml(label: string, items: any[], category: string): string {
   if (items.length === 0) return "";
   return `
@@ -414,7 +379,6 @@ function buildQuickAccessSectionHtml(label: string, items: any[], category: stri
   `;
 }
 
-// Wires click-to-open, unpin, and pin buttons for a rendered quick access container
 function wireQuickAccessItemEvents(container: HTMLElement) {
   container.querySelectorAll(".quick-access-item").forEach(item => {
     item.addEventListener("click", e => {
@@ -438,11 +402,9 @@ function wireQuickAccessItemEvents(container: HTMLElement) {
   });
 }
 
-// Refreshes the global quick access dropdown (list + count badge). Merges three categories —
-// user-pinned favorites, recently viewed, and activities starting soon — de-duplicating so an
-// activity that qualifies for more than one only appears once, under the highest-priority
-// category (favorites > recent > upcoming). Called after every favorite/view change, and on
-// every renderAll(), so it stays correct regardless of which view is active.
+// Merges three categories — user-pinned favorites, recently viewed, and activities starting soon
+// — de-duplicating so an activity that qualifies for more than one only appears once, under the
+// highest-priority category (favorites > recent > upcoming).
 function renderQuickAccessAll() {
   const listContainer = document.getElementById("quick-access-list-global");
   const countBadge = document.getElementById("quick-access-count-badge");
@@ -477,7 +439,6 @@ function renderQuickAccessAll() {
   }
 }
 
-// Render dynamic elements for a specific view
 function renderView(view: string) {
   if (view === "dashboard") {
     renderDashboard();
@@ -496,28 +457,21 @@ function renderView(view: string) {
 }
 
 function renderAll() {
-  // Populates dropdown selects in modals and forms
   populateDropdowns();
-
-  // Refreshes the global quick access dropdown (visible from every view)
   renderQuickAccessAll();
-
-  // Update active period description label
   updateActivePeriodDescription();
 
-  // Render currently active view
   const activeNav = document.querySelector(".nav-item.active");
   if (activeNav) {
     renderView(activeNav.getAttribute("data-view") || "");
   }
 }
 
-// Populate dropdown elements globally
 function populateDropdowns() {
   const filterSallePanel = document.getElementById("filter-salle-panel") as HTMLElement | null;
   const deptsSelects = [document.getElementById("form-activity-dept") as HTMLSelectElement | null];
 
-  // Filter Salle dropdown (multi-select: rebuild the checkbox list, preserving whatever was checked)
+  // Multi-select: rebuild the checkbox list, preserving whatever was checked
   if (filterSallePanel) {
     const previousSalleValues = getMultiSelectValues("filter-salle-panel");
     filterSallePanel.innerHTML = appState.settings.rooms
@@ -530,7 +484,6 @@ function populateDropdowns() {
   // directly from appState.settings.rooms at card-creation time (see buildRoomSelectItems()
   // and addReservationCard() in activities.js), so it doesn't need populating here.
 
-  // Form Event type dropdown
   const eventTypeSelect = document.getElementById("form-activity-event-type") as HTMLSelectElement | null;
   if (eventTypeSelect && !eventTypeSelect.dataset.populated) {
     eventTypeSelect.innerHTML =
@@ -538,7 +491,6 @@ function populateDropdowns() {
     eventTypeSelect.dataset.populated = "true";
   }
 
-  // Departments dropdowns
   deptsSelects.forEach(select => {
     if (!select) return;
     select.innerHTML = '<option value="">Sélectionner un département...</option>';
@@ -547,7 +499,6 @@ function populateDropdowns() {
     });
   });
 
-  // Account report dropdown filter
   const reportAccountSelect = document.getElementById("filter-report-account") as HTMLSelectElement | null;
   if (reportAccountSelect) {
     const previousReportValue = reportAccountSelect.value;
@@ -558,10 +509,6 @@ function populateDropdowns() {
     reportAccountSelect.value = previousReportValue;
   }
 }
-
-/* ==========================================================================
-   PERIOD SELECTOR (fiscal year + quarters)
-   ========================================================================== */
 
 function updateActivePeriodDescription() {
   const descEl = document.getElementById("active-period-description");
@@ -632,14 +579,11 @@ function updateActivePeriodDescription() {
 }
 
 function initPeriodSelector() {
-  // Populate dropdown
   populateFiscalYears();
 
-  // Wire quarter buttons toggling
   document.querySelectorAll(".quarter-toggle").forEach(btn => {
     const q = parseInt(btn.getAttribute("data-q") || "0", 10);
 
-    // Set initial class
     if (appState.selected_quarters.includes(q)) {
       btn.classList.add("active");
     } else {
@@ -666,7 +610,6 @@ function initPeriodSelector() {
         },
         "La sélection de trimestre n'a pas été enregistrée. Réessayez."
       ).then(() => {
-        // Re-run validation if ledger has been loaded to update statuses immediately!
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();
         }
@@ -676,7 +619,6 @@ function initPeriodSelector() {
     });
   });
 
-  // Wire year select
   const yearSelect = document.getElementById("top-fiscal-year") as HTMLSelectElement | null;
   if (yearSelect) {
     yearSelect.addEventListener("change", e => {
@@ -686,7 +628,6 @@ function initPeriodSelector() {
         appState.selected_year = prevYear;
         yearSelect.value = prevYear;
       }, "Le changement d'année n'a pas été enregistré. Réessayez.").then(() => {
-        // Re-run validation if ledger has been loaded to update statuses immediately!
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();
         }
@@ -701,10 +642,8 @@ function populateFiscalYears() {
   const select = document.getElementById("top-fiscal-year") as HTMLSelectElement | null;
   if (!select) return;
 
-  // Base years
   const years = new Set(["2024-2025", "2025-2026", "2026-2027", "2027-2028", "2028-2029", "2029-2030"]);
 
-  // Find any year from activities
   appState.activities.forEach(act => {
     if (act.deleted) return;
     if (act.date_start) {
@@ -713,7 +652,6 @@ function populateFiscalYears() {
     }
   });
 
-  // Sort them
   const sortedYears = Array.from(years).sort();
 
   select.innerHTML = "";

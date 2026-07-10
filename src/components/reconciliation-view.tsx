@@ -1,16 +1,13 @@
 /**
  * reconciliation-view.tsx - Reconciliation ("Rapprochement GL") view: file drop zone, column
  * mapping modal, results table (tabs/pagination/manual review/fuzzy-match suggestions), and the
- * ledger detail modal. Ported from reconciliation.js to React as the final step of Phase 4 of the
- * Vite/React/TS migration (see TODO.txt) — the engine/state (matching algorithm, decisions store)
- * stayed behind in js/reconciliation.ts so it can keep being imported by plain `node --test`
- * (Node can't execute .tsx) and by the several activities-*.ts files that read reconciliationState/
- * reconcileLedger, same split as js/dashboard.js/js/dashboard-view.tsx.
+ * ledger detail modal. The engine/state (matching algorithm, decisions store) resides in
+ * src/services/reconciliation.ts so it can be unit-tested directly and imported by Node test runners
+ * and other TypeScript modules.
  *
- * Only two entry points are called from outside this file (checked via grep): main.js's
- * DOMContentLoaded bootstrap calls initReconciliationHandlers() once, and navigation.js's
- * renderView() calls renderReconciliation() on every switch to the "validation" tab. Everything
- * else (file handling, modals, row actions) is internal to the React component now.
+ * External entry points called from outside this file:
+ * - main.ts's DOMContentLoaded bootstrap calls initReconciliationHandlers() once.
+ * - src/navigation.ts's renderView() calls renderReconciliation() on every switch to the "validation" tab.
  */
 import { useEffect, useRef, useState } from "react";
 import { appState, saveDatabaseOrRollback } from "../state/state.ts";

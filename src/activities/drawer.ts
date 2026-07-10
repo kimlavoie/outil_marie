@@ -5,7 +5,7 @@
  *
  * updateFormDatesHelper/saveActivityVersion (both defined in activities-history.ts, which itself
  * imports closeActivityDrawer from here) are real imports — a circular import between the two,
- * same as the several others already in this codebase (see TODO.txt): safe since nothing runs
+ * same as the several others already in this codebase: safe since nothing runs
  * during either module's top-level evaluation.
  */
 import { clearDateFieldErrors } from "./datepicker.ts";
@@ -40,7 +40,6 @@ function getSavedDrawerUiState(): { id: string; tab: string } | null {
   }
 }
 
-// Generates the next available activity id (XXYY-ZZZ) for the selected fiscal year
 function generateNextActivityId() {
   const prefix = appState.selected_year
     .split("-")
@@ -94,7 +93,7 @@ function openActivityDrawer(id: string, calendarReturn: any = null) {
   titleEl.textContent = act.name.trim() !== "" ? act.name : `Activité ${act.id}`;
   elById("form-activity-internal-id").value = act.id;
   elById("form-activity-id").value = act.id;
-  elById("form-activity-id").disabled = true; // Cannot edit active key
+  elById("form-activity-id").disabled = true;
   elById("form-activity-coba").value = act.coba || "";
   fillActivityFormFields(act);
   renderActivityStateBar(act);
@@ -114,13 +113,11 @@ function openActivityDrawer(id: string, calendarReturn: any = null) {
   updateFormDatesHelper();
   clearDateFieldErrors();
 
-  // Set cursor focus directly on the first editable field (Références COBA)
   setTimeout(() => {
     elById("form-activity-coba").focus();
   }, 150);
 }
 
-// Kept for calendar.js, which opens the activity record from a calendar event click
 function openActivityDetailModal(id: string, calendarReturn: any) {
   openActivityDrawer(id, calendarReturn);
 }

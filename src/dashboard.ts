@@ -1,13 +1,10 @@
 /**
  * dashboard.ts - Dashboard view KPI computation (pure, no DOM, unit-tested directly).
- * The rendering (stat cards, Chart.js visualizations) and the renderDashboard()/
- * renderDashboardCharts() functions navigation.js imports and calls live in js/dashboard-view.tsx
- * (React, since Phase 3 of the Vite/React/TS migration — see TODO.txt).
+ * The rendering (stat cards, Chart.js visualizations) resides in src/components/dashboard-view.tsx (React).
  *
  * Kept as a separate plain .ts module (rather than folded into dashboard-view.tsx) so the test
- * suite can still import computeDashboardStats through plain `node --test`: Node's built-in
- * TypeScript support strips .ts but can't execute .tsx (JSX needs a real transform, not just
- * type erasure), so nothing reachable from a test file's import graph can be a .tsx module.
+ * suite can still import computeDashboardStats through plain test runners: Node's built-in
+ * TypeScript support strips .ts but does not execute JSX.
  */
 import { getFiscalYear, getQuarterNumber, getActiveSalaryRate, getActiveSalaryOvertimeRate } from "./state/state.ts";
 import { getRoomsTariffTotal } from "./utils/utils.ts";

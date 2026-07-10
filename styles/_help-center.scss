@@ -1,6 +1,5 @@
 @use "mixins" as *;
 
-/* Help Center styles */
 .help-section {
   @include accordion-section;
 }

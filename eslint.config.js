@@ -1,9 +1,6 @@
-// Flat ESLint config for the app: src/*.js are still plain <script> globals by design (see
-// file banner below) so `no-undef` stays off there — it would otherwise flag every cross-file
-// function/variable reference as an error. src/*.ts(x) are real ES modules (Vite/TS, Phase 2-4 of
-// the migration, see TODO.txt); type-checking is tsc's job, so typescript-eslint here is
-// non-type-aware (fast, syntax-only) and focused on the same "catch real mistakes" rules as the
-// JS block, not on enforcing style tsc already enforces.
+// Flat ESLint config for the app. Type-checking is tsc's job, so typescript-eslint here is
+// non-type-aware (fast, syntax-only) and focused on rules to catch real mistakes,
+// not on enforcing style tsc already enforces.
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 

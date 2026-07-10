@@ -10,10 +10,6 @@ import { SchedulableTasksPanel, SchedulableTaskModal } from "./schedulable-tasks
 
 import type { Command } from "./mount.ts";
 
-// Remembers which settings tab (and, if any, which entity modal within it) the user had open, so
-// reloading/reopening the app drops them back exactly where they left off — same intent as
-// financials.ts's drawer UI persistence, kept local to this file since it's the only place that
-// knows about settings tabs/modals.
 const SETTINGS_UI_KEY = "outil_marie_settings_ui";
 
 type SettingsModalPanel = "accounts" | "rooms" | "departments" | "salaries" | "services" | "global-tasks" | "schedulable-tasks";
@@ -61,15 +57,11 @@ export function SettingsView({ command }: { command: Command }) {
     savedModal?.panel === "schedulable-tasks" ? savedModal.key : undefined
   );
 
-  // Wraps setActiveTab so every tab switch is persisted immediately (any modal open on the
-  // previous tab is dropped, since a modal is only ever opened from its own tab's panel).
   const setActiveTab = (tab: string) => {
     setActiveTabRaw(tab);
     persistSettingsUi(tab, null);
   };
 
-  // Generic modal setter used by every panel/modal below: updates the given panel's modal state
-  // and persists it (or clears the persisted modal when closed) in one place.
   const setModal = useCallback(
     (panel: SettingsModalPanel, setter: (v: string | null | undefined) => void, value: string | null | undefined) => {
       setter(value);

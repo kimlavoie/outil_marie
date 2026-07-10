@@ -48,7 +48,6 @@ export function getActiveSalaryRate(salary: any, dateStr: string, tarifId?: stri
   return getActiveRateVersionField(tarif && tarif.rate_versions, dateStr, "rate");
 }
 
-// Returns the overtime (temps supplémentaire) rate in effect for `dateStr` on the given salary's tarif
 export function getActiveSalaryOvertimeRate(salary: any, dateStr: string, tarifId?: string): number {
   const tarif = getSalaryTarif(salary, tarifId);
   return getActiveRateVersionField(tarif && tarif.rate_versions, dateStr, "overtime_rate");

@@ -45,8 +45,8 @@ const IMAGE_ROW_SPAN = Math.ceil(IMAGE_HEIGHT_EMU / 12700 / 15) + 1;
 // Style ids borrowed from CONTRAT.xlsx's "Salle poly et SFB" sheet (xl/styles.xml is copied
 // unmodified from that file, so these ids keep meaning exactly what they mean there).
 const S = {
-  sectionTitle: 78, // dark blue banner, e.g. "Identification du client"
-  sectionTitleAlt: 81, // lighter blue banner, e.g. "Fournisseur" / "Fournisseur" signature header
+  sectionTitle: 78,
+  sectionTitleAlt: 81,
   label: 29,
   value: 77,
   supplierLabel: 90,
@@ -264,10 +264,8 @@ const GRID_ROLE_KEYS = [
 function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
   let xmlText = new TextDecoder("utf-8").decode(stylesXmlBytes);
 
-  // Replace orange fills with pale blue fills in the styles template
   xmlText = xmlText.replace(/rgb="FFFF8B00"/g, 'rgb="FFD9E1F2"').replace(/rgb="FFFFC885"/g, 'rgb="FFF2F5FC"');
 
-  // Replace all borderId="N" with borderId="0" to remove all cell borders
   xmlText = xmlText.replace(/borderId="\d+"/g, 'borderId="0"');
 
   const bordersMatch = xmlText.match(/<borders count="(\d+)">/);
@@ -283,7 +281,6 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
   const xfCount = parseInt(cellXfsMatch[1], 10);
   const xfEntries = cellXfsMatch[2].match(/<xf\b[^>]*\/>|<xf\b[^>]*>[\s\S]*?<\/xf>/g) || [];
 
-  // Remove gray backgrounds from Attestations styles
   const cleanFill = (xf: string) => {
     if (!xf) return xf;
     let clean = xf.replace(/fillId="\d+"/, 'fillId="0"');
@@ -435,7 +432,6 @@ class SheetBuilder {
     if (value === undefined || value === "") return;
     const isLong = typeof value === "string" && (value.length > 40 || value.includes("\n"));
     const effectiveStyle = isLong ? S.wrapValue : valueStyle;
-    // C:F is 4 of the sheet's 6 columns (see buildSheetXml's <cols>, each 22 units wide).
     const height = isLong ? wrapRowHeight(value as string, 88) : null;
     this.addRow(height, [
       { col: "A", style: labelStyle, value: label, mergeTo: "B" },
@@ -444,7 +440,6 @@ class SheetBuilder {
   }
 
   textBoxRow(text: string, style: number, fontSize = 16) {
-    // A:F is the full 6-column width (see buildSheetXml's <cols>).
     this.addRow(wrapRowHeight(text, 132, fontSize), [{ col: "A", style, value: text, mergeTo: "F" }]);
   }
 
@@ -460,7 +455,6 @@ class SheetBuilder {
   }
 
   itemRow(label: string, col2: string | number, col3: string | number, amount: number) {
-    // A:B is 2 of the sheet's 6 columns (see buildSheetXml's <cols>).
     const height = label.length > 20 ? wrapRowHeight(label, 44) : null;
     this.addRow(height, [
       { col: "A", style: S.wrapValue, value: label, mergeTo: "B" },

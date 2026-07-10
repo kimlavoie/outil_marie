@@ -1,4 +1,3 @@
-// Content for the Help Center modal (#help-center-modal in index.html).
 // Kept as data here instead of inline HTML to keep index.html small.
 
 interface HelpSection {

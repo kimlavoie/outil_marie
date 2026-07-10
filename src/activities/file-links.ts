@@ -76,7 +76,7 @@ async function pickAndLinkFile(activityId: string, kind: "submission" | "contrac
   try {
     [handle] = await (window as any).showOpenFilePicker(pickerOptions);
   } catch {
-    return; // user cancelled the picker
+    return;
   }
 
   if (kind === "form" && !handle.name.toLowerCase().endsWith(".pdf")) {
@@ -118,7 +118,7 @@ async function generateAndLinkFile(act: any, kind: "contract" | "submission") {
         excludeAcceptAllOption: true
       });
     } catch {
-      return; // user cancelled or browser dismissed
+      return;
     }
 
     let result;
@@ -159,7 +159,6 @@ async function generateAndLinkFile(act: any, kind: "contract" | "submission") {
     const updated = appState.activities.find((a: any) => a.id === act.id) || act;
     renderFileLinkStatus(kind, updated);
   } else {
-    // Fallback: Standard browser download
     let result;
     try {
       if (kind === "contract") {

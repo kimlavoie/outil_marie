@@ -1,15 +1,14 @@
 /**
  * calendar-view.tsx - Activities calendar modal (day/week/month views of activities, colored by
- * the room(s) they're booked in — see js/settings-view.tsx for room color CRUD), ported from
- * calendar.js to React as part of Phase 4 of the Vite/React/TS migration (see TODO.txt).
+ * the room(s) they're booked in).
  *
- * Same external entry points as before, called from outside this module:
- * - main.js's DOMContentLoaded bootstrap calls initCalendarModal()/initViewCalendarButtons() once
- * - js/activities-form.ts calls reopenCalendarModal(calendarReturn) ("back to calendar" button),
+ * External entry points called from outside this module:
+ * - main.ts's DOMContentLoaded bootstrap calls initCalendarModal()/initViewCalendarButtons() once
+ * - src/activities/form.ts calls reopenCalendarModal(calendarReturn) ("back to calendar" button),
  *   via a dynamic import() since this is a .tsx file and that module must stay importable by
  *   plain `node --test` (Node can't load .tsx)
  * These are relayed through a small command/sequence-number queue the mounted component applies
- * via useEffect, same pattern as js/dashboard-view.tsx and js/settings-view.tsx.
+ * via useEffect, same pattern as src/components/dashboard-view.tsx and src/components/settings/view.tsx.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";

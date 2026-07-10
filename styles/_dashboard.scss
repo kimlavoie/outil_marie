@@ -1,6 +1,5 @@
 @use "mixins" as *;
 
-/* Dashboard Widgets Grid */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -40,7 +39,6 @@
   color: var(--text-muted);
 }
 
-/* Charts Grid */
 .charts-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;

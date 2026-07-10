@@ -4,7 +4,6 @@ import { DashboardView } from "./dashboard-view.tsx";
 
 let root: Root | null = null;
 
-// Mounts (first call) or re-renders (subsequent calls) the dashboard into #dashboard-root.
 export function renderDashboardReact() {
   const container = document.getElementById("dashboard-root");
   if (!container) return;

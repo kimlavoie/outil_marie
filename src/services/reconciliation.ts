@@ -2,10 +2,9 @@
  * reconciliation.ts - Reconciliation ("Rapprochement Comptable") engine + state: matching
  * activity distributions against an imported GL ledger, fuzzy-match suggestions, and the
  * manual-decision store. Pure/DOM-free by design (see matchDistributionsToLedger's own doc
- * comment) so it can be unit-tested directly and imported by plain `node --test` — the actual
- * view (drop zone, table, modals) is js/reconciliation-view.tsx (React, Phase 4's final step,
- * see TODO.txt), which imports the engine from here rather than the other way around, same split
- * as js/dashboard.js/js/dashboard-view.tsx.
+ * comment) so it can be unit-tested directly and imported by plain test runners — the actual
+ * view (drop zone, table, modals) is src/components/reconciliation-view.tsx (React), which
+ * imports the engine from here rather than the other way around.
  */
 import { validateRules } from "../utils/validation.ts";
 import { logError } from "../utils/logger.ts";

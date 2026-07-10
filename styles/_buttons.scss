@@ -1,6 +1,5 @@
 @use "mixins" as *;
 
-/* Button UI Components */
 .btn {
   padding: 10px 20px;
   border-radius: var(--radius-md);
@@ -95,7 +94,6 @@
   color: var(--bg-card);
 }
 
-/* Action buttons for manual reconciliation review */
 .btn-recon-validate:hover {
   border-color: var(--success);
   color: var(--success);
