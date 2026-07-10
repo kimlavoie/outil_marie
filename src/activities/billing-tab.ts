@@ -1,0 +1,152 @@
+/**
+ * "Facturation" tab: auto-populating GL distribution lines from the activity's rooms/staff/
+ * services/fees, and the Facturée/Terminée state toggle buttons. Split out of activities-form.ts
+ * (activity drawer form wiring).
+ */
+import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
+import { formatCurrency } from "../utils/utils.ts";
+import { addDistributionRow, updateDistributionTotal } from "./financials.ts";
+import { collectReservationsFromForm, getAggregateEventDates } from "./reservations.ts";
+import { commitActivityPatch } from "./form-state-bar.ts";
+import { deriveActivityState } from "./render.ts";
+
+// Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
+// comment for why this cast is needed/safe.
+function el<T extends Element = HTMLInputElement>(id: string): T {
+  return document.getElementById(id) as unknown as T;
+}
+
+// Builds distribution rows (account_code/amount/reference) from whichever room parameters,
+// personnel jobs, and autres frais already carry a configured GL account — items without one
+// are left out so the user adds/maps them manually, consistent with the existing distribution
+// row validation (an amount without a selected account blocks saving).
+export function generateBillingLines(act: any) {
+  if (
+    (act.distributions || []).length > 0 &&
+    !confirm("Des lignes de facturation existent déjà. Les remplacer par les lignes générées automatiquement ?")
+  ) {
+    return;
+  }
+
+  el("form-distribution-list").innerHTML = "";
+
+  const reservations = collectReservationsFromForm();
+  const eventDateStart = getAggregateEventDates(reservations).date_start;
+
+  reservations.forEach((r: any) => {
+    if (r.tariff_gl_account_code && r.tariff_amount > 0) {
+      const days = r.slots.length;
+      const details = `Location salle ${r.room_name} - ${days} jour${days > 1 ? "s" : ""} à ${formatCurrency(r.tariff_amount)}`;
+      addDistributionRow(r.tariff_gl_account_code, r.tariff_amount * days, "", details, true);
+    }
+  });
+
+  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
+    const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
+    const salary = ((appState.settings.salaries as any[]) || []).find((s: any) => s.id === salaryId);
+    const tarifId = row.querySelector<HTMLSelectElement>(".staff-tarif-select")!.value;
+    if (!salary) return;
+
+    let glAccountCode = "";
+    let rate = 0;
+    let overtimeRate = 0;
+    if (tarifId === "__custom__") {
+      const wrapper = row.closest(".distribution-row-wrapper");
+      glAccountCode = wrapper ? wrapper.querySelector<HTMLSelectElement>(".staff-custom-gl-select")!.value : "";
+      rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!.value) || 0 : 0;
+      overtimeRate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!.value) || 0 : 0;
+    } else {
+      const tarif = salary && ((salary.tarifs as any[]) || []).find((t: any) => t.id === tarifId);
+      glAccountCode = tarif ? tarif.gl_account_code : "";
+      rate = getActiveSalaryRate(salary, eventDateStart, tarifId);
+      overtimeRate = getActiveSalaryOvertimeRate(salary, eventDateStart, tarifId);
+    }
+    if (!glAccountCode) return;
+
+    const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
+    const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
+    const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
+    const amount = rate * hours * count + overtimeRate * overtimeHours * count;
+    if (amount > 0) {
+      let details = `${count} ${salary.job}${count > 1 ? "s" : ""} de ${hours}h à ${formatCurrency(rate)}/h`;
+      if (overtimeHours > 0) {
+        details += ` + ${overtimeHours}h sup. à ${formatCurrency(overtimeRate)}/h`;
+      }
+      addDistributionRow(glAccountCode, amount, "", details, true);
+    }
+  });
+
+  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
+    const serviceId = row.querySelector<HTMLInputElement>(".service-select")!.value;
+    const service = ((appState.settings.services as any[]) || []).find((s: any) => s.id === serviceId);
+    const tarifId = row.querySelector<HTMLSelectElement>(".service-tarif-select")!.value;
+    if (!service) return;
+
+    let glAccountCode = "";
+    let rate = 0;
+    if (tarifId === "__custom__") {
+      const wrapper = row.closest(".distribution-row-wrapper");
+      glAccountCode = wrapper ? wrapper.querySelector<HTMLSelectElement>(".service-custom-gl-select")!.value : "";
+      rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!.value) || 0 : 0;
+    } else {
+      const tarif = service && ((service.tarifs as any[]) || []).find((t: any) => t.id === tarifId);
+      glAccountCode = tarif ? tarif.gl_account_code : "";
+      rate = getActiveServiceRate(service, eventDateStart, tarifId);
+    }
+    if (!glAccountCode) return;
+
+    const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0;
+    const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
+    const isHourly = service.type === "hourly";
+    const amount = isHourly ? rate * hours * count : rate * count;
+    if (amount > 0) {
+      const details = isHourly
+        ? `${count} x ${service.name} de ${hours}h à ${formatCurrency(rate)}/h`
+        : `${count} x ${service.name} à ${formatCurrency(rate)}`;
+      addDistributionRow(glAccountCode, amount, "", details, true);
+    }
+  });
+
+  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-fees-list .distribution-row").forEach(row => {
+    const glCode = row.querySelector<HTMLInputElement>(".fee-gl-select-wrapper .searchable-select-value")!.value;
+    const amount = parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input")!.value) || 0;
+    const description = row.querySelector<HTMLInputElement>(".fee-desc-input")?.value.trim() || "";
+    if (glCode && amount > 0) addDistributionRow(glCode, amount, "", description, true);
+  });
+
+  if (document.querySelectorAll("#form-distribution-list .distribution-row").length === 0) {
+    addDistributionRow("", 0);
+  }
+  updateDistributionTotal();
+}
+
+// Renders the Facturée/Terminée billing dates and gated transition buttons
+export function renderBillingStateStatus(act: any) {
+  const container = el("billing-state-status");
+  if (!container) return;
+
+  container.innerHTML = `
+    ${act.billed_at ? `<span style="color: var(--text-muted);">Facturée le ${act.billed_at}</span>` : ""}
+    ${act.completed_at ? `<span style="color: var(--text-muted);">Terminée le ${act.completed_at}</span>` : ""}
+    <button type="button" id="mark-billed-btn" class="btn ${act.billed_at ? "btn-secondary" : "btn-primary"}">${act.billed_at ? "Annuler Facturée" : "Marquer comme Facturée"}</button>
+    <button type="button" id="mark-completed-btn" class="btn ${act.completed_at ? "btn-secondary" : "btn-primary"}">${act.completed_at ? "Annuler Terminée" : "Marquer comme Terminée"}</button>
+  `;
+
+  const billBtn = container.querySelector<HTMLButtonElement>("#mark-billed-btn")!;
+  billBtn.addEventListener("click", () => {
+    commitActivityPatch(act.id, (a: any) => {
+      a.billed_at = a.billed_at ? "" : new Date().toISOString().split("T")[0];
+      a.state = deriveActivityState(a);
+    });
+    renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
+  });
+
+  const completeBtn = container.querySelector<HTMLButtonElement>("#mark-completed-btn")!;
+  completeBtn.addEventListener("click", () => {
+    commitActivityPatch(act.id, (a: any) => {
+      a.completed_at = a.completed_at ? "" : new Date().toISOString().split("T")[0];
+      a.state = deriveActivityState(a);
+    });
+    renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
+  });
+}
