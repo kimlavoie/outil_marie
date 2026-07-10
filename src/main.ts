@@ -17,6 +17,7 @@ import { switchActivityTab } from "./activities/form.ts";
 import { renderHelpCenter } from "./help-center.ts";
 import { renderActivityDrawerShell } from "./activities/drawer-template.ts";
 import { renderActivitiesViewShell } from "./activities/activities-view-template.ts";
+import { renderBackupViewShell } from "./services/backup-view-template.ts";
 
 // Global safety net: an uncaught exception or rejected promise anywhere in the app would
 // otherwise fail silently (no console visible to the user, no indication a feature broke).
@@ -36,6 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   applyTheme(appState.settings.theme || "dark");
   renderActivityDrawerShell();
   renderActivitiesViewShell();
+  renderBackupViewShell();
   initPeriodSelector();
   initNavigation();
   renderHelpCenter();
