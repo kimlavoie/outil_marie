@@ -23,6 +23,15 @@ function generateUid(prefix: string) {
   return `${prefix}-${Date.now()}${Math.random().toString(36).substr(2, 5)}`;
 }
 
+// Typed shorthand for document.getElementById in the plain-DOM (non-React) views: getElementById
+// returns plain Element, which lacks .value/.disabled/.style/.focus() etc. Casting to
+// HTMLInputElement (a safe superset of the properties used across these views, including on
+// <select>/<button> elements the real DOM doesn't strictly type that way) avoids one-off casts
+// without changing any behavior.
+function elById<T extends Element = HTMLInputElement>(id: string): T {
+  return document.getElementById(id) as unknown as T;
+}
+
 export interface RateVersionRow {
   key: string;
   effective_date: string;
@@ -655,6 +664,7 @@ export {
   formatCurrency,
   escapeHtml,
   generateUid,
+  elById,
   newRateVersionRow,
   debounce,
   calculateDaysCount,

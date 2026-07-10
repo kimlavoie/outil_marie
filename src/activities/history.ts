@@ -28,17 +28,12 @@ import {
   getActivityStateLabel,
   getActivityStateBadgeClass
 } from "./render.ts";
-import {
-  autoSaveActivityForm,
-  closeActivityDrawer,
-  activityUndoSnapshotTimer,
-  ACTIVITY_UNDO_DEBOUNCE_MS,
-  setActivityUndoSnapshotTimer
-} from "./financials.ts";
+import { closeActivityDrawer } from "./drawer.ts";
+import { autoSaveActivityForm, activityUndoSnapshotTimer, ACTIVITY_UNDO_DEBOUNCE_MS, setActivityUndoSnapshotTimer } from "./autosave.ts";
 import { fillActivityFormFields, renderActivityStateBar } from "./form.ts";
 
 // Groups every autosave from one continuous edit into a single undo step (see
-// activities-financials.js's ACTIVITY_UNDO_DEBOUNCE_MS doc comment for why).
+// activities-autosave.ts's ACTIVITY_UNDO_DEBOUNCE_MS doc comment for why).
 function scheduleActivityUndoSnapshot(idx: number) {
   clearTimeout(activityUndoSnapshotTimer ?? undefined);
   setActivityUndoSnapshotTimer(
