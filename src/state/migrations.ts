@@ -1,7 +1,6 @@
 import { calculateDaysCount, generateUid } from "../utils/utils.ts";
 import { logWarn } from "../utils/logger.ts";
 import { DEFAULT_CONFIG } from "./config-defaults.ts";
-import { appState } from "./store.ts";
 import { parseLocalDateStr, formatDateStrLocal } from "./date-helpers.ts";
 import { getFlattenedRoomTarifs } from "./pricing.ts";
 
@@ -29,8 +28,8 @@ export function sanitizeActivitiesList(rawActivities: any[]): any[] {
 // Migrate legacy room config (price_internal/price_external) to a list of named tarifs per room,
 // then migrate that flat tarifs[] list to a versioned pricing grid (paramètre x type de client),
 // and ensure the linked_* configuration arrays exist.
-export function migrateRoomsConfig() {
-  (appState.settings.rooms || []).forEach(room => {
+export function migrateRoomsConfig(rooms: any[]) {
+  (rooms || []).forEach(room => {
     if (!room.tarifs && !room.pricing_grids) {
       const tarifs = [{ id: generateUid("tarif"), description: "Interne", amount: room.price_internal || 0 }];
       if (room.price_external > 0) {
@@ -66,8 +65,8 @@ export function migrateRoomsConfig() {
 // Migrate legacy flat salary rate (a single gl_account_code and rate_versions history per job)
 // to tarifs[]: each tarif carries its own budget account AND its own rate history, so a job can
 // be billed under several budget codes (mirrors migrateServicesConfig's tarifs[] for equipment).
-export function migrateSalariesConfig() {
-  (appState.settings.salaries || []).forEach(sal => {
+export function migrateSalariesConfig(salaries: any[]) {
+  (salaries || []).forEach(sal => {
     if (sal.tarifs) return;
     if (!sal.rate_versions) {
       sal.rate_versions = [{ id: generateUid("rv"), effective_date: "", rate: sal.rate || 0 }];
@@ -92,11 +91,10 @@ export function migrateSalariesConfig() {
 // Adds the hardcoded technical service fees (location de projecteur, piano à queue, projecteur /
 // équipement informatique) to existing databases that predate them, matched by id so it never
 // duplicates or overwrites amounts the user has already customized.
-export function migrateServicesConfig() {
-  if (!appState.settings.services) appState.settings.services = [];
+export function migrateServicesConfig(services: any[]) {
   DEFAULT_CONFIG.services.forEach(defaultSvc => {
-    if (!appState.settings.services.some(s => s.id === defaultSvc.id)) {
-      appState.settings.services.push(JSON.parse(JSON.stringify(defaultSvc)));
+    if (!services.some(s => s.id === defaultSvc.id)) {
+      services.push(JSON.parse(JSON.stringify(defaultSvc)));
     }
   });
 
@@ -104,7 +102,7 @@ export function migrateServicesConfig() {
   // billing_accounts (one per client type) with a single rate_versions history shared by all of
   // them. Both are now merged into tarifs[]: each tarif carries its own budget account AND its
   // own rate history, so different client types can also have different price histories.
-  appState.settings.services.forEach(svc => {
+  services.forEach(svc => {
     if (!svc.tarifs) {
       if (svc.billing_accounts === undefined) {
         svc.billing_accounts = svc.gl_account_code ? [{ id: generateUid("billing"), label: "", gl_account_code: svc.gl_account_code }] : [];
@@ -125,8 +123,8 @@ export function migrateServicesConfig() {
 }
 
 // Migrate legacy activity records to the current data shape (room_name -> rooms, new fields)
-export function migrateActivities() {
-  appState.activities.forEach(act => {
+export function migrateActivities(activities: any[], settings: { rooms: any[]; services: any[] }) {
+  activities.forEach(act => {
     if (act.room_name !== undefined) {
       if (!act.rooms) act.rooms = act.room_name ? [act.room_name] : [];
       delete act.room_name;
@@ -145,7 +143,7 @@ export function migrateActivities() {
     // room now carries its own schedule and a snapshotted tariff.
     if (act.rooms.length > 0 && typeof act.rooms[0] === "string") {
       act.rooms = act.rooms.map((name: string) => {
-        const roomConfig = (appState.settings.rooms || []).find(r => r.name === name);
+        const roomConfig = (settings.rooms || []).find(r => r.name === name);
         const wantedTariffDesc = act.client_type === "interne" ? "Interne" : "Externe";
         const flatTarifs = roomConfig ? getFlattenedRoomTarifs(roomConfig, act.date_start) : [];
         const matchedTariff = flatTarifs.length ? flatTarifs.find(t => t.description === wantedTariffDesc) || flatTarifs[0] : null;
@@ -431,7 +429,7 @@ export function migrateActivities() {
       // instead; matched by gl_account_code against the service's already-migrated tarifs.
       (r.services || []).forEach((s: any) => {
         if (s.gl_account_code !== undefined) {
-          const service = (appState.settings.services || []).find((sv: any) => sv.id === s.service_id);
+          const service = (settings.services || []).find((sv: any) => sv.id === s.service_id);
           const tarif = service && (service.tarifs || []).find((t: any) => t.gl_account_code === s.gl_account_code);
           s.tarif_id = tarif ? tarif.id : "";
           delete s.gl_account_code;

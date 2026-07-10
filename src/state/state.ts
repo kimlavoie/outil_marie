@@ -132,10 +132,10 @@ async function loadDatabase(): Promise<void> {
       const preMigrationActivityCount = appState.activities.length;
       let migrationFailed = false;
       try {
-        migrateRoomsConfig();
-        migrateSalariesConfig();
-        migrateServicesConfig();
-        migrateActivities();
+        migrateRoomsConfig(appState.settings.rooms);
+        migrateSalariesConfig(appState.settings.salaries);
+        migrateServicesConfig(appState.settings.services);
+        migrateActivities(appState.activities, appState.settings);
       } catch (e) {
         migrationFailed = true;
         logError("state", "migration des données au chargement", e);

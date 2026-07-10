@@ -565,9 +565,9 @@ function handleJsonBackupFile(file: File) {
         // a migration bug here must not leave the running app on a half-migrated appState that
         // an unrelated later save() would then persist over the still-intact on-disk data.
         try {
-          migrateRoomsConfig();
-          migrateSalariesConfig();
-          migrateActivities();
+          migrateRoomsConfig(appState.settings.rooms);
+          migrateSalariesConfig(appState.settings.salaries);
+          migrateActivities(appState.activities, appState.settings);
         } catch (err) {
           logError("backup", "migration des données lors de la restauration", err);
           setAppState(preRestoreSnapshot);

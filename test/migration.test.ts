@@ -35,9 +35,7 @@ function freshSettings(overrides: any = {}) {
 }
 
 test("migrateActivities correctly migrates legacy room_name to reservations format", () => {
-  // Setup legacy settings
-  appState.settings = {
-    theme: "dark",
+  const settings = freshSettings({
     rooms: [
       {
         name: "Salle François-Brassard (326.1)",
@@ -54,19 +52,10 @@ test("migrateActivities correctly migrates legacy room_name to reservations form
         linked_fees: [],
         linked_tasks: []
       }
-    ],
-    salaries: [],
-    services: [],
-    global_tasks: [],
-    schedulable_tasks: [],
-    departments: [],
-    accounts: [],
-    last_backup_date: "",
-    backup_reminder_days: 7
-  };
+    ]
+  });
 
-  // Setup legacy activity
-  appState.activities = [
+  const activities = [
     {
       id: "act-legacy-1",
       name: "Legacy Event",
@@ -89,10 +78,10 @@ test("migrateActivities correctly migrates legacy room_name to reservations form
     }
   ];
 
-  migrateActivities();
+  migrateActivities(activities, settings);
 
-  const migrated = appState.activities[0];
-  
+  const migrated = activities[0] as any;
+
   // Verify room name is deleted
   assert.equal(migrated.room_name, undefined);
 
@@ -124,7 +113,7 @@ test("migrateActivities correctly migrates legacy room_name to reservations form
 });
 
 test("migrateActivities broadcast legacy activity-level reference onto distributions", () => {
-  appState.activities = [
+  const activities = [
     {
       id: "act-legacy-ref",
       name: "Legacy Ref Event",
@@ -136,9 +125,9 @@ test("migrateActivities broadcast legacy activity-level reference onto distribut
     }
   ];
 
-  migrateActivities();
+  migrateActivities(activities, freshSettings());
 
-  const migrated = appState.activities[0];
+  const migrated = activities[0] as any;
 
   // Verify activity-level reference is deleted
   assert.equal(migrated.reference, undefined);
@@ -149,39 +138,17 @@ test("migrateActivities broadcast legacy activity-level reference onto distribut
 });
 
 test("migrateRoomsConfig does nothing and does not throw when there are no rooms", () => {
-  appState.settings = {
-    theme: "dark",
-    rooms: [],
-    salaries: [],
-    services: [],
-    global_tasks: [],
-    schedulable_tasks: [],
-    departments: [],
-    accounts: [],
-    last_backup_date: "",
-    backup_reminder_days: 7
-  };
-  assert.doesNotThrow(() => migrateRoomsConfig());
-  assert.deepEqual(appState.settings.rooms, []);
+  const rooms: any[] = [];
+  assert.doesNotThrow(() => migrateRoomsConfig(rooms));
+  assert.deepEqual(rooms, []);
 });
 
 test("migrateRoomsConfig builds a pricing grid from legacy price_internal/price_external", () => {
-  appState.settings = {
-    theme: "dark",
-    rooms: [{ name: "Salle A", price_internal: 100, price_external: 150 } as any],
-    salaries: [],
-    services: [],
-    global_tasks: [],
-    schedulable_tasks: [],
-    departments: [],
-    accounts: [],
-    last_backup_date: "",
-    backup_reminder_days: 7
-  };
+  const rooms = [{ name: "Salle A", price_internal: 100, price_external: 150 } as any];
 
-  migrateRoomsConfig();
+  migrateRoomsConfig(rooms);
 
-  const room = appState.settings.rooms[0];
+  const room = rooms[0];
   assert.equal(room.price_internal, undefined);
   assert.equal(room.price_external, undefined);
   assert.equal(room.tarifs, undefined); // tarifs is always a transient step, deleted after migration
@@ -195,77 +162,44 @@ test("migrateRoomsConfig builds a pricing grid from legacy price_internal/price_
 });
 
 test("migrateRoomsConfig leaves an existing pricing_grids untouched and still drops legacy tarifs", () => {
-  appState.settings = {
-    theme: "dark",
-    rooms: [
-      {
-        name: "Salle B",
-        // Legacy leftover tarifs alongside an already-migrated pricing_grids: pricing_grids wins.
-        tarifs: [{ id: "t1", description: "Interne", amount: 999 }] as any,
-        pricing_grids: [
-          {
-            effective_date: "",
-            parameters: [{ id: "p1", name: "Tarif" }],
-            client_types: [{ id: "ct1", name: "Interne" }],
-            cells: [{ parameter_id: "p1", client_type_id: "ct1", amount: 42 }]
-          }
-        ]
-      } as any
-    ],
-    salaries: [],
-    services: [],
-    global_tasks: [],
-    schedulable_tasks: [],
-    departments: [],
-    accounts: [],
-    last_backup_date: "",
-    backup_reminder_days: 7
-  };
+  const rooms = [
+    {
+      name: "Salle B",
+      // Legacy leftover tarifs alongside an already-migrated pricing_grids: pricing_grids wins.
+      tarifs: [{ id: "t1", description: "Interne", amount: 999 }] as any,
+      pricing_grids: [
+        {
+          effective_date: "",
+          parameters: [{ id: "p1", name: "Tarif" }],
+          client_types: [{ id: "ct1", name: "Interne" }],
+          cells: [{ parameter_id: "p1", client_type_id: "ct1", amount: 42 }]
+        }
+      ]
+    } as any
+  ];
 
-  migrateRoomsConfig();
+  migrateRoomsConfig(rooms);
 
-  const room = appState.settings.rooms[0];
+  const room = rooms[0];
   assert.equal(room.pricing_grids.length, 1);
   assert.equal(room.pricing_grids[0].cells[0].amount, 42); // untouched, not rebuilt from tarifs
   assert.equal(room.tarifs, undefined); // always dropped, even though it was ignored above
 });
 
 test("migrateRoomsConfig treats a null pricing_grids like a missing one and rebuilds it", () => {
-  appState.settings = {
-    theme: "dark",
-    rooms: [{ name: "Salle C", pricing_grids: null, tarifs: [{ id: "t1", description: "Interne", amount: 75 }] } as any],
-    salaries: [],
-    services: [],
-    global_tasks: [],
-    schedulable_tasks: [],
-    departments: [],
-    accounts: [],
-    last_backup_date: "",
-    backup_reminder_days: 7
-  };
+  const rooms = [{ name: "Salle C", pricing_grids: null, tarifs: [{ id: "t1", description: "Interne", amount: 75 }] } as any];
 
-  migrateRoomsConfig();
+  migrateRoomsConfig(rooms);
 
-  const room = appState.settings.rooms[0];
+  const room = rooms[0];
   assert.equal(room.pricing_grids.length, 1);
   assert.equal(room.pricing_grids[0].cells[0].amount, 75);
 });
 
 test("migrateRoomsConfig always ensures linked_* arrays exist", () => {
-  appState.settings = {
-    theme: "dark",
-    rooms: [{ name: "Salle D", pricing_grids: [] } as any],
-    salaries: [],
-    services: [],
-    global_tasks: [],
-    schedulable_tasks: [],
-    departments: [],
-    accounts: [],
-    last_backup_date: "",
-    backup_reminder_days: 7
-  };
-  migrateRoomsConfig();
-  const room = appState.settings.rooms[0];
+  const rooms = [{ name: "Salle D", pricing_grids: [] } as any];
+  migrateRoomsConfig(rooms);
+  const room = rooms[0];
   assert.deepEqual(room.linked_rooms, []);
   assert.deepEqual(room.linked_staff, []);
   assert.deepEqual(room.linked_fees, []);
@@ -275,13 +209,11 @@ test("migrateRoomsConfig always ensures linked_* arrays exist", () => {
 // --- migrateSalariesConfig ---
 
 test("migrateSalariesConfig moves legacy rate/gl_account_code into tarifs[], defaulting overtime_rate to 0", () => {
-  appState.settings = freshSettings({
-    salaries: [{ name: "Hôte", rate: 20, gl_account_code: "892-001" } as any]
-  });
+  const salaries = [{ name: "Hôte", rate: 20, gl_account_code: "892-001" } as any];
 
-  migrateSalariesConfig();
+  migrateSalariesConfig(salaries);
 
-  const sal = appState.settings.salaries[0];
+  const sal = salaries[0];
   assert.equal((sal as any).rate, undefined);
   assert.equal((sal as any).gl_account_code, undefined);
   assert.equal((sal as any).rate_versions, undefined); // moved under the tarif, not left at top level
@@ -294,13 +226,11 @@ test("migrateSalariesConfig moves legacy rate/gl_account_code into tarifs[], def
 });
 
 test("migrateSalariesConfig fills in missing overtime_rate on existing rate_versions without a gl_account_code", () => {
-  appState.settings = freshSettings({
-    salaries: [{ name: "Sauveteur", rate_versions: [{ effective_date: "", rate: 25 }] } as any]
-  });
+  const salaries = [{ name: "Sauveteur", rate_versions: [{ effective_date: "", rate: 25 }] } as any];
 
-  migrateSalariesConfig();
+  migrateSalariesConfig(salaries);
 
-  const tarif = appState.settings.salaries[0].tarifs[0];
+  const tarif = salaries[0].tarifs[0];
   assert.equal(tarif.gl_account_code, "");
   assert.equal(tarif.rate_versions[0].rate, 25);
   assert.equal(tarif.rate_versions[0].overtime_rate, 0);
@@ -308,13 +238,11 @@ test("migrateSalariesConfig fills in missing overtime_rate on existing rate_vers
 
 test("migrateSalariesConfig leaves a salary that already has tarifs untouched", () => {
   const existingTarifs = [{ id: "t1", label: "", gl_account_code: "111", rate_versions: [{ effective_date: "", rate: 99 }] }];
-  appState.settings = freshSettings({
-    salaries: [{ name: "Déjà migré", tarifs: existingTarifs } as any]
-  });
+  const salaries = [{ name: "Déjà migré", tarifs: existingTarifs } as any];
 
-  migrateSalariesConfig();
+  migrateSalariesConfig(salaries);
 
-  assert.strictEqual(appState.settings.salaries[0].tarifs, existingTarifs);
+  assert.strictEqual(salaries[0].tarifs, existingTarifs);
 });
 
 // --- migrateServicesConfig ---
@@ -323,11 +251,10 @@ test("migrateServicesConfig adds missing default services without touching an al
   const customizedDefault = JSON.parse(JSON.stringify(DEFAULT_CONFIG.services[0]));
   customizedDefault.tarifs[0].rate_versions[0].rate = 12345; // user-edited amount
 
-  appState.settings = freshSettings({ services: [customizedDefault] });
+  const services = [customizedDefault];
 
-  migrateServicesConfig();
+  migrateServicesConfig(services);
 
-  const services = appState.settings.services;
   // Every default service id is present...
   DEFAULT_CONFIG.services.forEach(def => {
     assert.ok(services.some((s: any) => s.id === def.id));
@@ -338,13 +265,13 @@ test("migrateServicesConfig adds missing default services without touching an al
 });
 
 test("migrateServicesConfig migrates a legacy single gl_account_code into tarifs[]", () => {
-  appState.settings = freshSettings({
-    services: [{ id: "svc-custom", name: "Service perso", gl_account_code: "700-100", rate_versions: [{ effective_date: "", rate: 40 }] } as any]
-  });
+  const services = [
+    { id: "svc-custom", name: "Service perso", gl_account_code: "700-100", rate_versions: [{ effective_date: "", rate: 40 }] } as any
+  ];
 
-  migrateServicesConfig();
+  migrateServicesConfig(services);
 
-  const svc = appState.settings.services.find((s: any) => s.id === "svc-custom");
+  const svc = services.find((s: any) => s.id === "svc-custom");
   assert.equal(svc.gl_account_code, undefined);
   assert.equal(svc.billing_accounts, undefined);
   assert.equal(svc.rate_versions, undefined);
@@ -354,23 +281,21 @@ test("migrateServicesConfig migrates a legacy single gl_account_code into tarifs
 });
 
 test("migrateServicesConfig migrates several legacy billing_accounts into one tarif each, sharing the same rate history", () => {
-  appState.settings = freshSettings({
-    services: [
-      {
-        id: "svc-multi",
-        name: "Service multi-comptes",
-        billing_accounts: [
-          { id: "b1", label: "Interne", gl_account_code: "111" },
-          { id: "b2", label: "Externe", gl_account_code: "222" }
-        ],
-        rate_versions: [{ effective_date: "", rate: 60 }]
-      } as any
-    ]
-  });
+  const services = [
+    {
+      id: "svc-multi",
+      name: "Service multi-comptes",
+      billing_accounts: [
+        { id: "b1", label: "Interne", gl_account_code: "111" },
+        { id: "b2", label: "Externe", gl_account_code: "222" }
+      ],
+      rate_versions: [{ effective_date: "", rate: 60 }]
+    } as any
+  ];
 
-  migrateServicesConfig();
+  migrateServicesConfig(services);
 
-  const svc = appState.settings.services.find((s: any) => s.id === "svc-multi");
+  const svc = services.find((s: any) => s.id === "svc-multi");
   assert.equal(svc.tarifs.length, 2);
   assert.deepEqual(
     svc.tarifs.map((t: any) => t.gl_account_code),
@@ -389,7 +314,8 @@ test("migrateServicesConfig migrates several legacy billing_accounts into one ta
 // inside their own try/catch in loadDatabase(), separate from the outer one that falls back to
 // seedDatabase() (which wipes everything). A migration bug must instead roll appState back to
 // the as-loaded, unmigrated data — these tests exercise that guard end-to-end through the real
-// IndexedDB read/write path (mocked), not just the individual migration functions in isolation.
+// IndexedDB read/write path (mocked), not just the individual migration functions in isolation,
+// so they still go through the shared appState (that's what loadDatabase() itself mutates).
 
 test("loadDatabase rolls back to pre-migration data when a migration throws", async () => {
   const legacyActivity = { id: "act-1", name: "Legacy Event", distributions: [], reservations: [] };
