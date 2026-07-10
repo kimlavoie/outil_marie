@@ -11,8 +11,8 @@
     "typecheck": "node node_modules/typescript-native/bin/tsc",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "format": "prettier --write \"src/**/*.{js,ts,tsx}\" \"*.html\" \"*.css\"",
-    "format:check": "prettier --check \"src/**/*.{js,ts,tsx}\" \"*.html\" \"*.css\"",
+    "format": "prettier --write \"src/**/*.{js,ts,tsx}\" \"*.html\" \"*.scss\"",
+    "format:check": "prettier --check \"src/**/*.{js,ts,tsx}\" \"*.html\" \"*.scss\"",
     "test": "node --test test/*.test.ts"
   },
   "devDependencies": {
@@ -23,6 +23,7 @@
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",
     "prettier": "^3.9.4",
+    "sass": "^1.101.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.63.0",
     "typescript-native": "npm:typescript@^7.0.2",
