@@ -5,7 +5,8 @@ import {
   generateUid,
   buildGlAccountOptionsHtml,
   buildSearchableSelectHtml,
-  initSearchableSelectEl
+  initSearchableSelectEl,
+  rejectNegativeAmountOnBlur
 } from "../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "./financials.ts";
 
@@ -136,6 +137,8 @@ export function addStaffRow(
     el.addEventListener("input", updateSubmissionFinancialSummary);
     el.addEventListener("change", updateSubmissionFinancialSummary);
   });
+  rejectNegativeAmountOnBlur(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!);
+  rejectNegativeAmountOnBlur(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!);
 
   updateStaffRowSubtotal(row);
 }
@@ -250,6 +253,7 @@ export function addServiceRow(
     el.addEventListener("input", updateSubmissionFinancialSummary);
     el.addEventListener("change", updateSubmissionFinancialSummary);
   });
+  rejectNegativeAmountOnBlur(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!);
 
   updateServiceRowSubtotal(row);
 }
@@ -328,6 +332,7 @@ export function addFeeRow(
   row.querySelectorAll<HTMLInputElement>(".fee-desc-input, .fee-amount-input")!.forEach(el => {
     el.addEventListener("input", updateSubmissionFinancialSummary);
   });
+  rejectNegativeAmountOnBlur(row.querySelector<HTMLInputElement>(".fee-amount-input")!);
 }
 
 // Salary id of the default "Directeur technique" entry seeded in config-defaults.ts. Activating

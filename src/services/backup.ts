@@ -403,8 +403,9 @@ function handleJsonBackupFile(file: File) {
       }
 
       if (confirm("La restauration va écraser la base de données actuelle. Continuer ?")) {
+        const preRestoreSnapshot = JSON.parse(JSON.stringify(appState));
         try {
-          await saveSafetyBackupToDb("avant_restauration", JSON.parse(JSON.stringify(appState)));
+          await saveSafetyBackupToDb("avant_restauration", preRestoreSnapshot);
         } catch (err) {
           logError("backup", "sauvegarde de sécurité avant restauration", err);
         }
@@ -444,10 +445,23 @@ function handleJsonBackupFile(file: File) {
         }
 
         // Restored files may predate the pricing-grid/rate-versioning/activity migrations —
-        // run the same migrations loadDatabase() applies on normal startup.
-        migrateRoomsConfig();
-        migrateSalariesConfig();
-        migrateActivities();
+        // run the same migrations loadDatabase() applies on normal startup. Guarded separately:
+        // a migration bug here must not leave the running app on a half-migrated appState that
+        // an unrelated later save() would then persist over the still-intact on-disk data.
+        try {
+          migrateRoomsConfig();
+          migrateSalariesConfig();
+          migrateActivities();
+        } catch (err) {
+          logError("backup", "migration des données lors de la restauration", err);
+          setAppState(preRestoreSnapshot);
+          showToast(
+            "La restauration a échoué pendant la mise à jour du format des données. Vos données précédentes ont été conservées (rien n'a été écrasé sur le disque). Veuillez recharger la page.",
+            "error",
+            12000
+          );
+          return;
+        }
 
         try {
           await clearAllActivityVersionsFromDb();

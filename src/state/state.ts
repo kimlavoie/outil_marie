@@ -533,10 +533,35 @@ async function loadDatabase(): Promise<void> {
         logError("state", "sauvegarde de sécurité avant migration", e);
       }
 
-      migrateRoomsConfig();
-      migrateSalariesConfig();
-      migrateServicesConfig();
-      migrateActivities();
+      // Guard: run migrations in their own try/catch, separate from the outer one, whose only
+      // other failure path is a genuinely unreadable database and calls seedDatabase() — which
+      // would otherwise wipe every activity and setting if a migration bug threw partway
+      // through. A migration failing here must never be treated the same as "no database".
+      const preMigrationActivityCount = appState.activities.length;
+      let migrationFailed = false;
+      try {
+        migrateRoomsConfig();
+        migrateSalariesConfig();
+        migrateServicesConfig();
+        migrateActivities();
+      } catch (e) {
+        migrationFailed = true;
+        logError("state", "migration des données au chargement", e);
+      }
+
+      // Second guard: even without throwing, a migration bug could still silently empty out
+      // activities that existed a moment ago. Either way, fall back to the as-loaded (unmigrated)
+      // data rather than let a corrupted/emptied state be what the next saveDatabase() persists —
+      // the safety backup taken above remains available regardless.
+      if (migrationFailed || (preMigrationActivityCount > 0 && appState.activities.length === 0)) {
+        appState.settings = dbData.settings || appState.settings;
+        appState.activities = sanitizeActivitiesList(dbData.activities);
+        showToast(
+          "La mise à jour du format des données a échoué ou a produit un résultat inattendu : vos données précédentes ont été conservées telles quelles. Une copie de sécurité est aussi disponible dans Sauvegarde & Export.",
+          "error",
+          12000
+        );
+      }
 
       // Drop favorites pointing at activities that no longer exist (deleted since last save)
       appState.favorites = (appState.favorites || []).filter(id => appState.activities.some(a => a.id === id && !a.deleted));

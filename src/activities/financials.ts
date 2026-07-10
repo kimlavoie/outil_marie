@@ -32,7 +32,8 @@ import {
   hideLoadingOverlay,
   showToast,
   buildSearchableSelectHtml,
-  initSearchableSelectEl
+  initSearchableSelectEl,
+  rejectNegativeAmountOnBlur
 } from "../utils/utils.ts";
 import { isNonEmptyString } from "../utils/validation.ts";
 import { activitiesState, renderActivities, getActivityStateLabel } from "./render.ts";
@@ -75,11 +76,12 @@ function el<T extends Element = HTMLInputElement>(id: string): T {
   return document.getElementById(id) as unknown as T;
 }
 
-// Recomputes and displays the room/personnel/frais subtotal, TPS (5%), TVQ (9.975%), and total
-function updateSubmissionFinancialSummary() {
-  const container = el("submission-financial-summary");
-  if (!container) return;
-
+// Computes the pre-tax revenue subtotal (rooms + personnel + équipements + autres frais) from
+// the live form. Shared by updateSubmissionFinancialSummary() (which adds TPS/TVQ on top) and
+// updateDistributionTotal() (which uses the subtotal, untaxed, as the reference the entered GL
+// distributions should add up to — the settings.accounts codes are all revenue accounts, no tax
+// account exists among them).
+function computeFormRevenueSubtotal(): { roomsTotal: number; staffTotal: number; servicesTotal: number; feesTotal: number; subtotal: number } {
   const reservations = collectReservationsFromForm();
   const roomsTotal = getRoomsTariffTotal({ reservations });
   const eventDateStart = getAggregateEventDates(reservations).date_start;
@@ -130,21 +132,34 @@ function updateSubmissionFinancialSummary() {
     feesTotal += parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input")!.value) || 0;
   });
 
-  const subtotal = roomsTotal + staffTotal + servicesTotal + feesTotal;
-  const tps = subtotal * 0.05;
-  const tvq = subtotal * 0.09975;
-  const total = subtotal + tps + tvq;
+  return { roomsTotal, staffTotal, servicesTotal, feesTotal, subtotal: roomsTotal + staffTotal + servicesTotal + feesTotal };
+}
 
-  container.innerHTML = `
-    <div class="financial-summary-row"><span>Location des salles</span><span>${formatCurrency(roomsTotal)}</span></div>
-    <div class="financial-summary-row"><span>Personnel</span><span>${formatCurrency(staffTotal)}</span></div>
-    <div class="financial-summary-row"><span>Équipements</span><span>${formatCurrency(servicesTotal)}</span></div>
-    <div class="financial-summary-row"><span>Autres frais</span><span>${formatCurrency(feesTotal)}</span></div>
-    <div class="financial-summary-row"><span>Sous-total</span><span>${formatCurrency(subtotal)}</span></div>
-    <div class="financial-summary-row"><span>TPS (5%)</span><span>${formatCurrency(tps)}</span></div>
-    <div class="financial-summary-row"><span>TVQ (9,975%)</span><span>${formatCurrency(tvq)}</span></div>
-    <div class="financial-summary-row total"><span>Total</span><span>${formatCurrency(total)}</span></div>
-  `;
+// Recomputes and displays the room/personnel/frais subtotal, TPS (5%), TVQ (9.975%), and total
+function updateSubmissionFinancialSummary() {
+  const container = el("submission-financial-summary");
+  if (container) {
+    const { roomsTotal, staffTotal, servicesTotal, feesTotal, subtotal } = computeFormRevenueSubtotal();
+    const tps = subtotal * 0.05;
+    const tvq = subtotal * 0.09975;
+    const total = subtotal + tps + tvq;
+
+    container.innerHTML = `
+      <div class="financial-summary-row"><span>Location des salles</span><span>${formatCurrency(roomsTotal)}</span></div>
+      <div class="financial-summary-row"><span>Personnel</span><span>${formatCurrency(staffTotal)}</span></div>
+      <div class="financial-summary-row"><span>Équipements</span><span>${formatCurrency(servicesTotal)}</span></div>
+      <div class="financial-summary-row"><span>Autres frais</span><span>${formatCurrency(feesTotal)}</span></div>
+      <div class="financial-summary-row"><span>Sous-total</span><span>${formatCurrency(subtotal)}</span></div>
+      <div class="financial-summary-row"><span>TPS (5%)</span><span>${formatCurrency(tps)}</span></div>
+      <div class="financial-summary-row"><span>TVQ (9,975%)</span><span>${formatCurrency(tvq)}</span></div>
+      <div class="financial-summary-row total"><span>Total</span><span>${formatCurrency(total)}</span></div>
+    `;
+  }
+
+  // Keep the "Total saisi" distribution warning in sync too: reservations/staff/services/fees
+  // changes call this function, not updateDistributionTotal(), but the subtotal they'd be
+  // compared against just changed.
+  updateDistributionTotal();
 }
 
 // Same subtotal/TPS/TVQ/total breakdown as updateSubmissionFinancialSummary(), but computed from
@@ -725,17 +740,37 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "", detail
   );
 
   newRow.querySelector(".dist-amount-input")!.addEventListener("input", updateDistributionTotal);
+  rejectNegativeAmountOnBlur(newRow.querySelector<HTMLInputElement>(".dist-amount-input")!);
 
   updateDistributionTotal();
 }
 
 function updateDistributionTotal() {
+  const distributionListEl = el("form-distribution-total-val");
+  if (!distributionListEl) return;
+
   let total = 0;
   document.querySelectorAll(".dist-amount-input").forEach(input => {
     const val = parseFloat((input as HTMLInputElement).value) || 0;
     total += val;
   });
-  el("form-distribution-total-val").textContent = formatCurrency(total);
+  distributionListEl.textContent = formatCurrency(total);
+
+  // Warn (non-blocking — the discrepancy might be intentional, e.g. a partial invoice) when the
+  // GL distributions entered don't add up to the activity's own calculated revenue, so a typo or
+  // a forgotten line doesn't silently understate/overstate what gets reported to the GL.
+  const warningEl = el("form-distribution-total-warning");
+  if (warningEl) {
+    const { subtotal } = computeFormRevenueSubtotal();
+    const diff = total - subtotal;
+    if (Math.abs(diff) > 0.01) {
+      warningEl.textContent = `Écart de ${formatCurrency(Math.abs(diff))} ${diff > 0 ? "au-dessus" : "en dessous"} du total calculé (${formatCurrency(subtotal)})`;
+      warningEl.style.display = "inline";
+    } else {
+      warningEl.textContent = "";
+      warningEl.style.display = "none";
+    }
+  }
 }
 
 let autoSaveTimeoutId: ReturnType<typeof setTimeout> | null = null;

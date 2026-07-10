@@ -631,6 +631,23 @@ function showToast(message: string, type = "info", duration = 4000) {
   if (duration > 0) setTimeout(dismiss, duration);
 }
 
+// Guards a monetary <input type="number"> against negative values: `min="0"` on the element is
+// only a soft hint (browsers still let you type "-25", it only affects the stepper arrows and
+// :invalid styling), so a few rate/amount fields (frais, taux personnalisés) accepted negative
+// numbers all the way into appState with no feedback. Wired on "blur" rather than every keystroke
+// so a user isn't interrupted while still typing the number.
+function rejectNegativeAmountOnBlur(input: HTMLInputElement) {
+  input.addEventListener("blur", () => {
+    const val = parseFloat(input.value);
+    if (Number.isFinite(val) && val < 0) {
+      input.value = "0";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      showToast("Un montant ne peut pas être négatif : corrigé à 0.", "warning");
+    }
+  });
+}
+
 export {
   formatCurrency,
   escapeHtml,
@@ -669,5 +686,6 @@ export {
   maskPhoneInput,
   showToast,
   showLoadingOverlay,
-  hideLoadingOverlay
+  hideLoadingOverlay,
+  rejectNegativeAmountOnBlur
 };

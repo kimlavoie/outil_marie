@@ -20,11 +20,24 @@ TODO - Avant mise en production (impact sur les données)
   récents sont conservés (purge automatique des plus anciens). Visibles et téléchargeables
   (fichier JSON, réutilisable via la restauration existante) dans l'écran "Sauvegarde & Export".
 
-[MAJEUR] Validation métier sur les montants
-- Problème : src/activities/form.ts:176-179 n'empêche pas les montants négatifs ni une
-  distribution dont la somme ne correspond pas au total de l'activité.
-- Correction : valider que la somme des distributions == montant total et que les montants
-  sont >= 0 avant sauvegarde.
+[FAIT] Validation métier sur les montants
+- Problème : les taux personnalisés du personnel/services et les montants de frais
+  (src/activities/reservation-subrows.ts) acceptaient des valeurs négatives sans avertissement
+  (contrairement aux lignes de distribution qui, elles, ignoraient silencieusement un montant <= 0
+  au lieu de le signaler). Aucune vérification que la somme des distributions saisies correspond
+  au total réel calculé de l'activité.
+- Correction appliquée :
+  - Nouvelle fonction partagée rejectNegativeAmountOnBlur() (src/utils/utils.ts) : au blur d'un
+    champ montant, une valeur négative est corrigée à 0 avec un toast d'avertissement. Appliquée à
+    fee-amount-input, staff-custom-rate-input, staff-custom-overtime-rate-input,
+    service-custom-rate-input (src/activities/reservation-subrows.ts) et dist-amount-input
+    (src/activities/financials.ts), en plus du `min="0"` déjà présent (qui n'est qu'une
+    indication visuelle côté navigateur, pas un vrai blocage).
+  - Le total des distributions saisies ("Total saisi", src/activities/financials.ts
+    updateDistributionTotal()) est maintenant comparé au sous-total réel de l'activité
+    (computeFormRevenueSubtotal(), factorisé depuis updateSubmissionFinancialSummary()) : un
+    écart de plus de 0,01 $ affiche un avertissement non bloquant sous le total (l'écart peut être
+    volontaire, ex. facturation partielle).
 
 [MAJEUR] Piste d'audit minimale
 - Problème : aucune trace de qui/quand une suppression ou modification significative a eu lieu.
@@ -32,10 +45,26 @@ TODO - Avant mise en production (impact sur les données)
 - Correction : étendre le store activity_versions (déjà utilisé pour l'undo) avec un log
   d'événements horodatés pour les suppressions/modifications importantes.
 
-[MODERE] Garde-fou avant migrations irréversibles
-- Problème : les migrations (src/state/state.ts:674-975) sont complexes et non réversibles.
-- Correction : valider qu'elles tournent sans erreur sur un vrai jeu de données de prod (pas
-  juste les fixtures de test), et s'assurer que le backup auto (point ci-dessus) couvre ce cas.
+[FAIT] Garde-fou avant migrations irréversibles
+- Problème : les migrations (src/state/state.ts:674-975) sont complexes et non réversibles. Pire :
+  si une migration levait une exception au chargement, le catch englobant de loadDatabase()
+  appelait seedDatabase(), qui efface TOUTES les activités et réinitialise les paramètres — un bug
+  de migration pouvait donc se traduire par une perte totale de données, pas juste une erreur.
+- Correction appliquée :
+  - loadDatabase() (src/state/state.ts) exécute maintenant les migrations dans leur propre
+    try/catch, séparé de celui qui déclenche seedDatabase() (réservé aux cas où la base est
+    réellement illisible).
+  - Si une migration échoue, ou si le nombre d'activités tombe à 0 après migration alors qu'il y
+    en avait avant (signe d'un bug silencieux), l'état revient aux données telles que chargées
+    (non migrées) au lieu de persister un résultat corrompu ou vide ; un toast d'erreur explicite
+    est affiché à l'utilisateur.
+  - Même garde appliquée à la restauration d'un fichier JSON (src/services/backup.ts) : si les
+    migrations post-restauration échouent, l'état revient à ce qu'il était avant la restauration
+    (rien n'est écrasé sur le disque) plutôt que de continuer avec des données à moitié migrées.
+  - Dans les deux cas, la sauvegarde de sécurité automatique (point précédent) reste disponible en
+    complément.
+  - Reste à faire manuellement avant la mise en prod : tester les migrations sur une copie réelle
+    des données de prod (pas seulement les fixtures de test), en plus de ce garde-fou.
 
 Hors scope pour l'instant :
 - Authentification / autorisation : à revoir selon qui utilisera l'app en production
