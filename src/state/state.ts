@@ -1,6 +1,6 @@
 import { calculateDaysCount, generateUid, showToast, getMultiSelectValues, setMultiSelectValues } from "../utils/utils.ts";
 import { openVersionedDb } from "./db-utils.ts";
-import { logError } from "../utils/logger.ts";
+import { logError, logWarn } from "../utils/logger.ts";
 
 import { DEFAULT_CONFIG } from "./config-defaults.ts";
 import { activitiesState } from "../activities/render.ts";
@@ -986,7 +986,20 @@ function migrateActivities() {
       act.reservations = (act.rooms || []).map((r: any) => {
         const slots: any[] = [];
         if (r.date_start) {
-          const dayCount = calculateDaysCount(r.date_start, r.date_end || r.date_start);
+          let dayCount = calculateDaysCount(r.date_start, r.date_end || r.date_start);
+          // A reversed legacy date_start/date_end (corrupted historical data) yields 0 here —
+          // generating 0 slots would silently drop the room's booking entirely during a migration
+          // the user can't retry. Keep at least the start date so the booking survives, and log
+          // the anomaly so it can be tracked down instead of disappearing unnoticed.
+          if (dayCount === 0) {
+            logWarn("state", "migration rooms->reservations : plage de dates inversée", {
+              activityId: act.id,
+              roomName: r.name,
+              date_start: r.date_start,
+              date_end: r.date_end
+            });
+            dayCount = 1;
+          }
           const start = parseLocalDateStr(r.date_start);
           for (let i = 0; i < dayCount; i++) {
             const d = new Date(start);

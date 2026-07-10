@@ -429,7 +429,10 @@ function renderActivities() {
         daysCount = calculateDaysCount(act.date_start, act.date_end);
         const start = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
         const end = parseLocalDateStr(act.date_end).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
-        datesText = `${start} au ${end} (${daysCount}j)`;
+        datesText =
+          daysCount > 0
+            ? `${start} au ${end} (${daysCount}j)`
+            : `⚠ ${start} au ${end} (dates invalides)`;
       } else if (act.date_start) {
         const start = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
         datesText = `À partir du ${start}`;

@@ -14,8 +14,8 @@ test("calculateDaysCount falls back to 1 day for missing or invalid input", () =
   assert.equal(calculateDaysCount("not-a-date", "2025-01-05"), 1);
 });
 
-test("calculateDaysCount falls back to 1 day when the end precedes the start", () => {
-  assert.equal(calculateDaysCount("2025-01-05", "2025-01-01"), 1);
+test("calculateDaysCount returns 0 (invalid range) when the end precedes the start", () => {
+  assert.equal(calculateDaysCount("2025-01-05", "2025-01-01"), 0);
 });
 
 test("getRoomsTariffTotal sums tariff_amount x number of créneaux across every réservation", () => {

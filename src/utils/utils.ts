@@ -45,14 +45,17 @@ function debounce(fn: (...args: any[]) => void, delay = 250) {
   };
 }
 
-// Helper: Calculate days between dates (inclusive)
+// Helper: Calculate days between dates (inclusive). Missing/unparseable input falls back to 1
+// (can't tell how long the range was meant to be), but end < start returns 0 rather than 1 —
+// that's not "unknown", it's an invalid range, and callers should treat it as such instead of
+// silently billing/generating a single day for it.
 function calculateDaysCount(startStr: string, endStr: string) {
   if (!startStr || !endStr) return 1;
   const start = new Date(startStr);
   const end = new Date(endStr);
   if (isNaN(Number(start)) || isNaN(Number(end))) return 1;
   const diffTime = end.getTime() - start.getTime();
-  if (diffTime < 0) return 1;
+  if (diffTime < 0) return 0;
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 }
 

@@ -3,14 +3,6 @@ TODO - Suggestions d'amélioration (suite du travail sur la sécurité des donn�
 [NE PAS FAIRE] Piste d'audit minimale
 - Décision : ne sera pas implémentée.
 
-[MINEUR] calculateDaysCount() masque les plages de dates inversées
-- Problème : calculateDaysCount() (src/utils/utils.ts:~49-56) retourne 1 si end < start (diffTime <
-  0) au lieu de signaler une plage invalide. Une activité corrompue ou mal saisie avec date_end
-  antérieure à date_start génère quand même une charge d'un jour minimum au lieu de faire échouer
-  la validation ou d'afficher une erreur claire.
-- Piste : faire remonter une erreur ou 0 plutôt que 1 quand end < start, et valider en amont (au
-  formulaire) que date_end >= date_start.
-
 Hors scope pour l'instant :
 - Authentification / autorisation : à revoir selon qui utilisera l'app en production
   (poste unique de confiance vs accès multi-utilisateurs).
@@ -50,3 +42,16 @@ Historique des correctifs appliqués (archivé, voir git log pour le détail com
       dans le Grand Livre local, au lieu de disparaître du rapport sans laisser de trace (le
       fallback qui les stockait dans accountEntries existait déjà, mais accountsToRender
       n'itérait que sur les comptes configurés — ces entrées n'étaient donc jamais rendues).
+- [FAIT] calculateDaysCount() masquait les plages de dates inversées
+  - Correction :
+    - calculateDaysCount() (src/utils/utils.ts) retourne maintenant 0 (plage invalide) quand
+      end < start, plutôt que 1 comme pour une saisie manquante/illisible — les deux cas n'ont
+      plus la même signification pour les appelants.
+    - render.ts (liste des activités) affiche "⚠ ... (dates invalides)" au lieu de "(0j)"/"(1j)"
+      quand la plage d'une activité est inversée, pour que ce soit visible plutôt que masqué.
+    - state.ts (migration ponctuelle rooms[] -> reservations[] des anciennes activités) : une
+      plage inversée sur une vieille réservation aurait maintenant produit 0 créneau (perte
+      silencieuse de la réservation lors d'une migration irréversible) au lieu du comportement
+      précédent (1 jour deviné) ; le code force maintenant explicitement 1 créneau sur date_start
+      dans ce cas précis (pour ne pas perdre la réservation) et logue l'anomalie via logWarn()
+      pour qu'elle reste traçable.
