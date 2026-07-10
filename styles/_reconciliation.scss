@@ -1,0 +1,68 @@
+@use "mixins" as *;
+
+/* Reconciliation Results Layout */
+.reconciliation-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+.reconcile-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.reconcile-tab {
+  background: none;
+  border: none;
+  padding: 10px 20px;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: var(--transition-smooth);
+}
+
+.reconcile-tab:hover {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.reconcile-tab.active {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+.reconcile-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-box {
+  @include card-surface(var(--radius-md));
+  padding: 16px;
+  text-align: center;
+}
+
+.summary-box-val {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.summary-box-lbl {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+}

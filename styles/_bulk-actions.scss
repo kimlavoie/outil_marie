@@ -1,0 +1,88 @@
+@use "mixins" as *;
+
+/* Bulk actions bar styling */
+.bulk-actions-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 55%; /* Centered slightly to the right to clear side navigation */
+  transform: translateX(-50%) translateY(120px);
+  z-index: 1000;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition:
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bulk-actions-bar.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bulk-actions-content {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+}
+
+.bulk-selected-count {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.bulk-actions-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Bulk actions status dropdown */
+.bulk-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.bulk-state-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 8px;
+  @include dropdown-menu-panel(180px);
+}
+
+.bulk-state-menu.hidden {
+  display: none;
+}
+
+.bulk-state-item {
+  @include dropdown-menu-item;
+}
+
+/* Activity row context menu (right-click on an activities list row) */
+.row-actions-menu {
+  @include dropdown-menu-panel(200px);
+}
+
+.row-actions-item {
+  @include dropdown-menu-item;
+}
+
+.row-actions-item.danger {
+  color: var(--danger);
+}
+
+.row-actions-item.danger:hover {
+  background-color: var(--danger);
+  color: white;
+}

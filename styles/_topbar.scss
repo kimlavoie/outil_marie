@@ -1,0 +1,173 @@
+@use "mixins" as *;
+
+.top-bar {
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 32px;
+  flex-shrink: 0;
+  transition: var(--transition-smooth);
+}
+
+.top-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.top-bar-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.period-selector-widget {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.btn-compact {
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  gap: 6px;
+}
+
+/* Theme Toggle */
+.theme-toggle-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: var(--transition-smooth);
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.theme-toggle-btn svg {
+  @include icon-svg(16px);
+}
+
+/* Quarter Toggle Buttons */
+.quarter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.quarter-toggle::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--text-secondary);
+  transition:
+    background-color var(--transition-smooth),
+    transform var(--transition-smooth);
+}
+
+.quarter-toggle:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.quarter-toggle.active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+}
+
+.quarter-toggle.active::before {
+  background-color: #ffffff;
+  transform: scale(1.2);
+}
+
+.active-period-description {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Pill Toggle Buttons (form multi-select: salles, services techniques) */
+.pill-toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill-toggle {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.pill-toggle:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.pill-toggle.active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+}
+
+/* Activity form mode toggle (Estimation / Soumission) — hides everything not needed
+   for the estimate calculation while "estimation" is active */
+#activity-mode-toggle.locked .pill-toggle {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.mode-estimation .estimation-hide {
+  display: none !important;
+}

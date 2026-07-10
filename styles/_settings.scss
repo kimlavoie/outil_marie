@@ -1,0 +1,136 @@
+@use "mixins" as *;
+
+/* Settings Tabbed Section */
+.settings-container {
+  @include card-surface;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 32px;
+  padding: 32px;
+}
+
+@media (max-width: 768px) {
+  .settings-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-right: 1px solid var(--border-color);
+  padding-right: 16px;
+}
+
+@media (max-width: 768px) {
+  .settings-tabs {
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding-right: 0;
+    padding-bottom: 16px;
+    overflow-x: auto;
+  }
+}
+
+.settings-tab-btn {
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: var(--transition-smooth);
+}
+
+.settings-tab-btn:hover {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+.settings-tab-btn.active {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.settings-panel {
+  display: none;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.settings-panel.active {
+  display: flex;
+}
+
+.settings-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+}
+
+.settings-panel-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* Custom list items in settings */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-main);
+  transition: var(--transition-smooth);
+  cursor: pointer;
+}
+
+.settings-list-item:hover {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+}
+
+.settings-list-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-list-item-code {
+  font-family: monospace;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.settings-list-item-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+/* Room color swatch (settings list + calendar legend) */
+.room-color-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  margin-right: 8px;
+  vertical-align: middle;
+}

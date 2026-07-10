@@ -1,0 +1,327 @@
+/* Auto-save status indicator styles */
+.auto-save-status {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition:
+    opacity 0.3s ease,
+    color 0.3s ease;
+  margin-left: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  pointer-events: none;
+}
+
+.auto-save-status.active {
+  opacity: 1;
+}
+
+.auto-save-status.saving {
+  color: var(--warning-text);
+  border-color: var(--warning);
+}
+
+.auto-save-status.saved {
+  color: var(--success-text);
+  border-color: var(--success);
+}
+
+.auto-save-spinner {
+  width: 14px;
+  height: 14px;
+  animation: spin 1s linear infinite;
+  fill: currentColor;
+}
+
+/* Full-screen overlay shown during longer operations (import/export, calcul de rapprochement)
+   so the app never looks frozen while it works. */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition-smooth);
+}
+
+.loading-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.loading-overlay-spinner {
+  width: 36px;
+  height: 36px;
+  animation: spin 1s linear infinite;
+  fill: #fff;
+}
+
+.loading-overlay-text {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Backup alert banner styles */
+.backup-alert-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background-color: var(--warning-light);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  margin: 20px 24px 0 24px;
+  color: var(--warning-text);
+  font-weight: 500;
+  font-size: 0.9rem;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.backup-alert-banner .alert-icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.backup-alert-banner .backup-alert-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Room reservation conflict warning banner (activity drawer) */
+.room-conflict-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background-color: rgba(217, 119, 6, 0.12);
+  border: 1px solid #d97706;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+
+.room-conflict-banner svg {
+  fill: #d97706;
+  margin-top: 2px;
+}
+
+/* Reconciliation Help Guide Banner */
+.reconcile-help-banner {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reconcile-help-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reconcile-help-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.reconcile-help-content {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.reconcile-help-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+}
+
+.reconcile-help-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reconcile-help-item .badge {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.reconcile-help-item p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Tooltip trigger in table headers */
+.help-tooltip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  font-weight: bold;
+  cursor: help;
+  margin-left: 4px;
+  vertical-align: middle;
+  transition: var(--transition-smooth);
+}
+
+.help-tooltip-trigger:hover {
+  background-color: var(--text-muted);
+  color: var(--bg-card);
+}
+
+/* Tab indicator styles in drawer */
+.tab-indicator {
+  margin-left: 6px;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+/* ==========================================================================
+   TOASTS (non-blocking notifications)
+   ========================================================================== */
+
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+  max-width: 360px;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateX(24px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.toast.toast-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast.toast-leaving {
+  opacity: 0;
+  transform: translateX(24px);
+}
+
+.toast-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+.toast-message {
+  flex: 1;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.toast-close:hover {
+  color: var(--text-primary);
+}
+
+.toast-success {
+  border-left-color: #16a34a;
+}
+.toast-success .toast-icon {
+  fill: #16a34a;
+}
+
+.toast-error {
+  border-left-color: #dc2626;
+}
+.toast-error .toast-icon {
+  fill: #dc2626;
+}
+
+.toast-warning {
+  border-left-color: #d97706;
+}
+.toast-warning .toast-icon {
+  fill: #d97706;
+}
+
+.toast-info .toast-icon {
+  fill: var(--primary);
+}

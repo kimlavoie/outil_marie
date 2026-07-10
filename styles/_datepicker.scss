@@ -1,0 +1,141 @@
+/* Custom Datepicker Calendar Styles */
+.datepicker-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.datepicker-trigger-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-left: none;
+  padding: 10px 12px;
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+.datepicker-trigger-btn:hover {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.view-calendar-btn {
+  background-color: var(--primary-light);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  color: var(--primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition: var(--transition-smooth);
+}
+
+.view-calendar-btn:hover {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+.datepicker-wrapper .form-input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.calendar-popover {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 1000;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 12px;
+  width: 260px;
+  margin-top: 4px;
+  display: none;
+  animation: fadeIn 0.2s ease;
+}
+
+.calendar-popover.active {
+  display: block;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.calendar-nav-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-nav-btn:hover {
+  background-color: var(--border-color);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+.calendar-day-header {
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+.calendar-day {
+  padding: 6px 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  color: var(--text-primary);
+}
+
+.calendar-day:hover {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.calendar-day.other-month {
+  color: var(--text-muted);
+  opacity: 0.3;
+}
+
+.calendar-day.selected {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+.calendar-day.disabled {
+  color: var(--text-muted);
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}

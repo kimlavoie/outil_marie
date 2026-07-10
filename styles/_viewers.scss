@@ -1,0 +1,336 @@
+@use "mixins" as *;
+
+/* ==========================================================================
+   PDF PREVIEW & EMBEDDED VIEWER
+   ========================================================================== */
+#form-pdf-preview {
+  margin-top: 20px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+}
+
+.pdf-preview-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-main);
+  margin: 12px;
+  transition: var(--transition-smooth);
+}
+
+.pdf-preview-empty:hover {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+}
+
+.pdf-preview-icon {
+  width: 48px;
+  height: 48px;
+  fill: var(--text-muted);
+  margin-bottom: 12px;
+  opacity: 0.6;
+  transition: var(--transition-smooth);
+}
+
+.pdf-preview-empty:hover .pdf-preview-icon {
+  fill: var(--primary);
+  opacity: 0.8;
+}
+
+.pdf-preview-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  margin: 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--danger-light);
+  border-left: 4px solid var(--danger);
+  color: var(--danger-text);
+  font-size: 0.88rem;
+}
+
+.pdf-preview-error .error-badge {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.pdf-preview-permission {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  background-color: var(--warning-light);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  margin: 12px;
+  color: var(--warning-text);
+}
+
+.pdf-preview-permission h3 {
+  margin: 16px 0 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.pdf-preview-permission p {
+  font-size: 0.88rem;
+  margin-bottom: 20px;
+  max-width: 400px;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+.permission-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+}
+
+.lock-icon {
+  width: 24px;
+  height: 24px;
+  fill: var(--warning);
+}
+
+.pdf-preview-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.pdf-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: var(--bg-main);
+  border-bottom: 1px solid var(--border-color);
+  gap: 12px;
+}
+
+.pdf-preview-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  max-width: 70%;
+}
+
+.pdf-preview-title span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf-file-icon {
+  width: 18px;
+  height: 18px;
+  fill: var(--danger);
+  flex-shrink: 0;
+}
+/* Custom PDF Viewer */
+.pdf-custom-viewer {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-main);
+  width: 100%;
+  outline: none;
+}
+
+.pdf-custom-viewer.pdf-fullscreen-mode {
+  @include custom-viewer-fullscreen;
+}
+
+.pdf-custom-viewer.pdf-fullscreen-mode .pdf-viewport {
+  height: auto;
+  flex: 1;
+}
+
+.pdf-toolbar {
+  @include viewer-toolbar;
+}
+
+.pdf-toolbar-group {
+  @include viewer-toolbar-group;
+}
+
+.pdf-page-indicator {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 85px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdf-zoom-indicator {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 45px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdf-viewport {
+  width: 100%;
+  height: 550px;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  background-color: #525659; /* Standard PDF reader background */
+  position: relative;
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .pdf-viewport {
+  background-color: #2a2b2d;
+}
+
+.pdf-canvas-container {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  background-color: #ffffff;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: inline-block;
+  line-height: 0; /* Prevents tiny sub-pixel empty line under canvas */
+}
+
+.pdf-loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* ==========================================================================
+   EXCEL (XLSX) PREVIEW & EMBEDDED VIEWER
+   ========================================================================== */
+#submission-xlsx-preview,
+#contract-xlsx-preview {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+}
+
+.xlsx-file-icon {
+  width: 18px;
+  height: 18px;
+  fill: #1d6f42; /* Excel green */
+  flex-shrink: 0;
+}
+
+.xlsx-custom-viewer {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-main);
+  width: 100%;
+  outline: none;
+}
+
+.xlsx-custom-viewer.xlsx-fullscreen-mode {
+  @include custom-viewer-fullscreen;
+}
+
+.xlsx-custom-viewer.xlsx-fullscreen-mode .xlsx-viewport {
+  max-height: none;
+  height: auto;
+  flex: 1;
+}
+
+.xlsx-toolbar {
+  @include viewer-toolbar;
+}
+
+.xlsx-toolbar-group {
+  @include viewer-toolbar-group;
+}
+
+.xlsx-sheet-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.xlsx-sheet-tab {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.xlsx-sheet-tab:hover {
+  color: var(--text-primary);
+  border-color: var(--primary);
+}
+
+.xlsx-sheet-tab.active {
+  color: #fff;
+  background-color: #1d6f42;
+  border-color: #1d6f42;
+}
+
+.xlsx-viewport {
+  width: 100%;
+  max-height: 550px;
+  overflow: auto;
+  padding: 0;
+  background-color: var(--bg-card);
+  box-sizing: border-box;
+}
+
+.xlsx-table-container {
+  overflow: auto;
+}
+
+.xlsx-table-container table {
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.xlsx-table-container td,
+.xlsx-table-container th {
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+}
+
+.xlsx-table-container tr:nth-child(even) {
+  background-color: var(--bg-main);
+}

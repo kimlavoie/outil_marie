@@ -1,0 +1,31 @@
+@use "mixins" as *;
+
+/* Help Center styles */
+.help-section {
+  @include accordion-section;
+}
+
+.help-section-summary {
+  @include accordion-summary;
+}
+
+.help-section-content {
+  @include accordion-content;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.help-section-content ol,
+.help-section-content ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.help-section-content li {
+  margin-bottom: 8px;
+}
+
+.help-section-content li:last-child {
+  margin-bottom: 0;
+}

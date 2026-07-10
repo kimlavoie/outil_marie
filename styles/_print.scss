@@ -1,0 +1,94 @@
+/* ==========================================================================
+   PRINT / PDF EXPORT (activity sheet — "Exporter PDF" button, uses window.print())
+   ========================================================================== */
+
+#print-activity-sheet {
+  display: none;
+}
+
+.print-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid #333;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.print-sheet-header h1 {
+  font-size: 1.4rem;
+  margin: 0 0 4px 0;
+}
+
+.print-sheet-header .print-sheet-subtitle {
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.print-sheet-section {
+  margin-bottom: 18px;
+}
+
+.print-sheet-section h2 {
+  font-size: 1rem;
+  border-bottom: 1px solid #999;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+.print-sheet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 24px;
+  font-size: 0.85rem;
+}
+
+.print-sheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.print-sheet-table th,
+.print-sheet-table td {
+  border: none;
+  padding: 5px 8px;
+  text-align: left;
+}
+
+.print-sheet-total-table {
+  width: 320px;
+  margin-left: auto;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.print-sheet-total-table td {
+  padding: 4px 8px;
+  text-align: right;
+}
+
+.print-sheet-total-table tr.print-sheet-grand-total td {
+  border-top: 2px solid #333;
+  font-weight: bold;
+  font-size: 1.05rem;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-activity-sheet,
+  #print-activity-sheet * {
+    visibility: visible;
+  }
+  #print-activity-sheet {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    color: #000;
+    background: #fff;
+  }
+}

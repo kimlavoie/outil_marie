@@ -1,0 +1,135 @@
+/* Shared mixins to avoid repeating the same declaration blocks across
+   similarly-shaped components (cards, badges, backdrops, dropdown menus,
+   accordions, viewers, icons). Kept purely presentational — no selector
+   or specificity changes versus the plain-CSS version. */
+@mixin card-surface($radius: var(--radius-lg)) {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: $radius;
+  box-shadow: var(--shadow-sm);
+}
+
+@mixin icon-svg($size) {
+  width: $size;
+  height: $size;
+  fill: currentColor;
+}
+
+@mixin overlay-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition-smooth);
+
+  &.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
+
+@mixin badge-variant($bg, $text) {
+  background-color: $bg;
+  color: $text;
+}
+
+@mixin dropdown-menu-panel($min-width) {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  min-width: $min-width;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 0;
+  z-index: 1001;
+}
+
+@mixin dropdown-menu-item {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 100%;
+  transition: var(--transition-smooth);
+
+  &:hover {
+    background-color: var(--primary-light);
+    color: var(--primary);
+  }
+}
+
+@mixin accordion-section {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+  overflow: hidden;
+  transition: var(--transition-smooth);
+
+  &[open] {
+    border-color: var(--primary);
+  }
+}
+
+@mixin accordion-summary {
+  padding: 14px 18px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &:hover {
+    background-color: var(--bg-main);
+  }
+}
+
+@mixin accordion-content {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+@mixin viewer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@mixin viewer-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@mixin custom-viewer-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  border-radius: 0;
+}

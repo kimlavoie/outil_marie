@@ -1,0 +1,398 @@
+@use "mixins" as *;
+
+/* Data Table Styles */
+.table-card {
+  @include card-surface;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cards that wrap a scrollable table (.table-responsive) fill the remaining
+   height of their view instead of growing with their content, so the table
+   body scrolls internally while the toolbar/column headers stay in place. */
+.table-card:has(.table-responsive) {
+  flex: 1;
+  min-height: 0;
+}
+
+.table-toolbar {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.search-wrapper {
+  position: relative;
+  width: 320px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 16px 10px 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  transition: var(--transition-smooth);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  fill: var(--text-muted);
+  pointer-events: none;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.select-input {
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.select-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Multi-select filter dropdown (activities toolbar: salle, type de client, état) */
+.multi-select {
+  position: relative;
+  display: inline-block;
+}
+
+.multi-select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.multi-select-btn::after {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  opacity: 0.6;
+}
+
+.multi-select-btn.filter-active {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.btn-reset-filters {
+  background-color: transparent;
+  color: var(--danger);
+  border: 1px dashed var(--danger);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  transition: var(--transition-smooth);
+}
+
+.btn-reset-filters .reset-icon {
+  transition: transform 0.4s ease;
+}
+
+.btn-reset-filters:hover:not(:disabled) {
+  background-color: rgba(244, 63, 94, 0.1);
+  border-style: solid;
+  color: var(--danger);
+  transform: translateY(-1px);
+}
+
+.btn-reset-filters:hover:not(:disabled) .reset-icon {
+  transform: rotate(-180deg);
+}
+
+.btn-reset-filters:disabled {
+  opacity: 0.4;
+  border-color: var(--border-color);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  background-color: transparent;
+  transform: none;
+  box-shadow: none;
+}
+
+.multi-select-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  min-width: 200px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px 0;
+  z-index: 1001;
+}
+
+.multi-select-panel[hidden] {
+  display: none;
+}
+
+.multi-select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.multi-select-option:hover {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.multi-select-option input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.table-responsive {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.table-responsive:last-child {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* Pagination bar (info + prev/next + page-size select), sits below a table */
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+}
+
+.pagination-bar:empty {
+  display: none;
+}
+
+.pagination-bar:last-child {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.pagination-info {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-page-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.pagination-controls .pagination-size-select {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+.pagination-controls .btn-icon:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Core Table Element */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+th {
+  background-color: var(--bg-main);
+  padding: 16px 24px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+td {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  transition: var(--transition-smooth);
+}
+
+tr:hover td {
+  background-color: var(--primary-light);
+}
+
+/* Status Badges */
+.badge {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-success {
+  @include badge-variant(var(--success-light), var(--success-text));
+}
+
+.badge-danger {
+  @include badge-variant(var(--danger-light), var(--danger-text));
+}
+
+.badge-warning {
+  @include badge-variant(var(--warning-light), var(--warning-text));
+}
+
+.badge-info {
+  @include badge-variant(var(--info-light), var(--info-text));
+}
+
+/* Sortable table headers */
+.table-responsive th[data-sort] {
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition-smooth);
+  position: relative;
+  padding-right: 24px;
+}
+
+.table-responsive th[data-sort]:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.table-responsive th[data-sort]::after {
+  content: "↕";
+  opacity: 0.3;
+  font-size: 0.75rem;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.table-responsive th[data-sort].sort-asc::after {
+  content: "▲";
+  opacity: 1;
+  color: var(--primary);
+}
+
+.table-responsive th[data-sort].sort-desc::after {
+  content: "▼";
+  opacity: 1;
+  color: var(--primary);
+}
+
+/* Alternating row colors for activities list */
+tr.activity-row:nth-child(even) td {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] tr.activity-row:nth-child(even) td {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+tr.activity-row:hover td,
+[data-theme="dark"] tr.activity-row:hover td {
+  background-color: var(--primary-light);
+}
+
+/* Highlight for selected table rows */
+tr.activity-row.selected td {
+  background-color: var(--primary-light) !important;
+}
+
+/* Multi-select checkboxes: kept subtle so they don't compete with the row data, and only
+   stand out on row hover, when checked, or (for the header) when a selection is in progress */
+.activity-select-checkbox {
+  opacity: 0.12;
+  transform: scale(0.75);
+  transition: opacity var(--transition-smooth);
+}
+
+tr.activity-row:hover .activity-select-checkbox,
+.activity-select-checkbox:checked,
+.activity-select-checkbox:focus-visible {
+  opacity: 0.7;
+}
+
+#activities-select-all {
+  opacity: 0.12;
+  transform: scale(0.75);
+  transition: opacity var(--transition-smooth);
+}
+
+.table-responsive thead:hover #activities-select-all,
+#activities-select-all:checked,
+#activities-select-all:indeterminate,
+#activities-select-all:focus-visible {
+  opacity: 0.7;
+}

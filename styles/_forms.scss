@@ -1,0 +1,374 @@
+@use "mixins" as *;
+
+/* Date + time side-by-side row inside form groups */
+.datetime-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.datetime-input-row .datepicker-wrapper {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.datetime-input-row input[type="time"] {
+  width: 110px;
+  max-width: 110px;
+  flex: 0 0 110px;
+}
+
+.form-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin: 24px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Forms Grid */
+.form-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+label,
+.field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  transition: var(--transition-smooth);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Checkbox inputs styling */
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary);
+  vertical-align: middle;
+}
+
+/* Checkbox labels styling */
+.form-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Distribution Interface inside form */
+.distribution-section {
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-top: 16px;
+  background-color: var(--bg-main);
+}
+
+.distribution-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.distribution-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.distribution-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1.2fr auto;
+  gap: 12px;
+  align-items: center;
+  animation: slideDown 0.25s ease;
+}
+
+/* Room tarif rows (settings) only have a description + amount field, unlike distribution rows */
+.distribution-row.room-tarif-row {
+  grid-template-columns: 2fr 1fr auto;
+}
+
+/* Reservation card in the activity form (salle + tarif + créneaux + services) */
+.reservation-card {
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-top: 12px;
+  background-color: var(--bg-main);
+  animation: slideDown 0.25s ease;
+}
+
+.room-bar-details {
+  border-left: 3px solid var(--primary);
+  padding-left: 16px;
+  margin-left: 10px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.reservation-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: 600;
+  gap: 12px;
+}
+
+/* Fix CSS grid select blow-up bug by forcing min-width: 0 */
+.distribution-row select,
+.distribution-row input {
+  min-width: 0;
+  width: 100%;
+  background-color: var(--bg-card) !important; /* Lighter background for high contrast */
+  border: 1px solid var(--border-color);
+}
+
+/* Ensure account dropdown truncates with ellipsis if it exceeds column width */
+.dist-account-select {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Specific styles to make the distribution amount field visible and spacious */
+.dist-amount-input {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  text-align: right;
+  font-weight: 600;
+}
+
+/* Hide number input spinner arrows to prevent clutter in narrow fields */
+.dist-amount-input::-webkit-outer-spin-button,
+.dist-amount-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.dist-amount-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.distribution-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  font-size: 1.05rem;
+}
+
+.financial-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.financial-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.financial-summary-row.total {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.file-link-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+
+.field-error-msg {
+  display: none;
+  color: var(--danger, #d32f2f);
+  font-size: 0.78rem;
+  margin-top: 4px;
+}
+
+.field-error-msg.visible {
+  display: block;
+}
+
+.form-input.invalid {
+  border-color: var(--danger, #d32f2f);
+}
+
+/* Activity form accordion sections */
+.form-accordion-section {
+  margin-bottom: 12px;
+  @include accordion-section;
+}
+
+.form-accordion-summary {
+  @include accordion-summary;
+}
+
+.form-accordion-content {
+  @include accordion-content;
+}
+
+.form-accordion-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-color);
+  color: transparent;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+  transition: var(--transition-smooth);
+}
+
+.form-accordion-check-spacer {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.form-accordion-check.complete {
+  border-color: var(--success);
+  background-color: var(--success);
+  color: #fff;
+}
+
+.form-accordion-check.complete::before {
+  content: "✓";
+}
+
+/* Auto-calculated/filled fields styling */
+.badge-auto {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  vertical-align: middle;
+  text-transform: none;
+}
+
+.input-auto {
+  background-color: var(--bg-main) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed !important;
+  border-style: dashed !important;
+}
+
+/* Drag & Drop Import File Area */
+.drop-zone {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 48px;
+  text-align: center;
+  cursor: pointer;
+  background-color: var(--bg-card);
+  transition: var(--transition-smooth);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.drop-zone:hover,
+.drop-zone.dragover {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+}
+
+#json-drop-zone {
+  transition: var(--transition-smooth);
+}
+
+#json-drop-zone:hover,
+#json-drop-zone.dragover {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+}
+
+.drop-zone-icon {
+  width: 50px;
+  height: 50px;
+  fill: var(--text-secondary);
+}
+
+.drop-zone.dragover .drop-zone-icon,
+.drop-zone:hover .drop-zone-icon {
+  fill: var(--primary);
+}
+
+.drop-zone-text {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.drop-zone-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

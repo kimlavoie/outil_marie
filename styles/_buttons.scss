@@ -1,0 +1,109 @@
+@use "mixins" as *;
+
+/* Button UI Components */
+.btn {
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--transition-smooth);
+  text-decoration: none;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background-color: var(--border-color);
+}
+
+.btn-success {
+  background-color: var(--success);
+  color: #ffffff;
+}
+
+.btn-success:hover {
+  opacity: 0.9;
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  opacity: 0.9;
+}
+
+.btn-icon {
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.btn-icon svg {
+  @include icon-svg(16px);
+}
+
+.btn-warning-outline {
+  background-color: transparent;
+  border: 1px solid var(--warning);
+  color: var(--warning-text);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-warning-outline:hover {
+  background-color: var(--warning);
+  color: var(--bg-card);
+}
+
+/* Action buttons for manual reconciliation review */
+.btn-recon-validate:hover {
+  border-color: var(--success);
+  color: var(--success);
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.btn-recon-ignore:hover {
+  border-color: var(--text-muted);
+  color: var(--text-muted);
+  background-color: rgba(100, 116, 139, 0.1);
+}
