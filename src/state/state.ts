@@ -244,7 +244,10 @@ const APP_DB_NAME = "outil_marie_app";
 const APP_STORE_NAME = "app_state_store";
 const APP_STATE_KEY = "app_state";
 
-const APP_DB_VERSION = 3;
+const APP_DB_VERSION = 4;
+const SAFETY_BACKUPS_STORE = "safety_backups";
+// How many automatic pre-destructive-operation snapshots to keep, oldest pruned first.
+const SAFETY_BACKUPS_MAX = 5;
 
 // Each block runs only for databases that haven't reached that version yet, so re-opening an
 // already-migrated database is a no-op and a fresh database walks through every step in order.
@@ -258,6 +261,9 @@ function upgradeAppDb(db: IDBDatabase, oldVersion: number) {
   }
   if (oldVersion < 3 && !db.objectStoreNames.contains("recon_decisions")) {
     db.createObjectStore("recon_decisions", { keyPath: "key" });
+  }
+  if (oldVersion < 4 && !db.objectStoreNames.contains(SAFETY_BACKUPS_STORE)) {
+    db.createObjectStore(SAFETY_BACKUPS_STORE, { keyPath: "id" });
   }
 }
 
@@ -371,6 +377,59 @@ function clearAllActivityVersionsFromDb(): Promise<void> {
   });
 }
 
+// Automatic safety net taken right before a destructive, hard-to-reverse operation (JSON
+// restore overwriting everything, database reset, or a startup schema migration). Stored as its
+// own IndexedDB entries (distinct from the regular app_state_store key) so it survives even if
+// the operation it's guarding immediately overwrites the main app state, and pruned to the last
+// few so it doesn't grow unbounded.
+function saveSafetyBackupToDb(label: string, snapshot: any): Promise<void> {
+  const record = {
+    id: `${Date.now()}_${label}`,
+    label,
+    timestamp: new Date().toISOString(),
+    snapshot
+  };
+  return openAppDb()
+    .then(db => {
+      return new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(SAFETY_BACKUPS_STORE, "readwrite");
+        const store = tx.objectStore(SAFETY_BACKUPS_STORE);
+        const req = store.put(record);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    })
+    .then(() => pruneSafetyBackups());
+}
+
+function getSafetyBackupsFromDb(): Promise<any[]> {
+  return openAppDb().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(SAFETY_BACKUPS_STORE, "readonly");
+      const store = tx.objectStore(SAFETY_BACKUPS_STORE);
+      const req = store.getAll();
+      req.onsuccess = () => resolve((req.result || []).sort((a: any, b: any) => b.id.localeCompare(a.id)));
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+function pruneSafetyBackups(maxCount: number = SAFETY_BACKUPS_MAX): Promise<void> {
+  return getSafetyBackupsFromDb().then(records => {
+    if (records.length <= maxCount) return Promise.resolve();
+    const toDelete = records.slice(maxCount); // records are newest-first; drop the oldest overflow
+    return openAppDb().then(db => {
+      return new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(SAFETY_BACKUPS_STORE, "readwrite");
+        const store = tx.objectStore(SAFETY_BACKUPS_STORE);
+        toDelete.forEach(r => store.delete(r.id));
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    });
+  });
+}
+
 function getAppStateFromDb(): Promise<any | null> {
   return openAppDb().then(db => {
     return new Promise((resolve, reject) => {
@@ -463,6 +522,15 @@ async function loadDatabase(): Promise<void> {
       // Sort accounts by code
       if (appState.settings.accounts) {
         appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
+      }
+
+      // Migrations below rewrite legacy data shapes in place and aren't reversible, so snapshot
+      // the as-loaded (pre-migration) data first. Best-effort: a failure here shouldn't block
+      // startup.
+      try {
+        await saveSafetyBackupToDb("migration", dbData);
+      } catch (e) {
+        logError("state", "sauvegarde de sécurité avant migration", e);
       }
 
       migrateRoomsConfig();
@@ -1139,6 +1207,8 @@ export {
   clearAllActivityVersionsFromDb,
   getAppStateFromDb,
   saveAppStateToDb,
+  saveSafetyBackupToDb,
+  getSafetyBackupsFromDb,
   sanitizeActivitiesList,
   loadDatabase,
   migrateRoomsConfig,

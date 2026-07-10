@@ -576,6 +576,18 @@
               </div>
             </div>
 
+            <!-- Automatic safety backups taken before destructive operations (restore, reset, migration) -->
+            <div class="stat-card" style="gap: 16px; margin-bottom: 24px">
+              <h3 class="chart-title">Sauvegardes de sécurité automatiques</h3>
+              <p style="font-size: 0.9rem; color: var(--text-secondary)">
+                Avant une restauration, une réinitialisation ou une mise à jour du format des données, l'application conserve
+                automatiquement une copie des données précédentes (les 5 plus récentes).
+              </p>
+              <div id="safety-backups-list" style="display: flex; flex-direction: column; gap: 8px">
+                <!-- Populated dynamically via JS -->
+              </div>
+            </div>
+
             <!-- Danger Zone to clear local database -->
             <div class="stat-card" style="gap: 16px; border-color: rgba(244, 63, 94, 0.2); background-color: rgba(244, 63, 94, 0.02)">
               <h3 class="chart-title" style="color: var(--danger)">Zone de Danger</h3>

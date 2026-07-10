@@ -9,6 +9,8 @@ import {
   setAppState,
   saveDatabase,
   saveAppStateToDb,
+  saveSafetyBackupToDb,
+  getSafetyBackupsFromDb,
   seedDatabase,
   migrateRoomsConfig,
   migrateSalariesConfig,
@@ -304,6 +306,13 @@ function initBackupHandlers() {
         "ATTENTION : Cette action va supprimer définitivement toutes vos activités enregistrées. Les comptes, tarifs de salles et départements seront réinitialisés à leurs valeurs d'origine. Voulez-vous continuer ?"
       )
     ) {
+      try {
+        await saveSafetyBackupToDb("avant_reinitialisation", JSON.parse(JSON.stringify(appState)));
+      } catch (err) {
+        logError("backup", "sauvegarde de sécurité avant réinitialisation", err);
+      }
+      renderSafetyBackupsList();
+
       await seedDatabase();
       const { applyTheme, renderAll } = await import("../navigation.ts");
       applyTheme("dark");
@@ -394,6 +403,13 @@ function handleJsonBackupFile(file: File) {
       }
 
       if (confirm("La restauration va écraser la base de données actuelle. Continuer ?")) {
+        try {
+          await saveSafetyBackupToDb("avant_restauration", JSON.parse(JSON.stringify(appState)));
+        } catch (err) {
+          logError("backup", "sauvegarde de sécurité avant restauration", err);
+        }
+        renderSafetyBackupsList();
+
         setAppState(parsed);
 
         // Sanitize settings on restoration
@@ -551,6 +567,65 @@ function renderBackupView() {
   if (inputEl) {
     inputEl.value = String(reminderDays);
   }
+
+  renderSafetyBackupsList();
+}
+
+const SAFETY_BACKUP_LABELS: Record<string, string> = {
+  avant_restauration: "Avant restauration d'une sauvegarde",
+  avant_reinitialisation: "Avant réinitialisation de la base",
+  migration: "Avant mise à jour du format des données"
+};
+
+// Lists the automatic snapshots taken right before a destructive operation (restore, reset,
+// startup migration) so they aren't invisible to the user. Each one can be downloaded as a
+// normal JSON file and brought back through the existing "Restauration des Données" drop zone —
+// reusing that flow instead of a separate restore path keeps this to one code path for actually
+// applying a backup.
+async function renderSafetyBackupsList() {
+  const container = document.getElementById("safety-backups-list");
+  if (!container) return;
+
+  let records: any[] = [];
+  try {
+    records = await getSafetyBackupsFromDb();
+  } catch (e) {
+    logError("backup", "lecture des sauvegardes de sécurité", e);
+  }
+
+  if (records.length === 0) {
+    container.innerHTML = `<span style="font-size: 0.85rem; color: var(--text-secondary)">Aucune sauvegarde de sécurité pour le moment.</span>`;
+    return;
+  }
+
+  container.innerHTML = "";
+  records.forEach(r => {
+    const row = document.createElement("div");
+    row.style.cssText = "display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; gap: 12px;";
+
+    const label = document.createElement("span");
+    const dt = new Date(r.timestamp);
+    label.textContent = `${SAFETY_BACKUP_LABELS[r.label] || r.label} — ${dt.toLocaleString("fr-CA")}`;
+    row.appendChild(label);
+
+    const btn = document.createElement("button");
+    btn.className = "btn btn-secondary";
+    btn.textContent = "Télécharger";
+    btn.style.cssText = "padding: 4px 10px; font-size: 0.8rem;";
+    btn.addEventListener("click", () => downloadSafetyBackup(r));
+    row.appendChild(btn);
+
+    container.appendChild(row);
+  });
+}
+
+function downloadSafetyBackup(record: any) {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(record.snapshot, null, 2));
+  const a = document.createElement("a");
+  a.setAttribute("href", dataStr);
+  const timestamp = record.timestamp.replace(/[:.]/g, "-");
+  a.setAttribute("download", `compta_marie_securite_${record.label}_${timestamp}.json`);
+  a.click();
 }
 
 // Generate structured excel matching the original template
@@ -748,5 +823,6 @@ export {
   getDaysSinceLastBackup,
   formatLocalDateToFrench,
   checkBackupReminder,
-  renderBackupView
+  renderBackupView,
+  renderSafetyBackupsList
 };

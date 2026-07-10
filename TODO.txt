@@ -10,11 +10,15 @@ TODO - Avant mise en production (impact sur les données)
   un toast d'erreur si l'écriture échoue, au lieu de laisser l'UI afficher un changement jamais
   persisté.
 
-[CRITIQUE] Backup automatique avant opérations destructrices
-- Problème : aucun backup n'est forcé juste avant un import (qui écrase tout), un reset de la
+[FAIT] Backup automatique avant opérations destructrices
+- Problème : aucun backup n'était forcé juste avant un import (qui écrase tout), un reset de la
   base, ou une migration de schéma automatique au premier lancement post-déploiement.
-- Correction : déclencher un backup silencieux (fichier horodaté) automatiquement avant ces
-  3 opérations.
+- Correction appliquée : nouveau store IndexedDB "safety_backups" (src/state/state.ts, DB
+  version 4). Un instantané horodaté de l'état est sauvegardé automatiquement et silencieusement
+  avant : la restauration d'un fichier JSON, la réinitialisation de la base, et les migrations de
+  schéma au chargement (src/state/state.ts loadDatabase(), src/services/backup.ts). Les 5 plus
+  récents sont conservés (purge automatique des plus anciens). Visibles et téléchargeables
+  (fichier JSON, réutilisable via la restauration existante) dans l'écran "Sauvegarde & Export".
 
 [MAJEUR] Validation métier sur les montants
 - Problème : src/activities/form.ts:176-179 n'empêche pas les montants négatifs ni une
