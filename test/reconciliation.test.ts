@@ -1,7 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import "./indexeddb-mock.ts";
 
-import { matchDistributionsToLedger, validateLedgerStructure, findBestColumnMatch, cleanRef, reconcileLedger, reconciliationState } from "../src/services/reconciliation.ts";
+import {
+  matchDistributionsToLedger,
+  validateLedgerStructure,
+  findBestColumnMatch,
+  cleanRef,
+  extractRefFromNom,
+  canonicalRefKey,
+  daysBetweenDateStrs,
+  reconcileLedger,
+  reconciliationState,
+  loadReconDecisions,
+  setReconDecision
+} from "../src/services/reconciliation.ts";
 import { appState } from "../src/state/state.ts";
 
 const YEAR = "2025-2026";
@@ -326,4 +339,136 @@ test("reconcileLedger performs match and applies local reconciliationState.decis
     reconciliationState.results = prevResults;
   }
 });
+test("canonicalRefKey strips the optional RI prefix so 'RI001' and '001' join the same group", () => {
+  assert.equal(canonicalRefKey("RI001"), "001");
+  assert.equal(canonicalRefKey("001"), "001");
+  assert.equal(canonicalRefKey(""), "");
+});
+
+test("extractRefFromNom returns an empty string when Nom has neither an RI code nor a 4+ digit number", () => {
+  assert.equal(extractRefFromNom("PAIEMENT DIVERS"), "");
+  assert.equal(extractRefFromNom(""), "");
+  assert.equal(extractRefFromNom(null), "");
+  assert.equal(extractRefFromNom("Facture #12"), ""); // only 2 digits, below the 4-digit threshold
+});
+
+test("daysBetweenDateStrs returns the absolute day difference, and Infinity for missing/invalid dates", () => {
+  assert.equal(daysBetweenDateStrs("2025-08-01", "2025-08-06"), 5);
+  assert.equal(daysBetweenDateStrs("2025-08-06", "2025-08-01"), 5); // order-independent
+  assert.equal(daysBetweenDateStrs("", "2025-08-01"), Infinity);
+  assert.equal(daysBetweenDateStrs("2025-08-01", ""), Infinity);
+  assert.equal(daysBetweenDateStrs("not-a-date", "2025-08-01"), Infinity);
+});
+
+test("matchDistributionsToLedger drops a ledger transaction with no usable reference (neither No référence nor Nom) instead of surfacing it as unentered", () => {
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "", "Nom": "", "Montant courant": -100 }];
+
+  const results = matchDistributionsToLedger([], ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 0);
+});
+
+test("matchDistributionsToLedger groups ledger transactions with a missing/blank Poste budgétaire under an empty account code", () => {
+  const activities = [activity({ distributions: [{ account_code: "", reference: "RI001", amount: 100 }] })];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "", "No référence": "RI001", "Montant courant": -100 }];
+
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "valid");
+});
+
+test("matchDistributionsToLedger skips a ledger transaction whose date falls outside the selected fiscal quarters, even if the year matches", () => {
+  // Activity in fiscal Q2 (Oct-Dec) so it passes the period filter, but its matching ledger
+  // transaction is in Q1 (Jul-Sep) — excluding quarter 1 should leave the distribution unlogged
+  // instead of matched, since the ledger side never enters ledgerGroups for that period.
+  const activities = [
+    activity({ date_start: "2025-10-15", distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] })
+  ];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
+
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, [2, 3, 4]);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "unlogged");
+});
+
+test("attachFuzzyMatchSuggestions caps suggestions at 3 candidates, ordered by non-increasing score", () => {
+  const activities = [
+    activity({
+      name: "Location de salle",
+      date_start: "2025-08-15",
+      distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }]
+    })
+  ];
+  // 4 unentered candidates on the same account, all within fuzzy amount/date tolerance — only
+  // the top 3 by score should be kept. RI900's GL description also matches the activity name, so
+  // it should score strictly higher than the other three (which have no description at all).
+  const ledger = [
+    { "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI900", "Montant courant": -100, Description: "Location de salle" },
+    { "Date versée": "2025-08-16", "Poste budgétaire": "892-1", "No référence": "RI901", "Montant courant": -99.98 },
+    { "Date versée": "2025-08-17", "Poste budgétaire": "892-1", "No référence": "RI902", "Montant courant": -99.97 },
+    { "Date versée": "2025-08-18", "Poste budgétaire": "892-1", "No référence": "RI903", "Montant courant": -99.96 }
+  ];
+
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  const unlogged = results.find(r => r.status === "unlogged") as any;
+  assert.equal(unlogged.suggestions.length, 3);
+  assert.equal(unlogged.suggestions[0].reference, "RI900");
+  for (let i = 1; i < unlogged.suggestions.length; i++) {
+    assert.ok(unlogged.suggestions[i - 1].score >= unlogged.suggestions[i].score);
+  }
+});
+
+test("attachFuzzyMatchSuggestions records every unlogged activity that suggested the same unentered candidate", () => {
+  const activities = [
+    activity({
+      id: "act-1",
+      name: "Conférence A",
+      date_start: "2025-08-15",
+      distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }]
+    }),
+    activity({
+      id: "act-2",
+      name: "Conférence B",
+      date_start: "2025-08-15",
+      distributions: [{ account_code: "892-1", reference: "RI002", amount: 100.01 }]
+    })
+  ];
+  // A single unentered candidate close in amount/date to both activities' unlogged distributions.
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI999", "Montant courant": -100 }];
+
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  const unentered = results.find(r => r.status === "unentered") as any;
+  assert.deepEqual(unentered.suggestedFor.sort(), ["Conférence A", "Conférence B"]);
+});
+
+test("setReconDecision persists a decision to IndexedDB and loadReconDecisions reads it back", async () => {
+  const prevDecisions = reconciliationState.decisions;
+  try {
+    reconciliationState.decisions = {};
+    await setReconDecision("892-1||RI001", "validated", "Approuvé");
+
+    await loadReconDecisions();
+    assert.equal(reconciliationState.decisions["892-1||RI001"].status, "validated");
+    assert.equal(reconciliationState.decisions["892-1||RI001"].note, "Approuvé");
+
+    // Clearing (empty status) should delete the decision, both in memory and once reloaded.
+    await setReconDecision("892-1||RI001", "");
+    assert.equal(reconciliationState.decisions["892-1||RI001"], undefined);
+    await loadReconDecisions();
+    assert.equal(reconciliationState.decisions["892-1||RI001"], undefined);
+  } finally {
+    reconciliationState.decisions = prevDecisions;
+  }
+});
+
+test("setReconDecision is a no-op when called with an empty key", async () => {
+  const prevDecisions = reconciliationState.decisions;
+  try {
+    reconciliationState.decisions = {};
+    await setReconDecision("", "validated");
+    assert.deepEqual(reconciliationState.decisions, {});
+  } finally {
+    reconciliationState.decisions = prevDecisions;
+  }
+});
+
 export {};

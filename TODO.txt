@@ -67,12 +67,34 @@ TODO - Suggestions d'amélioration (suite du travail sur la sécurité des donn�
   empêche le processus de se terminer). C'est un piège à surveiller si BroadcastChannel est
   réutilisé ailleurs dans le code.
 
-[À FAIRE] Couverture de tests du rapprochement GL et du générateur de contrat
+[FAIT] Couverture de tests du rapprochement GL et du générateur de contrat
 - Problème : src/services/reconciliation.ts (379 lignes) et src/services/contract-generator.ts
   (898 lignes) sont deux des plus gros modules métier, sans qu'on sache s'ils ont une couverture de
   cas limites comparable à celle de test/activities-financials.test.ts (montants à zéro, comptes GL
   manquants, dates invalides, etc.).
-- Piste : auditer la couverture actuelle et ajouter des tests pour les cas limites identifiés.
+- Correction appliquée :
+  - reconciliation.ts avait déjà une bonne base de tests (matching exact/diff/unlogged/unentered,
+    filtrage de période, extraction de référence). Lacunes comblées dans test/reconciliation.test.ts :
+    canonicalRefKey/extractRefFromNom/daysBetweenDateStrs testées directement, transaction GL sans
+    référence exploitable (ignorée plutôt qu'affichée comme "unentered"), compte GL vide/manquant
+    (regroupé sous une clé vide plutôt que de planter), transaction GL exclue par le filtre de
+    trimestre (même année, mauvais trimestre), plafond à 3 suggestions floues avec tri par score,
+    plusieurs activités "unlogged" pointant vers le même candidat "unentered" (suggestedFor), et le
+    cycle complet setReconDecision()/loadReconDecisions() (persistance + suppression IndexedDB).
+  - contract-generator.ts n'avait aucun test (pas de fichier test/contract-generator.test.ts) : les
+    deux fonctions exportées (generateContractXlsx/generateSoumissionXlsx) sont async et font du
+    fetch() + assemblage binaire, donc peu testables directement. buildSheetXml() — la fonction pure
+    qui construit le XML de la feuille à partir d'une activité, sans I/O — a été ajoutée aux exports
+    (avec xmlEscapeText/formatDateFr/wrapRowHeight) spécifiquement pour être testable. Nouveau
+    test/contract-generator.test.ts : échappement XML des caractères spéciaux (nom/description
+    d'activité), différences contrat vs soumission (image d'en-tête, clause d'annulation, annexe des
+    clauses), activité sans réservations/gestionnaire/participants (ne doit pas planter), salle sans
+    nom ("(salle non définie)"), total des lignes personnel/équipements/frais, période sur un jour vs
+    plage de dates.
+  - À noter : cette couverture teste la logique de construction (montants, échappement, sections
+    conditionnelles), pas la validité du fichier .xlsx binaire final (styles, zip, image) — ça reste
+    à vérifier manuellement en ouvrant un contrat généré dans Excel après un changement dans cette
+    zone.
 
 Hors scope pour l'instant :
 - Authentification / autorisation : à revoir selon qui utilisera l'app en production

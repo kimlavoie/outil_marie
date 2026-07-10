@@ -895,4 +895,4 @@ async function generateSoumissionXlsx(act: any) {
   return generateXlsx(act, "soumission");
 }
 
-export { generateContractXlsx, generateSoumissionXlsx };
+export { generateContractXlsx, generateSoumissionXlsx, xmlEscapeText, formatDateFr, wrapRowHeight, buildSheetXml };
