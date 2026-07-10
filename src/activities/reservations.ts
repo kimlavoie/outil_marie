@@ -170,20 +170,38 @@ function updateResolvedPriceDisplay(card: HTMLElement) {
   const ctSelect = card.querySelector<HTMLInputElement>(".room-tariff-client-type");
   const displayEl = card.querySelector<HTMLInputElement>(".room-tariff-resolved-price-display");
   const valEl = card.querySelector<HTMLInputElement>(".resolved-price-val");
+  const staleEl = card.querySelector<HTMLElement>(".room-tariff-stale-warning");
 
   if (!paramSelect || !ctSelect || !displayEl || !valEl) return;
 
   const paramVal = paramSelect.value;
   const clientTypeVal = ctSelect.value;
 
+  if (staleEl) staleEl.style.display = "none";
+
   if (roomName && roomName !== OTHER_ROOM_VALUE && paramVal && paramVal !== "__custom__" && clientTypeVal) {
     const roomConfig = appState.settings.rooms.find((r: any) => r.name === roomName);
-    const grid = roomConfig ? getActivePricingGrid(roomConfig, "") : null;
+    const slots = collectSlotsFromCard(card);
+    const firstSlotDate = slots.length ? [...slots].map(s => s.date).sort()[0] : "";
+    const grid = roomConfig ? getActivePricingGrid(roomConfig, firstSlotDate) : null;
     if (grid) {
       const cell = grid.cells.find((c: any) => c.parameter_id === paramVal && c.client_type_id === clientTypeVal);
       const price = cell ? cell.amount : 0;
       valEl.textContent = formatCurrency(price);
       displayEl.style.display = "block";
+
+      // Flags reservations whose stored amount no longer matches what the pricing grid would
+      // resolve to today for the same parameter/client type — e.g. the grid was edited
+      // retroactively after this reservation was saved (see TODO: tarifs de salle obsolètes).
+      const storedTariffId = card.dataset.storedTariffId;
+      const storedTariffAmount = card.dataset.storedTariffAmount;
+      if (staleEl && storedTariffId === `${paramVal}::${clientTypeVal}` && storedTariffAmount !== undefined) {
+        const storedAmount = parseFloat(storedTariffAmount);
+        if (!isNaN(storedAmount) && storedAmount !== price) {
+          staleEl.textContent = `⚠ Tarif obsolète : cette réservation a été enregistrée à ${formatCurrency(storedAmount)}/jour, mais la grille tarifaire actuelle indique maintenant ${formatCurrency(price)}/jour pour cette date.`;
+          staleEl.style.display = "block";
+        }
+      }
       return;
     }
   }
@@ -439,6 +457,7 @@ function addReservationCard(reservationData: any = null) {
       <div class="room-tariff-resolved-price-display" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: -6px; margin-bottom: 12px; display: none;">
         Tarif résolu : <strong class="resolved-price-val">0,00 $</strong> / jour
       </div>
+      <div class="room-tariff-stale-warning" style="font-size: 0.85rem; color: var(--warning-text); margin-top: -6px; margin-bottom: 12px; display: none;"></div>
       <div class="form-group-row room-tariff-custom-group" style="display: ${isCustomTariff ? "flex" : "none"}; gap: 12px; margin-bottom: 12px;">
         <div class="form-group" style="flex: 1; margin-bottom: 0;">
           <label for="${uid}-room-tariff-custom-desc">Description du tarif</label>
@@ -564,6 +583,13 @@ function addReservationCard(reservationData: any = null) {
 
   const card = el(uid);
 
+  // Remember the amount/tariff in effect when this reservation was saved so the resolved-price
+  // display can flag it if the room's pricing grid has since changed for that date (getActivePricingGrid).
+  if (reservationData && reservationData.tariff_id && typeof reservationData.tariff_amount === "number") {
+    card.dataset.storedTariffId = reservationData.tariff_id;
+    card.dataset.storedTariffAmount = String(reservationData.tariff_amount);
+  }
+
   if (install.enabled) {
     card.querySelector<HTMLInputElement>(`#${uid}-install-date`)!.value = install.date || "";
     card.querySelector<HTMLInputElement>(`#${uid}-install-start-time`)!.value = install.start_time || "";
@@ -676,6 +702,9 @@ function addReservationCard(reservationData: any = null) {
   wireSlotRangeGenerator(card);
   if (reservationData) {
     (reservationData.slots || []).forEach((s: any) => addSlotRow(slotsList, s.date, s.start_time, s.end_time));
+    // Re-run now that the slots are in the DOM: the earlier call (via refreshReservationTariffSelect)
+    // ran before any slot existed, so it couldn't resolve the pricing grid for the right date yet.
+    updateResolvedPriceDisplay(card);
   }
 
   const barToggleGroup = card.querySelector<HTMLInputElement>(".room-bar-toggle-group")!;
