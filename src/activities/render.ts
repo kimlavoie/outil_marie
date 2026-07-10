@@ -30,7 +30,8 @@ import {
   formatCurrency,
   calculateDaysCount,
   renderPaginationBar,
-  getMultiSelectValues
+  getMultiSelectValues,
+  showToast
 } from "../utils/utils.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { openActivityDrawer, openActivityDetailsModal } from "./financials.ts";
@@ -600,24 +601,41 @@ function initBulkActionsHandlers() {
   // Delete bulk button
   const deleteBtn = el("bulk-delete-btn");
   if (deleteBtn) {
-    deleteBtn.addEventListener("click", () => {
+    deleteBtn.addEventListener("click", async () => {
       const count = activitiesState.selectedIds.size;
       if (count === 0) return;
-      if (confirm(`Voulez-vous vraiment supprimer les ${count} activités sélectionnées ?`)) {
-        activitiesState.selectedIds.forEach(id => {
-          const act = appState.activities.find(a => a.id === id);
-          if (act) {
-            act.deleted = true;
-          }
-          appState.favorites = (appState.favorites || []).filter(f => f !== id);
-        });
-        activitiesState.selectedIds.clear();
-        saveDatabase();
-        if (reconciliationState.ledgerTransactions.length > 0) {
-          reconcileLedger();
+      if (!confirm(`Voulez-vous vraiment supprimer les ${count} activités sélectionnées ?`)) return;
+
+      const ids = new Set(activitiesState.selectedIds);
+      const touched: { act: any; prevDeleted: boolean }[] = [];
+      const prevFavorites = appState.favorites ? [...appState.favorites] : [];
+
+      ids.forEach(id => {
+        const act = appState.activities.find(a => a.id === id);
+        if (act) {
+          touched.push({ act, prevDeleted: act.deleted });
+          act.deleted = true;
         }
-        import("../navigation.ts").then(m => m.renderAll());
+      });
+      appState.favorites = (appState.favorites || []).filter(f => !ids.has(f));
+
+      const saved = await saveDatabase();
+      if (!saved) {
+        // Roll back the in-memory change so the UI doesn't show a deletion that was never
+        // persisted — otherwise it would silently revert on the next reload.
+        touched.forEach(({ act, prevDeleted }) => {
+          act.deleted = prevDeleted;
+        });
+        appState.favorites = prevFavorites;
+        showToast("La suppression n'a pas été enregistrée. Réessayez.", "error", 8000);
+        return;
       }
+
+      activitiesState.selectedIds.clear();
+      if (reconciliationState.ledgerTransactions.length > 0) {
+        reconcileLedger();
+      }
+      import("../navigation.ts").then(m => m.renderAll());
     });
   }
 
@@ -633,25 +651,36 @@ function initBulkActionsHandlers() {
 
   // State menu items
   document.querySelectorAll(".bulk-state-item").forEach(item => {
-    item.addEventListener("click", e => {
+    item.addEventListener("click", async e => {
       const newState = item.getAttribute("data-state");
       const count = activitiesState.selectedIds.size;
       if (count === 0) return;
 
+      const touched: { act: any; prevState: any }[] = [];
       activitiesState.selectedIds.forEach(id => {
         const act = appState.activities.find(a => a.id === id);
         if (act) {
+          touched.push({ act, prevState: act.state });
           act.state = newState;
         }
       });
 
-      activitiesState.selectedIds.clear();
-      saveDatabase();
-      import("../navigation.ts").then(m => m.renderAll());
-
+      const saved = await saveDatabase();
       if (stateMenu) {
         stateMenu.classList.add("hidden");
       }
+      if (!saved) {
+        // Roll back so the UI doesn't show a state change that was never persisted.
+        touched.forEach(({ act, prevState }) => {
+          act.state = prevState;
+        });
+        showToast("Le changement d'état n'a pas été enregistré. Réessayez.", "error", 8000);
+        import("../navigation.ts").then(m => m.renderAll());
+        return;
+      }
+
+      activitiesState.selectedIds.clear();
+      import("../navigation.ts").then(m => m.renderAll());
     });
   });
 

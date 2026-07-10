@@ -1006,8 +1006,11 @@ async function seedDatabase(): Promise<void> {
 // recovery are surfaced.
 let lastSaveFailed = false;
 
-// Save state to IndexedDB
-async function saveDatabase(): Promise<void> {
+// Save state to IndexedDB. Returns whether the write actually succeeded, so callers that
+// mutate appState in place (e.g. bulk operations) can roll back their in-memory change when
+// persistence fails, instead of leaving the UI showing a change that never made it to disk.
+async function saveDatabase(): Promise<boolean> {
+  let success = true;
   try {
     await saveAppStateToDb(appState);
     if (lastSaveFailed) {
@@ -1020,9 +1023,11 @@ async function saveDatabase(): Promise<void> {
       showToast("Échec de la sauvegarde des données. Vos dernières modifications pourraient être perdues.", "error", 8000);
     }
     lastSaveFailed = true;
+    success = false;
   }
   checkBackupReminder();
   scheduleAutoBackupWrite();
+  return success;
 }
 
 // Persist search/filter/sort/pagination state per view, so reloading the

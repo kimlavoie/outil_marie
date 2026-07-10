@@ -1,0 +1,38 @@
+TODO - Avant mise en production (impact sur les données)
+
+[FAIT] Transactions atomiques sur les opérations en masse
+- Problème : le bulk delete/update (src/activities/render.ts:601-649) modifiait l'état en mémoire
+  puis appelait saveDatabase() une seule fois. Si l'écriture échouait en cours de route (quota
+  IndexedDB, crash), l'état en mémoire et celui persisté divergeaient silencieusement.
+- Correction appliquée : saveDatabase() (src/state/state.ts) retourne maintenant un booléen de
+  succès. Les deux handlers de bulk (suppression et changement d'état) sauvegardent l'état
+  précédent avant mutation, tentent la sauvegarde, et annulent la mutation en mémoire + affichent
+  un toast d'erreur si l'écriture échoue, au lieu de laisser l'UI afficher un changement jamais
+  persisté.
+
+[CRITIQUE] Backup automatique avant opérations destructrices
+- Problème : aucun backup n'est forcé juste avant un import (qui écrase tout), un reset de la
+  base, ou une migration de schéma automatique au premier lancement post-déploiement.
+- Correction : déclencher un backup silencieux (fichier horodaté) automatiquement avant ces
+  3 opérations.
+
+[MAJEUR] Validation métier sur les montants
+- Problème : src/activities/form.ts:176-179 n'empêche pas les montants négatifs ni une
+  distribution dont la somme ne correspond pas au total de l'activité.
+- Correction : valider que la somme des distributions == montant total et que les montants
+  sont >= 0 avant sauvegarde.
+
+[MAJEUR] Piste d'audit minimale
+- Problème : aucune trace de qui/quand une suppression ou modification significative a eu lieu.
+  Pas d'authentification donc pas de "qui", mais on peut tracer "quand + quoi".
+- Correction : étendre le store activity_versions (déjà utilisé pour l'undo) avec un log
+  d'événements horodatés pour les suppressions/modifications importantes.
+
+[MODERE] Garde-fou avant migrations irréversibles
+- Problème : les migrations (src/state/state.ts:674-975) sont complexes et non réversibles.
+- Correction : valider qu'elles tournent sans erreur sur un vrai jeu de données de prod (pas
+  juste les fixtures de test), et s'assurer que le backup auto (point ci-dessus) couvre ce cas.
+
+Hors scope pour l'instant :
+- Authentification / autorisation : à revoir selon qui utilisera l'app en production
+  (poste unique de confiance vs accès multi-utilisateurs).
