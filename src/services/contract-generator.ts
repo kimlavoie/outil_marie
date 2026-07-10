@@ -279,7 +279,6 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
   xmlText = xmlText
     .replace(`<borders count="${borderCount}">`, `<borders count="${borderCount + 1}">`)
     .replace("</borders>", `${newBorder}</borders>`);
-  const newBorderId = borderCount;
 
   const xfCount = parseInt(cellXfsMatch[1], 10);
   const xfEntries = cellXfsMatch[2].match(/<xf\b[^>]*\/>|<xf\b[^>]*>[\s\S]*?<\/xf>/g) || [];

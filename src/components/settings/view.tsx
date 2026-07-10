@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { useSharedBackdrop } from "./common.tsx";
 import { AccountsPanel, AccountModal } from "./accounts.tsx";
@@ -76,10 +76,13 @@ function SettingsView({ command }: { command: Command }) {
 
   // Generic modal setter used by every panel/modal below: updates the given panel's modal state
   // and persists it (or clears the persisted modal when closed) in one place.
-  function setModal(panel: SettingsModalPanel, setter: (v: string | null | undefined) => void, value: string | null | undefined) {
-    setter(value);
-    persistSettingsUi(activeTab, value === undefined ? null : { panel, key: value });
-  }
+  const setModal = useCallback(
+    (panel: SettingsModalPanel, setter: (v: string | null | undefined) => void, value: string | null | undefined) => {
+      setter(value);
+      persistSettingsUi(activeTab, value === undefined ? null : { panel, key: value });
+    },
+    [activeTab]
+  );
 
   const lastSeqRef = useRef(0);
   useEffect(() => {
@@ -103,7 +106,7 @@ function SettingsView({ command }: { command: Command }) {
       setSchedulableTaskModalId(undefined);
       persistSettingsUi(activeTab, null);
     }
-  }, [command]);
+  }, [command, activeTab, setModal]);
 
   const anyModalOpen =
     accountModalCode !== undefined ||

@@ -13,7 +13,7 @@
  */
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { appState, getFiscalYear, getQuarterNumber, getQuarter, getActiveSalaryRate, getActiveSalaryOvertimeRate } from "../state/state.ts";
+import { appState, getFiscalYear, getQuarterNumber, getQuarter } from "../state/state.ts";
 import { getReservationRoomLabel, formatCurrency } from "../utils/utils.ts";
 import { computeDashboardStats, computeEmployeeStats } from "../dashboard.ts";
 import { reconciliationState } from "../services/reconciliation.ts";
@@ -196,7 +196,6 @@ function DashboardView() {
   useChart(salleRef, () => buildSalleShareConfig(isDark, textColor));
   useChart(accountsRef, () => buildAccountsVolumeConfig(textColor, gridColor));
 
-  const selectedSalary = salaries.find(s => s.id === selectedEmployeeId);
   const empStats = selectedEmployeeId
     ? computeEmployeeStats(selectedEmployeeId, appState.activities, appState.selected_year, appState.selected_quarters, salaries)
     : null;

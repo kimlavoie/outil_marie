@@ -21,7 +21,6 @@ import {
   getActivePricingGrid,
   getFlattenedRoomTarifs
 } from "../state/state.ts";
-import type { AppState } from "../state/state.ts";
 import {
   showToast,
   showLoadingOverlay,
