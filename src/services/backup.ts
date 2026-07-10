@@ -2,7 +2,7 @@
  * backup.ts - Backup/restore (JSON) and Excel export controllers
  */
 import { isPlainObject, isNonEmptyString, isFiniteNumber, validateRules } from "../utils/validation.ts";
-import { logError } from "../utils/logger.ts";
+import { logError, getLogHistory } from "../utils/logger.ts";
 import { openVersionedDb } from "../state/db-utils.ts";
 import {
   appState,
@@ -297,6 +297,11 @@ function initBackupHandlers() {
   // Export Excel
   document.getElementById("backup-export-excel")?.addEventListener("click", () => {
     exportToExcel();
+  });
+
+  // Export diagnostic logs
+  document.getElementById("backup-export-logs")?.addEventListener("click", () => {
+    exportDiagnosticLogs();
   });
 
   // Reset database button
@@ -753,6 +758,23 @@ function downloadSafetyBackup(record: any) {
   a.click();
 }
 
+// Downloads the in-memory log history (see src/utils/logger.ts) as a JSON file, so a user
+// facing an issue can hand it over without opening dev tools (F12).
+function exportDiagnosticLogs() {
+  const history = getLogHistory();
+  if (history.length === 0) {
+    showToast("Aucun journal de diagnostic à exporter pour le moment.", "info");
+    return;
+  }
+  const dataStr = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(history, null, 2));
+  const a = document.createElement("a");
+  a.setAttribute("href", dataStr);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  a.setAttribute("download", `compta_marie_journaux_${timestamp}.json`);
+  a.click();
+  showToast("Journaux de diagnostic téléchargés.", "success");
+}
+
 // Generate structured excel matching the original template
 function exportToExcel() {
   // Helper to convert column index to letter
@@ -931,6 +953,7 @@ function runExportToExcel(getExcelColName: (colIdx: number) => string) {
 export {
   validateBackupSchema,
   exportToExcel,
+  exportDiagnosticLogs,
   openAutoBackupDb,
   idbGetAutoBackupHandle,
   idbSetAutoBackupHandle,

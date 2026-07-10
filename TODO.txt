@@ -1,15 +1,16 @@
 TODO - Suggestions d'amélioration (suite du travail sur la sécurité des données)
 
 
-[MOYEN] Exportation des journaux (logs) de diagnostic
-- Problème : L'application possède un logger structuré (src/utils/logger.ts) stockant en mémoire les 200 derniers messages (infos, warnings, erreurs). Toutefois, si un utilisateur fait face à un problème, ces logs ne sont pas facilement récupérables sans ouvrir les outils de développement (F12).
-- Piste : Ajouter une option dans l'onglet "Sauvegarde & Export" permettant de télécharger l'historique des journaux de diagnostic sous format texte ou JSON.
-
 [MINEUR] Détection des tarifs de salle obsolètes
 - Problème : Si une grille tarifaire de salle (Configuration > Salles) est modifiée rétroactivement ou si des tarifs changent, les anciennes activités continuent d'utiliser les tarifs d'origine stockés. Il n'y a pas d'avertissement automatique indiquant que le montant facturé sur une ancienne réservation diffère du tarif actuel en vigueur pour cette date.
 - Piste : Lors de l'édition d'une activité, comparer le tarif appliqué aux réservations avec celui théoriquement renvoyé par la grille tarifaire à cette date (getActivePricingGrid) et afficher un indicateur visuel en cas de divergence.
 
 Historique des correctifs appliqués (archivé, voir git log pour le détail complet) :
+- [FAIT] Exportation des journaux (logs) de diagnostic
+  - Ajout : bouton "Télécharger les journaux (JSON)" dans l'onglet "Sauvegarde & Export"
+    (index.html, carte "Journaux de diagnostic"), branché sur exportDiagnosticLogs()
+    (src/services/backup.ts) qui télécharge getLogHistory() (src/utils/logger.ts, déjà existant)
+    sous forme de fichier JSON horodaté, sans avoir à ouvrir les outils de développement (F12).
 - [FAIT] Généraliser la vérification du succès de saveDatabase() (saveDatabaseOrRollback)
 - [FAIT] Validation du schéma à la restauration d'un backup/import (forme des éléments de liste)
 - [FAIT] Utilisation multi-onglets (avertissement BroadcastChannel avant écrasement)
