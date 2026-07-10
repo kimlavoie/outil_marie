@@ -13,13 +13,11 @@
  * else (file handling, modals, row actions) is internal to the React component now.
  */
 import { useEffect, useRef, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { appState, saveDatabaseOrRollback } from "../state/state.ts";
 import { showToast, showLoadingOverlay, hideLoadingOverlay, formatCurrency, renderPaginationBar } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
 import {
   reconciliationState,
-  loadReconDecisions,
   setReconDecision,
   validateLedgerStructure,
   findBestColumnMatch,
@@ -578,7 +576,7 @@ function ReconciliationRow({
 // Top-level view
 // ---------------------------------------------------------------------------
 
-function ReconciliationView() {
+export function ReconciliationView() {
   const [, setVersion] = useState(0);
   const bump = () => setVersion(v => v + 1);
 
@@ -959,23 +957,3 @@ function ReconciliationView() {
     </>
   );
 }
-
-let root: Root | null = null;
-
-function mount() {
-  const container = document.getElementById("validation-root");
-  if (!container) return;
-  if (!root) root = createRoot(container);
-  root.render(<ReconciliationView />);
-}
-
-function initReconciliationHandlers() {
-  loadReconDecisions();
-  mount();
-}
-
-function renderReconciliation() {
-  mount();
-}
-
-export { initReconciliationHandlers, renderReconciliation };

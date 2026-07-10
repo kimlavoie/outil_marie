@@ -256,7 +256,7 @@ function initFormHandlers() {
       // silently stopped doing anything (closeSettingsModal no longer existed) and only ever
       // covered 4 of the 6 modals anyway. Dynamic import for the same .tsx/node --test reason as
       // reopenCalendarModal above.
-      import("../components/settings/view.tsx").then(m => m.closeAllSettingsModals());
+      import("../components/settings/mount.ts").then(m => m.closeAllSettingsModals());
     }
   });
 }

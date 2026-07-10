@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { useSharedBackdrop } from "./common.tsx";
 import { AccountsPanel, AccountModal } from "./accounts.tsx";
 import { RoomsPanel, RoomModal } from "./rooms.tsx";
@@ -9,12 +8,7 @@ import { ServicesPanel, ServiceModal } from "./services.tsx";
 import { GlobalTasksPanel, GlobalTaskModal } from "./global-tasks.tsx";
 import { SchedulableTasksPanel, SchedulableTaskModal } from "./schedulable-tasks.tsx";
 
-type Command =
-  | { type: "openPanel"; panel: string; seq: number }
-  | { type: "openAccountModal"; code: string; seq: number }
-  | { type: "openDeptModal"; name: string; seq: number }
-  | { type: "closeAll"; seq: number }
-  | null;
+import type { Command } from "./mount.ts";
 
 // Remembers which settings tab (and, if any, which entity modal within it) the user had open, so
 // reloading/reopening the app drops them back exactly where they left off — same intent as
@@ -39,7 +33,7 @@ function persistSettingsUi(tab: string, modal: { panel: SettingsModalPanel; key:
   localStorage.setItem(SETTINGS_UI_KEY, JSON.stringify({ tab, modal }));
 }
 
-function SettingsView({ command }: { command: Command }) {
+export function SettingsView({ command }: { command: Command }) {
   const [, setVersion] = useState(0);
   const bump = () => setVersion(v => v + 1);
 
@@ -172,40 +166,3 @@ function SettingsView({ command }: { command: Command }) {
     </>
   );
 }
-
-let root: Root | null = null;
-let pendingCommand: Command = null;
-let seqCounter = 0;
-
-function mount() {
-  const container = document.getElementById("settings-root");
-  if (!container) return;
-  if (!root) root = createRoot(container);
-  root.render(<SettingsView command={pendingCommand} />);
-}
-
-function renderSettings() {
-  mount();
-}
-
-function openSettingsPanel(panel: string) {
-  pendingCommand = { type: "openPanel", panel, seq: ++seqCounter };
-  mount();
-}
-
-function openAccountModal(code: string) {
-  pendingCommand = { type: "openAccountModal", code, seq: ++seqCounter };
-  mount();
-}
-
-function openDeptModal(name: string) {
-  pendingCommand = { type: "openDeptModal", name, seq: ++seqCounter };
-  mount();
-}
-
-function closeAllSettingsModals() {
-  pendingCommand = { type: "closeAll", seq: ++seqCounter };
-  mount();
-}
-
-export { renderSettings, openSettingsPanel, openAccountModal, openDeptModal, closeAllSettingsModals };

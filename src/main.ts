@@ -7,7 +7,7 @@ import { showToast } from "./utils/utils.ts";
 import { appState, loadDatabase, restoreUiState } from "./state/state.ts";
 import { applyTheme, initPeriodSelector, initNavigation, populateDropdowns, renderAll, switchToView } from "./navigation.ts";
 import { initFormHandlers, initNewActivityModal } from "./activities/form.ts";
-import { initReconciliationHandlers } from "./components/reconciliation-view.tsx";
+import { initReconciliationHandlers } from "./components/reconciliation-mount.ts";
 import { initBackupHandlers } from "./services/backup.ts";
 import { initCustomDatepickers } from "./activities/datepicker.ts";
 import { initCalendarModal, initViewCalendarButtons } from "./components/calendar-view.tsx";

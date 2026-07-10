@@ -12,7 +12,6 @@
  * rather than introducing a separate reactive state layer.
  */
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { appState, getFiscalYear, getQuarterNumber, getQuarter } from "../state/state.ts";
 import { getReservationRoomLabel, formatCurrency } from "../utils/utils.ts";
 import { computeDashboardStats, computeEmployeeStats } from "../dashboard.ts";
@@ -177,7 +176,7 @@ function useChart(canvasRef: RefObject<HTMLCanvasElement | null>, buildConfig: (
   });
 }
 
-function DashboardView() {
+export function DashboardView() {
   const stats = computeDashboardStats(appState.activities, appState.selected_year, appState.selected_quarters, reconciliationState.results);
   const isDark = appState.settings.theme === "dark";
   const gridColor = isDark ? "#1f2937" : "#e2e8f0";
@@ -428,27 +427,3 @@ function DashboardView() {
     </>
   );
 }
-
-let root: Root | null = null;
-
-// Mounts (first call) or re-renders (subsequent calls) the dashboard into #dashboard-root.
-function renderDashboardReact() {
-  const container = document.getElementById("dashboard-root");
-  if (!container) return;
-  if (!root) root = createRoot(container);
-  root.render(<DashboardView />);
-}
-
-// Both re-render the same React tree: the split only mattered for the old imperative DOM code
-// (stats vs. charts were separate DOM writes), React recomputes everything together either way.
-// navigation.js imports and calls these on every view switch to "dashboard" and on theme
-// toggle — see js/navigation.js.
-function renderDashboard() {
-  renderDashboardReact();
-}
-
-function renderDashboardCharts() {
-  renderDashboardReact();
-}
-
-export { renderDashboardReact, renderDashboard, renderDashboardCharts };
