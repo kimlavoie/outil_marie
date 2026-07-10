@@ -51,12 +51,21 @@ TODO - Suggestions d'amélioration (suite du travail sur la sécurité des donn�
   le mauvais type. Tests mis à jour dans test/backup.test.ts (le test qui documentait la lacune est
   remplacé par des tests qui vérifient le rejet).
 
-[À FAIRE] Utilisation multi-onglets
+[FAIT] Utilisation multi-onglets
 - Problème : l'app tourne sur IndexedDB dans le navigateur. Si l'utilisateur ouvre l'app dans deux
   onglets, le second peut écraser silencieusement les changements du premier au prochain
   saveDatabase(), sans avertissement.
-- Piste : utiliser un BroadcastChannel (ou équivalent) pour détecter qu'une donnée a été modifiée
-  dans un autre onglet et avertir l'utilisateur avant d'écraser.
+- Correction appliquée : src/state/state.ts ouvre un BroadcastChannel("outil_marie_sync") par
+  onglet (chacun avec un id généré au chargement). Chaque saveDatabase() réussi diffuse un
+  battement {tabId, ts} aux autres onglets ; en recevant un battement d'un tabId différent, un
+  toast persistant (duration 0, fermeture manuelle) avertit l'utilisateur de recharger la page
+  avant de continuer, pour éviter d'écraser les changements de l'autre onglet. Un seul
+  avertissement par onglet (pas de spam si l'autre onglet sauvegarde plusieurs fois).
+  Le canal n'est créé que si `window` ET `BroadcastChannel` existent tous les deux — Node expose
+  un BroadcastChannel global aussi, donc vérifier seulement `typeof BroadcastChannel` aurait créé
+  un vrai canal dans l'environnement de test et bloqué indéfiniment `npm test` (handle ouvert qui
+  empêche le processus de se terminer). C'est un piège à surveiller si BroadcastChannel est
+  réutilisé ailleurs dans le code.
 
 [À FAIRE] Couverture de tests du rapprochement GL et du générateur de contrat
 - Problème : src/services/reconciliation.ts (379 lignes) et src/services/contract-generator.ts

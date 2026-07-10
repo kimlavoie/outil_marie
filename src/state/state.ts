@@ -1099,6 +1099,32 @@ async function seedDatabase(): Promise<void> {
 // recovery are surfaced.
 let lastSaveFailed = false;
 
+// Cross-tab change notification: the app has no locking around IndexedDB, so if the user opens
+// it in two tabs, the second tab's saveDatabase() calls silently overwrite whatever the first
+// tab wrote, with no indication either tab is now working from stale in-memory data. Each tab
+// broadcasts a heartbeat after every successful save; on hearing one from a different tab, a
+// persistent (non-auto-dismissing) toast tells the user to reload before their next edit
+// clobbers the other tab's changes. Guarded by a feature check since BroadcastChannel doesn't
+// exist in the Node test environment. Also requires `window` (rather than just checking
+// BroadcastChannel itself) because Node exposes a global BroadcastChannel too — creating one
+// there would leave an open handle that keeps the test process alive indefinitely.
+const TAB_INSTANCE_ID = generateUid("tab");
+const crossTabSyncChannel =
+  typeof window !== "undefined" && typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("outil_marie_sync") : null;
+let remoteChangeWarningShown = false;
+
+if (crossTabSyncChannel) {
+  crossTabSyncChannel.onmessage = (e: MessageEvent) => {
+    if (remoteChangeWarningShown || e.data?.tabId === TAB_INSTANCE_ID) return;
+    remoteChangeWarningShown = true;
+    showToast(
+      "Les données ont été modifiées dans un autre onglet. Rechargez cette page avant de continuer, sinon vos prochaines modifications risquent d'écraser ces changements.",
+      "warning",
+      0
+    );
+  };
+}
+
 // Save state to IndexedDB. Returns whether the write actually succeeded, so callers that
 // mutate appState in place (e.g. bulk operations) can roll back their in-memory change when
 // persistence fails, instead of leaving the UI showing a change that never made it to disk.
@@ -1110,6 +1136,7 @@ async function saveDatabase(): Promise<boolean> {
       showToast("La sauvegarde a repris normalement.", "success");
     }
     lastSaveFailed = false;
+    crossTabSyncChannel?.postMessage({ tabId: TAB_INSTANCE_ID, ts: Date.now() });
   } catch (e) {
     logError("state", "sauvegarde de la base IndexedDB", e);
     if (!lastSaveFailed) {
