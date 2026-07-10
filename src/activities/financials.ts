@@ -202,23 +202,29 @@ function buildPrintActivitySheetHtml(act: any) {
     })
     .join("");
 
-  const barSectionHtml = barReservations.length > 0
-    ? `
+  const barSectionHtml =
+    barReservations.length > 0
+      ? `
     <div class="print-sheet-section">
       <h2>Détails du service de bar</h2>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        ${barReservations.map((r: any) => {
-          const roomLabel = getReservationRoomLabel(r);
-          const bs = r.bar_service;
-          const detailsList = [];
-          if (bs.drink_type) detailsList.push(`<strong>Type de boisson :</strong> ${escapeHtml(bs.drink_type)}`);
-          if (bs.service_type) detailsList.push(`<strong>Type de service :</strong> ${escapeHtml(bs.service_type)}`);
-          if (bs.hostess_count && bs.hostess_count > 0 && (bs.service_type === "Service d'hôtesses" || bs.service_type === "Distribution de breuvages et nettoyage de coupes")) {
-            detailsList.push(`<strong>Nombre d'hôtesses :</strong> ${bs.hostess_count}`);
-          }
-          if (bs.special_order) detailsList.push(`<strong>Commande spéciale :</strong> ${escapeHtml(bs.special_order)}`);
-          
-          return `
+        ${barReservations
+          .map((r: any) => {
+            const roomLabel = getReservationRoomLabel(r);
+            const bs = r.bar_service;
+            const detailsList = [];
+            if (bs.drink_type) detailsList.push(`<strong>Type de boisson :</strong> ${escapeHtml(bs.drink_type)}`);
+            if (bs.service_type) detailsList.push(`<strong>Type de service :</strong> ${escapeHtml(bs.service_type)}`);
+            if (
+              bs.hostess_count &&
+              bs.hostess_count > 0 &&
+              (bs.service_type === "Service d'hôtesses" || bs.service_type === "Distribution de breuvages et nettoyage de coupes")
+            ) {
+              detailsList.push(`<strong>Nombre d'hôtesses :</strong> ${bs.hostess_count}`);
+            }
+            if (bs.special_order) detailsList.push(`<strong>Commande spéciale :</strong> ${escapeHtml(bs.special_order)}`);
+
+            return `
             <div style="border-left: 3px solid var(--primary, #3b82f6); padding-left: 10px; margin-bottom: 8px;">
               <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; color: var(--text-color);">${escapeHtml(roomLabel)}</div>
               <div class="print-sheet-grid">
@@ -226,11 +232,12 @@ function buildPrintActivitySheetHtml(act: any) {
               </div>
             </div>
           `;
-        }).join("")}
+          })
+          .join("")}
       </div>
     </div>
     `
-    : "";
+      : "";
 
   return `
     <div class="print-sheet-header">
@@ -350,23 +357,29 @@ function buildActivityDetailsHtml(act: any) {
     })
     .join("");
 
-  const barSectionHtml = barReservations.length > 0
-    ? `
+  const barSectionHtml =
+    barReservations.length > 0
+      ? `
     <div class="print-sheet-section">
       <h2>Détails du service de bar</h2>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        ${barReservations.map((r: any) => {
-          const roomLabel = getReservationRoomLabel(r);
-          const bs = r.bar_service;
-          const detailsList = [];
-          if (bs.drink_type) detailsList.push(`<strong>Type de boisson :</strong> ${escapeHtml(bs.drink_type)}`);
-          if (bs.service_type) detailsList.push(`<strong>Type de service :</strong> ${escapeHtml(bs.service_type)}`);
-          if (bs.hostess_count && bs.hostess_count > 0 && (bs.service_type === "Service d'hôtesses" || bs.service_type === "Distribution de breuvages et nettoyage de coupes")) {
-            detailsList.push(`<strong>Nombre d'hôtesses :</strong> ${bs.hostess_count}`);
-          }
-          if (bs.special_order) detailsList.push(`<strong>Commande spéciale :</strong> ${escapeHtml(bs.special_order)}`);
-          
-          return `
+        ${barReservations
+          .map((r: any) => {
+            const roomLabel = getReservationRoomLabel(r);
+            const bs = r.bar_service;
+            const detailsList = [];
+            if (bs.drink_type) detailsList.push(`<strong>Type de boisson :</strong> ${escapeHtml(bs.drink_type)}`);
+            if (bs.service_type) detailsList.push(`<strong>Type de service :</strong> ${escapeHtml(bs.service_type)}`);
+            if (
+              bs.hostess_count &&
+              bs.hostess_count > 0 &&
+              (bs.service_type === "Service d'hôtesses" || bs.service_type === "Distribution de breuvages et nettoyage de coupes")
+            ) {
+              detailsList.push(`<strong>Nombre d'hôtesses :</strong> ${bs.hostess_count}`);
+            }
+            if (bs.special_order) detailsList.push(`<strong>Commande spéciale :</strong> ${escapeHtml(bs.special_order)}`);
+
+            return `
             <div style="border-left: 3px solid var(--primary, #3b82f6); padding-left: 10px; margin-bottom: 8px;">
               <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; color: var(--text-color);">${escapeHtml(roomLabel)}</div>
               <div class="print-sheet-grid">
@@ -374,11 +387,12 @@ function buildActivityDetailsHtml(act: any) {
               </div>
             </div>
           `;
-        }).join("")}
+          })
+          .join("")}
       </div>
     </div>
     `
-    : "";
+      : "";
 
   const fin = reservations.length > 0 ? computeActivityFinancials(act) : null;
 

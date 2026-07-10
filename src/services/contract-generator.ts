@@ -265,9 +265,7 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
   let xmlText = new TextDecoder("utf-8").decode(stylesXmlBytes);
 
   // Replace orange fills with pale blue fills in the styles template
-  xmlText = xmlText
-    .replace(/rgb="FFFF8B00"/g, 'rgb="FFD9E1F2"')
-    .replace(/rgb="FFFFC885"/g, 'rgb="FFF2F5FC"');
+  xmlText = xmlText.replace(/rgb="FFFF8B00"/g, 'rgb="FFD9E1F2"').replace(/rgb="FFFFC885"/g, 'rgb="FFF2F5FC"');
 
   // Replace all borderId="N" with borderId="0" to remove all cell borders
   xmlText = xmlText.replace(/borderId="\d+"/g, 'borderId="0"');
@@ -301,9 +299,7 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
     let clone = /applyBorder="\d"/.test(xf)
       ? xf.replace(/applyBorder="\d"/, 'applyBorder="0"')
       : xf.replace("<xf ", '<xf applyBorder="0" ');
-    clone = /borderId="\d+"/.test(clone)
-      ? clone.replace(/borderId="\d+"/, `borderId="0"`)
-      : clone.replace("<xf ", `<xf borderId="0" `);
+    clone = /borderId="\d+"/.test(clone) ? clone.replace(/borderId="\d+"/, `borderId="0"`) : clone.replace("<xf ", `<xf borderId="0" `);
     return clone;
   };
 
@@ -531,7 +527,12 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   }
 
   sb.titleRow("Identification du client");
-  sb.labelRow("Responsable de l'activité", `${manager.first_name || ""} ${manager.last_name || ""}`.trim() || undefined, S.supplierLabel, S.supplierValue);
+  sb.labelRow(
+    "Responsable de l'activité",
+    `${manager.first_name || ""} ${manager.last_name || ""}`.trim() || undefined,
+    S.supplierLabel,
+    S.supplierValue
+  );
   sb.labelRow(
     "Responsable de la facturation",
     `${act.responsable_first_name || ""} ${act.responsable_last_name || ""}`.trim() || undefined,
@@ -666,7 +667,12 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
       { col: "E", style: S.currency, value: fin.total * 0.5, mergeTo: "F" }
     ]);
     sb.addRow(20, [
-      { col: "A", style: S.supplierValue, value: "* La facture d'acompte vous parviendra par courriel avec un spécimen de chèque.", mergeTo: "F" }
+      {
+        col: "A",
+        style: S.supplierValue,
+        value: "* La facture d'acompte vous parviendra par courriel avec un spécimen de chèque.",
+        mergeTo: "F"
+      }
     ]);
     sb.blankRows(1);
     sb.textBoxRow(CANCELLATION_CLAUSE, S.cancelBody, 14);
@@ -770,7 +776,6 @@ function buildDrawingXml() {
     `</xdr:wsDr>`
   );
 }
-
 
 async function generateXlsx(act: any, variant: "contrat" | "soumission") {
   const hasImage = variant === "contrat";

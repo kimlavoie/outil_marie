@@ -154,12 +154,7 @@ async function generateAndLinkFile(act: any, kind: "contract" | "submission") {
       }
     });
 
-    showToast(
-      kind === "contract"
-        ? "Contrat généré et lié avec succès !"
-        : "Soumission générée et liée avec succès !",
-      "success"
-    );
+    showToast(kind === "contract" ? "Contrat généré et lié avec succès !" : "Soumission générée et liée avec succès !", "success");
 
     const updated = appState.activities.find((a: any) => a.id === act.id) || act;
     renderFileLinkStatus(kind, updated);
@@ -388,7 +383,6 @@ async function renderPdfPreview(act: any) {
         return;
       }
 
-      const url = URL.createObjectURL(file);
       previewContainer.innerHTML = `
         <div class="pdf-preview-wrapper">
           <div class="pdf-preview-header">
@@ -396,17 +390,16 @@ async function renderPdfPreview(act: any) {
               <svg viewBox="0 0 24 24" class="pdf-file-icon"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v1.25c0 .41-.34.75-.75.75s-.75-.34-.75-.75V8c0-.55.45-1 1-1H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2c-.55 0-1-.45-1-1V8c0-.55.45-1 1-1h2c.83 0 1.5.67 1.5 1.5v3.5zm4-3.25c0 .41-.34.75-.75.75H19v1h.75c.41 0 .75.34.75.75s-.34.75-.75.75H19v1.25c0 .41-.34.75-.75.75s-.75-.34-.75-.75V8c0-.55.45-1 1-1h2c.41 0 .75.34.75.75zM3 6c-.55 0-1 .45-1 1v13c0 1.1.9 2 2 2h13c.55 0 1-.45 1-1s-.45-1-1-1H5c-.55 0-1-.45-1-1V7c0-.55-.45-1-1-1z"/></svg>
               <span>${escapeHtml(record.name)}</span>
             </div>
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-pdf-new-tab" style="padding: 4px 8px; font-size: 0.78rem; display: flex; align-items: center; gap: 4px;">
-              <svg viewBox="0 0 24 24" style="width: 12px; height: 12px; fill: currentColor;"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41 9.83-9.83V9h2V3h-6z"/></svg>
-              Ouvrir dans un nouvel onglet
-            </button>
           </div>
-          <iframe src="${url}" class="pdf-viewer-frame" width="100%" height="500px"></iframe>
+          <div id="pdf-viewer-mount"></div>
         </div>
       `;
-      previewContainer.querySelector("#btn-pdf-new-tab")!.addEventListener("click", () => {
-        window.open(url, "_blank");
-      });
+
+      const mountEl = previewContainer.querySelector("#pdf-viewer-mount") as HTMLElement;
+      const buffer = await file.arrayBuffer();
+      const { PdfViewer } = await import("./pdf-viewer.ts");
+      const viewer = new PdfViewer(mountEl, buffer, record.name);
+      await viewer.init();
     } else {
       previewContainer.innerHTML = `
         <div class="pdf-preview-permission">

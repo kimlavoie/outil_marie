@@ -258,12 +258,15 @@ function DashboardView() {
 
       <div className="charts-grid" style={{ gridTemplateColumns: "1fr", marginTop: "20px" }}>
         <div className="chart-card" style={{ minHeight: "auto" }}>
-          <div className="chart-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+          <div
+            className="chart-header"
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}
+          >
             <span className="chart-title">Facturation et temps par employé / emploi</span>
             <select
               className="select-input"
               value={selectedEmployeeId}
-              onChange={(e) => setSelectedEmployeeId(e.target.value)}
+              onChange={e => setSelectedEmployeeId(e.target.value)}
               style={{ minWidth: "240px" }}
             >
               <option value="">Choisir un employé / emploi...</option>
@@ -282,22 +285,37 @@ function DashboardView() {
           ) : empStats ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "8px" }}>
               <div className="stats-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-                <div className="stat-card" style={{ padding: "16px", background: "rgba(59, 130, 246, 0.04)", borderColor: "rgba(59, 130, 246, 0.15)", gap: "4px" }}>
-                  <span className="stat-label" style={{ fontSize: "0.75rem" }}>Temps normal</span>
+                <div
+                  className="stat-card"
+                  style={{ padding: "16px", background: "rgba(59, 130, 246, 0.04)", borderColor: "rgba(59, 130, 246, 0.15)", gap: "4px" }}
+                >
+                  <span className="stat-label" style={{ fontSize: "0.75rem" }}>
+                    Temps normal
+                  </span>
                   <span className="stat-value" style={{ fontSize: "1.6rem", color: "var(--primary)" }}>
                     {empStats.totalNormalHours.toFixed(1)} h
                   </span>
                   <span className="stat-desc">Trimestres sélectionnés</span>
                 </div>
-                <div className="stat-card" style={{ padding: "16px", background: "rgba(16, 185, 129, 0.04)", borderColor: "rgba(16, 185, 129, 0.15)", gap: "4px" }}>
-                  <span className="stat-label" style={{ fontSize: "0.75rem" }}>Temps supplémentaire</span>
+                <div
+                  className="stat-card"
+                  style={{ padding: "16px", background: "rgba(16, 185, 129, 0.04)", borderColor: "rgba(16, 185, 129, 0.15)", gap: "4px" }}
+                >
+                  <span className="stat-label" style={{ fontSize: "0.75rem" }}>
+                    Temps supplémentaire
+                  </span>
                   <span className="stat-value" style={{ fontSize: "1.6rem", color: "var(--success)" }}>
                     {empStats.totalOvertimeHours.toFixed(1)} h
                   </span>
                   <span className="stat-desc">Heures supplémentaires</span>
                 </div>
-                <div className="stat-card" style={{ padding: "16px", background: "rgba(139, 92, 246, 0.04)", borderColor: "rgba(139, 92, 246, 0.15)", gap: "4px" }}>
-                  <span className="stat-label" style={{ fontSize: "0.75rem" }}>Total facturé</span>
+                <div
+                  className="stat-card"
+                  style={{ padding: "16px", background: "rgba(139, 92, 246, 0.04)", borderColor: "rgba(139, 92, 246, 0.15)", gap: "4px" }}
+                >
+                  <span className="stat-label" style={{ fontSize: "0.75rem" }}>
+                    Total facturé
+                  </span>
                   <span className="stat-value" style={{ fontSize: "1.6rem", color: "var(--info)" }}>
                     {formatCurrency(empStats.totalAmount)}
                   </span>
@@ -308,7 +326,16 @@ function DashboardView() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px" }}>
                 {/* Quarterly breakdown */}
                 <div>
-                  <h4 style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "12px", borderBottom: "1px solid var(--border-color)", paddingBottom: "6px" }}>
+                  <h4
+                    style={{
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                      marginBottom: "12px",
+                      borderBottom: "1px solid var(--border-color)",
+                      paddingBottom: "6px"
+                    }}
+                  >
                     Répartition par trimestre
                   </h4>
                   <div className="table-responsive">
@@ -322,14 +349,16 @@ function DashboardView() {
                         </tr>
                       </thead>
                       <tbody>
-                        {appState.selected_quarters.map((qNum) => {
+                        {appState.selected_quarters.map(qNum => {
                           const qData = empStats.quarterDetails[qNum] || { normalHours: 0, overtimeHours: 0, amount: 0 };
                           return (
                             <tr key={qNum}>
                               <td style={{ fontWeight: 500 }}>Trimestre {qNum}</td>
                               <td className="text-right">{qData.normalHours.toFixed(1)} h</td>
                               <td className="text-right">{qData.overtimeHours.toFixed(1)} h</td>
-                              <td className="text-right" style={{ fontWeight: 600 }}>{formatCurrency(qData.amount)}</td>
+                              <td className="text-right" style={{ fontWeight: 600 }}>
+                                {formatCurrency(qData.amount)}
+                              </td>
                             </tr>
                           );
                         })}
@@ -340,7 +369,16 @@ function DashboardView() {
 
                 {/* Contributing activities list */}
                 <div>
-                  <h4 style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "12px", borderBottom: "1px solid var(--border-color)", paddingBottom: "6px" }}>
+                  <h4
+                    style={{
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                      marginBottom: "12px",
+                      borderBottom: "1px solid var(--border-color)",
+                      paddingBottom: "6px"
+                    }}
+                  >
                     Détail des activités
                   </h4>
                   <div className="table-responsive" style={{ maxHeight: "200px", overflowY: "auto" }}>
@@ -365,12 +403,17 @@ function DashboardView() {
                           empStats.contributingActivities.map((act, index) => (
                             <tr key={act.id || index}>
                               <td>{act.date}</td>
-                              <td style={{ maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={act.name}>
+                              <td
+                                style={{ maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                title={act.name}
+                              >
                                 {act.name}
                               </td>
                               <td className="text-right">{act.normalHours.toFixed(1)} h</td>
                               <td className="text-right">{act.overtimeHours.toFixed(1)} h</td>
-                              <td className="text-right" style={{ fontWeight: 600 }}>{formatCurrency(act.amount)}</td>
+                              <td className="text-right" style={{ fontWeight: 600 }}>
+                                {formatCurrency(act.amount)}
+                              </td>
                             </tr>
                           ))
                         )}

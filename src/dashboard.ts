@@ -75,7 +75,10 @@ function computeEmployeeStats(
     4: { normalHours: 0, overtimeHours: 0, amount: 0 }
   };
 
-  const activityMap: Record<string, { id: string; name: string; date: string; normalHours: number; overtimeHours: number; amount: number }> = {};
+  const activityMap: Record<
+    string,
+    { id: string; name: string; date: string; normalHours: number; overtimeHours: number; amount: number }
+  > = {};
 
   const selectedSalary = salariesList.find(s => s.id === employeeId);
 

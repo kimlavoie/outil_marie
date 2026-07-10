@@ -247,6 +247,35 @@ test("matchDistributionsToLedger chooses RI code from Nom when available", () =>
   assert.equal(results[0].reference, "RI001");
 });
 
+test("matchDistributionsToLedger extracts the RI code from Nom even when surrounded by other text", () => {
+  const activities = [activity({ distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }] })];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "123456", "Nom": "PAIEMENT RI001 SALLE X", "Montant courant": -100 }];
+
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "valid");
+  assert.equal(results[0].reference, "RI001");
+});
+
+test("matchDistributionsToLedger extracts a bare numeric reference from Nom even when surrounded by other text", () => {
+  const activities = [activity({ distributions: [{ account_code: "892-1", reference: "123456", amount: 100 }] })];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "", "Nom": "VIREMENT 123456 CLIENT Y", "Montant courant": -100 }];
+
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "valid");
+  assert.equal(results[0].reference, "123456");
+});
+
+test("matchDistributionsToLedger matches when the activity reference has no RI prefix but Nom's embedded code does", () => {
+  const activities = [activity({ distributions: [{ account_code: "892-1", reference: "162729", amount: 100 }] })];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "", "Nom": "bla bla RI162729 blablabla", "Montant courant": -100 }];
+
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "valid");
+});
+
 test("reconcileLedger performs match and applies local reconciliationState.decisions review statuses", () => {
   // Save previous state to restore later
   const prevActivities = appState.activities;

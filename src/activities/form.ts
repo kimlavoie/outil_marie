@@ -283,6 +283,11 @@ function initFormHandlers() {
 
     // Escape to close drawers and modals
     if (e.key === "Escape") {
+      // If a PDF is currently displayed in pseudo-fullscreen mode, let the PDF viewer
+      // handle the Escape key to close fullscreen, but do not close the drawer or modals.
+      if (document.querySelector(".pdf-custom-viewer.pdf-fullscreen-mode")) {
+        return;
+      }
       cancelActivityDrawer();
       closeNewActivityModal();
       // Settings' 6 modals became React state (see js/settings-view.tsx) when that view was

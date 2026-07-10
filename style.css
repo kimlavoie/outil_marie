@@ -3414,8 +3414,99 @@ tr.activity-row:hover .activity-select-checkbox,
   fill: var(--danger);
   flex-shrink: 0;
 }
+/* Custom PDF Viewer */
+.pdf-custom-viewer {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-main);
+  width: 100%;
+  outline: none;
+}
 
-.pdf-viewer-frame {
-  border: none;
-  background-color: #525659;
+.pdf-custom-viewer.pdf-fullscreen-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  border-radius: 0;
+}
+
+.pdf-custom-viewer.pdf-fullscreen-mode .pdf-viewport {
+  height: auto;
+  flex: 1;
+}
+
+.pdf-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pdf-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdf-page-indicator {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 85px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdf-zoom-indicator {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 45px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdf-viewport {
+  width: 100%;
+  height: 550px;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  background-color: #525659; /* Standard PDF reader background */
+  position: relative;
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .pdf-viewport {
+  background-color: #2a2b2d;
+}
+
+.pdf-canvas-container {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  background-color: #ffffff;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: inline-block;
+  line-height: 0; /* Prevents tiny sub-pixel empty line under canvas */
+}
+
+.pdf-loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }

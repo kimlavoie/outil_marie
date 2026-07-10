@@ -82,6 +82,27 @@ function cleanRef(val: any) {
   return s;
 }
 
+// Extracts a RI code or a bare reference number from the "Nom" column, which in the real GL
+// export can hold the reference buried among other text (e.g. "PAIEMENT RI001 SALLE X") rather
+// than being just the reference on its own — so a plain startsWith("RI") check misses it.
+function extractRefFromNom(val: any) {
+  const s = cleanRef(val);
+  if (!s) return "";
+  const riMatch = s.match(/RI\d+/);
+  if (riMatch) return riMatch[0];
+  const numMatch = s.match(/\d{4,}/);
+  if (numMatch) return numMatch[0];
+  return "";
+}
+
+// Key used to join a ledger reference against an activity distribution's reference: the "RI"
+// prefix is optional on either side (an activity may be entered as "162729" while the ledger's
+// Nom column holds "RI162729", or vice-versa), so matching strips it before comparing.
+function canonicalRefKey(ref: string) {
+  const m = ref.match(/^RI(\d+)$/);
+  return m ? m[1] : ref;
+}
+
 function validateLedgerStructure(rawRows: any) {
   const firstRow = Array.isArray(rawRows) && rawRows.length > 0 ? rawRows[0] : null;
   const requiredColumns = ["Poste budgétaire", "Date versée", "Montant courant"];
@@ -137,19 +158,17 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
 
     const acc = String(tx["Poste budgétaire"] || "").trim();
 
-    // The reference can be in "No référence" (typically 6-digit numeric) or "Nom" (e.g. RIXXXXXX)
+    // The reference can be in "No référence" (typically 6-digit numeric) or buried inside "Nom"
+    // (e.g. "PAIEMENT RI001 SALLE X" or a plain number amid other text)
     const refNo = cleanRef(tx["No référence"]);
-    const refNom = cleanRef(tx["Nom"]); // Originally removed, but might contain RIXXXXXX in real usage
+    const refNom = extractRefFromNom(tx["Nom"]);
 
-    // Choose reference key: Prefer RI code in Nom, fallback to No référence
-    let refKey = refNo;
-    if (refNom.startsWith("RI")) {
-      refKey = refNom;
-    }
+    // Choose reference key: prefer the RI code/number extracted from Nom, fallback to No référence
+    const refKey = refNom || refNo;
 
     if (!refKey) return; // Ignore ledger items without reference keys
 
-    const key = `${acc}||${refKey}`;
+    const key = `${acc}||${canonicalRefKey(refKey)}`;
 
     if (!ledgerGroups[key]) {
       ledgerGroups[key] = {
@@ -200,7 +219,7 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
       }
 
       // Find matching ledger group key
-      const key = `${dist.account_code}||${distRef}`;
+      const key = `${dist.account_code}||${canonicalRefKey(distRef)}`;
       const group = ledgerGroups[key];
 
       if (group) {
@@ -349,6 +368,8 @@ export {
   loadReconDecisions,
   setReconDecision,
   cleanRef,
+  extractRefFromNom,
+  canonicalRefKey,
   validateLedgerStructure,
   findBestColumnMatch,
   matchDistributionsToLedger,
