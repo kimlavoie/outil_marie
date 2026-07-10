@@ -34,13 +34,22 @@ TODO - Suggestions d'amélioration (suite du travail sur la sécurité des donn�
 - Piste : étendre le store activity_versions (déjà utilisé pour l'undo) avec un log d'événements
   horodatés pour les suppressions/modifications importantes.
 
-[À FAIRE] Validation du schéma à la restauration d'un backup/import
-- Problème : la restauration d'un fichier JSON (src/services/backup.ts) applique le contenu du
-  fichier tel quel, avec pour seul filet le garde-fou de migration déjà en place (qui revient en
-  arrière si la migration échoue). Un fichier corrompu, tronqué, ou modifié à la main pourrait
-  passer les migrations sans erreur mais avec une forme inattendue.
-- Piste : valider la structure du JSON (présence des champs attendus, types) avant d'appliquer la
-  restauration, en plus du garde-fou de migration existant.
+[FAIT] Validation du schéma à la restauration d'un backup/import
+- Problème : validateBackupSchema() (src/services/backup.ts) existait déjà et bloquait un fichier
+  qui n'était pas un objet JSON, sans "activities", ou dont les sous-collections de settings
+  n'étaient pas des listes — mais ne validait pas la forme des éléments à l'intérieur de ces
+  listes. Un fichier avec `activities: [null, "texte", 42]` ou des salles/emplois/comptes sans les
+  champs attendus (name/id/code) passait la validation, pour ensuite planter ou produire un état
+  incohérent une fois passé aux migrations et à l'UI (le test "does not validate the shape of
+  individual activity entries" documentait explicitement cette lacune).
+- Correction appliquée : validateBackupSchema() valide maintenant que chaque activité est un objet
+  avec un id non vide (et que les id sont uniques dans le fichier), et que chaque élément des
+  sous-collections de settings a le champ identifiant attendu par le reste de l'app (rooms.name,
+  salaries/services/global_tasks/schedulable_tasks.id, accounts.code, departments en tant que
+  chaînes non vides). Le check `arrayItemsMatch()` ne s'applique que si la collection est bien une
+  liste, pour ne pas planter (ex. .every sur une chaîne) quand une règle précédente a déjà signalé
+  le mauvais type. Tests mis à jour dans test/backup.test.ts (le test qui documentait la lacune est
+  remplacé par des tests qui vérifient le rejet).
 
 [À FAIRE] Utilisation multi-onglets
 - Problème : l'app tourne sur IndexedDB dans le navigateur. Si l'utilisateur ouvre l'app dans deux

@@ -1,7 +1,7 @@
 /**
  * backup.ts - Backup/restore (JSON) and Excel export controllers
  */
-import { isPlainObject, validateRules } from "../utils/validation.ts";
+import { isPlainObject, isNonEmptyString, validateRules } from "../utils/validation.ts";
 import { logError } from "../utils/logger.ts";
 import { openVersionedDb } from "../state/db-utils.ts";
 import {
@@ -367,19 +367,76 @@ function initBackupHandlers() {
   }
 }
 
+// True if `arr` isn't an array (an earlier rule already flags that) or every item satisfies
+// `predicate` — lets the item-shape rules below stay no-ops instead of throwing when the
+// collection itself is the wrong type (e.g. a string where an array was expected).
+function arrayItemsMatch(arr: any, predicate: (item: any) => boolean): boolean {
+  return !Array.isArray(arr) || arr.every(predicate);
+}
+
 function validateBackupSchema(parsed: any): { valid: boolean; error?: string } {
   const settings = isPlainObject(parsed) ? parsed.settings : undefined;
+  const activities = isPlainObject(parsed) ? parsed.activities : undefined;
+  const activityIds = Array.isArray(activities)
+    ? activities.filter((a: any) => isPlainObject(a) && isNonEmptyString(a.id)).map((a: any) => a.id)
+    : [];
+
   return validateRules([
     [isPlainObject(parsed), "Le contenu du fichier n'est pas un objet JSON valide."],
+    [isPlainObject(parsed) && Array.isArray(activities), "Le fichier de sauvegarde doit contenir une liste d'activités ('activities')."],
     [
-      isPlainObject(parsed) && Array.isArray(parsed.activities),
-      "Le fichier de sauvegarde doit contenir une liste d'activités ('activities')."
+      arrayItemsMatch(activities, (a: any) => isPlainObject(a) && isNonEmptyString(a.id)),
+      "Chaque activité de la liste ('activities') doit être un objet avec un identifiant ('id') non vide."
+    ],
+    [
+      new Set(activityIds).size === activityIds.length,
+      "Le fichier contient des activités avec des identifiants ('id') en double."
     ],
     [!settings || isPlainObject(settings), "La section de configuration ('settings') est invalide."],
     [!settings?.rooms || Array.isArray(settings.rooms), "La configuration des salles ('settings.rooms') doit être une liste."],
+    [
+      arrayItemsMatch(settings?.rooms, (r: any) => isPlainObject(r) && isNonEmptyString(r.name)),
+      "Chaque salle ('settings.rooms') doit être un objet avec un nom ('name') non vide."
+    ],
     [!settings?.salaries || Array.isArray(settings.salaries), "La configuration des salaires ('settings.salaries') doit être une liste."],
+    [
+      arrayItemsMatch(settings?.salaries, (s: any) => isPlainObject(s) && isNonEmptyString(s.id)),
+      "Chaque emploi ('settings.salaries') doit être un objet avec un identifiant ('id') non vide."
+    ],
     [!settings?.services || Array.isArray(settings.services), "La configuration des services ('settings.services') doit être une liste."],
+    [
+      arrayItemsMatch(settings?.services, (s: any) => isPlainObject(s) && isNonEmptyString(s.id)),
+      "Chaque équipement ('settings.services') doit être un objet avec un identifiant ('id') non vide."
+    ],
     [!settings?.accounts || Array.isArray(settings.accounts), "La configuration des comptes ('settings.accounts') doit être une liste."],
+    [
+      arrayItemsMatch(settings?.accounts, (a: any) => isPlainObject(a) && isNonEmptyString(a.code)),
+      "Chaque compte ('settings.accounts') doit être un objet avec un code ('code') non vide."
+    ],
+    [
+      !settings?.departments || Array.isArray(settings.departments),
+      "La configuration des départements ('settings.departments') doit être une liste."
+    ],
+    [
+      arrayItemsMatch(settings?.departments, (d: any) => isNonEmptyString(d)),
+      "Chaque département ('settings.departments') doit être une chaîne de caractères non vide."
+    ],
+    [
+      !settings?.global_tasks || Array.isArray(settings.global_tasks),
+      "La configuration des tâches globales ('settings.global_tasks') doit être une liste."
+    ],
+    [
+      arrayItemsMatch(settings?.global_tasks, (t: any) => isPlainObject(t) && isNonEmptyString(t.id)),
+      "Chaque tâche globale ('settings.global_tasks') doit être un objet avec un identifiant ('id') non vide."
+    ],
+    [
+      !settings?.schedulable_tasks || Array.isArray(settings.schedulable_tasks),
+      "La configuration des tâches programmables ('settings.schedulable_tasks') doit être une liste."
+    ],
+    [
+      arrayItemsMatch(settings?.schedulable_tasks, (t: any) => isPlainObject(t) && isNonEmptyString(t.id)),
+      "Chaque tâche programmable ('settings.schedulable_tasks') doit être un objet avec un identifiant ('id') non vide."
+    ],
     [!parsed?.favorites || Array.isArray(parsed.favorites), "La section des favoris ('favorites') doit être une liste."],
     [
       !parsed?.selected_quarters || Array.isArray(parsed.selected_quarters),

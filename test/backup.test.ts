@@ -85,10 +85,41 @@ test("validateBackupSchema accepts a null settings sub-collection (treated as ab
   assert.equal(validateBackupSchema(backup).valid, true);
 });
 
-test("validateBackupSchema does not validate the shape of individual activity entries", () => {
-  // Known limitation: only checks that `activities` is an array, not that its items are objects.
-  const backup = { activities: [null, "not-an-object", 42] };
-  assert.equal(validateBackupSchema(backup).valid, true);
+test("validateBackupSchema rejects activity entries that aren't objects with a non-empty id", () => {
+  assert.equal(validateBackupSchema({ activities: [null, "not-an-object", 42] }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [{ name: "Sans id" }] }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [{ id: "" }] }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [{ id: "act-1" }] }).valid, true);
+});
+
+test("validateBackupSchema rejects duplicate activity ids", () => {
+  const backup = { activities: [{ id: "act-1" }, { id: "act-1" }] };
+  const validation = validateBackupSchema(backup);
+  assert.equal(validation.valid, false);
+  assert.match(validation.error!, /double/);
+});
+
+test("validateBackupSchema validates the shape of settings sub-collection items", () => {
+  assert.equal(validateBackupSchema({ activities: [], settings: { rooms: [{ color: "#fff" }] } }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [], settings: { rooms: [{ name: "Salle A" }] } }).valid, true);
+
+  assert.equal(validateBackupSchema({ activities: [], settings: { salaries: [{ job: "Hôte" }] } }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [], settings: { salaries: [{ id: "salary-1", job: "Hôte" }] } }).valid, true);
+
+  assert.equal(validateBackupSchema({ activities: [], settings: { services: [{ name: "Projecteur" }] } }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [], settings: { services: [{ id: "service-1", name: "Projecteur" }] } }).valid, true);
+
+  assert.equal(validateBackupSchema({ activities: [], settings: { accounts: [{ description: "SCOLAIRE" }] } }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [], settings: { accounts: [{ code: "892-0000-00-000" }] } }).valid, true);
+
+  assert.equal(validateBackupSchema({ activities: [], settings: { departments: [42] } }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [], settings: { departments: ["ACEECJ"] } }).valid, true);
+
+  assert.equal(validateBackupSchema({ activities: [], settings: { global_tasks: [{ description: "Sans id" }] } }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [], settings: { global_tasks: [{ id: "t1", description: "Ok" }] } }).valid, true);
+
+  assert.equal(validateBackupSchema({ activities: [], settings: { schedulable_tasks: [{ description: "Sans id" }] } }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [], settings: { schedulable_tasks: [{ id: "t1" }] } }).valid, true);
 });
 
 test("getDaysSinceLastBackup returns null when there is no last_backup_date", () => {
