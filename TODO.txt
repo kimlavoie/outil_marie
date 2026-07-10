@@ -1,101 +1,55 @@
 TODO - Suggestions d'amélioration (suite du travail sur la sécurité des données)
 
-[FAIT] Généraliser la vérification du succès de saveDatabase()
-- Problème : saveDatabase() (src/state/state.ts) retourne un booléen de succès depuis les
-  correctifs sur le bulk delete/update, mais seuls les handlers de bulk (src/activities/render.ts:
-  622, 668) vérifiaient ce retour et annulaient la mutation en cas d'échec. Une trentaine d'autres
-  appels (formulaire d'activité src/activities/form.ts, historique/undo src/activities/history.ts,
-  financials.ts, tous les écrans de src/components/settings/*, reconciliation-view.tsx,
-  navigation.ts, accounts.tsx) l'utilisaient en mode "fire-and-forget" : si l'écriture IndexedDB
-  échoue (quota atteint, onglet en arrière-plan, etc.), l'UI restait optimiste sans que le
-  changement affiché corresponde à ce qui est réellement persisté.
-- Correction appliquée :
-  - Nouveau helper saveDatabaseOrRollback(restore, message) dans src/state/state.ts : appelle
-    saveDatabase(), et si ça échoue, invoque restore() (fourni par l'appelant pour annuler sa
-    mutation en mémoire) puis affiche un toast d'erreur explicite (en plus du toast générique déjà
-    affiché par saveDatabase() lui-même).
-  - Appliqué aux mutations d'activités existantes (suppression depuis le menu contextuel, undo/redo,
-    restauration de version, autosauvegarde du formulaire, patch de cycle de vie
-    commitActivityPatch(), annulation d'un brouillon), au rapprochement GL (mise à jour de
-    référence), aux préférences de navigation (thème, trimestres, année sélectionnés), et à tous les
-    écrans de configuration (salles, salaires, équipements, comptes GL, départements, tâches
-    globales/programmables) — y compris les cascades (ex. suppression d'un compte GL qui efface les
-    ventilations liées, renommage d'une salle qui met à jour les réservations existantes).
-  - Non traité délibérément : createActivity()/duplicateActivityAndOpen() (src/activities/form.ts)
-    et les autosaves fire-and-forget dans backup.ts. Ces créations ouvrent immédiatement le tiroir
-    d'édition sur l'enregistrement créé ; annuler la mutation en cas d'échec de sauvegarde
-    fermerait/viderait un formulaire que l'utilisateur est en train de remplir, ce qui est pire que
-    laisser l'enregistrement en mémoire (retenté à la prochaine sauvegarde) avec le toast d'erreur
-    générique déjà affiché par saveDatabase().
+[NE PAS FAIRE] Piste d'audit minimale
+- Décision : ne sera pas implémentée.
 
-[MAJEUR] Piste d'audit minimale
-- Problème : aucune trace de qui/quand une suppression ou modification significative a eu lieu.
-  Pas d'authentification donc pas de "qui", mais on peut tracer "quand + quoi".
-- Piste : étendre le store activity_versions (déjà utilisé pour l'undo) avec un log d'événements
-  horodatés pour les suppressions/modifications importantes.
+[MOYEN] Tarif de salle à 0 $ si le montant personnalisé est invalide
+- Problème : dans collectReservationsFromForm() (src/activities/reservations.ts:~819), pour un
+  tarif "custom", `tariffAmount = parseFloat(...) || 0` — si le champ est vide ou mal saisi,
+  parseFloat retourne NaN et `|| 0` transforme ça en tarif gratuit sans avertissement. La salle est
+  facturée 0 $ alors que l'utilisateur voulait probablement un montant précis.
+- Piste : distinguer "0 $ voulu" de "montant manquant/invalide" — avertir ou bloquer la sauvegarde
+  si une description de tarif custom est remplie mais le montant est vide/NaN.
 
-[FAIT] Validation du schéma à la restauration d'un backup/import
-- Problème : validateBackupSchema() (src/services/backup.ts) existait déjà et bloquait un fichier
-  qui n'était pas un objet JSON, sans "activities", ou dont les sous-collections de settings
-  n'étaient pas des listes — mais ne validait pas la forme des éléments à l'intérieur de ces
-  listes. Un fichier avec `activities: [null, "texte", 42]` ou des salles/emplois/comptes sans les
-  champs attendus (name/id/code) passait la validation, pour ensuite planter ou produire un état
-  incohérent une fois passé aux migrations et à l'UI (le test "does not validate the shape of
-  individual activity entries" documentait explicitement cette lacune).
-- Correction appliquée : validateBackupSchema() valide maintenant que chaque activité est un objet
-  avec un id non vide (et que les id sont uniques dans le fichier), et que chaque élément des
-  sous-collections de settings a le champ identifiant attendu par le reste de l'app (rooms.name,
-  salaries/services/global_tasks/schedulable_tasks.id, accounts.code, departments en tant que
-  chaînes non vides). Le check `arrayItemsMatch()` ne s'applique que si la collection est bien une
-  liste, pour ne pas planter (ex. .every sur une chaîne) quand une règle précédente a déjà signalé
-  le mauvais type. Tests mis à jour dans test/backup.test.ts (le test qui documentait la lacune est
-  remplacé par des tests qui vérifient le rejet).
+[MOYEN] Compte GL introuvable non détecté (tarif custom et grille de prix)
+- Problème : deux chemins dans reservations.ts affectent un tariff_gl_account_code sans vérifier
+  qu'il existe dans appState.settings.accounts : le sélecteur `.room-tariff-custom-gl` pour un tarif
+  custom, et `ct.gl_account_code || ""` (ligne ~834) pour un tarif tiré de la grille de prix d'un
+  type de client. Si le compte a été supprimé après coup (grille de prix figée, config custom
+  ancienne), le champ devient vide silencieusement. account-report.ts (ligne ~55/64) a le même
+  problème côté lecture : une distribution pointant vers un compte inexistant crée un compte
+  "fantôme" sans description plutôt que de signaler l'incohérence. Le rapprochement GL et le Grand
+  Livre deviennent silencieusement faux.
+- Piste : valider au moment de la sauvegarde qu'un gl_account_code non vide correspond à un compte
+  existant, et signaler (plutôt que de fabriquer une entrée orpheline) dans account-report.ts quand
+  ce n'est pas le cas.
 
-[FAIT] Utilisation multi-onglets
-- Problème : l'app tourne sur IndexedDB dans le navigateur. Si l'utilisateur ouvre l'app dans deux
-  onglets, le second peut écraser silencieusement les changements du premier au prochain
-  saveDatabase(), sans avertissement.
-- Correction appliquée : src/state/state.ts ouvre un BroadcastChannel("outil_marie_sync") par
-  onglet (chacun avec un id généré au chargement). Chaque saveDatabase() réussi diffuse un
-  battement {tabId, ts} aux autres onglets ; en recevant un battement d'un tabId différent, un
-  toast persistant (duration 0, fermeture manuelle) avertit l'utilisateur de recharger la page
-  avant de continuer, pour éviter d'écraser les changements de l'autre onglet. Un seul
-  avertissement par onglet (pas de spam si l'autre onglet sauvegarde plusieurs fois).
-  Le canal n'est créé que si `window` ET `BroadcastChannel` existent tous les deux — Node expose
-  un BroadcastChannel global aussi, donc vérifier seulement `typeof BroadcastChannel` aurait créé
-  un vrai canal dans l'environnement de test et bloqué indéfiniment `npm test` (handle ouvert qui
-  empêche le processus de se terminer). C'est un piège à surveiller si BroadcastChannel est
-  réutilisé ailleurs dans le code.
-
-[FAIT] Couverture de tests du rapprochement GL et du générateur de contrat
-- Problème : src/services/reconciliation.ts (379 lignes) et src/services/contract-generator.ts
-  (898 lignes) sont deux des plus gros modules métier, sans qu'on sache s'ils ont une couverture de
-  cas limites comparable à celle de test/activities-financials.test.ts (montants à zéro, comptes GL
-  manquants, dates invalides, etc.).
-- Correction appliquée :
-  - reconciliation.ts avait déjà une bonne base de tests (matching exact/diff/unlogged/unentered,
-    filtrage de période, extraction de référence). Lacunes comblées dans test/reconciliation.test.ts :
-    canonicalRefKey/extractRefFromNom/daysBetweenDateStrs testées directement, transaction GL sans
-    référence exploitable (ignorée plutôt qu'affichée comme "unentered"), compte GL vide/manquant
-    (regroupé sous une clé vide plutôt que de planter), transaction GL exclue par le filtre de
-    trimestre (même année, mauvais trimestre), plafond à 3 suggestions floues avec tri par score,
-    plusieurs activités "unlogged" pointant vers le même candidat "unentered" (suggestedFor), et le
-    cycle complet setReconDecision()/loadReconDecisions() (persistance + suppression IndexedDB).
-  - contract-generator.ts n'avait aucun test (pas de fichier test/contract-generator.test.ts) : les
-    deux fonctions exportées (generateContractXlsx/generateSoumissionXlsx) sont async et font du
-    fetch() + assemblage binaire, donc peu testables directement. buildSheetXml() — la fonction pure
-    qui construit le XML de la feuille à partir d'une activité, sans I/O — a été ajoutée aux exports
-    (avec xmlEscapeText/formatDateFr/wrapRowHeight) spécifiquement pour être testable. Nouveau
-    test/contract-generator.test.ts : échappement XML des caractères spéciaux (nom/description
-    d'activité), différences contrat vs soumission (image d'en-tête, clause d'annulation, annexe des
-    clauses), activité sans réservations/gestionnaire/participants (ne doit pas planter), salle sans
-    nom ("(salle non définie)"), total des lignes personnel/équipements/frais, période sur un jour vs
-    plage de dates.
-  - À noter : cette couverture teste la logique de construction (montants, échappement, sections
-    conditionnelles), pas la validité du fichier .xlsx binaire final (styles, zip, image) — ça reste
-    à vérifier manuellement en ouvrant un contrat généré dans Excel après un changement dans cette
-    zone.
+[MINEUR] calculateDaysCount() masque les plages de dates inversées
+- Problème : calculateDaysCount() (src/utils/utils.ts:~49-56) retourne 1 si end < start (diffTime <
+  0) au lieu de signaler une plage invalide. Une activité corrompue ou mal saisie avec date_end
+  antérieure à date_start génère quand même une charge d'un jour minimum au lieu de faire échouer
+  la validation ou d'afficher une erreur claire.
+- Piste : faire remonter une erreur ou 0 plutôt que 1 quand end < start, et valider en amont (au
+  formulaire) que date_end >= date_start.
 
 Hors scope pour l'instant :
 - Authentification / autorisation : à revoir selon qui utilisera l'app en production
   (poste unique de confiance vs accès multi-utilisateurs).
+
+Historique des correctifs appliqués (archivé, voir git log pour le détail complet) :
+- [FAIT] Généraliser la vérification du succès de saveDatabase() (saveDatabaseOrRollback)
+- [FAIT] Validation du schéma à la restauration d'un backup/import (forme des éléments de liste)
+- [FAIT] Utilisation multi-onglets (avertissement BroadcastChannel avant écrasement)
+- [FAIT] Couverture de tests du rapprochement GL et du générateur de contrat
+- [FAIT] Perte silencieuse des dates d'une activité quand tous les créneaux sont supprimés
+  - Correction : autoSaveActivityForm() (src/activities/financials.ts) ne remplace plus
+    date_start/date_end par des chaînes vides quand getAggregateEventDates() n'a plus aucun slot à
+    agréger ; il conserve les dates déjà enregistrées sur l'activité et affiche un toast
+    d'avertissement ("Aucun créneau restant : les dates de l'activité n'ont pas été modifiées.").
+- [FAIT] Perte silencieuse d'heures/coûts saisis quand salary_id/service_id/description est vide
+  - Correction : collectStaffFromForm/collectServicesFromForm/collectFeesFromForm
+    (src/activities/reservation-subrows.ts) continuent d'exclure ces lignes de l'enregistrement
+    (elles n'ont pas d'identifiant à rattacher à une distribution), mais détectent maintenant quand
+    une ligne exclue avait des données saisies (heures, taux, montant, compte GL...) et le
+    signalent via un toast d'avertissement affiché par autoSaveActivityForm() plutôt que de
+    disparaître silencieusement.

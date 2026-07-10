@@ -41,7 +41,8 @@ import {
   autoAddTechnicalDirectorIfNeeded,
   collectStaffFromForm,
   collectServicesFromForm,
-  collectFeesFromForm
+  collectFeesFromForm,
+  resetIncompleteRowWarnings
 } from "./reservation-subrows.ts";
 
 function el<T extends Element = HTMLInputElement>(id: string): T {
@@ -799,6 +800,7 @@ function addReservationCard(reservationData: any = null) {
 }
 
 function collectReservationsFromForm() {
+  resetIncompleteRowWarnings();
   const cards = document.querySelectorAll<HTMLInputElement>("#form-activity-reservations .reservation-card")!;
   return Array.from(cards).map(card => {
     const uid = card.id;

@@ -38,7 +38,7 @@ import {
 import { isNonEmptyString } from "../utils/validation.ts";
 import { activitiesState, renderActivities, getActivityStateLabel } from "./render.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations.ts";
-import { updateStaffRowSubtotal, updateServiceRowSubtotal } from "./reservation-subrows.ts";
+import { updateStaffRowSubtotal, updateServiceRowSubtotal, getIncompleteRowWarnings } from "./reservation-subrows.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { fillActivityFormFields, renderActivityStateBar, switchActivityTab, getActivityFormMode, updateFormTabIndicators } from "./form.ts";
 import { updateFormDatesHelper, saveActivityVersion, scheduleActivityUndoSnapshot } from "./history.ts";
@@ -855,7 +855,17 @@ function autoSaveActivityForm() {
   const managerProvince = el("form-activity-manager-province").value.trim();
   const managerPostalCode = el("form-activity-manager-postal-code").value.trim();
   const reservations = collectReservationsFromForm();
-  const { date_start: start, date_end: end } = getAggregateEventDates(reservations);
+  getIncompleteRowWarnings().forEach(msg => showToast(msg, "warning"));
+  const aggregateDates = getAggregateEventDates(reservations);
+  const existingActivity = appState.activities.find(a => a.id === internalId);
+  // If every slot was removed (reservation kept but emptied), don't let the activity lose its
+  // date range silently — keep whatever dates it already had and warn instead.
+  const datesCleared = (!aggregateDates.date_start || !aggregateDates.date_end) && existingActivity?.date_start;
+  const start = aggregateDates.date_start || existingActivity?.date_start || "";
+  const end = aggregateDates.date_end || existingActivity?.date_end || "";
+  if (datesCleared) {
+    showToast("Aucun créneau restant : les dates de l'activité n'ont pas été modifiées.", "warning");
+  }
   const dept = el("form-activity-dept").value;
   const eventType = el("form-activity-event-type").value;
   const eventTypeOther = el("form-activity-event-type-other").value.trim();
