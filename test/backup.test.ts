@@ -122,6 +122,73 @@ test("validateBackupSchema validates the shape of settings sub-collection items"
   assert.equal(validateBackupSchema({ activities: [], settings: { schedulable_tasks: [{ id: "t1" }] } }).valid, true);
 });
 
+test("validateBackupSchema validates the deep shape of an activity's reservations", () => {
+  const validReservation = {
+    id: "act-1",
+    reservations: [
+      {
+        room_name: "Salle A",
+        tariff_amount: 100,
+        slots: [{ date: "2025-08-01", start_time: "09:00", end_time: "17:00" }],
+        fees: [{ description: "Frais additionnels", amount: 25 }],
+        staff: [],
+        services: []
+      }
+    ]
+  };
+  assert.equal(validateBackupSchema({ activities: [validReservation] }).valid, true);
+
+  assert.equal(
+    validateBackupSchema({ activities: [{ id: "act-1", reservations: "not-a-list" }] }).valid,
+    false
+  );
+  assert.equal(
+    validateBackupSchema({ activities: [{ id: "act-1", reservations: [{ room_name: 42 }] }] }).valid,
+    false
+  );
+  assert.equal(
+    validateBackupSchema({ activities: [{ id: "act-1", reservations: [{ tariff_amount: "100" }] }] }).valid,
+    false
+  );
+  assert.equal(
+    validateBackupSchema({
+      activities: [{ id: "act-1", reservations: [{ slots: [{ date: "2025-08-01", start_time: "09:00", end_time: null }] }] }]
+    }).valid,
+    false
+  );
+  assert.equal(
+    validateBackupSchema({
+      activities: [{ id: "act-1", reservations: [{ fees: [{ description: "Frais", amount: "25" }] }] }]
+    }).valid,
+    false
+  );
+});
+
+test("validateBackupSchema validates the deep shape of an activity's distributions", () => {
+  assert.equal(
+    validateBackupSchema({
+      activities: [{ id: "act-1", distributions: [{ account_code: "892-0000-00-000", amount: 100 }] }]
+    }).valid,
+    true
+  );
+  assert.equal(
+    validateBackupSchema({ activities: [{ id: "act-1", distributions: [{ account_code: "", amount: 100 }] }] }).valid,
+    false
+  );
+  assert.equal(
+    validateBackupSchema({
+      activities: [{ id: "act-1", distributions: [{ account_code: "892-0000-00-000", amount: "100" }] }]
+    }).valid,
+    false
+  );
+});
+
+test("validateBackupSchema rejects activities with wrong-typed top-level fields", () => {
+  assert.equal(validateBackupSchema({ activities: [{ id: "act-1", name: 42 }] }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [{ id: "act-1", date_start: 20250801 }] }).valid, false);
+  assert.equal(validateBackupSchema({ activities: [{ id: "act-1", attendees_count: "beaucoup" }] }).valid, false);
+});
+
 test("getDaysSinceLastBackup returns null when there is no last_backup_date", () => {
   setAppState({
     settings: {

@@ -1,7 +1,7 @@
 /**
  * backup.ts - Backup/restore (JSON) and Excel export controllers
  */
-import { isPlainObject, isNonEmptyString, validateRules } from "../utils/validation.ts";
+import { isPlainObject, isNonEmptyString, isFiniteNumber, validateRules } from "../utils/validation.ts";
 import { logError } from "../utils/logger.ts";
 import { openVersionedDb } from "../state/db-utils.ts";
 import {
@@ -374,6 +374,56 @@ function arrayItemsMatch(arr: any, predicate: (item: any) => boolean): boolean {
   return !Array.isArray(arr) || arr.every(predicate);
 }
 
+// Deep-shape checks for a single reservation record within an activity. Catches the case of a
+// hand-edited or corrupted backup where a reservation's slots/fees/tariff hold the wrong type
+// (e.g. a string instead of a number) that would otherwise only surface as a silent NaN/crash
+// later, in rendering or billing calculations.
+function validateReservationShape(r: any): boolean {
+  if (!isPlainObject(r)) return false;
+  if (r.room_name !== undefined && typeof r.room_name !== "string") return false;
+  if (r.tariff_amount !== undefined && !isFiniteNumber(r.tariff_amount)) return false;
+  if (r.slots !== undefined && !Array.isArray(r.slots)) return false;
+  if (
+    !arrayItemsMatch(
+      r.slots,
+      (s: any) => isPlainObject(s) && typeof s.date === "string" && typeof s.start_time === "string" && typeof s.end_time === "string"
+    )
+  ) {
+    return false;
+  }
+  if (r.fees !== undefined && !Array.isArray(r.fees)) return false;
+  if (!arrayItemsMatch(r.fees, (f: any) => isPlainObject(f) && typeof f.description === "string" && isFiniteNumber(f.amount))) {
+    return false;
+  }
+  if (r.staff !== undefined && !Array.isArray(r.staff)) return false;
+  if (!arrayItemsMatch(r.staff, (s: any) => isPlainObject(s))) return false;
+  if (r.services !== undefined && !Array.isArray(r.services)) return false;
+  if (!arrayItemsMatch(r.services, (s: any) => isPlainObject(s))) return false;
+  return true;
+}
+
+// A distribution ties a billed amount to a GL account code; both must have the right type or
+// the reconciliation/export math (which sums `amount`) silently produces NaN/garbage totals.
+function validateDistributionShape(d: any): boolean {
+  return isPlainObject(d) && isNonEmptyString(d.account_code) && isFiniteNumber(d.amount);
+}
+
+// Inspects one activity's internal fields beyond just its `id`, so a corrupted or hand-edited
+// backup can't slip malformed reservations/distributions/dates past validation and only fail
+// later as a silent rendering or billing crash.
+function validateActivityDeepShape(a: any): boolean {
+  if (!isPlainObject(a)) return false;
+  if (a.name !== undefined && typeof a.name !== "string") return false;
+  if (a.date_start !== undefined && typeof a.date_start !== "string") return false;
+  if (a.date_end !== undefined && typeof a.date_end !== "string") return false;
+  if (a.attendees_count !== undefined && !isFiniteNumber(a.attendees_count)) return false;
+  if (a.reservations !== undefined && !Array.isArray(a.reservations)) return false;
+  if (!arrayItemsMatch(a.reservations, validateReservationShape)) return false;
+  if (a.distributions !== undefined && !Array.isArray(a.distributions)) return false;
+  if (!arrayItemsMatch(a.distributions, validateDistributionShape)) return false;
+  return true;
+}
+
 function validateBackupSchema(parsed: any): { valid: boolean; error?: string } {
   const settings = isPlainObject(parsed) ? parsed.settings : undefined;
   const activities = isPlainObject(parsed) ? parsed.activities : undefined;
@@ -391,6 +441,10 @@ function validateBackupSchema(parsed: any): { valid: boolean; error?: string } {
     [
       new Set(activityIds).size === activityIds.length,
       "Le fichier contient des activités avec des identifiants ('id') en double."
+    ],
+    [
+      arrayItemsMatch(activities, validateActivityDeepShape),
+      "Une ou plusieurs activités contiennent des données invalides (réservations, distributions ou dates dont le type est incorrect)."
     ],
     [!settings || isPlainObject(settings), "La section de configuration ('settings') est invalide."],
     [!settings?.rooms || Array.isArray(settings.rooms), "La configuration des salles ('settings.rooms') doit être une liste."],

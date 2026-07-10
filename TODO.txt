@@ -1,11 +1,13 @@
 TODO - Suggestions d'amélioration (suite du travail sur la sécurité des données)
 
-[NE PAS FAIRE] Piste d'audit minimale
-- Décision : ne sera pas implémentée.
 
-Hors scope pour l'instant :
-- Authentification / autorisation : à revoir selon qui utilisera l'app en production
-  (poste unique de confiance vs accès multi-utilisateurs).
+[MOYEN] Exportation des journaux (logs) de diagnostic
+- Problème : L'application possède un logger structuré (src/utils/logger.ts) stockant en mémoire les 200 derniers messages (infos, warnings, erreurs). Toutefois, si un utilisateur fait face à un problème, ces logs ne sont pas facilement récupérables sans ouvrir les outils de développement (F12).
+- Piste : Ajouter une option dans l'onglet "Sauvegarde & Export" permettant de télécharger l'historique des journaux de diagnostic sous format texte ou JSON.
+
+[MINEUR] Détection des tarifs de salle obsolètes
+- Problème : Si une grille tarifaire de salle (Configuration > Salles) est modifiée rétroactivement ou si des tarifs changent, les anciennes activités continuent d'utiliser les tarifs d'origine stockés. Il n'y a pas d'avertissement automatique indiquant que le montant facturé sur une ancienne réservation diffère du tarif actuel en vigueur pour cette date.
+- Piste : Lors de l'édition d'une activité, comparer le tarif appliqué aux réservations avec celui théoriquement renvoyé par la grille tarifaire à cette date (getActivePricingGrid) et afficher un indicateur visuel en cas de divergence.
 
 Historique des correctifs appliqués (archivé, voir git log pour le détail complet) :
 - [FAIT] Généraliser la vérification du succès de saveDatabase() (saveDatabaseOrRollback)
@@ -55,3 +57,10 @@ Historique des correctifs appliqués (archivé, voir git log pour le détail com
       précédent (1 jour deviné) ; le code force maintenant explicitement 1 créneau sur date_start
       dans ce cas précis (pour ne pas perdre la réservation) et logue l'anomalie via logWarn()
       pour qu'elle reste traçable.
+
+[NE PAS FAIRE] Piste d'audit minimale
+- Décision : ne sera pas implémentée.
+
+Hors scope:
+- Authentification / autorisation : à revoir selon qui utilisera l'app en production
+  (poste unique de confiance vs accès multi-utilisateurs).
