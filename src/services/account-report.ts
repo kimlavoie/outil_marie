@@ -73,10 +73,19 @@ function renderAccountReport() {
     });
   });
 
+  // Distributions can reference an account code that isn't (or no longer is) in the configured
+  // chart of accounts (deleted account, stale tariff config...). Surface those as "Compte inconnu"
+  // cards instead of silently dropping the entries from the report — otherwise the report total
+  // wouldn't match the sum of what was actually saved, with no way to find the discrepancy.
+  const configuredCodes = new Set(appState.settings.accounts.map(a => a.code));
+  const orphanAccounts = Object.keys(accountEntries)
+    .filter(code => code && !configuredCodes.has(code) && accountEntries[code].length > 0)
+    .map(code => ({ code, description: "Compte inconnu (compte supprimé ou introuvable)" }));
+
   // Determine which accounts to render
-  let accountsToRender = appState.settings.accounts;
+  let accountsToRender = [...appState.settings.accounts, ...orphanAccounts];
   if (filterAccount) {
-    accountsToRender = appState.settings.accounts.filter(a => a.code === filterAccount);
+    accountsToRender = accountsToRender.filter(a => a.code === filterAccount);
   }
 
   // If we show "All", let's only display accounts that have at least one transaction entry.

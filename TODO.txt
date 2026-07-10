@@ -3,19 +3,6 @@ TODO - Suggestions d'amélioration (suite du travail sur la sécurité des donn�
 [NE PAS FAIRE] Piste d'audit minimale
 - Décision : ne sera pas implémentée.
 
-[MOYEN] Compte GL introuvable non détecté (tarif custom et grille de prix)
-- Problème : deux chemins dans reservations.ts affectent un tariff_gl_account_code sans vérifier
-  qu'il existe dans appState.settings.accounts : le sélecteur `.room-tariff-custom-gl` pour un tarif
-  custom, et `ct.gl_account_code || ""` (ligne ~834) pour un tarif tiré de la grille de prix d'un
-  type de client. Si le compte a été supprimé après coup (grille de prix figée, config custom
-  ancienne), le champ devient vide silencieusement. account-report.ts (ligne ~55/64) a le même
-  problème côté lecture : une distribution pointant vers un compte inexistant crée un compte
-  "fantôme" sans description plutôt que de signaler l'incohérence. Le rapprochement GL et le Grand
-  Livre deviennent silencieusement faux.
-- Piste : valider au moment de la sauvegarde qu'un gl_account_code non vide correspond à un compte
-  existant, et signaler (plutôt que de fabriquer une entrée orpheline) dans account-report.ts quand
-  ce n'est pas le cas.
-
 [MINEUR] calculateDaysCount() masque les plages de dates inversées
 - Problème : calculateDaysCount() (src/utils/utils.ts:~49-56) retourne 1 si end < start (diffTime <
   0) au lieu de signaler une plage invalide. Une activité corrompue ou mal saisie avec date_end
@@ -51,3 +38,15 @@ Historique des correctifs appliqués (archivé, voir git log pour le détail com
     tombe quand même à 0 via `parseFloat(...) || 0`, le comportement de facturation ne change pas)
     et pousse un avertissement (via le même mécanisme pushIncompleteRowWarning/getIncompleteRowWarnings
     que les lignes de personnel/services/frais) affiché en toast par autoSaveActivityForm().
+- [FAIT] Compte GL introuvable non détecté (tarif custom et grille de prix)
+  - Correction :
+    - collectReservationsFromForm() (src/activities/reservations.ts) vérifie maintenant, pour un
+      tarif custom ou tiré de la grille de prix, que tariffGlAccountCode correspond à un compte
+      existant dans appState.settings.accounts ; sinon, un avertissement est poussé
+      (pushIncompleteRowWarning) et affiché en toast par autoSaveActivityForm().
+    - account-report.ts n'abandonne plus silencieusement les distributions dont le account_code
+      n'est plus dans la liste des comptes configurés : ces entrées orphelines sont maintenant
+      regroupées et affichées comme une carte "Compte inconnu (compte supprimé ou introuvable)"
+      dans le Grand Livre local, au lieu de disparaître du rapport sans laisser de trace (le
+      fallback qui les stockait dans accountEntries existait déjà, mais accountsToRender
+      n'itérait que sur les comptes configurés — ces entrées n'étaient donc jamais rendues).

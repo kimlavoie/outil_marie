@@ -847,6 +847,16 @@ function collectReservationsFromForm() {
       }
     }
 
+    // A tariff can carry a GL account code from a custom entry or from a pricing grid's client
+    // type that was configured before the account got deleted from Paramètres > Comptes GL. That
+    // stale code still gets saved on the reservation, but distributions generated from it (and the
+    // Grand Livre report reading them back) silently can't tie it to a real account — warn here.
+    if (tariffGlAccountCode && !appState.settings.accounts.some(a => a.code === tariffGlAccountCode)) {
+      pushIncompleteRowWarning(
+        `Le tarif "${tariffDescription || roomName}" est lié au compte GL "${tariffGlAccountCode}", qui n'existe plus.`
+      );
+    }
+
     const installEnabled = card.querySelector<HTMLInputElement>(".reservation-install-toggle")!.classList.contains("active");
     const dismantleEnabled = card.querySelector<HTMLInputElement>(".reservation-dismantle-toggle")!.classList.contains("active");
 
