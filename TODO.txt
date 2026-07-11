@@ -43,36 +43,108 @@ FIABILITE (priorite haute)
 TESTS (trous a combler)
 =======================================================
 
-npm run test:coverage : 367 tests, 57.63% lignes / 74.34% branches.
+npm run test:coverage : 428 tests, 66.33% lignes / 74.60% branches
+(etait 367 tests, 57.63%/74.34% avant cette section).
 Fichiers de logique metier substantielle les moins couverts :
 
-[ ] src/services/backup/restore.ts (18.96%)
-    Chemin de restauration entier non teste -- correle directement avec
-    le bug de fiabilite ci-dessus (sanitizeActivitiesList manquant), qui
-    aurait probablement ete detecte par un test couvrant une restauration
-    avec activite incomplete.
+[x] src/services/backup/restore.ts (etait 18.96%, maintenant 83.06%)
+    test/backup/restore.test.ts : validation rejetee (etat inchange),
+    confirm() annule (etat inchange), activite restauree sans "name"
+    correctement assainie (test de non-regression pour le bug
+    sanitizeActivitiesList corrige plus haut), et echec de migration ->
+    rollback + re-persistance sur disque (verifie via getAppStateFromDb).
 
-[ ] src/services/backup/index.ts (25.14%) et
-    src/services/backup/auto-backup.ts (35.74%)
-    Orchestration de sauvegarde peu exercee -- correle avec les bugs
-    d'echec silencieux et de fenetre de perte ci-dessus.
+[x] src/services/backup/auto-backup.ts (etait 35.74%, maintenant 83.08%)
+    test/backup/auto-backup.test.ts : statut "unsupported" sans API
+    disponible, connexion + ecriture reussie (handle persiste + contenu
+    ecrit verifie), echec d'ecriture -> statut "write-error" + toast (test
+    de non-regression pour le bug d'echec silencieux corrige plus haut),
+    debounce de scheduleAutoBackupWrite + flush immediat sur
+    l'evenement beforeunload (test de non-regression pour la fenetre de
+    perte corrigee plus haut), et deconnexion.
+    Note : src/services/backup/index.ts (25.14%) est surtout un barrel
+    de re-export (voir historique TODO) ; sa logique propre
+    (validateBackupSchema, getDaysSinceLastBackup, checkBackupReminder)
+    est deja couverte par test/backup/index.test.ts.
 
-[ ] src/services/contract-generator.ts (26.28%)
-    Le point d'entree generateXlsx n'est pas teste directement (le
-    sous-module contract-generator/sheet-builder.ts, lui, est a 99%).
+[x] src/services/contract-generator.ts (etait 26.28%, maintenant 100%)
+    test/contract-generator-generate.test.ts : generateContractXlsx et
+    generateSoumissionXlsx produisent un .xlsx valide (signature "PK",
+    parties OOXML attendues, drawing d'entete present seulement pour la
+    variante "contrat"), nom de fichier (avec repli "activite" si
+    l'activite n'a pas de nom), et les deux chemins d'erreur (gabarit
+    injoignable / gabarit invalide) affichent le toast attendu.
+    A necessite un petit ajustement dans contract-generator.ts : l'appel
+    fetch utilisait `import.meta.env.BASE_URL` sans garde, qui n'existe
+    pas hors d'un vrai runtime Vite (donc pas dans les tests Node) ;
+    passe a `(import.meta as any).env?.BASE_URL ?? ""`, sans changement
+    de comportement sous Vite.
 
-[ ] src/activities/bulk-actions.ts (10.83%)
-    Suppression/changement d'etat en masse -- logique metier, pas
-    seulement du rendu.
+[x] src/activities/bulk-actions.ts (etait 25.12%, maintenant 87.68%)
+    test/bulk-actions.test.ts etendu : case a cocher "tout selectionner"
+    (coche/decoche + synchronise activitiesState.selectedIds), bouton
+    "effacer la selection", suppression en masse (seules les activites
+    selectionnees sont marquees supprimees, retirees des favoris,
+    selection videe), confirmation annulee (rien ne change), selection
+    vide (aucun appel a confirm()), rollback en memoire si la sauvegarde
+    echoue (deletion et favoris restaures, toast affiche), et changement
+    d'etat en masse (nouvel etat applique uniquement aux lignes
+    selectionnees, menu referme, selection videe).
 
-[ ] src/activities/form.ts (31.83%) et src/activities/render.ts (35.54%)
-    Quasiment tout form.ts (lignes 36-262) et une bonne partie de
-    render.ts (lignes 151-439) ne sont pas couverts.
+[x] src/activities/render.ts (etait 35.54%, maintenant 83.66%)
+    test/activities-render-extra.test.ts : renderActivities() -- placeholder
+    "aucune activite" + bouton reset desactive, activites supprimees
+    exclues, rendu "Vierge" pour un nom vide, filtre de recherche
+    (id/nom/responsable/code de compte/reference), filtres salle/type de
+    client/statut/periode (annee fiscale + trimestre), tri (nom, chiffre
+    d'affaires, croissant/decroissant), et cases a cocher de ligne
+    (synchronisation activitiesState.selectedIds + classe "selected").
+    Les petits helpers purs (getActivityStateLabel, deriveActivityState,
+    etc.) etaient deja couverts par test/activities-render.test.ts.
 
-[ ] src/navigation/period-selector.ts, global-search.ts, quick-access.ts
-    (~18-20%)
-    Logique de selection de periode fiscale et de recherche floue peu
-    testee malgre la correction recente sur la fenetre d'annees fiscales.
+[x] src/activities/form.ts (etait 31.83%, maintenant 77.17%)
+    test/activities-form-handlers.test.ts : initFormHandlers() se cable
+    sans lancer d'exception avec le DOM requis, bouton "reset-filters"
+    (vide la recherche + les panneaux de filtres + re-rend la liste),
+    raccourci Alt+[1-6] (delegue au bouton de navigation correspondant),
+    et les deux bascules d'affichage conditionnelles (type de responsable
+    "externe", type d'activite "autre"). fillActivityFormFields (le reste
+    de la logique substantielle du fichier) etait deja couvert par
+    test/form-fill.test.ts. Non couvert (raccourcis clavier
+    Ctrl+Z/Y limites au drawer, Echap, et les boutons qui ouvrent le
+    drawer/modale -- necessiteraient de simuler tout le cycle de vie du
+    drawer, hors de portee raisonnable pour un test unitaire Node).
+
+[x] src/navigation/global-search.ts (etait ~18%, maintenant 96.22%)
+    test/global-search.test.ts : globalSearchMatches (substring +
+    repli flou via textSimilarity), renderGlobalSearchResults (requete
+    vide, aucun resultat, activites/comptes/departements trouves en
+    excluant les activites supprimees/sans nom, plafond de 5 par
+    categorie), openGlobalSearchResult (aucune exception meme pour un
+    id inconnu), et initGlobalSearch (debounce de la saisie, focus
+    rouvrant un resultat existant, clic exterieur et Echap qui ferment
+    le panneau).
+
+[x] src/navigation/quick-access.ts (etait ~19%, maintenant 96.22%)
+    test/quick-access.test.ts : etat vide (message + badge cache),
+    section "Epinglees", section "A venir bientot" (fenetre de 30
+    jours, bornes incluses/exclues verifiees), deduplication (une
+    activite a la fois epinglee et recemment consultee n'apparait que
+    sous "Epinglees"), boutons epingler/desepingler (mettent a jour
+    appState.favorites et re-rendent), et initQuickAccessDropdown/
+    closeQuickAccessDropdown (bouton bascule, clic exterieur, Echap).
+
+[x] src/navigation/period-selector.ts (etait ~23%, maintenant 90.76%)
+    test/period-selector-extra.test.ts : updateActivePeriodDescription
+    (annee/trimestre manquant, 4 trimestres = annee complete,
+    trimestres contigus = une seule plage de dates, trimestres non
+    contigus listes individuellement), populateFiscalYears (fenetre
+    glissante + annees des activites existantes ajoutees, activites
+    supprimees ignorees, annee courante marquee selectionnee), et
+    initPeriodSelector (etat initial des pastilles de trimestre,
+    clic qui ajoute/retire un trimestre et persiste, changement
+    d'annee fiscale qui persiste). getFiscalYearWindow etait deja
+    couvert par test/period-selector.test.ts.
 
 =======================================================
 ARCHITECTURE (dette technique, non bloquant)

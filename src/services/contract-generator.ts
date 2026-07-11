@@ -38,7 +38,9 @@ async function generateXlsx(act: any, variant: "contrat" | "soumission") {
 
   let templateBuffer: ArrayBuffer;
   try {
-    const res = await fetch(`${import.meta.env.BASE_URL}${CONTRACT_TEMPLATE_PATH}`);
+    // Optional chaining here only matters outside a real Vite runtime (e.g. the Node test
+    // harness, where import.meta.env isn't injected) — Vite always provides BASE_URL in dev/build.
+    const res = await fetch(`${(import.meta as any).env?.BASE_URL ?? ""}${CONTRACT_TEMPLATE_PATH}`);
     if (!res.ok) throw new Error(String(res.status));
     templateBuffer = await res.arrayBuffer();
   } catch {
