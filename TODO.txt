@@ -150,29 +150,42 @@ Fichiers de logique metier substantielle les moins couverts :
 ARCHITECTURE (dette technique, non bloquant)
 =======================================================
 
-[ ] Decouper src/activities/history.ts (610 lignes)
-    Melange 4 responsabilites distinctes : pile undo/redo (37-110),
-    soumission de formulaire + tri de table (112-160), detection de
-    conflits de salle (166-306, logique quasi pure et testable), et
-    historique de versions/diff (308-590, sous-fonctionnalite autonome).
-    Decoupage propose : activities/history-undo.ts,
-    activities/room-conflicts.ts, activities/version-history.ts.
+[x] Decouper src/activities/history.ts (610 lignes)
+    history.ts redevient un barrel (submitActivityForm, initActivitiesSort
+    + re-export) qui garde le nom de fichier original pour ne rien casser
+    cote imports existants (autosave.ts, drawer.ts, form-state-bar.ts,
+    form.ts, reservations/*.ts importaient tous depuis "./history.ts").
+    Nouveaux fichiers : activities/history-undo.ts (pile undo/redo),
+    activities/room-conflicts.ts (aide aux dates du formulaire +
+    detection de conflits de salle), activities/version-history.ts
+    (snapshots de version, diff, restauration). Import circulaire assume
+    entre history-undo.ts/version-history.ts et form.ts (meme pattern
+    deja utilise ailleurs) -- sans danger, rien ne s'execute au
+    chargement des modules. Verifie : lint, typecheck, les 428 tests et
+    `npm run build` passent tous sans changement.
 
-[ ] Decouper src/activities/file-links.ts (570 lignes)
-    4 concerns, surtout pour dedupliquer : mini-store IndexedDB (22-50),
-    workflows File System Access API (56-235), rendu du statut + cablage
-    d'evenements (261-388), et deux previsualiseurs PDF/XLSX (390-568)
-    qui dupliquent presque mot pour mot le meme pattern
-    permission->erreur->montage. Decoupage propose : file-links-db.ts,
-    file-links-actions.ts, file-link-status.ts, file-preview.ts (en
-    extrayant la logique de permission partagee).
+[x] Decouper src/activities/file-links.ts (570 lignes)
+    file-links.ts redevient un barrel pur (re-export seulement).
+    Nouveaux fichiers : file-links-db.ts (mini-store IndexedDB),
+    file-links-actions.ts (workflows File System Access : lier/generer/
+    ouvrir/retirer un fichier), file-link-status.ts (rendu du statut +
+    cablage d'evenements, garde l'etat expandedXlsxPreviews partage),
+    file-preview.ts (les deux previsualiseurs PDF/XLSX). La deduplication
+    du pattern permission->erreur->montage entre les deux previsualiseurs
+    n'a PAS ete tentee : aucun test ne couvre leur HTML exact (necessite
+    l'API File System Access reelle, hors de portee des tests Node -- deja
+    note dans TESTS/file-links.test.ts), donc le risque de casser un
+    comportement sans pouvoir le verifier automatiquement l'emportait sur
+    le gain. Verifie : lint, typecheck, les 428 tests et `npm run build`
+    passent tous sans changement.
 
-[ ] Dedupliquer le tableau de resume financier dans
+[x] Dedupliquer le tableau de resume financier dans
     src/activities/print-sheet.ts
-    Le tableau (lignes 132-140 et 285-293) est duplique a l'identique
-    entre buildPrintActivitySheetHtml et buildActivityDetailsHtml.
-    Extraire un buildFinancialSummaryTableHtml(fin) partage (pas besoin
-    de split de fichier complet).
+    buildFinancialSummaryTableHtml(fin) extrait et utilise par
+    buildPrintActivitySheetHtml et buildActivityDetailsHtml. Couvert par
+    les tests existants de test/activities-financials.test.ts (assertions
+    sur le contenu du tableau de sommaire financier), qui passent
+    toujours sans modification.
 
     Note : reservations/card.ts (509 lignes), pdf-viewer.ts (456 lignes),
     state/migrations.ts (440 lignes, chaine sequentielle de migrations

@@ -51,6 +51,26 @@ function buildBarServiceSectionHtml(reservations: any[]) {
     `;
 }
 
+// Shared by buildPrintActivitySheetHtml() and buildActivityDetailsHtml(): renders the "Sommaire
+// financier" totals table from a computeActivityFinancials() result.
+function buildFinancialSummaryTableHtml(fin: ReturnType<typeof computeActivityFinancials>) {
+  return `
+    <div class="print-sheet-section">
+      <h2>Sommaire financier</h2>
+      <table class="print-sheet-total-table">
+        <tr><td>Location des salles</td><td>${formatCurrency(fin.roomsTotal)}</td></tr>
+        <tr><td>Personnel</td><td>${formatCurrency(fin.staffTotal)}</td></tr>
+        <tr><td>Équipements</td><td>${formatCurrency(fin.servicesTotal)}</td></tr>
+        <tr><td>Autres frais</td><td>${formatCurrency(fin.feesTotal)}</td></tr>
+        <tr><td>Sous-total</td><td>${formatCurrency(fin.subtotal)}</td></tr>
+        <tr><td>TPS (5%)</td><td>${formatCurrency(fin.tps)}</td></tr>
+        <tr><td>TVQ (9,975%)</td><td>${formatCurrency(fin.tvq)}</td></tr>
+        <tr class="print-sheet-grand-total"><td>Total</td><td>${formatCurrency(fin.total)}</td></tr>
+      </table>
+    </div>
+  `;
+}
+
 // Builds the printable/PDF activity sheet's markup (client, gestionnaire, réservations, sommaire
 // financier), rendered offscreen into #print-activity-sheet and shown only via @media print.
 function buildPrintActivitySheetHtml(act: any) {
@@ -126,19 +146,7 @@ function buildPrintActivitySheetHtml(act: any) {
 
     ${buildBarServiceSectionHtml(reservations)}
 
-    <div class="print-sheet-section">
-      <h2>Sommaire financier</h2>
-      <table class="print-sheet-total-table">
-        <tr><td>Location des salles</td><td>${formatCurrency(fin.roomsTotal)}</td></tr>
-        <tr><td>Personnel</td><td>${formatCurrency(fin.staffTotal)}</td></tr>
-        <tr><td>Équipements</td><td>${formatCurrency(fin.servicesTotal)}</td></tr>
-        <tr><td>Autres frais</td><td>${formatCurrency(fin.feesTotal)}</td></tr>
-        <tr><td>Sous-total</td><td>${formatCurrency(fin.subtotal)}</td></tr>
-        <tr><td>TPS (5%)</td><td>${formatCurrency(fin.tps)}</td></tr>
-        <tr><td>TVQ (9,975%)</td><td>${formatCurrency(fin.tvq)}</td></tr>
-        <tr class="print-sheet-grand-total"><td>Total</td><td>${formatCurrency(fin.total)}</td></tr>
-      </table>
-    </div>
+    ${buildFinancialSummaryTableHtml(fin)}
   `;
 }
 
@@ -276,25 +284,7 @@ function buildActivityDetailsHtml(act: any) {
 
     ${buildBarServiceSectionHtml(reservations)}
 
-    ${
-      fin
-        ? `
-    <div class="print-sheet-section">
-      <h2>Sommaire financier</h2>
-      <table class="print-sheet-total-table">
-        <tr><td>Location des salles</td><td>${formatCurrency(fin.roomsTotal)}</td></tr>
-        <tr><td>Personnel</td><td>${formatCurrency(fin.staffTotal)}</td></tr>
-        <tr><td>Équipements</td><td>${formatCurrency(fin.servicesTotal)}</td></tr>
-        <tr><td>Autres frais</td><td>${formatCurrency(fin.feesTotal)}</td></tr>
-        <tr><td>Sous-total</td><td>${formatCurrency(fin.subtotal)}</td></tr>
-        <tr><td>TPS (5%)</td><td>${formatCurrency(fin.tps)}</td></tr>
-        <tr><td>TVQ (9,975%)</td><td>${formatCurrency(fin.tvq)}</td></tr>
-        <tr class="print-sheet-grand-total"><td>Total</td><td>${formatCurrency(fin.total)}</td></tr>
-      </table>
-    </div>
-    `
-        : ""
-    }
+    ${fin ? buildFinancialSummaryTableHtml(fin) : ""}
   `;
 }
 
