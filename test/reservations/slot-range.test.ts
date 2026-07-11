@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { dom } from "./dom-mock.ts";
+import { dom } from "../dom-mock.ts";
 
 test.after(() => dom.window.close());
 
@@ -12,8 +12,8 @@ test.after(() => dom.window.close());
   clear() { this.store = {}; }
 };
 
-import { setAppState } from "../src/state/state.ts";
-import { addReservationCard } from "../src/activities/reservations.ts";
+import { setAppState } from "../../src/state/state.ts";
+import { addReservationCard } from "../../src/activities/reservations/index.ts";
 
 function baseState(overrides: any = {}) {
   return {

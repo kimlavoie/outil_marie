@@ -1,4 +1,4 @@
-import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
+import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../../state/state.ts";
 import {
   escapeHtml,
   formatCurrency,
@@ -7,8 +7,8 @@ import {
   buildSearchableSelectHtml,
   initSearchableSelectEl,
   rejectNegativeAmountOnBlur
-} from "../utils/utils.ts";
-import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "./financials.ts";
+} from "../../utils/utils.ts";
+import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
 
 function el<T extends Element = HTMLInputElement>(id: string): T {
   return document.getElementById(id) as unknown as T;

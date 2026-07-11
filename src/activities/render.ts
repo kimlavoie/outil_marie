@@ -37,7 +37,7 @@ import {
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { openActivityDrawer, openActivityDetailsModal } from "./financials.ts";
 import { duplicateActivityAndOpen } from "./form.ts";
-import { TECHNICAL_DIRECTOR_SALARY_ID } from "./reservation-subrows.ts";
+import { TECHNICAL_DIRECTOR_SALARY_ID } from "./reservations/subrows.ts";
 
 // Typed shorthand for document.getElementById in this file's DOM-manipulation code — see
 // activities-financials.ts's `el` helper doc comment for why this cast is needed/safe.

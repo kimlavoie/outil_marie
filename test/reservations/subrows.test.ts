@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { dom } from "./dom-mock.ts";
+import { dom } from "../dom-mock.ts";
 
 test.after(() => dom.window.close());
 
@@ -12,7 +12,7 @@ test.after(() => dom.window.close());
   clear() { this.store = {}; }
 };
 
-import { setAppState } from "../src/state/state.ts";
+import { setAppState } from "../../src/state/state.ts";
 import {
   addStaffRow,
   addServiceRow,
@@ -26,7 +26,7 @@ import {
   getIncompleteRowWarnings,
   autoAddTechnicalDirectorIfNeeded,
   TECHNICAL_DIRECTOR_SALARY_ID
-} from "../src/activities/reservation-subrows.ts";
+} from "../../src/activities/reservations/subrows.ts";
 
 const SALARY_DT = {
   id: "salary-dt",

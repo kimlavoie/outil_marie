@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import "./indexeddb-mock.ts";
+import "../indexeddb-mock.ts";
 import {
   validateBackupSchema,
   getDaysSinceLastBackup,
@@ -10,8 +10,8 @@ import {
   idbGetAutoBackupHandle,
   idbSetAutoBackupHandle,
   idbClearAutoBackupHandle
-} from "../src/services/backup.ts";
-import { appState, setAppState } from "../src/state/state.ts";
+} from "../../src/services/backup/index.ts";
+import { appState, setAppState } from "../../src/state/state.ts";
 
 test("validateBackupSchema returns valid=true for correct backup structures", () => {
   const correctBackup = {

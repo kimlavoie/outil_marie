@@ -1,13 +1,13 @@
 /**
- * reservation-slots.ts - Time slot rows within a reservation card: single-row add/collect
+ * reservations/slots.ts - Time slot rows within a reservation card: single-row add/collect
  * helpers plus the "plage de jours" (date range) generator that bulk-adds slots by weekday.
  */
-import { validateDateFieldFiscalYear } from "./datepicker.ts";
-import { WEEKDAY_PILL_OPTIONS } from "./form.ts";
-import { formatDateStrLocal, parseLocalDateStr } from "../state/state.ts";
-import { generateUid, showToast, initPillToggleEl, maskDateInput } from "../utils/utils.ts";
-import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "./financials.ts";
-import { updateFormDatesHelper } from "./history.ts";
+import { validateDateFieldFiscalYear } from "../datepicker.ts";
+import { WEEKDAY_PILL_OPTIONS } from "../form.ts";
+import { formatDateStrLocal, parseLocalDateStr } from "../../state/state.ts";
+import { generateUid, showToast, initPillToggleEl, maskDateInput } from "../../utils/utils.ts";
+import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
+import { updateFormDatesHelper } from "../history.ts";
 
 function el<T extends Element = HTMLInputElement>(id: string): T {
   return document.getElementById(id) as unknown as T;

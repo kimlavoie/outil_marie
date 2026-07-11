@@ -1,9 +1,9 @@
 /**
- * backup-restore.ts - Restoring the app database from a user-provided JSON backup file: schema
+ * backup/restore.ts - Restoring the app database from a user-provided JSON backup file: schema
  * validation, a pre-restore safety snapshot, migrating the restored data to the current format,
  * and rolling back in place if that migration fails.
  */
-import { logError } from "../utils/logger.ts";
+import { logError } from "../../utils/logger.ts";
 import {
   appState,
   setAppState,
@@ -13,10 +13,10 @@ import {
   migrateSalariesConfig,
   migrateActivities,
   clearAllActivityVersionsFromDb
-} from "../state/state.ts";
-import { showToast } from "../utils/utils.ts";
-import { validateBackupSchema } from "./backup-validation.ts";
-import { checkBackupReminder, renderSafetyBackupsList } from "./backup-reminder.ts";
+} from "../../state/state.ts";
+import { showToast } from "../../utils/utils.ts";
+import { validateBackupSchema } from "./validation.ts";
+import { checkBackupReminder, renderSafetyBackupsList } from "./reminder.ts";
 
 function handleJsonBackupFile(file: File) {
   const reader = new FileReader();
@@ -99,7 +99,7 @@ function handleJsonBackupFile(file: File) {
           logError("backup", "suppression des versions lors de la restauration", err);
         }
         await saveDatabase();
-        const { applyTheme, renderAll } = await import("../navigation.ts");
+        const { applyTheme, renderAll } = await import("../../navigation.ts");
         applyTheme(appState.settings.theme || "dark");
         renderAll();
         checkBackupReminder();

@@ -4,11 +4,11 @@
  * picked, on every saveDatabase(). The FileSystemFileHandle itself is persisted in a tiny
  * IndexedDB store (not used for app data) so the connection survives page reloads.
  */
-import { logError } from "../utils/logger.ts";
-import { openVersionedDb } from "../state/db-utils.ts";
-import { appState, saveAppStateToDb } from "../state/state.ts";
-import { showToast } from "../utils/utils.ts";
-import { checkBackupReminder, renderBackupView } from "./backup-reminder.ts";
+import { logError } from "../../utils/logger.ts";
+import { openVersionedDb } from "../../state/db-utils.ts";
+import { appState, saveAppStateToDb } from "../../state/state.ts";
+import { showToast } from "../../utils/utils.ts";
+import { checkBackupReminder, renderBackupView } from "./reminder.ts";
 
 const AUTO_BACKUP_DB_NAME = "outil_marie_autobackup";
 const AUTO_BACKUP_STORE = "handles";

@@ -20,7 +20,7 @@ import { renderDashboard, renderDashboardCharts } from "./components/dashboard-m
 import { renderReconciliation } from "./components/reconciliation-mount.ts";
 import { reconciliationState, reconcileLedger } from "./services/reconciliation.ts";
 import { renderAccountReport } from "./services/account-report.ts";
-import { exportToExcel, renderBackupView, checkBackupReminder } from "./services/backup.ts";
+import { exportToExcel, renderBackupView, checkBackupReminder } from "./services/backup/index.ts";
 
 function applyTheme(theme: string) {
   document.documentElement.setAttribute("data-theme", theme);

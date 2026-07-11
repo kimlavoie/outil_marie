@@ -6,7 +6,7 @@
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
 import { formatCurrency } from "../utils/utils.ts";
 import { addDistributionRow, updateDistributionTotal } from "./financials.ts";
-import { collectReservationsFromForm, getAggregateEventDates } from "./reservations.ts";
+import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
 import { commitActivityPatch } from "./form-state-bar.ts";
 import { deriveActivityState } from "./render.ts";
 

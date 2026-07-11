@@ -1,24 +1,23 @@
 /**
- * reservations.ts - Room reservation cards: init/collection entry points. Split into
- * reservation-slots.ts (créneau rows + date-range generator), reservation-tariff.ts (pricing
- * grid resolution) and reservation-card.ts (the card builder itself) — this file re-exports all
- * of them so existing imports keep working, and keeps the section init + form-collection logic
- * that ties them together.
+ * reservations/index.ts - Room reservation cards: init/collection entry points. Split into
+ * slots.ts (créneau rows + date-range generator), tariff.ts (pricing grid resolution) and
+ * card.ts (the card builder itself) — this file re-exports all of them so existing imports
+ * keep working, and keeps the section init + form-collection logic that ties them together.
  * Part 3/5 of the activities module (see render.ts for context).
  */
-import { appState, getActivePricingGrid } from "../state/state.ts";
-import { OTHER_ROOM_VALUE, getExclusivePillValueEl } from "../utils/utils.ts";
-import { updateSubmissionFinancialSummary } from "./financials.ts";
-import { updateFormDatesHelper } from "./history.ts";
+import { appState, getActivePricingGrid } from "../../state/state.ts";
+import { OTHER_ROOM_VALUE, getExclusivePillValueEl } from "../../utils/utils.ts";
+import { updateSubmissionFinancialSummary } from "../financials.ts";
+import { updateFormDatesHelper } from "../history.ts";
 import {
   collectStaffFromForm,
   collectServicesFromForm,
   collectFeesFromForm,
   resetIncompleteRowWarnings,
   pushIncompleteRowWarning
-} from "./reservation-subrows.ts";
-import { addSlotRow, collectSlotsFromCard } from "./reservation-slots.ts";
-import { addReservationCard } from "./reservation-card.ts";
+} from "./subrows.ts";
+import { addSlotRow, collectSlotsFromCard } from "./slots.ts";
+import { addReservationCard } from "./card.ts";
 
 function el<T extends Element = HTMLInputElement>(id: string): T {
   return document.getElementById(id) as unknown as T;
@@ -167,12 +166,12 @@ function getAggregateEventDates(reservations: any[]) {
   };
 }
 
-export { addSlotRow, collectSlotsFromCard, addNextSlotRow, buildSlotRangeGeneratorHtml, wireSlotRangeGenerator } from "./reservation-slots.ts";
+export { addSlotRow, collectSlotsFromCard, addNextSlotRow, buildSlotRangeGeneratorHtml, wireSlotRangeGenerator } from "./slots.ts";
 export {
   buildTariffParameterOptionsHtml,
   buildTariffClientTypeOptionsHtml,
   updateResolvedPriceDisplay,
   refreshReservationTariffSelect
-} from "./reservation-tariff.ts";
-export { buildRoomSelectItems, buildRoomDateTimeFieldHtml, buildDatePeriodFieldHtml, addReservationCard } from "./reservation-card.ts";
+} from "./tariff.ts";
+export { buildRoomSelectItems, buildRoomDateTimeFieldHtml, buildDatePeriodFieldHtml, addReservationCard } from "./card.ts";
 export { getAggregateEventDates, initReservationsSection, collectReservationsFromForm };

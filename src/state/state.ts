@@ -2,7 +2,7 @@ import { generateUid, showToast } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
 
 import { DEFAULT_CONFIG } from "./config-defaults.ts";
-import { checkBackupReminder, scheduleAutoBackupWrite } from "../services/backup.ts";
+import { checkBackupReminder, scheduleAutoBackupWrite } from "../services/backup/index.ts";
 
 import { type AppState, appState, setAppState } from "./store.ts";
 import { getDefaultFiscalYear } from "./date-helpers.ts";

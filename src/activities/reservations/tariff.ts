@@ -1,11 +1,11 @@
 /**
- * reservation-tariff.ts - Resolves a reservation card's room tariff (parameter x client type)
+ * reservations/tariff.ts - Resolves a reservation card's room tariff (parameter x client type)
  * against the room's active pricing grid: option list builders, the resolved-price/stale-tariff
  * display, and re-populating the parameter/client-type selects when the room or date changes.
  */
-import { appState, getActivePricingGrid } from "../state/state.ts";
-import { escapeHtml, formatCurrency, OTHER_ROOM_VALUE } from "../utils/utils.ts";
-import { collectSlotsFromCard } from "./reservation-slots.ts";
+import { appState, getActivePricingGrid } from "../../state/state.ts";
+import { escapeHtml, formatCurrency, OTHER_ROOM_VALUE } from "../../utils/utils.ts";
+import { collectSlotsFromCard } from "./slots.ts";
 
 function buildTariffParameterOptionsHtml(roomName: string, dateStr: string, selectedTariffId: string) {
   if (!roomName || roomName === OTHER_ROOM_VALUE) return "";

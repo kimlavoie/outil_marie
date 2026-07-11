@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_CONFIG } from "../src/state/config-defaults.ts";
 import { migrateRoomsConfig, migrateSalariesConfig, migrateServicesConfig } from "../src/state/migrations.ts";
-import { validateBackupSchema } from "../src/services/backup.ts";
+import { validateBackupSchema } from "../src/services/backup/index.ts";
 
 // Guards against the embedded seed config (config-defaults.ts) silently drifting out of sync
 // with the shape migrations.ts produces and validateBackupSchema.ts expects, since nothing else

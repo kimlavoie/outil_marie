@@ -1,10 +1,10 @@
 /**
- * reservation-card.ts - Builds and wires a single reservation card in the activity form: room
+ * reservations/card.ts - Builds and wires a single reservation card in the activity form: room
  * selection, tariff, montage/démontage, créneaux, technical services, bar service, host duties,
  * and its staff/equipment/fees sub-lists.
  */
-import { initDatepickerWrapper } from "./datepicker.ts";
-import { appState, TECHNICAL_SERVICES, BAR_DRINK_TYPES, BAR_SERVICE_TYPES, HOST_DUTY_OPTIONS } from "../state/state.ts";
+import { initDatepickerWrapper } from "../datepicker.ts";
+import { appState, TECHNICAL_SERVICES, BAR_DRINK_TYPES, BAR_SERVICE_TYPES, HOST_DUTY_OPTIONS } from "../../state/state.ts";
 import {
   escapeHtml,
   generateUid,
@@ -16,18 +16,18 @@ import {
   initExclusivePillToggleEl,
   setPillGroupActiveEl,
   buildGlAccountOptionsHtml
-} from "../utils/utils.ts";
-import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "./financials.ts";
-import { updateFormDatesHelper } from "./history.ts";
+} from "../../utils/utils.ts";
+import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
+import { updateFormDatesHelper } from "../history.ts";
 import {
   addStaffRow,
   addServiceRow,
   addFeeRow,
   autoAddLinkedStaffAndFees,
   autoAddTechnicalDirectorIfNeeded
-} from "./reservation-subrows.ts";
-import { addSlotRow, addNextSlotRow, buildSlotRangeGeneratorHtml, wireSlotRangeGenerator } from "./reservation-slots.ts";
-import { buildTariffClientTypeOptionsHtml, updateResolvedPriceDisplay, refreshReservationTariffSelect } from "./reservation-tariff.ts";
+} from "./subrows.ts";
+import { addSlotRow, addNextSlotRow, buildSlotRangeGeneratorHtml, wireSlotRangeGenerator } from "./slots.ts";
+import { buildTariffClientTypeOptionsHtml, updateResolvedPriceDisplay, refreshReservationTariffSelect } from "./tariff.ts";
 
 function el<T extends Element = HTMLInputElement>(id: string): T {
   return document.getElementById(id) as unknown as T;

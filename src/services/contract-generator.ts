@@ -19,7 +19,7 @@
  */
 import JSZip from "jszip";
 import { computeActivityFinancials } from "../activities/financials.ts";
-import { getAggregateEventDates } from "../activities/reservations.ts";
+import { getAggregateEventDates } from "../activities/reservations/index.ts";
 import { getReservationRoomLabel, showToast } from "../utils/utils.ts";
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
 

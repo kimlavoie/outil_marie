@@ -5,8 +5,8 @@
  */
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
 import { formatCurrency, getRoomsTariffTotal, elById } from "../utils/utils.ts";
-import { collectReservationsFromForm, getAggregateEventDates } from "./reservations.ts";
-import { updateStaffRowSubtotal, updateServiceRowSubtotal } from "./reservation-subrows.ts";
+import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
+import { updateStaffRowSubtotal, updateServiceRowSubtotal } from "./reservations/subrows.ts";
 
 // Computes the pre-tax revenue subtotal (rooms + personnel + équipements + autres frais) from
 // the live form. Shared by updateSubmissionFinancialSummary() (which adds TPS/TVQ on top) and

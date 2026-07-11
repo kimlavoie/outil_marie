@@ -20,7 +20,7 @@ import { openActivityDrawer, printActivitySheet, autoSaveActivityForm, cancelAct
 import { undoActivityFormChange, redoActivityFormChange, loadAndRenderActivityHistory, updateFormDatesHelper } from "./history.ts";
 import { submitActivityForm } from "./history.ts";
 import { renderFileLinkStatus } from "./file-links.ts";
-import { addReservationCard, addSlotRow, initReservationsSection } from "./reservations.ts";
+import { addReservationCard, addSlotRow, initReservationsSection } from "./reservations/index.ts";
 
 import { initNewActivityModal, openNewActivityModal, closeNewActivityModal, createActivity, createDraftActivity, duplicateActivityAndOpen } from "./new-activity-modal.ts";
 import { applyActivityFormMode, getActivityFormMode, initActivityModeToggle, switchActivityTab, renderActivityStateBar, updateFormTabIndicators, commitActivityPatch } from "./form-state-bar.ts";

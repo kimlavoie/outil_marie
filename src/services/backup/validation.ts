@@ -1,9 +1,9 @@
 /**
- * backup-validation.ts - Deep schema validation for a restored JSON backup, so a corrupted or
+ * backup/validation.ts - Deep schema validation for a restored JSON backup, so a corrupted or
  * hand-edited file can't slip malformed data past validation and only fail later as a silent
  * rendering or billing crash.
  */
-import { isPlainObject, isNonEmptyString, isFiniteNumber, validateRules } from "../utils/validation.ts";
+import { isPlainObject, isNonEmptyString, isFiniteNumber, validateRules } from "../../utils/validation.ts";
 
 // True if `arr` isn't an array (an earlier rule already flags that) or every item satisfies
 // `predicate` — lets the item-shape rules below stay no-ops instead of throwing when the

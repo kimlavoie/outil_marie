@@ -1,10 +1,10 @@
 /**
- * backup-reminder.ts - "Have you backed up recently?" banner/badge logic, the list of automatic
+ * backup/reminder.ts - "Have you backed up recently?" banner/badge logic, the list of automatic
  * safety snapshots taken before a destructive operation, and diagnostic log export.
  */
-import { appState, getSafetyBackupsFromDb } from "../state/state.ts";
-import { logError, getLogHistory } from "../utils/logger.ts";
-import { showToast } from "../utils/utils.ts";
+import { appState, getSafetyBackupsFromDb } from "../../state/state.ts";
+import { logError, getLogHistory } from "../../utils/logger.ts";
+import { showToast } from "../../utils/utils.ts";
 
 // Backup reminder helpers and views
 function getDaysSinceLastBackup(): number | null {

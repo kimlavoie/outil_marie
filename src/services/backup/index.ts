@@ -1,16 +1,16 @@
 /**
- * backup.ts - Backup/restore (JSON) and Excel export controllers: wires up the Sauvegarde & Export
- * view's DOM handlers. Split into auto-backup.ts (File System Access API auto-save),
- * backup-validation.ts (restored JSON schema checks), backup-restore.ts (applying a restore),
- * backup-reminder.ts (reminder banner/safety snapshots/diagnostic logs) and excel-export.ts
+ * backup/index.ts - Backup/restore (JSON) and Excel export controllers: wires up the
+ * Sauvegarde & Export view's DOM handlers. Split into auto-backup.ts (File System Access API
+ * auto-save), validation.ts (restored JSON schema checks), restore.ts (applying a restore),
+ * reminder.ts (reminder banner/safety snapshots/diagnostic logs) and ../excel-export.ts
  * (the xlsx report) — this file re-exports all of them so existing imports keep working.
  */
-import { logError } from "../utils/logger.ts";
-import { appState, saveDatabase, saveSafetyBackupToDb, seedDatabase } from "../state/state.ts";
-import { showToast } from "../utils/utils.ts";
-import { exportToExcel } from "./excel-export.ts";
-import { handleJsonBackupFile } from "./backup-restore.ts";
-import { checkBackupReminder, renderBackupView, renderSafetyBackupsList, exportDiagnosticLogs } from "./backup-reminder.ts";
+import { logError } from "../../utils/logger.ts";
+import { appState, saveDatabase, saveSafetyBackupToDb, seedDatabase } from "../../state/state.ts";
+import { showToast } from "../../utils/utils.ts";
+import { exportToExcel } from "../excel-export.ts";
+import { handleJsonBackupFile } from "./restore.ts";
+import { checkBackupReminder, renderBackupView, renderSafetyBackupsList, exportDiagnosticLogs } from "./reminder.ts";
 import { initAutoBackup, connectAutoBackupFile, reconnectAutoBackupPermission, disconnectAutoBackup } from "./auto-backup.ts";
 
 function initBackupHandlers() {
@@ -89,7 +89,7 @@ function initBackupHandlers() {
       renderSafetyBackupsList();
 
       await seedDatabase();
-      const { applyTheme, renderAll } = await import("../navigation.ts");
+      const { applyTheme, renderAll } = await import("../../navigation.ts");
       applyTheme("dark");
       renderAll();
       checkBackupReminder();
@@ -117,7 +117,7 @@ function initBackupHandlers() {
   const bannerActionBtn = document.getElementById("backup-banner-action-btn");
   if (bannerActionBtn) {
     bannerActionBtn.addEventListener("click", () => {
-      import("../navigation.ts").then(m => m.switchToView("backup"));
+      import("../../navigation.ts").then(m => m.switchToView("backup"));
     });
   }
 
@@ -142,9 +142,9 @@ function initBackupHandlers() {
   }
 }
 
-export { validateBackupSchema } from "./backup-validation.ts";
-export { exportToExcel } from "./excel-export.ts";
-export { handleJsonBackupFile } from "./backup-restore.ts";
+export { validateBackupSchema } from "./validation.ts";
+export { exportToExcel } from "../excel-export.ts";
+export { handleJsonBackupFile } from "./restore.ts";
 export {
   getDaysSinceLastBackup,
   formatLocalDateToFrench,
@@ -153,7 +153,7 @@ export {
   renderSafetyBackupsList,
   downloadSafetyBackup,
   exportDiagnosticLogs
-} from "./backup-reminder.ts";
+} from "./reminder.ts";
 export {
   openAutoBackupDb,
   idbGetAutoBackupHandle,
