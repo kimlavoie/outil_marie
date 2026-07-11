@@ -28,6 +28,14 @@ function exportToExcel() {
 
 function runExportToExcel(getExcelColName: (colIdx: number) => string) {
   try {
+    if (typeof XLSX === "undefined" || !XLSX?.utils?.book_new) {
+      throw new Error("La librairie Excel (XLSX) n'a pas pu être chargée.");
+    }
+    if (!appState.settings.accounts || appState.settings.accounts.length === 0) {
+      showToast("Aucun compte configuré : ajoutez des comptes dans les paramètres avant d'exporter.", "error", 6000);
+      return;
+    }
+
     const wb = XLSX.utils.book_new();
 
     // Sheet 1: ACTIVITÉS

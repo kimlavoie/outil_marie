@@ -7,7 +7,7 @@
  * imports the engine from here rather than the other way around.
  */
 import { validateRules } from "../utils/validation.ts";
-import { logError } from "../utils/logger.ts";
+import { logError, logWarn } from "../utils/logger.ts";
 import { textSimilarity } from "../utils/fuzzy-match.ts";
 import {
   appState,
@@ -178,7 +178,18 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
       };
     }
 
-    ledgerGroups[key].montant_somme += parseFloat(tx["Montant courant"]) || 0;
+    const rawMontant = tx["Montant courant"];
+    const parsedMontant = parseFloat(rawMontant);
+    if (isNaN(parsedMontant) && String(rawMontant ?? "").trim() !== "") {
+      // A non-numeric "Montant courant" would otherwise silently fall back to 0 below,
+      // understating the reconciled total without any indication something was skipped.
+      logWarn("reconciliation", "montant illisible ignoré dans une ligne du grand livre", {
+        account_code: acc,
+        reference: refKey,
+        raw_value: rawMontant
+      });
+    }
+    ledgerGroups[key].montant_somme += parsedMontant || 0;
     ledgerGroups[key].txs.push(tx);
   });
 

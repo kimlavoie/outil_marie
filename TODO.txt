@@ -1,0 +1,80 @@
+TODO - Ameliorations Outil Marie
+(genere le 2026-07-11 suite a une revue de code)
+
+=======================================================
+FIABILITE (priorite haute)
+=======================================================
+
+[x] Rollback automatique si la migration echoue pendant une restauration
+    Fichier : src/services/backup/restore.ts (lignes 81-94)
+    Deja en place (setAppState(preRestoreSnapshot) + toast d'erreur) -
+    verifie le 2026-07-11, aucun changement necessaire.
+
+[x] Garde-fous dans l'export Excel
+    Fichier : src/services/excel-export.ts
+    Ajout d'une verification que XLSX est bien charge et qu'au moins un
+    compte est configure avant de generer le classeur (sinon message
+    d'erreur clair au lieu d'un plantage/export vide).
+
+[x] Montants invalides en reconciliation
+    Fichier : src/services/reconciliation.ts
+    Un "Montant courant" non numerique loggue desormais un avertissement
+    (logWarn) au lieu d'etre silencieusement remplace par 0.
+    Note : le regroupement par cle compte+reference est un comportement
+    voulu (plusieurs transactions pour une meme facture doivent
+    s'additionner), donc pas de "detection de doublons" a ajouter la.
+
+=======================================================
+TESTS (trous a combler)
+=======================================================
+
+[ ] Ajouter des tests pour src/services/excel-export.ts
+[ ] Ajouter des tests pour src/services/account-report.ts
+[ ] Ajouter des tests pour src/services/backup/reminder.ts
+[ ] Ajouter des tests pour src/services/backup/validation.ts
+    (prioritaire : c'est la validation utilisee lors d'une restauration)
+[ ] Ajouter des tests pour src/activities/billing-tab.ts
+[ ] Ajouter des tests pour src/activities/file-links.ts
+[ ] Configurer un outil de couverture de tests (ex. c8) pour identifier
+    objectivement les zones non testees
+
+=======================================================
+ARCHITECTURE (dette technique, non bloquant)
+=======================================================
+
+[ ] Decouper src/services/contract-generator.ts (891 lignes)
+    Separer la logique de generation de document de la logique de
+    reprise de styles Excel (S style map, normalizeGridBorders).
+
+[ ] Decouper src/activities/render.ts (735 lignes)
+    Extraire les actions groupees (bulk actions) et le menu contextuel
+    dans des modules dedies.
+
+[ ] Decouper src/utils/utils.ts (704 lignes, fourre-tout)
+    Extraire formatage (formatCurrency, escapeHtml), aides DOM, et
+    utilitaires de selection multiple dans des modules separes.
+
+[ ] Decouper src/navigation.ts (664 lignes)
+    Extraire la recherche globale et l'acces rapide dans des modules
+    dedies.
+
+=======================================================
+PRODUIT
+=======================================================
+
+[ ] Tracabilite utilisateur sur les decisions de reconciliation
+    Fichier : src/services/reconciliation.ts
+    Actuellement seul un timestamp est enregistre, pas l'identite de
+    la personne ayant pris la decision.
+
+[ ] Apercu avant telechargement pour la generation de contrat/soumission
+    Fichier : src/services/contract-generator.ts
+
+[ ] Sauvegarde automatique planifiee (au-dela du simple rappel)
+    Fichier : src/services/backup/reminder.ts et auto-backup.ts
+
+[ ] Rendre les annees fiscales configurables (actuellement codees en dur)
+    Fichier : src/navigation.ts (ligne 645)
+
+[ ] Regler le TODO existant sur les tarifs de salle obsoletes
+    Fichier : src/activities/reservations/tariff.ts (ligne 83)
