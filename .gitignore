@@ -3,4 +3,5 @@ exemple_validation.xls
 node_modules/
 dist/
 .vite/
+coverage/
 /CONTRAT.xlsx

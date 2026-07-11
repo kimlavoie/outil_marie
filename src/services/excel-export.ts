@@ -6,20 +6,22 @@ import { logError } from "../utils/logger.ts";
 import { appState, getFiscalYear, getQuarterNumber, getActivePricingGrid, getFlattenedRoomTarifs } from "../state/state.ts";
 import { showToast, showLoadingOverlay, hideLoadingOverlay, getRoomsTariffTotal, getActivityReferences, getReservationRoomLabel } from "../utils/utils.ts";
 
+// Converts a 1-based column index to its Excel letter (1 -> "A", 27 -> "AA"), exported alongside
+// runExportToExcel so both can be exercised directly by tests without going through the
+// setTimeout-deferred exportToExcel() entry point.
+function getExcelColName(colIdx: number) {
+  let temp,
+    letter = "";
+  while (colIdx > 0) {
+    temp = (colIdx - 1) % 26;
+    letter = String.fromCharCode(65 + temp) + letter;
+    colIdx = (colIdx - temp - 1) / 26;
+  }
+  return letter;
+}
+
 // Generate structured excel matching the original template
 function exportToExcel() {
-  // Helper to convert column index to letter
-  function getExcelColName(colIdx: number) {
-    let temp,
-      letter = "";
-    while (colIdx > 0) {
-      temp = (colIdx - 1) % 26;
-      letter = String.fromCharCode(65 + temp) + letter;
-      colIdx = (colIdx - temp - 1) / 26;
-    }
-    return letter;
-  }
-
   showLoadingOverlay("Génération de l'export Excel...");
   // Deferred so the overlay actually paints before this synchronous, potentially long-running
   // workbook generation blocks the main thread.
@@ -189,4 +191,4 @@ function runExportToExcel(getExcelColName: (colIdx: number) => string) {
   }
 }
 
-export { exportToExcel };
+export { exportToExcel, getExcelColName, runExportToExcel };

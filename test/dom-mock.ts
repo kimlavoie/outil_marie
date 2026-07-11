@@ -39,7 +39,7 @@ function fixSelects(root: any) {
 
 // Patch insertAdjacentHTML
 const origInsertAdjacentHTML = window.Element.prototype.insertAdjacentHTML;
-window.Element.prototype.insertAdjacentHTML = function(position: string, text: string) {
+window.Element.prototype.insertAdjacentHTML = function(position: InsertPosition, text: string) {
   origInsertAdjacentHTML.call(this, position, text);
   fixSelects(this);
 };

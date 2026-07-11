@@ -1,0 +1,147 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { dom } from "./dom-mock.ts";
+
+test.after(() => dom.window.close());
+
+// generateBillingLines auto-populates distribution rows from whatever's currently on the
+// activity form (room tariffs, staff, services, autres frais) — this exercises the staff/
+// services/fees line-generation directly against a hand-built DOM fixture (mirroring the real
+// markup produced by src/activities/reservations/subrows.ts) rather than driving the full
+// reservation-card UI, since only these three lists (and #form-distribution-list) matter here.
+import { appState } from "../src/state/state.ts";
+import { generateBillingLines } from "../src/activities/billing-tab.ts";
+
+function baseSettings(overrides: any = {}) {
+  return {
+    theme: "dark",
+    rooms: [],
+    departments: [],
+    accounts: [],
+    last_backup_date: "",
+    backup_reminder_days: 7,
+    salaries: [
+      {
+        id: "sal1",
+        job: "Technicien",
+        tarifs: [{ id: "tarif1", gl_account_code: "GL-STAFF", rate_versions: [{ effective_date: "", rate: 20, overtime_rate: 30 }] }]
+      }
+    ],
+    services: [
+      {
+        id: "svc1",
+        name: "Projecteur",
+        type: "hourly",
+        tarifs: [{ id: "svctarif1", gl_account_code: "GL-SERVICE", rate_versions: [{ effective_date: "", rate: 10 }] }]
+      }
+    ],
+    global_tasks: [],
+    schedulable_tasks: [],
+    ...overrides
+  };
+}
+
+function setupSkeleton() {
+  document.body.innerHTML = `
+    <div id="form-activity-reservations">
+      <div class="room-staff-list">
+        <div class="distribution-row-wrapper">
+          <div class="distribution-row">
+            <select class="staff-salary-select"><option value="sal1" selected>Technicien</option></select>
+            <select class="staff-tarif-select"><option value="tarif1" selected>Tarif régulier</option></select>
+            <input class="staff-count-input" value="2">
+            <input class="staff-hours-input" value="4">
+            <input class="staff-overtime-hours-input" value="1">
+          </div>
+        </div>
+      </div>
+      <div class="room-services-list">
+        <div class="distribution-row-wrapper">
+          <div class="distribution-row">
+            <select class="service-select"><option value="svc1" selected>Projecteur</option></select>
+            <select class="service-tarif-select"><option value="svctarif1" selected>Tarif régulier</option></select>
+            <input class="service-count-input" value="2">
+            <input class="service-hours-input" value="3">
+          </div>
+        </div>
+      </div>
+      <div class="room-fees-list">
+        <div class="distribution-row">
+          <div class="fee-gl-select-wrapper"><input class="searchable-select-value" value="GL-FEE"></div>
+          <input class="fee-amount-input" value="25">
+          <input class="fee-desc-input" value="Frais divers">
+        </div>
+      </div>
+    </div>
+    <div id="form-distribution-list"></div>
+  `;
+}
+
+function distributionRows() {
+  return Array.from(document.querySelectorAll("#form-distribution-list .distribution-row")).map(row => ({
+    account: (row.querySelector(".dist-account-select-wrapper .searchable-select-value") as HTMLInputElement | null)?.value ?? null,
+    amount: (row.querySelector(".dist-amount-input") as HTMLInputElement | null)?.value ?? null,
+    details: (row.querySelector(".dist-details-input") as HTMLInputElement | null)?.value ?? null
+  }));
+}
+
+test.beforeEach(() => {
+  appState.settings = baseSettings();
+  appState.activities = [];
+  setupSkeleton();
+  (globalThis as any).confirm = () => true;
+});
+
+test("generateBillingLines adds a staff line costing (rate x hours + overtime rate x overtime hours) x count", () => {
+  generateBillingLines({ distributions: [] });
+
+  const rows = distributionRows();
+  // (20 * 4 * 2) + (30 * 1 * 2) = 160 + 60 = 220
+  const staffRow = rows.find(r => r.details && r.details.includes("Technicien"));
+  assert.ok(staffRow, "expected a staff distribution row");
+  assert.equal(staffRow!.amount, "220");
+});
+
+test("generateBillingLines adds an hourly service line costing rate x hours x count", () => {
+  generateBillingLines({ distributions: [] });
+
+  const rows = distributionRows();
+  // 10 * 3 * 2 = 60
+  const serviceRow = rows.find(r => r.details && r.details.includes("Projecteur"));
+  assert.ok(serviceRow, "expected a service distribution row");
+  assert.equal(serviceRow!.amount, "60");
+});
+
+test("generateBillingLines carries over an 'autre frais' row as-is (account/amount/description)", () => {
+  generateBillingLines({ distributions: [] });
+
+  const rows = distributionRows();
+  const feeRow = rows.find(r => r.details === "Frais divers");
+  assert.ok(feeRow, "expected the autre-frais distribution row");
+  assert.equal(feeRow!.amount, "25");
+});
+
+test("generateBillingLines skips a staff/service line entirely when its computed amount is 0", () => {
+  (document.querySelector(".staff-hours-input") as HTMLInputElement).value = "0";
+  (document.querySelector(".staff-overtime-hours-input") as HTMLInputElement).value = "0";
+  (document.querySelector(".service-hours-input") as HTMLInputElement).value = "0";
+
+  generateBillingLines({ distributions: [] });
+
+  const rows = distributionRows();
+  assert.equal(rows.some(r => r.details && r.details.includes("Technicien")), false);
+  assert.equal(rows.some(r => r.details && r.details.includes("Projecteur")), false);
+  // The fee line is unaffected and still generated.
+  assert.equal(rows.some(r => r.details === "Frais divers"), true);
+});
+
+test("generateBillingLines asks for confirmation before replacing existing distribution lines, and aborts if declined", () => {
+  (globalThis as any).confirm = () => false;
+  const existing = { id: "act-1", distributions: [{ account_code: "GL-OLD", amount: 10 }] };
+
+  generateBillingLines(existing);
+
+  // Declined: the pre-existing markup (empty #form-distribution-list, since the skeleton never
+  // called addDistributionRow) must be left untouched rather than regenerated.
+  assert.equal(document.querySelectorAll("#form-distribution-list .distribution-row").length, 0);
+});

@@ -567,4 +567,4 @@ async function renderXlsxPreview(kind: "submission" | "contract", act: any) {
   }
 }
 
-export { renderFileLinkStatus, pickAndLinkFile, openLinkedFile, renderPdfPreview, renderXlsxPreview };
+export { renderFileLinkStatus, pickAndLinkFile, openLinkedFile, renderPdfPreview, renderXlsxPreview, idbSetFileLink, idbGetFileLink };
