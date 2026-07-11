@@ -1,6 +1,5 @@
 /**
- * activities-render.ts - Activities list view: table state, filtering/sorting,
- * row rendering, and bulk selection actions.
+ * activities-render.ts - Activities list view: table state, filtering/sorting, and row rendering.
  * Part 1/5 of the activities module (split from a single 3400-line file for
  * maintainability); see activities-form.js, activities-reservations.js,
  * activities-financials.js, activities-history.js for the rest.
@@ -11,17 +10,21 @@
  * React conversion here would need to touch both of those before their own turn in Phase 4, so —
  * like js/datepicker.ts, js/activities-file-links.ts, js/activities-history.ts and
  * js/activities-financials.ts — this stays a plain TS module for now.
+ *
+ * Also a barrel re-exporting context-menu.ts (the row right-click menu) and bulk-actions.ts (the
+ * floating multi-select actions bar) under this original shared import path (the same pattern
+ * used by src/services/backup/index.ts and src/activities/reservations/index.ts) — split out
+ * because the original file mixed the table itself with those two largely independent UI pieces.
+ * Both submodules import activitiesState/renderActivities back from here — a real circular
+ * import, safe since nothing runs during either module's top-level evaluation, same as the other
+ * circular imports already in this codebase (e.g. utils.ts <-> state.ts).
  */
 import {
   appState,
   getFiscalYear,
   getQuarterNumber,
   parseLocalDateStr,
-  saveDatabase,
-  saveDatabaseOrRollback,
-  saveUiState,
-  isFavoriteActivity,
-  toggleFavoriteActivity
+  saveUiState
 } from "../state/state.ts";
 import {
   getReservationRoomAbbreviation,
@@ -31,13 +34,13 @@ import {
   formatCurrency,
   calculateDaysCount,
   renderPaginationBar,
-  getMultiSelectValues,
-  showToast
+  getMultiSelectValues
 } from "../utils/utils.ts";
-import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
-import { openActivityDrawer, openActivityDetailsModal } from "./financials.ts";
-import { duplicateActivityAndOpen } from "./form.ts";
+import { reconciliationState } from "../services/reconciliation.ts";
+import { openActivityDrawer } from "./financials.ts";
 import { TECHNICAL_DIRECTOR_SALARY_ID } from "./reservations/subrows.ts";
+import { showActivityContextMenu } from "./context-menu.ts";
+import { updateBulkActionsBar } from "./bulk-actions.ts";
 
 // Typed shorthand for document.getElementById in this file's DOM-manipulation code — see
 // activities-financials.ts's `el` helper doc comment for why this cast is needed/safe.
@@ -143,110 +146,6 @@ function buildProgressBarHtml(percent: number) {
       <div class="progress-bar-fill ${percent >= 100 ? "complete" : ""}" style="width: ${percent}%;"></div>
     </div>
   `;
-}
-
-// Right-click context menu for activity row actions (favorite, open in new tab, view details,
-// duplicate, delete) — replaces the dedicated "Actions" column to save horizontal space.
-function closeActivityContextMenu() {
-  const existing = document.getElementById("activity-context-menu");
-  if (existing) existing.remove();
-}
-
-function showActivityContextMenu(e: MouseEvent, id: string) {
-  closeActivityContextMenu();
-
-  const act = appState.activities.find((a: any) => a.id === id);
-  if (!act) return;
-  const isFilled = act.name.trim() !== "";
-
-  const items: { label: string; danger?: boolean; onClick: () => void }[] = [];
-
-  if (isFilled) {
-    items.push({
-      label: isFavoriteActivity(id) ? "Retirer des accès rapides" : "Ajouter aux accès rapides",
-      onClick: () => {
-        toggleFavoriteActivity(id);
-        renderActivities();
-        // Dynamic import: navigation.js pulls in the .tsx views (Paramètres/Tableau de bord/...),
-        // and this module must stay importable by plain `node --test` (Node can't load .tsx).
-        import("../navigation.ts").then(m => m.renderQuickAccessAll());
-      }
-    });
-    items.push({
-      label: "Ouvrir dans un nouvel onglet",
-      onClick: () => {
-        const url = new URL(window.location.href);
-        url.search = `?activity=${encodeURIComponent(id)}`;
-        window.open(url.toString(), "_blank");
-      }
-    });
-    items.push({
-      label: "Voir les détails",
-      onClick: () => openActivityDetailsModal(id)
-    });
-    items.push({
-      label: "Dupliquer",
-      onClick: () => duplicateActivityAndOpen(id)
-    });
-  }
-
-  items.push({
-    label: "Supprimer",
-    danger: true,
-    onClick: () => {
-      if (confirm(`Voulez-vous vraiment supprimer l'activité ${id} ?`)) {
-        const target = appState.activities.find((a: any) => a.id === id);
-        const prevDeleted = target?.deleted;
-        const prevFavorites = appState.favorites ? [...appState.favorites] : [];
-        if (target) {
-          target.deleted = true;
-        }
-        appState.favorites = (appState.favorites || []).filter((f: any) => f !== id);
-        saveDatabaseOrRollback(
-          () => {
-            if (target) target.deleted = prevDeleted;
-            appState.favorites = prevFavorites;
-          },
-          "La suppression n'a pas été enregistrée. Réessayez."
-        ).then(() => {
-          if (reconciliationState.ledgerTransactions.length > 0) {
-            reconcileLedger();
-          }
-          import("../navigation.ts").then(m => m.renderAll());
-        });
-      }
-    }
-  });
-
-  const menu = document.createElement("div");
-  menu.id = "activity-context-menu";
-  menu.className = "row-actions-menu";
-  menu.style.position = "fixed";
-  menu.style.left = `${e.clientX}px`;
-  menu.style.top = `${e.clientY}px`;
-
-  items.forEach(item => {
-    const btn = document.createElement("button");
-    btn.className = `row-actions-item${item.danger ? " danger" : ""}`;
-    btn.textContent = item.label;
-    btn.addEventListener("click", ev => {
-      ev.stopPropagation();
-      closeActivityContextMenu();
-      item.onClick();
-    });
-    menu.appendChild(btn);
-  });
-
-  document.body.appendChild(menu);
-
-  // Clamp menu position so it doesn't overflow the viewport
-  const rect = menu.getBoundingClientRect();
-  if (rect.right > window.innerWidth) {
-    menu.style.left = `${Math.max(0, window.innerWidth - rect.width - 8)}px`;
-  }
-  if (rect.bottom > window.innerHeight) {
-    menu.style.top = `${Math.max(0, window.innerHeight - rect.height - 8)}px`;
-  }
 }
 
 function renderActivities() {
@@ -539,186 +438,6 @@ function renderActivities() {
   updateBulkActionsBar();
 }
 
-function updateBulkActionsBar() {
-  const bar = el("bulk-actions-bar");
-  const countSpan = el("bulk-selected-count");
-  const selectAllCheckbox = el("activities-select-all");
-
-  const selectedCount = activitiesState.selectedIds.size;
-
-  if (selectedCount > 0) {
-    if (bar) {
-      bar.classList.add("visible");
-    }
-    if (countSpan) {
-      countSpan.textContent = `${selectedCount} activité${selectedCount > 1 ? "s" : ""} sélectionnée${selectedCount > 1 ? "s" : ""}`;
-    }
-  } else {
-    if (bar) {
-      bar.classList.remove("visible");
-    }
-  }
-
-  // Update the select-all checkbox state based on visible rows
-  if (selectAllCheckbox) {
-    const checkboxes = document.querySelectorAll<HTMLInputElement>(".activity-select-checkbox");
-    if (checkboxes.length > 0) {
-      const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-      if (checkedCount === 0) {
-        selectAllCheckbox.checked = false;
-        selectAllCheckbox.indeterminate = false;
-      } else if (checkedCount === checkboxes.length) {
-        selectAllCheckbox.checked = true;
-        selectAllCheckbox.indeterminate = false;
-      } else {
-        selectAllCheckbox.checked = false;
-        selectAllCheckbox.indeterminate = true;
-      }
-    } else {
-      selectAllCheckbox.checked = false;
-      selectAllCheckbox.indeterminate = false;
-    }
-  }
-}
-
-function initBulkActionsHandlers() {
-  const selectAllCheckbox = el("activities-select-all");
-  if (selectAllCheckbox) {
-    selectAllCheckbox.addEventListener("change", e => {
-      const checkboxes = document.querySelectorAll<HTMLInputElement>(".activity-select-checkbox");
-      const isChecked = (e.target as HTMLInputElement).checked;
-      checkboxes.forEach(cb => {
-        const id = cb.getAttribute("data-id");
-        cb.checked = isChecked;
-        if (isChecked) {
-          activitiesState.selectedIds.add(id);
-          cb.closest("tr")!.classList.add("selected");
-        } else {
-          activitiesState.selectedIds.delete(id);
-          cb.closest("tr")!.classList.remove("selected");
-        }
-      });
-      updateBulkActionsBar();
-    });
-  }
-
-  // Clear selections button
-  const clearBtn = el("bulk-clear-btn");
-  if (clearBtn) {
-    clearBtn.addEventListener("click", () => {
-      activitiesState.selectedIds.clear();
-      renderActivities();
-    });
-  }
-
-  // Delete bulk button
-  const deleteBtn = el("bulk-delete-btn");
-  if (deleteBtn) {
-    deleteBtn.addEventListener("click", async () => {
-      const count = activitiesState.selectedIds.size;
-      if (count === 0) return;
-      if (!confirm(`Voulez-vous vraiment supprimer les ${count} activités sélectionnées ?`)) return;
-
-      const ids = new Set(activitiesState.selectedIds);
-      const touched: { act: any; prevDeleted: boolean }[] = [];
-      const prevFavorites = appState.favorites ? [...appState.favorites] : [];
-
-      ids.forEach(id => {
-        const act = appState.activities.find(a => a.id === id);
-        if (act) {
-          touched.push({ act, prevDeleted: act.deleted });
-          act.deleted = true;
-        }
-      });
-      appState.favorites = (appState.favorites || []).filter(f => !ids.has(f));
-
-      const saved = await saveDatabase();
-      if (!saved) {
-        // Roll back the in-memory change so the UI doesn't show a deletion that was never
-        // persisted — otherwise it would silently revert on the next reload.
-        touched.forEach(({ act, prevDeleted }) => {
-          act.deleted = prevDeleted;
-        });
-        appState.favorites = prevFavorites;
-        showToast("La suppression n'a pas été enregistrée. Réessayez.", "error", 8000);
-        return;
-      }
-
-      activitiesState.selectedIds.clear();
-      if (reconciliationState.ledgerTransactions.length > 0) {
-        reconcileLedger();
-      }
-      import("../navigation.ts").then(m => m.renderAll());
-    });
-  }
-
-  // State bulk dropdown toggle
-  const stateBtn = el("bulk-state-btn");
-  const stateMenu = el("bulk-state-menu");
-  if (stateBtn && stateMenu) {
-    stateBtn.addEventListener("click", e => {
-      e.stopPropagation();
-      stateMenu.classList.toggle("hidden");
-    });
-  }
-
-  // State menu items
-  document.querySelectorAll(".bulk-state-item").forEach(item => {
-    item.addEventListener("click", async e => {
-      const newState = item.getAttribute("data-state");
-      const count = activitiesState.selectedIds.size;
-      if (count === 0) return;
-
-      const touched: { act: any; prevState: any }[] = [];
-      activitiesState.selectedIds.forEach(id => {
-        const act = appState.activities.find(a => a.id === id);
-        if (act) {
-          touched.push({ act, prevState: act.state });
-          act.state = newState;
-        }
-      });
-
-      const saved = await saveDatabase();
-      if (stateMenu) {
-        stateMenu.classList.add("hidden");
-      }
-      if (!saved) {
-        // Roll back so the UI doesn't show a state change that was never persisted.
-        touched.forEach(({ act, prevState }) => {
-          act.state = prevState;
-        });
-        showToast("Le changement d'état n'a pas été enregistré. Réessayez.", "error", 8000);
-        import("../navigation.ts").then(m => m.renderAll());
-        return;
-      }
-
-      activitiesState.selectedIds.clear();
-      import("../navigation.ts").then(m => m.renderAll());
-    });
-  });
-
-  // Close dropdown on click outside
-  document.addEventListener("click", e => {
-    const stateMenu = el("bulk-state-menu");
-    const stateBtn = el("bulk-state-btn");
-    if (stateMenu && stateBtn && !stateBtn.contains(e.target as Node) && !stateMenu.contains(e.target as Node)) {
-      stateMenu.classList.add("hidden");
-    }
-  });
-
-  // Close the activity row context menu when clicking outside of it, scrolling, or pressing Escape
-  document.addEventListener("click", e => {
-    const menu = document.getElementById("activity-context-menu");
-    if (menu && !menu.contains(e.target as Node)) {
-      closeActivityContextMenu();
-    }
-  });
-  document.addEventListener("scroll", () => closeActivityContextMenu(), true);
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape") closeActivityContextMenu();
-  });
-}
-
 export {
   activitiesState,
   ACTIVITY_STATES,
@@ -729,7 +448,6 @@ export {
   getPlanningProgress,
   deriveActivityState,
   buildProgressBarHtml,
-  renderActivities,
-  updateBulkActionsBar,
-  initBulkActionsHandlers
+  renderActivities
 };
+export { updateBulkActionsBar, initBulkActionsHandlers } from "./bulk-actions.ts";

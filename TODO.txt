@@ -74,21 +74,43 @@ TESTS (trous a combler)
 ARCHITECTURE (dette technique, non bloquant)
 =======================================================
 
-[ ] Decouper src/services/contract-generator.ts (891 lignes)
-    Separer la logique de generation de document de la logique de
-    reprise de styles Excel (S style map, normalizeGridBorders).
+[x] Decouper src/services/contract-generator.ts (891 lignes)
+    Nouveau dossier src/services/contract-generator/ : styles.ts (S,
+    normalizeGridBorders), static-content.ts (textes fixes du contrat),
+    sheet-builder.ts (SheetBuilder + helpers XML generiques),
+    sheet-xml.ts (buildSheetXml/buildDrawingXml, la mise en page reelle).
+    contract-generator.ts devient un barrel qui ne garde que
+    l'assemblage du .xlsx (zip/OOXML) + generateContractXlsx/
+    generateSoumissionXlsx, et re-exporte le reste pour ne rien casser
+    (meme approche que backup/ et reservations/).
 
-[ ] Decouper src/activities/render.ts (735 lignes)
-    Extraire les actions groupees (bulk actions) et le menu contextuel
-    dans des modules dedies.
+[x] Decouper src/activities/render.ts (735 lignes)
+    Nouveaux fichiers src/activities/context-menu.ts (menu contextuel
+    clic-droit sur une activite) et bulk-actions.ts (barre d'actions
+    groupees). render.ts redevient un barrel qui re-exporte les deux et
+    ne garde que l'etat/le rendu du tableau.
 
-[ ] Decouper src/utils/utils.ts (704 lignes, fourre-tout)
-    Extraire formatage (formatCurrency, escapeHtml), aides DOM, et
-    utilitaires de selection multiple dans des modules separes.
+[x] Decouper src/utils/utils.ts (704 lignes, fourre-tout)
+    Nouveaux fichiers src/utils/format.ts (formatage/masques),
+    activity-helpers.ts (aides dependantes d'appState : references,
+    salles, comptes GL), dom-helpers.ts (pagination, pill-toggle,
+    overlay, toasts), select-helpers.ts (filtres multi-select),
+    searchable-select.ts. utils.ts redevient un barrel qui re-exporte
+    tout, aucun import existant a changer.
 
-[ ] Decouper src/navigation.ts (664 lignes)
-    Extraire la recherche globale et l'acces rapide dans des modules
-    dedies.
+[x] Decouper src/navigation.ts (664 lignes)
+    Nouveau dossier src/navigation/ : global-search.ts, quick-access.ts,
+    period-selector.ts. navigation.ts redevient un barrel qui garde le
+    theme/le switch de vue/l'orchestration du rendu et re-exporte le
+    reste.
+
+    Note commune aux 4 decoupages : les modules extraits importent
+    certaines fonctions "en retour" du fichier barrel d'origine (import
+    circulaire assume, deja utilise ailleurs dans le projet entre
+    utils.ts et state.ts) - sans danger puisque rien ne s'execute au
+    chargement des modules, seulement a l'appel des fonctions. Verifie
+    apres coup : lint, typecheck, les 365 tests, et `npm run build`
+    passent tous sans changement.
 
 =======================================================
 PRODUIT
@@ -108,5 +130,11 @@ PRODUIT
 [ ] Rendre les annees fiscales configurables (actuellement codees en dur)
     Fichier : src/navigation.ts (ligne 645)
 
-[ ] Regler le TODO existant sur les tarifs de salle obsoletes
+[x] "TODO" tarifs de salle obsoletes - fausse piste, rien a faire
     Fichier : src/activities/reservations/tariff.ts (ligne 83)
+    Verifie le 2026-07-11 : ce n'est pas un TODO de travail inacheve,
+    juste un commentaire qui se refere a lui-meme par le nom de la
+    fonctionnalite. L'avertissement "Tarif obsolete" (comparaison entre
+    le montant enregistre sur la reservation et ce que la grille
+    tarifaire actuelle donnerait) est deja pleinement implemente dans
+    updateResolvedPriceDisplay (lignes 70-96).
