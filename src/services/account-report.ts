@@ -200,7 +200,7 @@ function renderAccountReport() {
           </div>
         </div>
 
-        <div class="table-responsive">
+        <div class="table-responsive account-report-table">
           <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
             <thead>
               <tr style="background-color: var(--bg-main);">

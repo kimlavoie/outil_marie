@@ -757,7 +757,7 @@ export function ReconciliationView() {
       {!reconciliationState.imported && <DropZone onFile={handleLedgerFile} />}
 
       {reconciliationState.imported && (
-        <div id="reconciliation-panel" style={{ display: "grid" }} className="reconciliation-grid">
+        <div id="reconciliation-panel" className="reconciliation-grid">
           {showHelp && (
             <div className="reconcile-help-banner">
               <div className="reconcile-help-header">

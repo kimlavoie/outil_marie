@@ -2,9 +2,8 @@
 
 /* Reconciliation Results Layout */
 .reconciliation-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
   flex: 1;
   min-height: 0;

@@ -206,6 +206,25 @@
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
+/* The account report ("Grand livre local") stacks one card per account inside
+   .table-card, which is itself height-bound to the view (see the :has() rule
+   above) but had no overflow of its own, so the stacked cards spilled out
+   past the card's bottom edge instead of scrolling. This container is the
+   one that actually scrolls, keeping the toolbar fixed above it. */
+#account-report-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Each card's own table then gets a bounded scroll box instead of the
+   generic flex:1 behavior, which would make its sticky header fight for
+   position with the other cards' headers on the shared container scroll. */
+.account-report-table {
+  flex: none;
+  max-height: 420px;
+}
+
 /* Pagination bar (info + prev/next + page-size select), sits below a table */
 .pagination-bar {
   display: flex;
