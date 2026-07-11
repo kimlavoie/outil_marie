@@ -86,14 +86,16 @@ function renderAutoBackupStatus(status: string, filename?: string) {
   }
 
   const badge = document.createElement("span");
-  badge.className = status === "connected" ? "badge badge-success" : "badge badge-warning";
-  badge.textContent = status === "connected" ? "Actif" : "Action requise";
+  badge.className = status === "connected" ? "badge badge-success" : status === "write-error" ? "badge badge-danger" : "badge badge-warning";
+  badge.textContent = status === "connected" ? "Actif" : status === "write-error" ? "Échec d'écriture" : "Action requise";
   container.appendChild(badge);
 
   const info = document.createElement("span");
   let infoText = `Fichier : ${filename}`;
   if (status === "connected" && autoBackupLastWrite) {
     infoText += ` — dernière écriture : ${autoBackupLastWrite.toLocaleTimeString("fr-CA")}`;
+  } else if (status === "write-error") {
+    infoText += " — la dernière écriture a échoué, ce fichier n'est plus à jour.";
   }
   info.textContent = infoText;
   container.appendChild(info);
@@ -204,6 +206,19 @@ function scheduleAutoBackupWrite() {
   autoBackupWriteTimer = setTimeout(writeAutoBackupNow, 1500);
 }
 
+// If the app is closed/reloaded while a debounced write is still pending, that write would
+// otherwise never happen and the auto-backup file would silently fall behind the real
+// (IndexedDB) state. Fire the write immediately instead of waiting out the debounce.
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", () => {
+    if (autoBackupWriteTimer) {
+      clearTimeout(autoBackupWriteTimer);
+      autoBackupWriteTimer = null;
+      void writeAutoBackupNow();
+    }
+  });
+}
+
 async function writeAutoBackupNow() {
   if (!autoBackupHandle) return;
   try {
@@ -228,8 +243,10 @@ async function writeAutoBackupNow() {
       checkBackupReminder();
       renderBackupView();
     }
-  } catch (e) {
+  } catch (e: any) {
     logError("backup", "écriture de la sauvegarde automatique", e);
+    renderAutoBackupStatus("write-error", autoBackupHandle.name);
+    showToast("Échec de l'écriture de la sauvegarde automatique : " + (e?.message || e), "error", 8000);
   }
 }
 

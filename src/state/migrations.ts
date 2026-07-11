@@ -147,6 +147,14 @@ export function migrateActivities(activities: any[], settings: { rooms: any[]; s
         const wantedTariffDesc = act.client_type === "interne" ? "Interne" : "Externe";
         const flatTarifs = roomConfig ? getFlattenedRoomTarifs(roomConfig, act.date_start) : [];
         const matchedTariff = flatTarifs.length ? flatTarifs.find(t => t.description === wantedTariffDesc) || flatTarifs[0] : null;
+        if (!matchedTariff) {
+          logWarn("state", "migration rooms->reservations : aucun tarif trouvé, montant remis à 0", {
+            activityId: act.id,
+            roomName: name,
+            roomFound: !!roomConfig,
+            date_start: act.date_start
+          });
+        }
         return {
           name,
           tariff_id: matchedTariff ? matchedTariff.id : "",

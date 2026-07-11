@@ -9,6 +9,7 @@ import {
   setAppState,
   saveDatabase,
   saveSafetyBackupToDb,
+  sanitizeActivitiesList,
   migrateRoomsConfig,
   migrateSalariesConfig,
   migrateActivities,
@@ -42,6 +43,7 @@ function handleJsonBackupFile(file: File) {
         renderSafetyBackupsList();
 
         setAppState(parsed);
+        appState.activities = sanitizeActivitiesList(appState.activities);
 
         // Sanitize settings on restoration
         if (!appState.favorites) appState.favorites = [];
@@ -76,8 +78,9 @@ function handleJsonBackupFile(file: File) {
 
         // Restored files may predate the pricing-grid/rate-versioning/activity migrations —
         // run the same migrations loadDatabase() applies on normal startup. Guarded separately:
-        // a migration bug here must not leave the running app on a half-migrated appState that
-        // an unrelated later save() would then persist over the still-intact on-disk data.
+        // a migration bug here must not leave the running app on a half-migrated appState. On
+        // failure the in-memory state is rolled back AND explicitly re-persisted, so a later
+        // unrelated save() can't accidentally write the half-migrated data to disk instead.
         try {
           migrateRoomsConfig(appState.settings.rooms);
           migrateSalariesConfig(appState.settings.salaries);
@@ -85,8 +88,13 @@ function handleJsonBackupFile(file: File) {
         } catch (err) {
           logError("backup", "migration des données lors de la restauration", err);
           setAppState(preRestoreSnapshot);
+          try {
+            await saveDatabase();
+          } catch (saveErr) {
+            logError("backup", "réécriture des données pré-restauration après échec de migration", saveErr);
+          }
           showToast(
-            "La restauration a échoué pendant la mise à jour du format des données. Vos données précédentes ont été conservées (rien n'a été écrasé sur le disque). Veuillez recharger la page.",
+            "La restauration a échoué pendant la mise à jour du format des données. Vos données précédentes ont été restaurées et sauvegardées. Veuillez recharger la page.",
             "error",
             12000
           );

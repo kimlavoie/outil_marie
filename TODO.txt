@@ -1,148 +1,126 @@
 TODO - Ameliorations Outil Marie
-(genere le 2026-07-11 suite a une revue de code)
+(genere le 2026-07-11 suite a une nouvelle revue de code)
 
 =======================================================
 FIABILITE (priorite haute)
 =======================================================
 
-[x] Rollback automatique si la migration echoue pendant une restauration
-    Fichier : src/services/backup/restore.ts (lignes 81-94)
-    Deja en place (setAppState(preRestoreSnapshot) + toast d'erreur) -
-    verifie le 2026-07-11, aucun changement necessaire.
+[x] Restauration JSON sans sanitizeActivitiesList -> crash potentiel
+    Fichier : src/services/backup/restore.ts (handleJsonBackupFile)
+    Ajout de appState.activities = sanitizeActivitiesList(appState.activities)
+    juste apres setAppState(parsed), avant les autres migrations.
 
-[x] Garde-fous dans l'export Excel
-    Fichier : src/services/excel-export.ts
-    Ajout d'une verification que XLSX est bien charge et qu'au moins un
-    compte est configure avant de generer le classeur (sinon message
-    d'erreur clair au lieu d'un plantage/export vide).
+[x] Rollback de restauration non re-persiste sur disque
+    Fichier : src/services/backup/restore.ts (bloc catch de la migration)
+    saveDatabase() est maintenant rappele apres setAppState(preRestoreSnapshot)
+    pour re-ecrire explicitement l'etat pre-restauration sur disque au
+    lieu de compter sur une sauvegarde ulterieure non liee.
 
-[x] Montants invalides en reconciliation
-    Fichier : src/services/reconciliation.ts
-    Un "Montant courant" non numerique loggue desormais un avertissement
-    (logWarn) au lieu d'etre silencieusement remplace par 0.
-    Note : le regroupement par cle compte+reference est un comportement
-    voulu (plusieurs transactions pour une meme facture doivent
-    s'additionner), donc pas de "detection de doublons" a ajouter la.
+[x] Echec silencieux de l'auto-backup
+    Fichier : src/services/backup/auto-backup.ts (writeAutoBackupNow,
+    renderAutoBackupStatus)
+    Un nouveau statut "write-error" affiche un badge rouge + un message
+    explicite dans le panneau, et un showToast() signale l'echec a
+    l'utilisateur au moment ou il se produit, plutot que de laisser le
+    dernier badge "Actif" mentir silencieusement.
+
+[x] Fenetre de perte possible sur fermeture rapide de l'app
+    Fichier : src/services/backup/auto-backup.ts (scheduleAutoBackupWrite)
+    Un gestionnaire beforeunload declenche immediatement l'ecriture en
+    attente (au lieu d'attendre le debounce de 1500ms) si l'app se ferme
+    pendant la fenetre d'attente. Best-effort (l'API File System Access
+    reste asynchrone et non garantie avant la fermeture), mais reduit
+    nettement la fenetre de divergence.
+
+[x] Migration de tarif : correspondance de room perdue -> montant remis
+    a zero sans trace
+    Fichier : src/state/migrations.ts (migrateActivities)
+    Un logWarn (meme pattern que le cas dayCount === 0 existant) est
+    ajoute quand matchedTariff est null, pour tracer les montants remis
+    a 0 pendant une migration/restauration.
 
 =======================================================
 TESTS (trous a combler)
 =======================================================
 
-[x] Ajouter des tests pour src/services/excel-export.ts
-    test/excel-export.test.ts : garde-fous XLSX absent/comptes vides,
-    filtrage par periode, formules de sommes, nom de fichier.
-    (getExcelColName et runExportToExcel exportes pour etre testables,
-    comme le fait deja contract-generator.ts pour ses helpers internes.)
+npm run test:coverage : 367 tests, 57.63% lignes / 74.34% branches.
+Fichiers de logique metier substantielle les moins couverts :
 
-[x] src/services/account-report.ts
-    Deja teste (test/account-report.test.ts existait avant cette revue) -
-    aucune action necessaire.
+[ ] src/services/backup/restore.ts (18.96%)
+    Chemin de restauration entier non teste -- correle directement avec
+    le bug de fiabilite ci-dessus (sanitizeActivitiesList manquant), qui
+    aurait probablement ete detecte par un test couvrant une restauration
+    avec activite incomplete.
 
-[x] src/services/backup/reminder.ts et backup/validation.ts
-    getDaysSinceLastBackup, formatLocalDateToFrench, checkBackupReminder
-    et validateBackupSchema (le point prioritaire, utilise lors d'une
-    restauration) etaient deja couverts par test/backup/index.test.ts -
-    aucune action necessaire. Non couverts (mineur, purement visuel) :
-    renderBackupView, renderSafetyBackupsList, downloadSafetyBackup,
-    exportDiagnosticLogs.
+[ ] src/services/backup/index.ts (25.14%) et
+    src/services/backup/auto-backup.ts (35.74%)
+    Orchestration de sauvegarde peu exercee -- correle avec les bugs
+    d'echec silencieux et de fenetre de perte ci-dessus.
 
-[x] Ajouter des tests pour src/activities/billing-tab.ts
-    test/billing-tab.test.ts : calcul des lignes personnel/equipements/
-    frais, lignes a montant nul omises, confirmation avant remplacement
-    des lignes existantes.
+[ ] src/services/contract-generator.ts (26.28%)
+    Le point d'entree generateXlsx n'est pas teste directement (le
+    sous-module contract-generator/sheet-builder.ts, lui, est a 99%).
 
-[x] Ajouter des tests pour src/activities/file-links.ts
-    test/file-links.test.ts : aller-retour IndexedDB des liens de fichier,
-    rendu de renderFileLinkStatus (lie/non lie, etats Soumise/Approuvee),
-    garde-fous de pickAndLinkFile (navigateur non compatible, fichier
-    refuse pour le kind "form"). Non couvert (necessite l'API File System
-    Access reelle, hors de portee de tests Node) : generateAndLinkFile,
-    openLinkedFile, renderPdfPreview/renderXlsxPreview au-dela du cas
-    "aucun fichier lie".
+[ ] src/activities/bulk-actions.ts (10.83%)
+    Suppression/changement d'etat en masse -- logique metier, pas
+    seulement du rendu.
 
-[x] Configurer un outil de couverture de tests (ex. c8) pour identifier
-    objectivement les zones non testees
-    Ajout de c8 (devDependency) + script "npm run test:coverage"
-    (texte + rapport HTML dans coverage/, ignore par .gitignore).
-    Couverture globale actuelle : ~70% des lignes de src/. Zones les
-    plus faibles identifiees : src/activities/render.ts (22%),
-    src/activities/form.ts (32%), src/services/backup/restore.ts (19%,
-    la plupart des branches d'erreur/migration ne sont pas exercees),
-    src/services/backup/index.ts (25%).
+[ ] src/activities/form.ts (31.83%) et src/activities/render.ts (35.54%)
+    Quasiment tout form.ts (lignes 36-262) et une bonne partie de
+    render.ts (lignes 151-439) ne sont pas couverts.
+
+[ ] src/navigation/period-selector.ts, global-search.ts, quick-access.ts
+    (~18-20%)
+    Logique de selection de periode fiscale et de recherche floue peu
+    testee malgre la correction recente sur la fenetre d'annees fiscales.
 
 =======================================================
 ARCHITECTURE (dette technique, non bloquant)
 =======================================================
 
-[x] Decouper src/services/contract-generator.ts (891 lignes)
-    Nouveau dossier src/services/contract-generator/ : styles.ts (S,
-    normalizeGridBorders), static-content.ts (textes fixes du contrat),
-    sheet-builder.ts (SheetBuilder + helpers XML generiques),
-    sheet-xml.ts (buildSheetXml/buildDrawingXml, la mise en page reelle).
-    contract-generator.ts devient un barrel qui ne garde que
-    l'assemblage du .xlsx (zip/OOXML) + generateContractXlsx/
-    generateSoumissionXlsx, et re-exporte le reste pour ne rien casser
-    (meme approche que backup/ et reservations/).
+[ ] Decouper src/activities/history.ts (610 lignes)
+    Melange 4 responsabilites distinctes : pile undo/redo (37-110),
+    soumission de formulaire + tri de table (112-160), detection de
+    conflits de salle (166-306, logique quasi pure et testable), et
+    historique de versions/diff (308-590, sous-fonctionnalite autonome).
+    Decoupage propose : activities/history-undo.ts,
+    activities/room-conflicts.ts, activities/version-history.ts.
 
-[x] Decouper src/activities/render.ts (735 lignes)
-    Nouveaux fichiers src/activities/context-menu.ts (menu contextuel
-    clic-droit sur une activite) et bulk-actions.ts (barre d'actions
-    groupees). render.ts redevient un barrel qui re-exporte les deux et
-    ne garde que l'etat/le rendu du tableau.
+[ ] Decouper src/activities/file-links.ts (570 lignes)
+    4 concerns, surtout pour dedupliquer : mini-store IndexedDB (22-50),
+    workflows File System Access API (56-235), rendu du statut + cablage
+    d'evenements (261-388), et deux previsualiseurs PDF/XLSX (390-568)
+    qui dupliquent presque mot pour mot le meme pattern
+    permission->erreur->montage. Decoupage propose : file-links-db.ts,
+    file-links-actions.ts, file-link-status.ts, file-preview.ts (en
+    extrayant la logique de permission partagee).
 
-[x] Decouper src/utils/utils.ts (704 lignes, fourre-tout)
-    Nouveaux fichiers src/utils/format.ts (formatage/masques),
-    activity-helpers.ts (aides dependantes d'appState : references,
-    salles, comptes GL), dom-helpers.ts (pagination, pill-toggle,
-    overlay, toasts), select-helpers.ts (filtres multi-select),
-    searchable-select.ts. utils.ts redevient un barrel qui re-exporte
-    tout, aucun import existant a changer.
+[ ] Dedupliquer le tableau de resume financier dans
+    src/activities/print-sheet.ts
+    Le tableau (lignes 132-140 et 285-293) est duplique a l'identique
+    entre buildPrintActivitySheetHtml et buildActivityDetailsHtml.
+    Extraire un buildFinancialSummaryTableHtml(fin) partage (pas besoin
+    de split de fichier complet).
 
-[x] Decouper src/navigation.ts (664 lignes)
-    Nouveau dossier src/navigation/ : global-search.ts, quick-access.ts,
-    period-selector.ts. navigation.ts redevient un barrel qui garde le
-    theme/le switch de vue/l'orchestration du rendu et re-exporte le
-    reste.
-
-    Note commune aux 4 decoupages : les modules extraits importent
-    certaines fonctions "en retour" du fichier barrel d'origine (import
-    circulaire assume, deja utilise ailleurs dans le projet entre
-    utils.ts et state.ts) - sans danger puisque rien ne s'execute au
-    chargement des modules, seulement a l'appel des fonctions. Verifie
-    apres coup : lint, typecheck, les 365 tests, et `npm run build`
-    passent tous sans changement.
+    Note : reservations/card.ts (509 lignes), pdf-viewer.ts (456 lignes),
+    state/migrations.ts (440 lignes, chaine sequentielle de migrations
+    dependantes de l'ordre -- eclater fragmenterait un recit lineaire),
+    state/config-defaults.ts (411 lignes, donnees de seed pures) et
+    drawer-template.ts (432 lignes, template litteral statique) ont ete
+    revus et restent cohesifs -- pas de split necessaire pour l'instant.
 
 =======================================================
 PRODUIT
 =======================================================
 
-[ ] Tracabilite utilisateur sur les decisions de reconciliation
-    Fichier : src/services/reconciliation.ts
-    Actuellement seul un timestamp est enregistre, pas l'identite de
-    la personne ayant pris la decision.
+[ ] SAFETY_BACKUPS_MAX (5) et le delai d'auto-backup (1500ms) sont des
+    constantes fixes non exposees aux reglages utilisateur
+    Fichiers : src/state/db.ts (ligne 11), src/services/backup/
+    auto-backup.ts (ligne 204)
+    Probablement acceptable tel quel pour l'instant, mais a garder en
+    tete : si un utilisateur perd un jour l'historique des sauvegardes
+    de securite apres 5 operations destructives rapprochees, c'est le
+    premier endroit a rendre configurable.
 
-[ ] Apercu avant telechargement pour la generation de contrat/soumission
-    Fichier : src/services/contract-generator.ts
-
-[ ] Sauvegarde automatique planifiee (au-dela du simple rappel)
-    Fichier : src/services/backup/reminder.ts et auto-backup.ts
-
-[x] Rendre les annees fiscales configurables (actuellement codees en dur)
-    Fichier : src/navigation/period-selector.ts
-    Remplace la liste figee 2024-2025..2029-2030 par une fenetre glissante
-    calculee a partir de la date du jour (getFiscalYearWindow) : 1 an
-    dans le passe, 3 ans dans le futur, autour de l'annee fiscale
-    courante (getDefaultFiscalYear). Aucun reglage de configuration
-    ajoute - la fenetre se decale automatiquement d'annee en annee.
-    La fusion avec les annees deja utilisees par des activites existantes
-    est conservee (une annee avec des donnees ne disparait jamais du
-    menu meme hors fenetre). Teste dans test/period-selector.test.ts.
-
-[x] "TODO" tarifs de salle obsoletes - fausse piste, rien a faire
-    Fichier : src/activities/reservations/tariff.ts (ligne 83)
-    Verifie le 2026-07-11 : ce n'est pas un TODO de travail inacheve,
-    juste un commentaire qui se refere a lui-meme par le nom de la
-    fonctionnalite. L'avertissement "Tarif obsolete" (comparaison entre
-    le montant enregistre sur la reservation et ce que la grille
-    tarifaire actuelle donnerait) est deja pleinement implemente dans
-    updateResolvedPriceDisplay (lignes 70-96).
+Aucun TODO/FIXME/HACK/XXX representant un travail reellement inacheve
+n'a ete trouve dans src/ lors de cette revue.
