@@ -127,8 +127,16 @@ PRODUIT
 [ ] Sauvegarde automatique planifiee (au-dela du simple rappel)
     Fichier : src/services/backup/reminder.ts et auto-backup.ts
 
-[ ] Rendre les annees fiscales configurables (actuellement codees en dur)
-    Fichier : src/navigation.ts (ligne 645)
+[x] Rendre les annees fiscales configurables (actuellement codees en dur)
+    Fichier : src/navigation/period-selector.ts
+    Remplace la liste figee 2024-2025..2029-2030 par une fenetre glissante
+    calculee a partir de la date du jour (getFiscalYearWindow) : 1 an
+    dans le passe, 3 ans dans le futur, autour de l'annee fiscale
+    courante (getDefaultFiscalYear). Aucun reglage de configuration
+    ajoute - la fenetre se decale automatiquement d'annee en annee.
+    La fusion avec les annees deja utilisees par des activites existantes
+    est conservee (une annee avec des donnees ne disparait jamais du
+    menu meme hors fenetre). Teste dans test/period-selector.test.ts.
 
 [x] "TODO" tarifs de salle obsoletes - fausse piste, rien a faire
     Fichier : src/activities/reservations/tariff.ts (ligne 83)

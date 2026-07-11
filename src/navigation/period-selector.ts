@@ -7,7 +7,7 @@
  * Imports renderAll back from navigation.ts (a real circular import, same as global-search.ts/
  * quick-access.ts) — safe since nothing runs during either module's top-level evaluation.
  */
-import { appState, saveDatabaseOrRollback, getFiscalYear } from "../state/state.ts";
+import { appState, saveDatabaseOrRollback, getFiscalYear, getDefaultFiscalYear } from "../state/state.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { renderAll } from "../navigation.ts";
 
@@ -139,11 +139,30 @@ function initPeriodSelector() {
   }
 }
 
+// How far around the current fiscal year the dropdown always offers, so it never needs a code
+// change as years pass (see TODO.txt's former "années fiscales codées en dur" entry). One year
+// back covers activities still being wrapped up from the previous year; three years forward
+// covers rooms booked well ahead of time.
+const FISCAL_YEAR_RANGE_PAST = 1;
+const FISCAL_YEAR_RANGE_FUTURE = 3;
+
+// Builds the rolling window of fiscal years always offered, regardless of any existing activity:
+// [current - FISCAL_YEAR_RANGE_PAST, current + FISCAL_YEAR_RANGE_FUTURE].
+function getFiscalYearWindow(): string[] {
+  const currentStartYear = parseInt(getDefaultFiscalYear().split("-")[0], 10);
+  const years: string[] = [];
+  for (let offset = -FISCAL_YEAR_RANGE_PAST; offset <= FISCAL_YEAR_RANGE_FUTURE; offset++) {
+    const startYear = currentStartYear + offset;
+    years.push(`${startYear}-${startYear + 1}`);
+  }
+  return years;
+}
+
 function populateFiscalYears() {
   const select = document.getElementById("top-fiscal-year") as HTMLSelectElement | null;
   if (!select) return;
 
-  const years = new Set(["2024-2025", "2025-2026", "2026-2027", "2027-2028", "2028-2029", "2029-2030"]);
+  const years = new Set(getFiscalYearWindow());
 
   appState.activities.forEach(act => {
     if (act.deleted) return;
@@ -162,4 +181,4 @@ function populateFiscalYears() {
   });
 }
 
-export { updateActivePeriodDescription, initPeriodSelector, populateFiscalYears };
+export { updateActivePeriodDescription, initPeriodSelector, populateFiscalYears, getFiscalYearWindow };
