@@ -1,0 +1,129 @@
+AUDIT DE CONFIDENTIALITE - LOI 25 (Quebec)
+Outil Marie - Gestion des activites, facturation et rapprochement comptable
+Date de l'audit : 2026-07-11
+
+=======================================================
+RESUME DE L'APPLICATION
+=======================================================
+
+"Outil Marie" (package.json) est un outil de gestion des activites/locations
+de salles, facturation et rapprochement comptable pour un service
+communautaire (le Cegep de Jonquiere, d'apres les references dans
+src/services/contract-generator.ts). C'est une application 100% locale,
+hors ligne : aucun serveur backend, aucun appel reseau externe detecte
+(aucune analytics, aucun tiers cloud), donnees stockees dans
+IndexedDB/localStorage du navigateur, exports en JSON/Excel generes cote
+client.
+
+RP traites : nom, prenom, telephone, courriel, nom d'entreprise et adresse
+du "responsable de facturation" et du "responsable de l'activite" pour
+chaque location de salle (src/activities/drawer-template.ts, lignes
+135-211), repris dans les contrats Excel generes
+(src/services/contract-generator.ts).
+
+=======================================================
+PROBLEMES TROUVES
+=======================================================
+
+--- ELEVE ---
+
+1. Aucun mecanisme de consentement a la collecte des RP
+   Fichier : src/activities/drawer-template.ts (lignes 135-211)
+   Le formulaire d'activite collecte nom, courriel, telephone, adresse
+   sans aucune case de consentement ni mention des fins de collecte.
+   Loi 25 : consentement manifeste, libre, eclaire, a des fins specifiques.
+
+2. Aucune politique de confidentialite presente dans l'application
+   Recherche exhaustive dans le code, le HTML et le centre d'aide
+   (src/help-center.ts) : rien trouve.
+   Loi 25 : obligation d'une politique redigee en langage clair, accessible.
+
+3. Aucun responsable de la protection des RP designe
+   Ni dans l'UI, ni dans la documentation du projet.
+   Loi 25 (art. 3.1) : designation obligatoire avec coordonnees publiees.
+
+4. Aucune EFVP (evaluation des facteurs relatifs a la vie privee) documentee
+   Pour un systeme traitant systematiquement des RP (noms, coordonnees)
+   dans le cadre d'un organisme public/parapublic (Cegep), une EFVP est
+   obligatoire avant deploiement/refonte. Rien dans le depot ne l'atteste.
+
+5. Export/backup JSON non chiffre contenant potentiellement des RP
+   Fichier : src/services/backup.ts (lignes 766-773, fonction
+   downloadSafetyBackup) et la sauvegarde automatique (mecanisme
+   FileSystemFileHandle) ecrivent l'etat complet de l'app (incluant
+   coordonnees des responsables) en clair sur disque, sans chiffrement
+   ni mot de passe.
+   Loi 25 : mesures de securite raisonnables pour les RP, minimisation.
+
+--- MOYEN ---
+
+6. Journaux de diagnostic exportables pouvant contenir des RP
+   Fichier : src/utils/logger.ts
+   Capture des "details" arbitraires (potentiellement des objets
+   d'activite avec coordonnees) dans un historique en memoire, exportable
+   via exportDiagnosticLogs() (src/services/backup.ts, lignes 777-790) et
+   affiche en clair dans la console navigateur (console.error/warn/info).
+   Si un utilisateur envoie ce fichier pour du support, il pourrait
+   divulguer des RP sans le savoir.
+   Loi 25 : minimisation, gestion des incidents de confidentialite.
+
+7. Historique de versions d'activites conserve indefiniment
+   Fichier : src/state/db.ts (lignes 19-22, store "activity_versions")
+   N'est purge que par nombre de versions (fonction
+   pruneActivityVersions, max configurable) et non par duree de
+   conservation. Aucune politique de conservation/destruction basee sur
+   le temps.
+   Loi 25 : ne conserver les RP que le temps necessaire, destruction/
+   anonymisation apres.
+
+8. Aucun mecanisme structure pour les droits d'acces/rectification/retrait
+   La seule facon de retirer les RP d'une personne (ex. un responsable
+   d'activite) est la suppression manuelle de l'activite par
+   l'administratrice de l'outil ; rien ne permet de repondre
+   formellement a une demande d'acces ou de rectification, ni de tracer
+   que la demande a ete traitee.
+   Loi 25 : droits des personnes concernees.
+
+9. Aucun registre des incidents de confidentialite
+   Aucune fonctionnalite ni documentation ne prevoit la consignation
+   d'un incident de confidentialite (ex. perte du fichier de sauvegarde,
+   ordinateur vole).
+   Loi 25 (art. 3.5) : registre obligatoire.
+
+--- FAIBLE ---
+
+10. Absence de chiffrement au repos pour IndexedDB
+    Fichier : src/state/db.ts (lignes 194-216, app_state_store)
+    Les RP sont stockees telles quelles ; depend entierement du
+    chiffrement disque de l'ordinateur hote. Risque faible pour une app
+    strictement locale/mono-poste, mais aggrave si le poste est partage
+    ou non chiffre.
+
+11. Fichiers template.xlsx / exemple_validation.xls
+    Verifies : ne contiennent pas de donnees reelles (fichiers
+    essentiellement vides de contenu shared strings), donc pas de fuite
+    de RP reels dans le depot Git. A surveiller si des fichiers
+    d'exemple reels sont ajoutes plus tard.
+
+=======================================================
+POINTS POSITIFS
+=======================================================
+
+- Aucune telemetrie/analytics tierce detectee, aucune cle API ni secret
+  en dur dans le code, aucune donnee envoyee a des serveurs hors Quebec
+  (l'app ne transfere rien nulle part) - donc pas de probleme de
+  transfert transfrontalier tel quel, tant que l'app reste strictement
+  locale (si un hebergement cloud est ajoute plus tard, une EFVP serait
+  requise).
+- Les salaires sont geres par poste/emploi, pas par employe nomme - pas
+  de RP la.
+
+=======================================================
+NOTE
+=======================================================
+
+Ce document est un diagnostic seulement ; aucun correctif n'a ete
+applique au code. Un plan de remediation pourra etre priorise
+ulterieurement (ex. politique de confidentialite type, ajout d'une case
+de consentement, chiffrement des exports, politique de conservation
+basee sur le temps).
