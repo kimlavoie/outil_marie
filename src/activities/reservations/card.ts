@@ -18,7 +18,7 @@ import {
   buildGlAccountOptionsHtml
 } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
-import { updateFormDatesHelper } from "../history.ts";
+import { updateFormDatesHelper } from "../history/index.ts";
 import {
   addStaffRow,
   addServiceRow,

@@ -1,16 +1,16 @@
 /**
- * activities/file-links-actions.ts - File System Access API workflows: picking/generating a file
+ * activities/file-links/actions.ts - File System Access API workflows: picking/generating a file
  * and linking it to an activity, opening a previously-linked file, and removing a link. Split out
- * of file-links.ts (see that file for why it stays a barrel importing/re-exporting this alongside
- * file-links-db.ts/file-link-status.ts/file-preview.ts).
+ * of index.ts (see that file for why it stays a barrel importing/re-exporting this alongside
+ * db.ts/status.ts/preview.ts).
  */
-import { appState } from "../state/state.ts";
-import { generateUid, showToast } from "../utils/utils.ts";
-import { commitActivityPatch } from "./form.ts";
-import { deriveActivityState } from "./render.ts";
-import { generateContractXlsx, generateSoumissionXlsx } from "../services/contract-generator.ts";
-import { idbSetFileLink, idbGetFileLink } from "./file-links-db.ts";
-import { renderFileLinkStatus, expandedXlsxPreviews } from "./file-link-status.ts";
+import { appState } from "../../state/state.ts";
+import { generateUid, showToast } from "../../utils/utils.ts";
+import { commitActivityPatch } from "../form.ts";
+import { deriveActivityState } from "../render.ts";
+import { generateContractXlsx, generateSoumissionXlsx } from "../../services/contract-generator.ts";
+import { idbSetFileLink, idbGetFileLink } from "./db.ts";
+import { renderFileLinkStatus, expandedXlsxPreviews } from "./status.ts";
 
 // Lets the user pick an existing file on disk and links it (via the File System Access API) to
 // the given activity's submission/contract/form — this only stores a reference to a file the

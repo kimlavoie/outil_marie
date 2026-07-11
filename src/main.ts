@@ -11,7 +11,7 @@ import { initReconciliationHandlers } from "./components/reconciliation-mount.ts
 import { initBackupHandlers } from "./services/backup/index.ts";
 import { initCustomDatepickers } from "./activities/datepicker.ts";
 import { initCalendarModal, initViewCalendarButtons } from "./components/calendar-view.tsx";
-import { initActivitiesSort } from "./activities/history.ts";
+import { initActivitiesSort } from "./activities/history/index.ts";
 import { openActivityDrawer, initActivityDetailsModal, getSavedDrawerUiState } from "./activities/financials.ts";
 import { switchActivityTab } from "./activities/form.ts";
 import { renderHelpCenter } from "./help-center.ts";

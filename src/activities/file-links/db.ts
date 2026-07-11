@@ -1,10 +1,10 @@
 /**
- * activities/file-links-db.ts - Tiny IndexedDB store mapping a generated link id to the
+ * activities/file-links/db.ts - Tiny IndexedDB store mapping a generated link id to the
  * FileSystemFileHandle it points at (plus the file's display name), so a linked file survives
- * page reloads. Split out of file-links.ts (see that file for why it stays a barrel importing/
- * re-exporting this alongside file-links-actions.ts/file-link-status.ts/file-preview.ts).
+ * page reloads. Split out of index.ts (see that file for why it stays a barrel importing/
+ * re-exporting this alongside actions.ts/status.ts/preview.ts).
  */
-import { openVersionedDb } from "../state/db-utils.ts";
+import { openVersionedDb } from "../../state/db-utils.ts";
 
 const FILE_LINKS_DB_NAME = "outil_marie_file_links";
 const FILE_LINKS_STORE_NAME = "links";

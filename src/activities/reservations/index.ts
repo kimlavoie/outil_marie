@@ -8,7 +8,7 @@
 import { appState, getActivePricingGrid } from "../../state/state.ts";
 import { OTHER_ROOM_VALUE, getExclusivePillValueEl } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary } from "../financials.ts";
-import { updateFormDatesHelper } from "../history.ts";
+import { updateFormDatesHelper } from "../history/index.ts";
 import {
   collectStaffFromForm,
   collectServicesFromForm,

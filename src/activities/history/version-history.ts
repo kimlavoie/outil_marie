@@ -1,8 +1,8 @@
 /**
- * activities/version-history.ts - Activity version snapshots (taken on every meaningful drawer
- * close), their diff against the current record, and the "Historique" tab's list/restore UI.
- * Split out of history.ts (see that file for why it stays a barrel importing/re-exporting this
- * alongside history-undo.ts/room-conflicts.ts).
+ * activities/history/version-history.ts - Activity version snapshots (taken on every meaningful
+ * drawer close), their diff against the current record, and the "Historique" tab's list/restore
+ * UI. Split out of index.ts (see that file for why it stays a barrel importing/re-exporting this
+ * alongside undo.ts/room-conflicts.ts).
  */
 import {
   appState,
@@ -11,11 +11,11 @@ import {
   getActivityVersionsFromDb,
   addActivityVersionToDb,
   pruneActivityVersions
-} from "../state/state.ts";
-import { showToast, escapeHtml, formatCurrency } from "../utils/utils.ts";
-import { logError } from "../utils/logger.ts";
-import { activitiesState, renderActivities, getActivityStateLabel, getActivityStateBadgeClass } from "./render.ts";
-import { fillActivityFormFields, renderActivityStateBar } from "./form.ts";
+} from "../../state/state.ts";
+import { showToast, escapeHtml, formatCurrency } from "../../utils/utils.ts";
+import { logError } from "../../utils/logger.ts";
+import { activitiesState, renderActivities, getActivityStateLabel, getActivityStateBadgeClass } from "../render.ts";
+import { fillActivityFormFields, renderActivityStateBar } from "../form.ts";
 
 function formatTimestampToFrench(isoString: string) {
   if (!isoString) return "";

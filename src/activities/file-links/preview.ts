@@ -1,11 +1,11 @@
 /**
- * activities/file-preview.ts - Inline preview of a linked submission/contract (.xlsx) or form
- * (.pdf) file, requesting File System Access read permission when needed. Split out of
- * file-links.ts (see that file for why it stays a barrel importing/re-exporting this alongside
- * file-links-db.ts/file-links-actions.ts/file-link-status.ts).
+ * activities/file-links/preview.ts - Inline preview of a linked submission/contract (.xlsx) or
+ * form (.pdf) file, requesting File System Access read permission when needed. Split out of
+ * index.ts (see that file for why it stays a barrel importing/re-exporting this alongside
+ * db.ts/actions.ts/status.ts).
  */
-import { showToast, escapeHtml } from "../utils/utils.ts";
-import { idbGetFileLink } from "./file-links-db.ts";
+import { showToast, escapeHtml } from "../../utils/utils.ts";
+import { idbGetFileLink } from "./db.ts";
 
 const XLSX_PREVIEW_CONTAINER_IDS: Record<"submission" | "contract", string> = {
   submission: "submission-xlsx-preview",
@@ -72,7 +72,7 @@ async function renderPdfPreview(act: any) {
 
       const mountEl = previewContainer.querySelector("#pdf-viewer-mount") as HTMLElement;
       const buffer = await file.arrayBuffer();
-      const { PdfViewer } = await import("./pdf-viewer.ts");
+      const { PdfViewer } = await import("../pdf-viewer.ts");
       const viewer = new PdfViewer(mountEl, buffer, record.name);
       await viewer.init();
     } else {
@@ -162,7 +162,7 @@ async function renderXlsxPreview(kind: "submission" | "contract", act: any) {
 
       const mountEl = previewContainer.querySelector(`#xlsx-viewer-mount-${kind}`) as HTMLElement;
       const buffer = await file.arrayBuffer();
-      const { XlsxViewer } = await import("./xlsx-viewer.ts");
+      const { XlsxViewer } = await import("../xlsx-viewer.ts");
       const viewer = new XlsxViewer(mountEl, buffer, record.name);
       await viewer.init();
     } else {

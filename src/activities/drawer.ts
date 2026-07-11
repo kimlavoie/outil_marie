@@ -13,7 +13,7 @@ import { appState, saveDatabaseOrRollback, recordActivityView } from "../state/s
 import { showToast, elById } from "../utils/utils.ts";
 import { activitiesState, renderActivities } from "./render.ts";
 import { fillActivityFormFields, renderActivityStateBar, switchActivityTab } from "./form.ts";
-import { updateFormDatesHelper, saveActivityVersion } from "./history.ts";
+import { updateFormDatesHelper, saveActivityVersion } from "./history/index.ts";
 import { activityUndoSnapshotTimer } from "./autosave.ts";
 
 // Persists which activity record (and which of its tabs) is currently open in the drawer, so

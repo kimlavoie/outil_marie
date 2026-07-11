@@ -10,7 +10,7 @@ import {
   getDaysOfWeekInRange,
   formatTimestampToFrench,
   saveActivityVersion
-} from "../src/activities/history.ts";
+} from "../src/activities/history/index.ts";
 
 test("timeRangesOverlap detects overlapping windows on the same day", () => {
   assert.equal(timeRangesOverlap("09:00", "12:00", "11:00", "14:00"), true);

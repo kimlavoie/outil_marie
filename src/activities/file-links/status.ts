@@ -1,16 +1,15 @@
 /**
- * activities/file-link-status.ts - The "Lier un fichier / Ouvrir / Changer" status row (plus the
+ * activities/file-links/status.ts - The "Lier un fichier / Ouvrir / Changer" status row (plus the
  * submission/contract state-transition button and inline preview toggle) shown for each of the
- * submission/contract/form file links. Split out of file-links.ts (see that file for why it stays
- * a barrel importing/re-exporting this alongside file-links-db.ts/file-links-actions.ts/
- * file-preview.ts).
+ * submission/contract/form file links. Split out of index.ts (see that file for why it stays
+ * a barrel importing/re-exporting this alongside db.ts/actions.ts/preview.ts).
  */
-import { appState } from "../state/state.ts";
-import { commitActivityPatch } from "./form.ts";
-import { deriveActivityState } from "./render.ts";
-import { autoSaveActivityForm } from "./financials.ts";
-import { pickAndLinkFile, openLinkedFile, unlinkFile, generateAndLinkFile } from "./file-links-actions.ts";
-import { renderPdfPreview, renderXlsxPreview, XLSX_PREVIEW_CONTAINER_IDS } from "./file-preview.ts";
+import { appState } from "../../state/state.ts";
+import { commitActivityPatch } from "../form.ts";
+import { deriveActivityState } from "../render.ts";
+import { autoSaveActivityForm } from "../financials.ts";
+import { pickAndLinkFile, openLinkedFile, unlinkFile, generateAndLinkFile } from "./actions.ts";
+import { renderPdfPreview, renderXlsxPreview, XLSX_PREVIEW_CONTAINER_IDS } from "./preview.ts";
 
 const FILE_STATUS_CONTAINER_IDS: Record<"submission" | "contract" | "form", string> = {
   submission: "submission-file-status",

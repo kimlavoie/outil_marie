@@ -1,20 +1,20 @@
 /**
- * activities-history.ts - Form submission and table sort init, plus a barrel re-exporting
- * history-undo.ts (undo/redo stack), room-conflicts.ts (dates helper + room-booking conflict
- * detection) and version-history.ts (version snapshots/diff/restore) under this original shared
- * import path (the same pattern used by src/services/backup/index.ts and
- * src/activities/reservations/index.ts) — split out because the original file mixed those 4
- * largely independent concerns in one 610-line module.
+ * activities/history/index.ts - Form submission and table sort init, plus a barrel re-exporting
+ * undo.ts (undo/redo stack), room-conflicts.ts (dates helper + room-booking conflict detection)
+ * and version-history.ts (version snapshots/diff/restore) under this shared import path (the same
+ * pattern used by src/services/backup/index.ts and src/activities/reservations/index.ts) — split
+ * out because the original file mixed those 4 largely independent concerns in one 610-line
+ * module.
  *
  * Renders/manipulates the activity drawer/form directly — like js/datepicker.ts,
  * js/activities-file-links.ts, js/activities-render.ts and js/activities-form.ts, this stays a
  * plain TS module rather than a React component until Réservations gets its own turn in Phase 4.
  */
-import { requireNonEmpty } from "../utils/validation.ts";
-import { showToast } from "../utils/utils.ts";
-import { activitiesState, renderActivities } from "./render.ts";
-import { closeActivityDrawer } from "./drawer.ts";
-import { autoSaveActivityForm } from "./autosave.ts";
+import { requireNonEmpty } from "../../utils/validation.ts";
+import { showToast } from "../../utils/utils.ts";
+import { activitiesState, renderActivities } from "../render.ts";
+import { closeActivityDrawer } from "../drawer.ts";
+import { autoSaveActivityForm } from "../autosave.ts";
 
 function submitActivityForm(e?: Event) {
   if (e) e.preventDefault();
@@ -73,7 +73,7 @@ export {
   restoreActivitySnapshot,
   undoActivityFormChange,
   redoActivityFormChange
-} from "./history-undo.ts";
+} from "./undo.ts";
 export {
   updateFormDatesHelper,
   timeRangesOverlap,

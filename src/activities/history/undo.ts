@@ -1,14 +1,14 @@
 /**
- * activities/history-undo.ts - Undo/redo snapshot stack (Ctrl+Z / Ctrl+Y) for the activity
- * drawer currently open. Split out of history.ts (see that file for why it stays a barrel
+ * activities/history/undo.ts - Undo/redo snapshot stack (Ctrl+Z / Ctrl+Y) for the activity
+ * drawer currently open. Split out of index.ts (see that file for why it stays a barrel
  * importing/re-exporting this alongside room-conflicts.ts/version-history.ts).
  */
-import { appState, saveDatabaseOrRollback } from "../state/state.ts";
-import { showToast } from "../utils/utils.ts";
-import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
-import { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT, renderActivities } from "./render.ts";
-import { activityUndoSnapshotTimer, ACTIVITY_UNDO_DEBOUNCE_MS, setActivityUndoSnapshotTimer } from "./autosave.ts";
-import { fillActivityFormFields, renderActivityStateBar } from "./form.ts";
+import { appState, saveDatabaseOrRollback } from "../../state/state.ts";
+import { showToast } from "../../utils/utils.ts";
+import { reconciliationState, reconcileLedger } from "../../services/reconciliation.ts";
+import { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT, renderActivities } from "../render.ts";
+import { activityUndoSnapshotTimer, ACTIVITY_UNDO_DEBOUNCE_MS, setActivityUndoSnapshotTimer } from "../autosave.ts";
+import { fillActivityFormFields, renderActivityStateBar } from "../form.ts";
 
 // Groups every autosave from one continuous edit into a single undo step (see
 // activities-autosave.ts's ACTIVITY_UNDO_DEBOUNCE_MS doc comment for why).

@@ -7,7 +7,7 @@
 import { appState, saveDatabaseOrRollback } from "../state/state.ts";
 import { activitiesState, getPlanningProgress, buildProgressBarHtml, getActivityStateBadgeClass, getActivityStateLabel, renderActivities } from "./render.ts";
 import { persistDrawerUiState } from "./financials.ts";
-import { saveActivityVersion } from "./history.ts";
+import { saveActivityVersion } from "./history/index.ts";
 
 // Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
 // comment for why this cast is needed/safe.

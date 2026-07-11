@@ -1,11 +1,11 @@
 /**
- * activities/room-conflicts.ts - Form "dates helper" text and cross-activity room-booking
- * conflict detection. Split out of history.ts (see that file for why it stays a barrel
- * importing/re-exporting this alongside history-undo.ts/version-history.ts).
+ * activities/history/room-conflicts.ts - Form "dates helper" text and cross-activity
+ * room-booking conflict detection. Split out of index.ts (see that file for why it stays a
+ * barrel importing/re-exporting this alongside undo.ts/version-history.ts).
  */
-import { appState, parseLocalDateStr } from "../state/state.ts";
-import { escapeHtml, OTHER_ROOM_VALUE } from "../utils/utils.ts";
-import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
+import { appState, parseLocalDateStr } from "../../state/state.ts";
+import { escapeHtml, OTHER_ROOM_VALUE } from "../../utils/utils.ts";
+import { collectReservationsFromForm, getAggregateEventDates } from "../reservations/index.ts";
 
 function updateFormDatesHelper() {
   const helperEl = document.getElementById("form-activity-dates-helper");

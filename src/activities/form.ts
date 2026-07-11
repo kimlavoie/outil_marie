@@ -17,9 +17,9 @@ import { appState } from "../state/state.ts";
 import { debounce, generateUid, maskPhoneInput, initMultiSelectDropdown } from "../utils/utils.ts";
 import { activitiesState, renderActivities, initBulkActionsHandlers } from "./render.ts";
 import { openActivityDrawer, printActivitySheet, autoSaveActivityForm, cancelActivityDrawer, addDistributionRow, showAutoSaveStatus, updateSubmissionFinancialSummary } from "./financials.ts";
-import { undoActivityFormChange, redoActivityFormChange, loadAndRenderActivityHistory, updateFormDatesHelper } from "./history.ts";
-import { submitActivityForm } from "./history.ts";
-import { renderFileLinkStatus } from "./file-links.ts";
+import { undoActivityFormChange, redoActivityFormChange, loadAndRenderActivityHistory, updateFormDatesHelper } from "./history/index.ts";
+import { submitActivityForm } from "./history/index.ts";
+import { renderFileLinkStatus } from "./file-links/index.ts";
 import { addReservationCard, addSlotRow, initReservationsSection } from "./reservations/index.ts";
 
 import { initNewActivityModal, openNewActivityModal, closeNewActivityModal, createActivity, createDraftActivity, duplicateActivityAndOpen } from "./new-activity-modal.ts";

@@ -17,7 +17,7 @@ import { collectReservationsFromForm, getAggregateEventDates } from "./reservati
 import { getIncompleteRowWarnings } from "./reservations/subrows.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { getActivityFormMode, updateFormTabIndicators } from "./form.ts";
-import { scheduleActivityUndoSnapshot } from "./history.ts";
+import { scheduleActivityUndoSnapshot } from "./history/index.ts";
 
 let autoSaveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 

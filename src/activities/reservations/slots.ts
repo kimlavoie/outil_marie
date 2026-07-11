@@ -7,7 +7,7 @@ import { WEEKDAY_PILL_OPTIONS } from "../form.ts";
 import { formatDateStrLocal, parseLocalDateStr } from "../../state/state.ts";
 import { generateUid, showToast, initPillToggleEl, maskDateInput } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
-import { updateFormDatesHelper } from "../history.ts";
+import { updateFormDatesHelper } from "../history/index.ts";
 
 function el<T extends Element = HTMLInputElement>(id: string): T {
   return document.getElementById(id) as unknown as T;
