@@ -300,15 +300,8 @@ const ACTIVITY_DRAWER_HTML = `
           </summary>
           <div class="form-accordion-content">
             <div id="submission-financial-summary" class="financial-summary">
-              <!-- Populated dynamically -->
-            </div>
-            <div style="margin-top: 6px; text-align: right">
-              <a
-                href="#"
-                id="adjust-taxes-link"
-                style="font-size: 0.78rem; color: var(--text-muted); text-decoration: underline; cursor: pointer"
-                >Ajuster les taxes...</a
-              >
+              <!-- Populated dynamically, including the "Non taxable" pill and the adjust-taxes icon
+                   right above the TPS/TVQ rows — see updateSubmissionFinancialSummary() -->
             </div>
           </div>
         </details>

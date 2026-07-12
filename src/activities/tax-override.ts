@@ -2,8 +2,8 @@
  * tax-override.ts - The "Ajuster les taxes..." modal: lets a user replace the default TPS/TVQ
  * rate for a single activity with either a different rate (e.g. 0 for a fully exonerated
  * organization) or a flat dollar amount, each annotated with a note explaining why. Deliberately
- * kept out of the main form flow (a discreet link under the cost estimate, not a form field)
- * since this is an exception path used rarely, not a routine input.
+ * kept out of the main form flow (a small icon next to the TPS/TVQ lines, not a form field) since
+ * this is an exception path used rarely, not a routine input.
  */
 import { appState } from "../state/state.ts";
 import { elById } from "../utils/utils.ts";
@@ -43,6 +43,7 @@ export function openTaxOverrideModal(activityId: string) {
   const overrides = act.tax_overrides || {};
   fillTaxSection("tps", overrides.tps);
   fillTaxSection("tvq", overrides.tvq);
+  elById("tax-override-non-taxable-warning").style.display = act.non_taxable ? "block" : "none";
 
   elById("tax-override-modal").classList.add("active");
   elById("modal-backdrop").classList.add("active");
@@ -70,6 +71,10 @@ function saveTaxOverrides() {
   updateSubmissionFinancialSummary();
 }
 
+// The "Ajuster les taxes..." icon itself lives inside #submission-financial-summary, which is
+// fully re-rendered on every recompute (see updateSubmissionFinancialSummary()) — so it can't
+// carry its own listener. form.ts's delegated click handler on the (stable) accordion element
+// calls openTaxOverrideModal() directly instead.
 export function initTaxOverrideModal() {
   elById("tax-override-modal-close").addEventListener("click", closeTaxOverrideModal);
   elById("tax-override-modal-cancel").addEventListener("click", closeTaxOverrideModal);
@@ -82,11 +87,5 @@ export function initTaxOverrideModal() {
       valueEl.disabled = modeEl.value === "default";
       valueEl.placeholder = modeEl.value === "amount" ? "Montant ($)" : "Ex: 0 pour une exonération complète (%)";
     });
-  });
-
-  elById("adjust-taxes-link").addEventListener("click", (e: Event) => {
-    e.preventDefault();
-    const internalId = elById("form-activity-internal-id").value;
-    if (internalId) openTaxOverrideModal(internalId);
   });
 }

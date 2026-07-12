@@ -19,12 +19,19 @@ function formatRatePercent(rate: number): string {
 // Resolves the TPS/TVQ dollar amounts actually applied to an activity: the global default rate
 // (Paramètres > Taxes) unless an activity-level override replaces it — either a different rate
 // (e.g. 0 for a fully exonerated organization) or a flat dollar amount set directly by the user.
+// `non_taxable` (the "Non taxable" checkbox) is a shortcut for full exemption on both taxes at
+// once and takes priority over any rate/amount override, without erasing it — unchecking the box
+// falls back to whatever override (or default rate) was already configured.
 // Shared by the live form summary and the saved-record summary (PDF sheet) so both stay in sync.
 function computeTaxes(subtotal: number, act: any) {
   const defaultRates = appState.settings.tax_rates || { tps: 0.05, tvq: 0.09975 };
   const overrides: { tps?: TaxOverride; tvq?: TaxOverride } = act?.tax_overrides || {};
+  const nonTaxable = !!act?.non_taxable;
 
   const resolve = (tax: "tps" | "tvq") => {
+    if (nonTaxable) {
+      return { amount: 0, label: `${tax.toUpperCase()} (non taxable)`, override: undefined };
+    }
     const override = overrides[tax];
     const amount = override ? (override.mode === "amount" ? override.value : subtotal * override.value) : subtotal * defaultRates[tax];
     const label =
@@ -123,6 +130,16 @@ function updateSubmissionFinancialSummary() {
       <div class="financial-summary-row"><span>Équipements</span><span>${formatCurrency(servicesTotal)}</span></div>
       <div class="financial-summary-row"><span>Autres frais</span><span>${formatCurrency(feesTotal)}</span></div>
       <div class="financial-summary-row"><span>Sous-total</span><span>${formatCurrency(subtotal)}</span></div>
+      <div class="financial-summary-row" style="align-items: center">
+        <div id="activity-non-taxable-toggle" class="pill-toggle-group" role="group" aria-label="Non taxable">
+          <button type="button" class="pill-toggle${act?.non_taxable ? " active" : ""}" style="padding: 3px 10px; font-size: 0.72rem">Non taxable</button>
+        </div>
+        <button type="button" id="adjust-taxes-link" class="btn-icon" title="Ajuster les taxes..." style="width: 22px; height: 22px; padding: 4px">
+          <svg viewBox="0 0 24 24" style="width: 14px; height: 14px">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+          </svg>
+        </button>
+      </div>
       <div class="financial-summary-row"><span>${tps.label}${overrideMarkerHtml(tps.override)}</span><span>${formatCurrency(tps.amount)}</span></div>
       <div class="financial-summary-row"><span>${tvq.label}${overrideMarkerHtml(tvq.override)}</span><span>${formatCurrency(tvq.amount)}</span></div>
       <div class="financial-summary-row total"><span>Total</span><span>${formatCurrency(total)}</span></div>

@@ -154,6 +154,7 @@ function computeActivityDiff(oldAct: any, newAct: any) {
     return [describe("TPS", overrides.tps), describe("TVQ", overrides.tvq)].filter(Boolean).join(" | ");
   };
   addDiff("Dérogation de taxes", getTaxOverrideSummary(oldAct), getTaxOverrideSummary(newAct));
+  addDiff("Non taxable", oldAct.non_taxable ? "Oui" : "Non", newAct.non_taxable ? "Oui" : "Non");
 
   return diffs;
 }

@@ -100,7 +100,9 @@ function buildNewActivityRecord(id: string, name: string, mode: string) {
     notes: "",
     // Per-activity TPS/TVQ overrides (organismes exonérés, ententes particulières) — null means
     // "use the default rates from Paramètres > Taxes". See tax-override.ts.
-    tax_overrides: null as { tps?: { mode: "rate" | "amount"; value: number; note: string }; tvq?: { mode: "rate" | "amount"; value: number; note: string } } | null
+    tax_overrides: null as { tps?: { mode: "rate" | "amount"; value: number; note: string }; tvq?: { mode: "rate" | "amount"; value: number; note: string } } | null,
+    // "Non taxable" checkbox: full TPS/TVQ exemption shortcut, takes priority over tax_overrides.
+    non_taxable: false
   };
 }
 

@@ -16,7 +16,16 @@
 import { appState } from "../state/state.ts";
 import { debounce, generateUid, maskPhoneInput, initMultiSelectDropdown } from "../utils/utils.ts";
 import { activitiesState, renderActivities, initBulkActionsHandlers } from "./render.ts";
-import { openActivityDrawer, printActivitySheet, autoSaveActivityForm, cancelActivityDrawer, addDistributionRow, showAutoSaveStatus, updateSubmissionFinancialSummary } from "./financials.ts";
+import {
+  openActivityDrawer,
+  printActivitySheet,
+  autoSaveActivityForm,
+  cancelActivityDrawer,
+  addDistributionRow,
+  showAutoSaveStatus,
+  updateSubmissionFinancialSummary,
+  openTaxOverrideModal
+} from "./financials.ts";
 import { undoActivityFormChange, redoActivityFormChange, loadAndRenderActivityHistory, updateFormDatesHelper } from "./history/index.ts";
 import { submitActivityForm } from "./history/index.ts";
 import { renderFileLinkStatus } from "./file-links/index.ts";
@@ -50,6 +59,30 @@ function initFormHandlers() {
   el("activity-drawer-close").addEventListener("click", cancelActivityDrawer);
   backdrop.addEventListener("click", cancelActivityDrawer);
   el("activity-print-btn").addEventListener("click", printActivitySheet);
+
+  // "Non taxable" pill and "Ajuster les taxes..." icon: both render fresh on every
+  // updateSubmissionFinancialSummary() call (see financial-summary.ts), so they're wired via
+  // delegation on the accordion — which itself is never rebuilt — rather than bound directly.
+  el("accordion-section-financial-summary").addEventListener("click", e => {
+    const target = e.target as HTMLElement;
+
+    const pillBtn = target.closest("#activity-non-taxable-toggle .pill-toggle");
+    if (pillBtn) {
+      const id = el("form-activity-internal-id").value;
+      if (!id) return;
+      const active = !pillBtn.classList.contains("active");
+      commitActivityPatch(id, (a: any) => {
+        a.non_taxable = active;
+      });
+      updateSubmissionFinancialSummary();
+      return;
+    }
+
+    if (target.closest("#adjust-taxes-link")) {
+      const id = el("form-activity-internal-id").value;
+      if (id) openTaxOverrideModal(id);
+    }
+  });
 
   // Undo/Redo (Ctrl+Z / Ctrl+Y, or Ctrl+Shift+Z for redo) while the activity drawer is open
   document.addEventListener("keydown", e => {
