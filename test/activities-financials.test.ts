@@ -14,10 +14,26 @@ appState.settings = {
   accounts: [],
   last_backup_date: "",
   backup_reminder_days: 7,
-  salaries: [{ id: "sal1", rate_versions: [{ effective_date: "", rate: 20, overtime_rate: 30 }] }],
+  salaries: [
+    {
+      id: "sal1",
+      job: "",
+      tarifs: [{ id: "tarif-sal1", label: "", gl_account_code: "", rate_versions: [{ id: "rv1", effective_date: "", rate: 20, overtime_rate: 30 }] }]
+    }
+  ],
   services: [
-    { id: "svc-hourly", type: "hourly", rate_versions: [{ effective_date: "", rate: 10 }] },
-    { id: "svc-flat", type: "flat", rate_versions: [{ effective_date: "", rate: 50 }] }
+    {
+      id: "svc-hourly",
+      name: "",
+      type: "hourly",
+      tarifs: [{ id: "tarif-svc-hourly", label: "", gl_account_code: "", rate_versions: [{ id: "rv2", effective_date: "", rate: 10 }] }]
+    },
+    {
+      id: "svc-flat",
+      name: "",
+      type: "fixed",
+      tarifs: [{ id: "tarif-svc-flat", label: "", gl_account_code: "", rate_versions: [{ id: "rv3", effective_date: "", rate: 50 }] }]
+    }
   ],
   global_tasks: [],
   schedulable_tasks: [],

@@ -1,28 +1,12 @@
 import { useState } from "react";
 import { generateUid, formatDateMask, showToast } from "../../utils/utils.ts";
 import { DeleteIcon, GlAccountOptions } from "./common.tsx";
+import type { GridParameter, GridClientType, GridCell, PricingGrid } from "../../state/store.ts";
 
-export interface GridParam {
-  id: string;
-  name: string;
-}
-export interface GridClientType {
-  id: string;
-  name: string;
-  gl_account_code?: string;
-}
-export interface GridCell {
-  parameter_id: string;
-  client_type_id: string;
-  amount: number;
-}
-export interface PricingGrid {
-  id: string;
-  effective_date: string;
-  parameters: GridParam[];
-  client_types: GridClientType[];
-  cells: GridCell[];
-}
+// Re-exported under this file's original names — GridParameter is the canonical (store.ts) name,
+// GridParam is what rooms.tsx (this editor's only consumer) already imports.
+export type { GridClientType, GridCell, PricingGrid };
+export type GridParam = GridParameter;
 
 // The "Configuration des Tarifs" editor for a room: manages a versioned pricing grid (one
 // version per effective_date), each version being a matrix of parameters (rows) x client types

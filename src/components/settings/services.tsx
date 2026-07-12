@@ -63,7 +63,7 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
   const isOpen = id !== undefined;
   const originalId = id || "";
   const [name, setName] = useState("");
-  const [type, setType] = useState("fixed");
+  const [type, setType] = useState<"fixed" | "hourly">("fixed");
   const [tarifs, setTarifs] = useState<TarifRow[]>([]);
 
   useEffect(() => {
@@ -185,7 +185,12 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
       </div>
       <div className="form-group">
         <label htmlFor="form-service-type">Type de frais</label>
-        <select id="form-service-type" className="select-input" value={type} onChange={e => setType(e.target.value)}>
+        <select
+          id="form-service-type"
+          className="select-input"
+          value={type}
+          onChange={e => setType(e.target.value as "fixed" | "hourly")}
+        >
           <option value="fixed">Frais fixe</option>
           <option value="hourly">Frais horaire</option>
         </select>

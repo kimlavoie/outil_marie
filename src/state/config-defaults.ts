@@ -364,7 +364,7 @@ const DEFAULT_CONFIG = {
     {
       id: "service-location-projecteur",
       name: "Location de projecteur",
-      type: "hourly",
+      type: "hourly" as const,
       tarifs: [
         {
           id: "tarif-location-projecteur",
@@ -377,7 +377,7 @@ const DEFAULT_CONFIG = {
     {
       id: "service-piano-queue",
       name: "Piano à queue",
-      type: "fixed",
+      type: "fixed" as const,
       tarifs: [
         {
           id: "tarif-piano-queue",
@@ -390,7 +390,7 @@ const DEFAULT_CONFIG = {
     {
       id: "service-projecteur-equipement",
       name: "Projecteur / équipement informatique",
-      type: "fixed",
+      type: "fixed" as const,
       tarifs: [
         {
           id: "tarif-projecteur-equipement",

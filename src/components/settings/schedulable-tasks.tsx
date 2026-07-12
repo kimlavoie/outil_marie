@@ -2,26 +2,7 @@ import { useState, useEffect } from "react";
 import { appState, saveDatabaseOrRollback, EVENT_TYPES, TECHNICAL_SERVICES } from "../../state/state.ts";
 import { showToast, generateUid } from "../../utils/utils.ts";
 import { DeleteIcon, Modal } from "./common.tsx";
-
-interface TaskCondition {
-  id: string;
-  field: string;
-  operator: string;
-  value: string | number;
-}
-
-interface ConditionGroup {
-  id: string;
-  logic: "AND" | "OR";
-  conditions: TaskCondition[];
-}
-
-interface SchedulableTask {
-  id: string;
-  description: string;
-  groups_logic: "AND" | "OR";
-  groups: ConditionGroup[];
-}
+import type { TaskCondition, ConditionGroup, SchedulableTask } from "../../state/store.ts";
 
 const CONDITION_FIELDS: { value: string; label: string; type: "select" | "number" }[] = [
   { value: "event_type", label: "Type d'événement", type: "select" },

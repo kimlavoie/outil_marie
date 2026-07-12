@@ -1,17 +1,139 @@
 import { DEFAULT_CONFIG } from "./config-defaults.ts";
 
+// Domain types for src/state/config-defaults.ts's seed data and everything stored under
+// appState.settings — shared here (rather than left as `any[]` on AppState) so a typo on a field
+// name (e.g. reading `s.rate` on a Service, which has none — rates live under its tarifs' own
+// rate_versions) is caught at compile time instead of silently computing 0 at runtime.
+
+export interface RateVersion {
+  id: string;
+  effective_date: string;
+  rate: number;
+  overtime_rate?: number;
+}
+
+// A named price point (e.g. "Interne" / "Externe") a salary or service can be billed under, each
+// with its own GL account and its own dated rate history.
+export interface Tarif {
+  id: string;
+  label: string;
+  gl_account_code: string;
+  rate_versions: RateVersion[];
+}
+
+export interface Salary {
+  id: string;
+  job: string;
+  tarifs: Tarif[];
+}
+
+export interface Service {
+  id: string;
+  name: string;
+  type: "hourly" | "fixed";
+  tarifs: Tarif[];
+}
+
+export interface Account {
+  code: string;
+  description: string;
+}
+
+export interface GlobalTask {
+  id: string;
+  description: string;
+}
+
+export interface LinkedStaff {
+  id: string;
+  salary_id: string;
+  count: number;
+}
+
+export interface LinkedFee {
+  id: string;
+  description: string;
+  amount: number;
+  gl_account_code: string;
+}
+
+export interface LinkedTask {
+  id: string;
+  description: string;
+}
+
+export interface GridParameter {
+  id: string;
+  name: string;
+}
+
+export interface GridClientType {
+  id: string;
+  name: string;
+  gl_account_code?: string;
+}
+
+export interface GridCell {
+  parameter_id: string;
+  client_type_id: string;
+  amount: number;
+}
+
+// One dated version of a room's pricing matrix (parameters x client_types, one $ amount per
+// cell). A room can carry several, each taking effect from its own effective_date.
+export interface PricingGrid {
+  id: string;
+  effective_date: string;
+  parameters: GridParameter[];
+  client_types: GridClientType[];
+  cells: GridCell[];
+}
+
+export interface Room {
+  name: string;
+  color: string;
+  abbreviation?: string;
+  pricing_grids: PricingGrid[];
+  linked_rooms: string[];
+  linked_staff: LinkedStaff[];
+  linked_fees: LinkedFee[];
+  linked_tasks: LinkedTask[];
+}
+
+export interface TaskCondition {
+  id: string;
+  field: string;
+  operator: string;
+  value: string | number;
+}
+
+export interface ConditionGroup {
+  id: string;
+  logic: "AND" | "OR";
+  conditions: TaskCondition[];
+}
+
+// A planning task auto-suggested on an activity when its conditions (event type, client type,
+// department, rooms/services reserved, attendee count...) match. See activities/planning-tab.ts.
+export interface SchedulableTask {
+  id: string;
+  description: string;
+  groups_logic: "AND" | "OR";
+  groups: ConditionGroup[];
+}
+
 export interface AppState {
   settings: {
     theme: string;
-    rooms: any[];
-    departments: any[];
-    accounts: any[];
+    rooms: Room[];
+    departments: string[];
+    accounts: Account[];
     last_backup_date: string;
     backup_reminder_days: number;
-    salaries: any[];
-    services: any[];
-    global_tasks: any[];
-    schedulable_tasks: any[];
+    salaries: Salary[];
+    services: Service[];
+    global_tasks: GlobalTask[];
+    schedulable_tasks: SchedulableTask[];
     tax_rates: { tps: number; tvq: number };
   };
   activities: any[];

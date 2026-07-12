@@ -71,7 +71,7 @@ function computeFormRevenueSubtotal(): { roomsTotal: number; staffTotal: number;
       rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!.value) || 0 : 0;
       overtimeRate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!.value) || 0 : 0;
     } else {
-      const salary = (appState.settings.salaries || []).find((s: any) => s.id === salaryId);
+      const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
       rate = salary ? getActiveSalaryRate(salary, eventDateStart, tarifId) : 0;
       overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, tarifId) : 0;
     }
@@ -90,10 +90,10 @@ function computeFormRevenueSubtotal(): { roomsTotal: number; staffTotal: number;
       const wrapper = row.closest(".distribution-row-wrapper");
       rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!.value) || 0 : 0;
     } else {
-      const service = (appState.settings.services || []).find((s: any) => s.id === serviceId);
+      const service = (appState.settings.services || []).find(s => s.id === serviceId);
       rate = service ? getActiveServiceRate(service, eventDateStart, tarifId) : 0;
     }
-    const service = (appState.settings.services || []).find((s: any) => s.id === serviceId);
+    const service = (appState.settings.services || []).find(s => s.id === serviceId);
     servicesTotal += service && service.type === "hourly" ? rate * hours * count : rate * count;
   });
 
@@ -149,7 +149,7 @@ function computeActivityFinancials(act: any) {
 
   reservations.forEach((r: any) => {
     (r.staff || []).forEach((s: any) => {
-      const salary = (appState.settings.salaries || []).find((sal: any) => sal.id === s.salary_id);
+      const salary = (appState.settings.salaries || []).find(sal => sal.id === s.salary_id);
       let rate = 0;
       let overtimeRate = 0;
       if (s.tarif_id === "__custom__") {
@@ -162,7 +162,7 @@ function computeActivityFinancials(act: any) {
       staffTotal += rate * (s.hours || 0) * (s.count || 0) + overtimeRate * (s.overtime_hours || 0) * (s.count || 0);
     });
     (r.services || []).forEach((s: any) => {
-      const service = (appState.settings.services || []).find((sv: any) => sv.id === s.service_id);
+      const service = (appState.settings.services || []).find(sv => sv.id === s.service_id);
       let rate = 0;
       if (s.tarif_id === "__custom__") {
         rate = s.custom_rate || 0;
