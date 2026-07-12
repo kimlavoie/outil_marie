@@ -25,12 +25,22 @@ function exportToExcel() {
   showLoadingOverlay("Génération de l'export Excel...");
   // Deferred so the overlay actually paints before this synchronous, potentially long-running
   // workbook generation blocks the main thread.
-  setTimeout(() => runExportToExcel(getExcelColName), 20);
+  setTimeout(async () => {
+    try {
+      const xlsxModule = await import("xlsx");
+      runExportToExcel(getExcelColName, xlsxModule);
+    } catch (err: any) {
+      logError("backup", "importation de xlsx", err);
+      showToast("La librairie Excel (XLSX) n'a pas pu être chargée.", "error");
+      hideLoadingOverlay();
+    }
+  }, 20);
 }
 
-function runExportToExcel(getExcelColName: (colIdx: number) => string) {
+function runExportToExcel(getExcelColName: (colIdx: number) => string, xlsxInstance?: any) {
   try {
-    if (typeof XLSX === "undefined" || !XLSX?.utils?.book_new) {
+    const lib = xlsxInstance || (globalThis as any).XLSX;
+    if (typeof lib === "undefined" || !lib?.utils?.book_new) {
       throw new Error("La librairie Excel (XLSX) n'a pas pu être chargée.");
     }
     if (!appState.settings.accounts || appState.settings.accounts.length === 0) {
@@ -38,7 +48,7 @@ function runExportToExcel(getExcelColName: (colIdx: number) => string) {
       return;
     }
 
-    const wb = XLSX.utils.book_new();
+    const wb = lib.utils.book_new();
 
     // Sheet 1: ACTIVITÉS
     // Define Headers
@@ -138,7 +148,7 @@ function runExportToExcel(getExcelColName: (colIdx: number) => string) {
 
     sheetData.push(totalRow);
 
-    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    const ws = lib.utils.aoa_to_sheet(sheetData);
 
     // Adjust columns widths
     ws["!cols"] = [
@@ -161,7 +171,7 @@ function runExportToExcel(getExcelColName: (colIdx: number) => string) {
     accountsOrder.forEach(() => ws["!cols"].push({ wch: 18 }));
     ws["!cols"].push({ wch: 20 }); // Total revenue
 
-    XLSX.utils.book_append_sheet(wb, ws, "ACTIVITÉS");
+    lib.utils.book_append_sheet(wb, ws, "ACTIVITÉS");
 
     // Sheet 2: Configuration Salles (une ligne par cellule de la grille tarifaire active)
     const roomsData = [["SALLE", "GRILLE (ENTRÉE EN VIGUEUR)", "TARIF", "MONTANT ($/JOUR)"]];
@@ -172,8 +182,8 @@ function runExportToExcel(getExcelColName: (colIdx: number) => string) {
         roomsData.push([r.name, grid ? grid.effective_date || "Depuis toujours" : "", t.description, t.amount]);
       });
     });
-    const wsRooms = XLSX.utils.aoa_to_sheet(roomsData);
-    XLSX.utils.book_append_sheet(wb, wsRooms, "SALLES");
+    const wsRooms = lib.utils.aoa_to_sheet(roomsData);
+    lib.utils.book_append_sheet(wb, wsRooms, "SALLES");
 
     // Trigger download: includes selected period in filename
     const qStr = appState.selected_quarters
@@ -181,7 +191,7 @@ function runExportToExcel(getExcelColName: (colIdx: number) => string) {
       .map(q => `T${q}`)
       .join("-");
     const filename = `compta_marie_rapport_${appState.selected_year}_${qStr || "aucun"}_${new Date().toISOString().split("T")[0]}.xlsx`;
-    XLSX.writeFile(wb, filename);
+    lib.writeFile(wb, filename);
     showToast("Export Excel terminé.", "success");
   } catch (err: any) {
     logError("backup", "export Excel", err);

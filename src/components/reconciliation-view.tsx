@@ -35,7 +35,7 @@ const RECON_STATUS_LABELS: Record<string, string> = {
 // Excel export (button in the table toolbar)
 // ---------------------------------------------------------------------------
 
-function runReconciliationExcelExport() {
+function runReconciliationExcelExport(XLSX: any) {
   try {
     const header = [
       "Compte",
@@ -93,7 +93,16 @@ function exportReconciliationToExcel() {
     return;
   }
   showLoadingOverlay("Génération de l'export du rapprochement...");
-  setTimeout(runReconciliationExcelExport, 20);
+  setTimeout(async () => {
+    try {
+      const xlsxModule = await import("xlsx");
+      runReconciliationExcelExport(xlsxModule);
+    } catch (err: any) {
+      logError("reconciliation", "importation de xlsx", err);
+      showToast("La librairie Excel (XLSX) n'a pas pu être chargée.", "error");
+      hideLoadingOverlay();
+    }
+  }, 20);
 }
 
 // ---------------------------------------------------------------------------
@@ -649,8 +658,9 @@ export function ReconciliationView() {
       showToast("Erreur lors de la lecture du fichier.", "error");
     };
 
-    reader.onload = e => {
+    reader.onload = async e => {
       try {
+        const XLSX = await import("xlsx");
         const data = new Uint8Array(e.target!.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: "array" });
         const firstSheet = workbook.SheetNames[0];

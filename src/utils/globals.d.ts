@@ -5,7 +5,6 @@
 
 declare global {
   const Chart: any;
-  const XLSX: any;
 
   interface Window {
     // File System Access API (Chrome/Edge only).
