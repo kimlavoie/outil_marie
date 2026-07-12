@@ -5,7 +5,7 @@ import { dom } from "./dom-mock.ts";
 
 test.after(() => dom.window.close());
 
-import { renderFileLinkStatus, pickAndLinkFile, idbSetFileLink, idbGetFileLink } from "../src/activities/file-links/index.ts";
+import { renderFileLinkStatus, pickAndLinkFile, idbSetFileLink, idbGetFileLink, renderPdfPreview, renderXlsxPreview } from "../src/activities/file-links/index.ts";
 
 function makeActivity(overrides: any = {}) {
   return {
@@ -110,3 +110,58 @@ test("pickAndLinkFile rejects a non-PDF file for the 'form' kind without linking
   const linked = await idbGetFileLink("act-1");
   assert.equal(linked, null);
 });
+
+test("renderPdfPreview shows empty message when no form is linked", async () => {
+  setupContainer("form");
+  await renderPdfPreview(makeActivity({ form: { file_link_id: "" } }));
+  assert.match(document.getElementById("form-pdf-preview")!.innerHTML, /Aucun formulaire PDF lié/);
+});
+
+test("renderPdfPreview shows error when linked record is not found in IndexedDB", async () => {
+  setupContainer("form");
+  await renderPdfPreview(makeActivity({ form: { file_link_id: "non-existent" } }));
+  assert.match(document.getElementById("form-pdf-preview")!.innerHTML, /Fichier introuvable/);
+});
+
+test("renderPdfPreview shows permission request when read permission is not granted", async () => {
+  setupContainer("form");
+  const mockHandle = {
+    queryPermission: async () => "prompt",
+    requestPermission: async () => "denied"
+  };
+  await idbSetFileLink("link-prompt-pdf", { name: "test.pdf", handle: mockHandle });
+  
+  await renderPdfPreview(makeActivity({ form: { file_link_id: "link-prompt-pdf" } }));
+  assert.match(document.getElementById("form-pdf-preview")!.innerHTML, /Accès sécurisé requis/);
+});
+
+test("renderPdfPreview displays type error for non-PDF file", async () => {
+  setupContainer("form");
+  const mockHandle = {
+    queryPermission: async () => "granted",
+    getFile: async () => ({ name: "test.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+  };
+  await idbSetFileLink("link-invalid-pdf", { name: "test.xlsx", handle: mockHandle });
+
+  await renderPdfPreview(makeActivity({ form: { file_link_id: "link-invalid-pdf" } }));
+  assert.match(document.getElementById("form-pdf-preview")!.innerHTML, /Le fichier lié n'est pas un document PDF/);
+});
+
+test("renderXlsxPreview shows empty message when no submission is linked", async () => {
+  setupContainer("submission");
+  await renderXlsxPreview("submission", makeActivity({ submission: { file_link_id: "" } }));
+  assert.match(document.getElementById("submission-xlsx-preview")!.innerHTML, /Aucune soumission liée/);
+});
+
+test("renderXlsxPreview shows permission prompt when read permission is not granted", async () => {
+  setupContainer("submission");
+  const mockHandle = {
+    queryPermission: async () => "prompt",
+    requestPermission: async () => "denied"
+  };
+  await idbSetFileLink("link-prompt-xlsx", { name: "test.xlsx", handle: mockHandle });
+
+  await renderXlsxPreview("submission", makeActivity({ submission: { file_link_id: "link-prompt-xlsx" } }));
+  assert.match(document.getElementById("submission-xlsx-preview")!.innerHTML, /Accès sécurisé requis/);
+});
+
