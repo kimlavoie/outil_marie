@@ -20,7 +20,8 @@ appState.settings = {
     { id: "svc-flat", type: "flat", rate_versions: [{ effective_date: "", rate: 50 }] }
   ],
   global_tasks: [],
-  schedulable_tasks: []
+  schedulable_tasks: [],
+  tax_rates: { tps: 0.05, tvq: 0.09975 }
 };
 
 function makeActivity(reservationOverrides: any): any {

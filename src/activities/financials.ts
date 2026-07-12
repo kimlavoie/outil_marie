@@ -24,6 +24,7 @@ export {
   getSavedDrawerUiState
 } from "./drawer.ts";
 export { addDistributionRow } from "./distribution-rows.ts";
+export { openTaxOverrideModal, closeTaxOverrideModal, initTaxOverrideModal } from "./tax-override.ts";
 export {
   showAutoSaveStatus,
   autoSaveActivityForm,

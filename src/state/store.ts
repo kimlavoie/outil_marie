@@ -12,6 +12,7 @@ export interface AppState {
     services: any[];
     global_tasks: any[];
     schedulable_tasks: any[];
+    tax_rates: { tps: number; tvq: number };
   };
   activities: any[];
   favorites: any[];
@@ -31,7 +32,8 @@ export let appState: AppState = {
     salaries: [...DEFAULT_CONFIG.salaries],
     services: [...DEFAULT_CONFIG.services],
     global_tasks: [...DEFAULT_CONFIG.global_tasks],
-    schedulable_tasks: [...DEFAULT_CONFIG.schedulable_tasks]
+    schedulable_tasks: [...DEFAULT_CONFIG.schedulable_tasks],
+    tax_rates: { ...DEFAULT_CONFIG.tax_rates }
   },
   activities: [],
   favorites: [], // ids of activities pinned (by the user) to the "Accès rapide" list

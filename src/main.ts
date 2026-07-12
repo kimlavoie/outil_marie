@@ -12,7 +12,7 @@ import { initBackupHandlers } from "./services/backup/index.ts";
 import { initCustomDatepickers } from "./activities/datepicker.ts";
 import { initCalendarModal, initViewCalendarButtons } from "./components/calendar-view.tsx";
 import { initActivitiesSort } from "./activities/history/index.ts";
-import { openActivityDrawer, initActivityDetailsModal, getSavedDrawerUiState } from "./activities/financials.ts";
+import { openActivityDrawer, initActivityDetailsModal, initTaxOverrideModal, getSavedDrawerUiState } from "./activities/financials.ts";
 import { switchActivityTab } from "./activities/form.ts";
 import { renderHelpCenter } from "./help-center.ts";
 import { renderActivityDrawerShell } from "./activities/drawer-template.ts";
@@ -45,6 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initFormHandlers();
   initNewActivityModal();
   initActivityDetailsModal();
+  initTaxOverrideModal();
   initReconciliationHandlers();
   initBackupHandlers();
   initCustomDatepickers();

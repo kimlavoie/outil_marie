@@ -7,6 +7,7 @@ import { SalariesPanel, SalaryModal } from "./salaries.tsx";
 import { ServicesPanel, ServiceModal } from "./services.tsx";
 import { GlobalTasksPanel, GlobalTaskModal } from "./global-tasks.tsx";
 import { SchedulableTasksPanel, SchedulableTaskModal } from "./schedulable-tasks.tsx";
+import { TaxesPanel } from "./taxes.tsx";
 
 import type { Command } from "./mount.ts";
 
@@ -111,7 +112,8 @@ export function SettingsView({ command }: { command: Command }) {
     { key: "salaries", label: "Salaires" },
     { key: "services", label: "Équipements" },
     { key: "global-tasks", label: "Tâches globales" },
-    { key: "schedulable-tasks", label: "Tâches programmables" }
+    { key: "schedulable-tasks", label: "Tâches programmables" },
+    { key: "taxes", label: "Taxes" }
   ];
 
   return (
@@ -141,6 +143,7 @@ export function SettingsView({ command }: { command: Command }) {
             openModal={v => setModal("schedulable-tasks", setSchedulableTaskModalId, v)}
             bump={bump}
           />
+          <TaxesPanel active={activeTab === "taxes"} />
         </div>
       </div>
 

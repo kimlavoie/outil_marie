@@ -82,9 +82,10 @@ test("getRoomColor returns configured room color or stable fallback from hash", 
     departments: [],
     accounts: [],
     last_backup_date: "",
-    backup_reminder_days: 7
+    backup_reminder_days: 7,
+    tax_rates: { tps: 0.05, tvq: 0.09975 }
   };
-  
+
   // Configured color
   assert.equal(getRoomColor("Salle Bleue"), "#0000ff");
   
@@ -113,9 +114,10 @@ test("buildGlAccountOptionsHtml generates correct select options HTML with optio
       { code: "102", description: "Banque & Épargne" }
     ],
     last_backup_date: "",
-    backup_reminder_days: 7
+    backup_reminder_days: 7,
+    tax_rates: { tps: 0.05, tvq: 0.09975 }
   };
-  
+
   const optionsHtml = buildGlAccountOptionsHtml();
   assert.ok(optionsHtml.includes('<option value="">Aucun</option>'));
   assert.ok(optionsHtml.includes('<option value="101" >101 (Caisse)</option>'));

@@ -11,7 +11,17 @@
  * either module's top-level evaluation, same as the other circular imports already in this
  * codebase.
  */
-export { formatCurrency, escapeHtml, generateUid, newRateVersionRow, calculateDaysCount, formatDateMask, maskDateInput, maskPhoneInput } from "./format.ts";
+export {
+  formatCurrency,
+  escapeHtml,
+  generateUid,
+  rateToPercentString,
+  newRateVersionRow,
+  calculateDaysCount,
+  formatDateMask,
+  maskDateInput,
+  maskPhoneInput
+} from "./format.ts";
 export type { RateVersionRow } from "./format.ts";
 export {
   getActivityReferences,

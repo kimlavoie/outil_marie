@@ -1,211 +1,84 @@
 TODO - Ameliorations Outil Marie
-(genere le 2026-07-11 suite a une nouvelle revue de code)
+(genere le 2026-07-11)
 
 =======================================================
-FIABILITE (priorite haute)
+CONTROLE UTILISATEUR SUR LES DONNEES (priorite produit)
 =======================================================
 
-[x] Restauration JSON sans sanitizeActivitiesList -> crash potentiel
-    Fichier : src/services/backup/restore.ts (handleJsonBackupFile)
-    Ajout de appState.activities = sanitizeActivitiesList(appState.activities)
-    juste apres setAppState(parsed), avant les autres migrations.
+Principe directeur : l'utilisateur souhaite garder le plus de controle
+possible sur ses donnees. Plusieurs champs sont aujourd'hui calcules
+automatiquement (tarifs, taux, taxes, totaux, dates fiscales) sans
+possibilite de correction manuelle. Il serait utile d'ajouter, la ou
+c'est pertinent, un mecanisme d'"exception" (surcharge manuelle) qui
+laisse la valeur calculee par defaut mais permet a l'utilisateur de la
+remplacer explicitement quand la situation reelle diverge de la regle
+generale.
 
-[x] Rollback de restauration non re-persiste sur disque
-    Fichier : src/services/backup/restore.ts (bloc catch de la migration)
-    saveDatabase() est maintenant rappele apres setAppState(preRestoreSnapshot)
-    pour re-ecrire explicitement l'etat pre-restauration sur disque au
-    lieu de compter sur une sauvegarde ulterieure non liee.
+Note : les tarifs de salle ("Montant personnalise..." dans
+reservations/tariff.ts), les taux de salaire/supplementaire et les
+taux de service/equipement (champs "custom-rate-input" dans
+reservations/subrows.ts) supportent deja une surcharge manuelle -
+retires de cette liste apres verification du code.
 
-[x] Echec silencieux de l'auto-backup
-    Fichier : src/services/backup/auto-backup.ts (writeAutoBackupNow,
-    renderAutoBackupStatus)
-    Un nouveau statut "write-error" affiche un badge rouge + un message
-    explicite dans le panneau, et un showToast() signale l'echec a
-    l'utilisateur au moment ou il se produit, plutot que de laisser le
-    dernier badge "Actif" mentir silencieusement.
+[X] Taxes (TPS 5% / TVQ 9,975%)
+    Fichier : src/activities/financial-summary.ts
+    (updateSubmissionFinancialSummary, computeActivityFinancials)
+    Taux fixes appliques sur le sous-total. Certaines activites
+    (organismes exoneres, ententes particulieres) auraient besoin
+    d'un taux ou d'un montant de taxes different, voire d'une
+    exoneration complete.
 
-[x] Fenetre de perte possible sur fermeture rapide de l'app
-    Fichier : src/services/backup/auto-backup.ts (scheduleAutoBackupWrite)
-    Un gestionnaire beforeunload declenche immediatement l'ecriture en
-    attente (au lieu d'attendre le debounce de 1500ms) si l'app se ferme
-    pendant la fenetre d'attente. Best-effort (l'API File System Access
-    reste asynchrone et non garantie avant la fermeture), mais reduit
-    nettement la fenetre de divergence.
+[ ] Annee fiscale / numero de trimestre
+    Fichier : src/state/date-helpers.ts (getFiscalYear,
+    getQuarterNumber)
+    Derives automatiquement de la date de debut. Pour des corrections
+    comptables historiques, pouvoir forcer l'annee/trimestre sans
+    changer la date reelle de l'activite serait utile.
 
-[x] Migration de tarif : correspondance de room perdue -> montant remis
-    a zero sans trace
-    Fichier : src/state/migrations.ts (migrateActivities)
-    Un logWarn (meme pattern que le cas dayCount === 0 existant) est
-    ajoute quand matchedTariff est null, pour tracer les montants remis
-    a 0 pendant une migration/restauration.
+[ ] Nombre de jours (dayCount)
+    Fichiers : src/state/migrations.ts (calculateDaysCount),
+    src/utils/format.ts
+    Genere automatiquement a partir de date_start/date_end ; une plage
+    inversee retombe a 0 puis est forcee a 1. Une surcharge manuelle
+    permettrait de corriger le nombre de jours factures sans devoir
+    modifier les dates elles-memes pour obtenir le bon compte.
 
-=======================================================
-TESTS (trous a combler)
-=======================================================
+[ ] Resolution du tarif de salle (tariff_id, tariff_description,
+    tariff_gl_account_code)
+    Fichiers : src/activities/reservations/index.ts (resolution de
+    grille), src/state/migrations.ts
+    L'id du tarif, sa description et le code de compte GL sont
+    resolus automatiquement selon salle + parametre + type de client
+    (ou lors de la migration heritage). Une exception permettrait de
+    pointer une reservation vers un autre compte GL ou de corriger la
+    resolution apres qu'une grille tarifaire ait change retroactivement.
 
-npm run test:coverage : 428 tests, 66.33% lignes / 74.60% branches
-(etait 367 tests, 57.63%/74.34% avant cette section).
-Fichiers de logique metier substantielle les moins couverts :
-
-[x] src/services/backup/restore.ts (etait 18.96%, maintenant 83.06%)
-    test/backup/restore.test.ts : validation rejetee (etat inchange),
-    confirm() annule (etat inchange), activite restauree sans "name"
-    correctement assainie (test de non-regression pour le bug
-    sanitizeActivitiesList corrige plus haut), et echec de migration ->
-    rollback + re-persistance sur disque (verifie via getAppStateFromDb).
-
-[x] src/services/backup/auto-backup.ts (etait 35.74%, maintenant 83.08%)
-    test/backup/auto-backup.test.ts : statut "unsupported" sans API
-    disponible, connexion + ecriture reussie (handle persiste + contenu
-    ecrit verifie), echec d'ecriture -> statut "write-error" + toast (test
-    de non-regression pour le bug d'echec silencieux corrige plus haut),
-    debounce de scheduleAutoBackupWrite + flush immediat sur
-    l'evenement beforeunload (test de non-regression pour la fenetre de
-    perte corrigee plus haut), et deconnexion.
-    Note : src/services/backup/index.ts (25.14%) est surtout un barrel
-    de re-export (voir historique TODO) ; sa logique propre
-    (validateBackupSchema, getDaysSinceLastBackup, checkBackupReminder)
-    est deja couverte par test/backup/index.test.ts.
-
-[x] src/services/contract-generator.ts (etait 26.28%, maintenant 100%)
-    test/contract-generator-generate.test.ts : generateContractXlsx et
-    generateSoumissionXlsx produisent un .xlsx valide (signature "PK",
-    parties OOXML attendues, drawing d'entete present seulement pour la
-    variante "contrat"), nom de fichier (avec repli "activite" si
-    l'activite n'a pas de nom), et les deux chemins d'erreur (gabarit
-    injoignable / gabarit invalide) affichent le toast attendu.
-    A necessite un petit ajustement dans contract-generator.ts : l'appel
-    fetch utilisait `import.meta.env.BASE_URL` sans garde, qui n'existe
-    pas hors d'un vrai runtime Vite (donc pas dans les tests Node) ;
-    passe a `(import.meta as any).env?.BASE_URL ?? ""`, sans changement
-    de comportement sous Vite.
-
-[x] src/activities/bulk-actions.ts (etait 25.12%, maintenant 87.68%)
-    test/bulk-actions.test.ts etendu : case a cocher "tout selectionner"
-    (coche/decoche + synchronise activitiesState.selectedIds), bouton
-    "effacer la selection", suppression en masse (seules les activites
-    selectionnees sont marquees supprimees, retirees des favoris,
-    selection videe), confirmation annulee (rien ne change), selection
-    vide (aucun appel a confirm()), rollback en memoire si la sauvegarde
-    echoue (deletion et favoris restaures, toast affiche), et changement
-    d'etat en masse (nouvel etat applique uniquement aux lignes
-    selectionnees, menu referme, selection videe).
-
-[x] src/activities/render.ts (etait 35.54%, maintenant 83.66%)
-    test/activities-render-extra.test.ts : renderActivities() -- placeholder
-    "aucune activite" + bouton reset desactive, activites supprimees
-    exclues, rendu "Vierge" pour un nom vide, filtre de recherche
-    (id/nom/responsable/code de compte/reference), filtres salle/type de
-    client/statut/periode (annee fiscale + trimestre), tri (nom, chiffre
-    d'affaires, croissant/decroissant), et cases a cocher de ligne
-    (synchronisation activitiesState.selectedIds + classe "selected").
-    Les petits helpers purs (getActivityStateLabel, deriveActivityState,
-    etc.) etaient deja couverts par test/activities-render.test.ts.
-
-[x] src/activities/form.ts (etait 31.83%, maintenant 77.17%)
-    test/activities-form-handlers.test.ts : initFormHandlers() se cable
-    sans lancer d'exception avec le DOM requis, bouton "reset-filters"
-    (vide la recherche + les panneaux de filtres + re-rend la liste),
-    raccourci Alt+[1-6] (delegue au bouton de navigation correspondant),
-    et les deux bascules d'affichage conditionnelles (type de responsable
-    "externe", type d'activite "autre"). fillActivityFormFields (le reste
-    de la logique substantielle du fichier) etait deja couvert par
-    test/form-fill.test.ts. Non couvert (raccourcis clavier
-    Ctrl+Z/Y limites au drawer, Echap, et les boutons qui ouvrent le
-    drawer/modale -- necessiteraient de simuler tout le cycle de vie du
-    drawer, hors de portee raisonnable pour un test unitaire Node).
-
-[x] src/navigation/global-search.ts (etait ~18%, maintenant 96.22%)
-    test/global-search.test.ts : globalSearchMatches (substring +
-    repli flou via textSimilarity), renderGlobalSearchResults (requete
-    vide, aucun resultat, activites/comptes/departements trouves en
-    excluant les activites supprimees/sans nom, plafond de 5 par
-    categorie), openGlobalSearchResult (aucune exception meme pour un
-    id inconnu), et initGlobalSearch (debounce de la saisie, focus
-    rouvrant un resultat existant, clic exterieur et Echap qui ferment
-    le panneau).
-
-[x] src/navigation/quick-access.ts (etait ~19%, maintenant 96.22%)
-    test/quick-access.test.ts : etat vide (message + badge cache),
-    section "Epinglees", section "A venir bientot" (fenetre de 30
-    jours, bornes incluses/exclues verifiees), deduplication (une
-    activite a la fois epinglee et recemment consultee n'apparait que
-    sous "Epinglees"), boutons epingler/desepingler (mettent a jour
-    appState.favorites et re-rendent), et initQuickAccessDropdown/
-    closeQuickAccessDropdown (bouton bascule, clic exterieur, Echap).
-
-[x] src/navigation/period-selector.ts (etait ~23%, maintenant 90.76%)
-    test/period-selector-extra.test.ts : updateActivePeriodDescription
-    (annee/trimestre manquant, 4 trimestres = annee complete,
-    trimestres contigus = une seule plage de dates, trimestres non
-    contigus listes individuellement), populateFiscalYears (fenetre
-    glissante + annees des activites existantes ajoutees, activites
-    supprimees ignorees, annee courante marquee selectionnee), et
-    initPeriodSelector (etat initial des pastilles de trimestre,
-    clic qui ajoute/retire un trimestre et persiste, changement
-    d'annee fiscale qui persiste). getFiscalYearWindow etait deja
-    couvert par test/period-selector.test.ts.
+Remarque : il faudra decider, pour chaque champ, si l'exception se
+manifeste comme un simple champ modifiable qui memorise "valeur
+calculee vs valeur forcee" (avec un indicateur visuel du type
+"surcharge manuelle") ou comme un champ separe optionnel. A determiner
+avec l'utilisateur au cas par cas avant l'implementation, plutot que
+d'appliquer un patron unique partout.
 
 =======================================================
-ARCHITECTURE (dette technique, non bloquant)
-=======================================================
-
-[x] Decouper src/activities/history.ts (610 lignes)
-    history.ts redevient un barrel (submitActivityForm, initActivitiesSort
-    + re-export) qui garde le nom de fichier original pour ne rien casser
-    cote imports existants (autosave.ts, drawer.ts, form-state-bar.ts,
-    form.ts, reservations/*.ts importaient tous depuis "./history.ts").
-    Nouveaux fichiers : activities/history-undo.ts (pile undo/redo),
-    activities/room-conflicts.ts (aide aux dates du formulaire +
-    detection de conflits de salle), activities/version-history.ts
-    (snapshots de version, diff, restauration). Import circulaire assume
-    entre history-undo.ts/version-history.ts et form.ts (meme pattern
-    deja utilise ailleurs) -- sans danger, rien ne s'execute au
-    chargement des modules. Verifie : lint, typecheck, les 428 tests et
-    `npm run build` passent tous sans changement.
-
-[x] Decouper src/activities/file-links.ts (570 lignes)
-    file-links.ts redevient un barrel pur (re-export seulement).
-    Nouveaux fichiers : file-links-db.ts (mini-store IndexedDB),
-    file-links-actions.ts (workflows File System Access : lier/generer/
-    ouvrir/retirer un fichier), file-link-status.ts (rendu du statut +
-    cablage d'evenements, garde l'etat expandedXlsxPreviews partage),
-    file-preview.ts (les deux previsualiseurs PDF/XLSX). La deduplication
-    du pattern permission->erreur->montage entre les deux previsualiseurs
-    n'a PAS ete tentee : aucun test ne couvre leur HTML exact (necessite
-    l'API File System Access reelle, hors de portee des tests Node -- deja
-    note dans TESTS/file-links.test.ts), donc le risque de casser un
-    comportement sans pouvoir le verifier automatiquement l'emportait sur
-    le gain. Verifie : lint, typecheck, les 428 tests et `npm run build`
-    passent tous sans changement.
-
-[x] Dedupliquer le tableau de resume financier dans
-    src/activities/print-sheet.ts
-    buildFinancialSummaryTableHtml(fin) extrait et utilise par
-    buildPrintActivitySheetHtml et buildActivityDetailsHtml. Couvert par
-    les tests existants de test/activities-financials.test.ts (assertions
-    sur le contenu du tableau de sommaire financier), qui passent
-    toujours sans modification.
-
-    Note : reservations/card.ts (509 lignes), pdf-viewer.ts (456 lignes),
-    state/migrations.ts (440 lignes, chaine sequentielle de migrations
-    dependantes de l'ordre -- eclater fragmenterait un recit lineaire),
-    state/config-defaults.ts (411 lignes, donnees de seed pures) et
-    drawer-template.ts (432 lignes, template litteral statique) ont ete
-    revus et restent cohesifs -- pas de split necessaire pour l'instant.
-
-=======================================================
-PRODUIT
+AUTRES PISTES A EVALUER
 =======================================================
 
 [ ] SAFETY_BACKUPS_MAX (5) et le delai d'auto-backup (1500ms) sont des
-    constantes fixes non exposees aux reglages utilisateur
-    Fichiers : src/state/db.ts (ligne 11), src/services/backup/
-    auto-backup.ts (ligne 204)
-    Probablement acceptable tel quel pour l'instant, mais a garder en
-    tete : si un utilisateur perd un jour l'historique des sauvegardes
-    de securite apres 5 operations destructives rapprochees, c'est le
-    premier endroit a rendre configurable.
+    constantes fixes non exposees aux reglages utilisateur.
+    Fichiers : src/state/db.ts, src/services/backup/auto-backup.ts
+    A rendre configurable si un utilisateur perd un jour l'historique
+    de securite apres plusieurs operations destructives rapprochees.
 
-Aucun TODO/FIXME/HACK/XXX representant un travail reellement inacheve
-n'a ete trouve dans src/ lors de cette revue.
+[ ] Aucun mecanisme de log/historique visible pour les surcharges
+    manuelles ("exceptions") suggerees ci-dessus une fois implementees.
+    Si l'utilisateur peut forcer une valeur calculee, il sera utile de
+    pouvoir voir, dans l'historique de version d'une activite (deja
+    existant via activities/version-history.ts), qu'une exception a
+    ete appliquee et par qui/quand.
+
+[ ] Export/rapport des exceptions actives : une fois la fonctionnalite
+    d'exception en place sur plusieurs champs, prevoir un moyen de
+    lister rapidement toutes les activites qui contiennent au moins
+    une valeur forcee manuellement, pour faciliter les revisions
+    comptables periodiques.

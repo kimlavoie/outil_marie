@@ -405,7 +405,11 @@ const DEFAULT_CONFIG = {
     { id: "global-task-dossier-serveur", description: "Créer un dossier sur le serveur" },
     { id: "global-task-dossier-outlook", description: "Créer un dossier dans Outlook" }
   ],
-  schedulable_tasks: [] as any[]
+  schedulable_tasks: [] as any[],
+  // Current Quebec/Canada rates (TPS/TVQ) as of this codebase's writing. Kept as configurable
+  // settings rather than hard-coded so a future rate change doesn't require a code change — see
+  // the "Taxes" settings panel.
+  tax_rates: { tps: 0.05, tvq: 0.09975 }
 };
 
 export { DEFAULT_CONFIG };

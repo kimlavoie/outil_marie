@@ -12,7 +12,7 @@ import {
   addActivityVersionToDb,
   pruneActivityVersions
 } from "../../state/state.ts";
-import { showToast, escapeHtml, formatCurrency } from "../../utils/utils.ts";
+import { showToast, escapeHtml, formatCurrency, rateToPercentString } from "../../utils/utils.ts";
 import { logError } from "../../utils/logger.ts";
 import { activitiesState, renderActivities, getActivityStateLabel, getActivityStateBadgeClass } from "../render.ts";
 import { fillActivityFormFields, renderActivityStateBar } from "../form.ts";
@@ -141,6 +141,19 @@ function computeActivityDiff(oldAct: any, newAct: any) {
       .join(" | ");
   };
   addDiff("Ventilations comptables", getDistributionsSummary(oldAct), getDistributionsSummary(newAct));
+
+  // 5. Tax overrides (rare exception path — see tax-override.ts)
+  const getTaxOverrideSummary = (act: any) => {
+    const overrides = act.tax_overrides;
+    if (!overrides || (!overrides.tps && !overrides.tvq)) return "Taux par défaut";
+    const describe = (tax: string, o: any) => {
+      if (!o) return "";
+      const val = o.mode === "amount" ? formatCurrency(o.value) : `${rateToPercentString(o.value).replace(".", ",")}%`;
+      return `${tax}: ${val}${o.note ? ` (${o.note})` : ""}`;
+    };
+    return [describe("TPS", overrides.tps), describe("TVQ", overrides.tvq)].filter(Boolean).join(" | ");
+  };
+  addDiff("Dérogation de taxes", getTaxOverrideSummary(oldAct), getTaxOverrideSummary(newAct));
 
   return diffs;
 }

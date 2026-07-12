@@ -352,6 +352,61 @@
       </div>
     </div>
 
+    <!-- Tax Override Modal: per-activity TPS/TVQ exception (rate or flat amount), with a note -->
+    <div
+      id="tax-override-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tax-override-modal-title"
+      style="width: 520px"
+    >
+      <div class="modal-header">
+        <h3 class="modal-title" id="tax-override-modal-title">Ajuster les taxes</h3>
+        <button id="tax-override-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0">
+          Par défaut, les taux configurés dans Paramètres &gt; Taxes s'appliquent. Utilisez ceci uniquement pour un cas particulier propre
+          à cette activité (organisme exonéré, entente particulière).
+        </p>
+
+        <div class="form-group">
+          <label>TPS</label>
+          <div style="display: flex; gap: 8px">
+            <select id="tax-override-tps-mode" class="select-input" style="flex: 0 0 150px">
+              <option value="default">Taux par défaut</option>
+              <option value="rate">Taux personnalisé</option>
+              <option value="amount">Montant fixe</option>
+            </select>
+            <input type="number" id="tax-override-tps-value" class="form-input" step="0.01" placeholder="Taux (%)" disabled />
+          </div>
+          <textarea id="tax-override-tps-note" class="form-input" rows="2" placeholder="Note (raison de la modification)"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>TVQ</label>
+          <div style="display: flex; gap: 8px">
+            <select id="tax-override-tvq-mode" class="select-input" style="flex: 0 0 150px">
+              <option value="default">Taux par défaut</option>
+              <option value="rate">Taux personnalisé</option>
+              <option value="amount">Montant fixe</option>
+            </select>
+            <input type="number" id="tax-override-tvq-value" class="form-input" step="0.01" placeholder="Taux (%)" disabled />
+          </div>
+          <textarea id="tax-override-tvq-note" class="form-input" rows="2" placeholder="Note (raison de la modification)"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="tax-override-modal-cancel" class="btn btn-secondary">Annuler</button>
+        <button id="tax-override-modal-save" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </div>
+
     <!-- Modal Container Backdrop -->
     <div id="modal-backdrop" class="modal-backdrop" role="presentation"></div>
 

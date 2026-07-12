@@ -302,6 +302,14 @@ const ACTIVITY_DRAWER_HTML = `
             <div id="submission-financial-summary" class="financial-summary">
               <!-- Populated dynamically -->
             </div>
+            <div style="margin-top: 6px; text-align: right">
+              <a
+                href="#"
+                id="adjust-taxes-link"
+                style="font-size: 0.78rem; color: var(--text-muted); text-decoration: underline; cursor: pointer"
+                >Ajuster les taxes...</a
+              >
+            </div>
           </div>
         </details>
 

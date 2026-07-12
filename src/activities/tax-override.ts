@@ -1,0 +1,92 @@
+/**
+ * tax-override.ts - The "Ajuster les taxes..." modal: lets a user replace the default TPS/TVQ
+ * rate for a single activity with either a different rate (e.g. 0 for a fully exonerated
+ * organization) or a flat dollar amount, each annotated with a note explaining why. Deliberately
+ * kept out of the main form flow (a discreet link under the cost estimate, not a form field)
+ * since this is an exception path used rarely, not a routine input.
+ */
+import { appState } from "../state/state.ts";
+import { elById } from "../utils/utils.ts";
+import { commitActivityPatch } from "./form-state-bar.ts";
+import { updateSubmissionFinancialSummary } from "./financial-summary.ts";
+import type { TaxOverride } from "./financial-summary.ts";
+
+let currentActivityId: string | null = null;
+
+function fillTaxSection(tax: "tps" | "tvq", override: TaxOverride | undefined) {
+  const modeEl = elById<HTMLSelectElement>(`tax-override-${tax}-mode`);
+  const valueEl = elById<HTMLInputElement>(`tax-override-${tax}-value`);
+  const noteEl = elById<HTMLTextAreaElement>(`tax-override-${tax}-note`);
+
+  modeEl.value = override ? override.mode : "default";
+  valueEl.value = override ? (override.mode === "rate" ? String(override.value * 100) : String(override.value)) : "";
+  noteEl.value = override ? override.note : "";
+  modeEl.dispatchEvent(new Event("change"));
+}
+
+function readTaxSection(tax: "tps" | "tvq"): TaxOverride | undefined {
+  const mode = elById<HTMLSelectElement>(`tax-override-${tax}-mode`).value;
+  if (mode === "default") return undefined;
+
+  const rawValue = parseFloat(elById<HTMLInputElement>(`tax-override-${tax}-value`).value);
+  const note = elById<HTMLTextAreaElement>(`tax-override-${tax}-note`).value.trim();
+  const value = isNaN(rawValue) ? 0 : mode === "rate" ? rawValue / 100 : rawValue;
+
+  return { mode: mode as "rate" | "amount", value, note };
+}
+
+export function openTaxOverrideModal(activityId: string) {
+  const act = appState.activities.find((a: any) => a.id === activityId);
+  if (!act) return;
+
+  currentActivityId = activityId;
+  const overrides = act.tax_overrides || {};
+  fillTaxSection("tps", overrides.tps);
+  fillTaxSection("tvq", overrides.tvq);
+
+  elById("tax-override-modal").classList.add("active");
+  elById("modal-backdrop").classList.add("active");
+}
+
+export function closeTaxOverrideModal() {
+  currentActivityId = null;
+  elById("tax-override-modal").classList.remove("active");
+  elById("modal-backdrop").classList.remove("active");
+}
+
+function saveTaxOverrides() {
+  if (!currentActivityId) return;
+  const id = currentActivityId;
+
+  const tps = readTaxSection("tps");
+  const tvq = readTaxSection("tvq");
+  const tax_overrides = tps || tvq ? { tps, tvq } : null;
+
+  commitActivityPatch(id, (a: any) => {
+    a.tax_overrides = tax_overrides;
+  });
+
+  closeTaxOverrideModal();
+  updateSubmissionFinancialSummary();
+}
+
+export function initTaxOverrideModal() {
+  elById("tax-override-modal-close").addEventListener("click", closeTaxOverrideModal);
+  elById("tax-override-modal-cancel").addEventListener("click", closeTaxOverrideModal);
+  elById("tax-override-modal-save").addEventListener("click", saveTaxOverrides);
+
+  (["tps", "tvq"] as const).forEach(tax => {
+    const modeEl = elById<HTMLSelectElement>(`tax-override-${tax}-mode`);
+    const valueEl = elById<HTMLInputElement>(`tax-override-${tax}-value`);
+    modeEl.addEventListener("change", () => {
+      valueEl.disabled = modeEl.value === "default";
+      valueEl.placeholder = modeEl.value === "amount" ? "Montant ($)" : "Ex: 0 pour une exonération complète (%)";
+    });
+  });
+
+  elById("adjust-taxes-link").addEventListener("click", (e: Event) => {
+    e.preventDefault();
+    const internalId = elById("form-activity-internal-id").value;
+    if (internalId) openTaxOverrideModal(internalId);
+  });
+}

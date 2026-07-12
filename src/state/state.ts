@@ -105,6 +105,7 @@ async function loadDatabase(): Promise<void> {
       if (!appState.settings.global_tasks || appState.settings.global_tasks.length === 0)
         appState.settings.global_tasks = [...DEFAULT_CONFIG.global_tasks];
       if (!appState.settings.schedulable_tasks) appState.settings.schedulable_tasks = [...DEFAULT_CONFIG.schedulable_tasks];
+      if (!appState.settings.tax_rates) appState.settings.tax_rates = { ...DEFAULT_CONFIG.tax_rates };
       if (appState.settings.last_backup_date === undefined) appState.settings.last_backup_date = "";
       appState.settings.backup_reminder_days = parseInt(appState.settings.backup_reminder_days as any, 10);
       if (isNaN(appState.settings.backup_reminder_days)) {
@@ -178,7 +179,8 @@ async function seedDatabase(): Promise<void> {
     salaries: [...DEFAULT_CONFIG.salaries],
     services: [...DEFAULT_CONFIG.services],
     global_tasks: [...DEFAULT_CONFIG.global_tasks],
-    schedulable_tasks: [...DEFAULT_CONFIG.schedulable_tasks]
+    schedulable_tasks: [...DEFAULT_CONFIG.schedulable_tasks],
+    tax_rates: { ...DEFAULT_CONFIG.tax_rates }
   };
 
   appState.activities = [];

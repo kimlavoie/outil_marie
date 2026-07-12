@@ -21,6 +21,13 @@ function generateUid(prefix: string) {
   return `${prefix}-${Date.now()}${Math.random().toString(36).substr(2, 5)}`;
 }
 
+// Converts a stored rate (e.g. 0.09975) to the percentage string shown/edited in the UI (e.g.
+// "9.975"), rounded to 6 decimals to absorb the floating-point noise `rate * 100` alone would
+// introduce (0.09975 * 100 === 9.975000000000001).
+function rateToPercentString(rate: number): string {
+  return String(Math.round(rate * 1e8) / 1e6);
+}
+
 export interface RateVersionRow {
   key: string;
   effective_date: string;
@@ -111,4 +118,14 @@ function maskPhoneInput(input: HTMLInputElement | null) {
   });
 }
 
-export { formatCurrency, escapeHtml, generateUid, newRateVersionRow, calculateDaysCount, formatDateMask, maskDateInput, maskPhoneInput };
+export {
+  formatCurrency,
+  escapeHtml,
+  generateUid,
+  rateToPercentString,
+  newRateVersionRow,
+  calculateDaysCount,
+  formatDateMask,
+  maskDateInput,
+  maskPhoneInput
+};

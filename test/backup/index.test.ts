@@ -201,7 +201,8 @@ test("getDaysSinceLastBackup returns null when there is no last_backup_date", ()
       salaries: [],
       services: [],
       global_tasks: [],
-      schedulable_tasks: []
+      schedulable_tasks: [],
+      tax_rates: { tps: 0.05, tvq: 0.09975 }
     },
     activities: [],
     favorites: [],
@@ -223,7 +224,8 @@ test("getDaysSinceLastBackup returns null for a malformed date (wrong separator)
       salaries: [],
       services: [],
       global_tasks: [],
-      schedulable_tasks: []
+      schedulable_tasks: [],
+      tax_rates: { tps: 0.05, tvq: 0.09975 }
     },
     activities: [],
     favorites: [],
@@ -247,7 +249,8 @@ test("getDaysSinceLastBackup returns 0 for today and a negative count for a futu
       salaries: [],
       services: [],
       global_tasks: [],
-      schedulable_tasks: []
+      schedulable_tasks: [],
+      tax_rates: { tps: 0.05, tvq: 0.09975 }
     },
     activities: [],
     favorites: [],
@@ -267,7 +270,8 @@ test("getDaysSinceLastBackup returns 0 for today and a negative count for a futu
       salaries: [],
       services: [],
       global_tasks: [],
-      schedulable_tasks: []
+      schedulable_tasks: [],
+      tax_rates: { tps: 0.05, tvq: 0.09975 }
     },
     activities: [],
     favorites: [],
@@ -306,7 +310,8 @@ test("checkBackupReminder hides banner if no activities exist", () => {
       salaries: [],
       services: [],
       global_tasks: [],
-      schedulable_tasks: []
+      schedulable_tasks: [],
+      tax_rates: { tps: 0.05, tvq: 0.09975 }
     },
     activities: [],
     favorites: [],
@@ -339,7 +344,8 @@ test("checkBackupReminder shows banner if activities exist but no backup date", 
       salaries: [],
       services: [],
       global_tasks: [],
-      schedulable_tasks: []
+      schedulable_tasks: [],
+      tax_rates: { tps: 0.05, tvq: 0.09975 }
     },
     activities: [{ id: "act-1" }],
     favorites: [],

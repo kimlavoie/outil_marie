@@ -8,7 +8,7 @@ import { appState, EVENT_TYPES } from "../state/state.ts";
 import { formatCurrency, escapeHtml, getReservationRoomLabel, showLoadingOverlay, hideLoadingOverlay, elById } from "../utils/utils.ts";
 import { isNonEmptyString } from "../utils/validation.ts";
 import { getActivityStateLabel } from "./render.ts";
-import { computeActivityFinancials } from "./financial-summary.ts";
+import { computeActivityFinancials, overrideMarkerHtml } from "./financial-summary.ts";
 
 // Shared by buildPrintActivitySheetHtml() and buildActivityDetailsHtml(): renders the "Détails du
 // service de bar" section for every reservation with an active bar_service, or "" if none.
@@ -63,8 +63,8 @@ function buildFinancialSummaryTableHtml(fin: ReturnType<typeof computeActivityFi
         <tr><td>Équipements</td><td>${formatCurrency(fin.servicesTotal)}</td></tr>
         <tr><td>Autres frais</td><td>${formatCurrency(fin.feesTotal)}</td></tr>
         <tr><td>Sous-total</td><td>${formatCurrency(fin.subtotal)}</td></tr>
-        <tr><td>TPS (5%)</td><td>${formatCurrency(fin.tps)}</td></tr>
-        <tr><td>TVQ (9,975%)</td><td>${formatCurrency(fin.tvq)}</td></tr>
+        <tr><td>${fin.tpsLabel}${overrideMarkerHtml(fin.tpsOverride)}</td><td>${formatCurrency(fin.tps)}</td></tr>
+        <tr><td>${fin.tvqLabel}${overrideMarkerHtml(fin.tvqOverride)}</td><td>${formatCurrency(fin.tvq)}</td></tr>
         <tr class="print-sheet-grand-total"><td>Total</td><td>${formatCurrency(fin.total)}</td></tr>
       </table>
     </div>

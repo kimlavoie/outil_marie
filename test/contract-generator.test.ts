@@ -16,7 +16,8 @@ appState.settings = {
   salaries: [{ id: "sal1", job: "Technicien", tarifs: [], rate_versions: [{ effective_date: "", rate: 20, overtime_rate: 30 }] } as any],
   services: [{ id: "svc-hourly", name: "Projecteur", type: "hourly", rate_versions: [{ effective_date: "", rate: 10 }] } as any],
   global_tasks: [],
-  schedulable_tasks: []
+  schedulable_tasks: [],
+  tax_rates: { tps: 0.05, tvq: 0.09975 }
 };
 
 function makeActivity(overrides: any = {}) {

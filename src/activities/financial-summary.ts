@@ -4,9 +4,47 @@
  * Split out of activities-financials.ts (see that file for the rest of the module's history).
  */
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
-import { formatCurrency, getRoomsTariffTotal, elById } from "../utils/utils.ts";
+import { formatCurrency, escapeHtml, rateToPercentString, getRoomsTariffTotal, elById } from "../utils/utils.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
 import { updateStaffRowSubtotal, updateServiceRowSubtotal } from "./reservations/subrows.ts";
+
+type TaxOverride = { mode: "rate" | "amount"; value: number; note: string };
+
+// Formats a rate as a French-style percentage (e.g. 0.09975 -> "9,975%"), matching the labels
+// that used to be hard-coded ("TPS (5%)", "TVQ (9,975%)").
+function formatRatePercent(rate: number): string {
+  return `${rateToPercentString(rate).replace(".", ",")}%`;
+}
+
+// Resolves the TPS/TVQ dollar amounts actually applied to an activity: the global default rate
+// (Paramètres > Taxes) unless an activity-level override replaces it — either a different rate
+// (e.g. 0 for a fully exonerated organization) or a flat dollar amount set directly by the user.
+// Shared by the live form summary and the saved-record summary (PDF sheet) so both stay in sync.
+function computeTaxes(subtotal: number, act: any) {
+  const defaultRates = appState.settings.tax_rates || { tps: 0.05, tvq: 0.09975 };
+  const overrides: { tps?: TaxOverride; tvq?: TaxOverride } = act?.tax_overrides || {};
+
+  const resolve = (tax: "tps" | "tvq") => {
+    const override = overrides[tax];
+    const amount = override ? (override.mode === "amount" ? override.value : subtotal * override.value) : subtotal * defaultRates[tax];
+    const label =
+      override && override.mode === "amount"
+        ? `${tax.toUpperCase()} (montant fixé manuellement)`
+        : `${tax.toUpperCase()} (${formatRatePercent(override ? override.value : defaultRates[tax])})`;
+    return { amount, label, override };
+  };
+
+  return { tps: resolve("tps"), tvq: resolve("tvq") };
+}
+
+// Small "modifié" marker appended next to a TPS/TVQ label when an override is active, its note
+// (if any) shown on hover — the only visible trace of the override outside the dedicated modal,
+// by design (this is meant to stay unobtrusive since it's rarely used).
+function overrideMarkerHtml(override: TaxOverride | undefined): string {
+  if (!override) return "";
+  const title = override.note ? escapeHtml(override.note) : "Taxe modifiée manuellement pour cette activité";
+  return ` <span title="${title}" style="cursor: help; color: var(--text-muted);">✎</span>`;
+}
 
 // Computes the pre-tax revenue subtotal (rooms + personnel + équipements + autres frais) from
 // the live form. Shared by updateSubmissionFinancialSummary() (which adds TPS/TVQ on top) and
@@ -67,14 +105,17 @@ function computeFormRevenueSubtotal(): { roomsTotal: number; staffTotal: number;
   return { roomsTotal, staffTotal, servicesTotal, feesTotal, subtotal: roomsTotal + staffTotal + servicesTotal + feesTotal };
 }
 
-// Recomputes and displays the room/personnel/frais subtotal, TPS (5%), TVQ (9.975%), and total
+// Recomputes and displays the room/personnel/frais subtotal, TPS, TVQ, and total. TPS/TVQ use
+// the default rates from Paramètres > Taxes unless this activity carries an override (see
+// computeTaxes()).
 function updateSubmissionFinancialSummary() {
   const container = elById("submission-financial-summary");
   if (container) {
     const { roomsTotal, staffTotal, servicesTotal, feesTotal, subtotal } = computeFormRevenueSubtotal();
-    const tps = subtotal * 0.05;
-    const tvq = subtotal * 0.09975;
-    const total = subtotal + tps + tvq;
+    const internalId = (document.getElementById("form-activity-internal-id") as HTMLInputElement | null)?.value;
+    const act = appState.activities.find((a: any) => a.id === internalId);
+    const { tps, tvq } = computeTaxes(subtotal, act);
+    const total = subtotal + tps.amount + tvq.amount;
 
     container.innerHTML = `
       <div class="financial-summary-row"><span>Location des salles</span><span>${formatCurrency(roomsTotal)}</span></div>
@@ -82,8 +123,8 @@ function updateSubmissionFinancialSummary() {
       <div class="financial-summary-row"><span>Équipements</span><span>${formatCurrency(servicesTotal)}</span></div>
       <div class="financial-summary-row"><span>Autres frais</span><span>${formatCurrency(feesTotal)}</span></div>
       <div class="financial-summary-row"><span>Sous-total</span><span>${formatCurrency(subtotal)}</span></div>
-      <div class="financial-summary-row"><span>TPS (5%)</span><span>${formatCurrency(tps)}</span></div>
-      <div class="financial-summary-row"><span>TVQ (9,975%)</span><span>${formatCurrency(tvq)}</span></div>
+      <div class="financial-summary-row"><span>${tps.label}${overrideMarkerHtml(tps.override)}</span><span>${formatCurrency(tps.amount)}</span></div>
+      <div class="financial-summary-row"><span>${tvq.label}${overrideMarkerHtml(tvq.override)}</span><span>${formatCurrency(tvq.amount)}</span></div>
       <div class="financial-summary-row total"><span>Total</span><span>${formatCurrency(total)}</span></div>
     `;
   }
@@ -136,9 +177,21 @@ function computeActivityFinancials(act: any) {
   });
 
   const subtotal = roomsTotal + staffTotal + servicesTotal + feesTotal;
-  const tps = subtotal * 0.05;
-  const tvq = subtotal * 0.09975;
-  return { roomsTotal, staffTotal, servicesTotal, feesTotal, subtotal, tps, tvq, total: subtotal + tps + tvq };
+  const taxes = computeTaxes(subtotal, act);
+  return {
+    roomsTotal,
+    staffTotal,
+    servicesTotal,
+    feesTotal,
+    subtotal,
+    tps: taxes.tps.amount,
+    tvq: taxes.tvq.amount,
+    tpsLabel: taxes.tps.label,
+    tvqLabel: taxes.tvq.label,
+    tpsOverride: taxes.tps.override,
+    tvqOverride: taxes.tvq.override,
+    total: subtotal + taxes.tps.amount + taxes.tvq.amount
+  };
 }
 
 function updateDistributionTotal() {
@@ -169,4 +222,5 @@ function updateDistributionTotal() {
   }
 }
 
-export { computeFormRevenueSubtotal, updateSubmissionFinancialSummary, computeActivityFinancials, updateDistributionTotal };
+export { computeFormRevenueSubtotal, updateSubmissionFinancialSummary, computeActivityFinancials, updateDistributionTotal, overrideMarkerHtml };
+export type { TaxOverride };
