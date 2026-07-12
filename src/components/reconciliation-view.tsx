@@ -611,6 +611,7 @@ export function ReconciliationView() {
       return;
     }
 
+    const totalRows = rawRows.length;
     reconciliationState.ledgerTransactions = rawRows.filter((row: any) => {
       const poste = String(row["Poste budgétaire"] || "").trim();
       const dateVersee = String(row["Date versée"] || "").trim();
@@ -623,6 +624,14 @@ export function ReconciliationView() {
     if (reconciliationState.ledgerTransactions.length === 0) {
       showToast("Aucune transaction valide n'a été trouvée dans le fichier. Veuillez vérifier la structure du fichier Excel.", "warning");
       return;
+    }
+
+    const skippedCount = totalRows - reconciliationState.ledgerTransactions.length;
+    if (skippedCount > 0) {
+      showToast(
+        `${skippedCount} ligne(s) du fichier ont été ignorées (montant ou date manquant/invalide) : le rapprochement peut être incomplet.`,
+        "warning"
+      );
     }
 
     reconcileLedger();
@@ -672,6 +681,7 @@ export function ReconciliationView() {
       "No doc. GL": String(row["No doc. GL"] || "").trim()
     }));
 
+    const totalRows = mappedTransactions.length;
     reconciliationState.ledgerTransactions = mappedTransactions.filter(row => {
       const poste = row["Poste budgétaire"];
       const dateVersee = row["Date versée"];
@@ -692,7 +702,14 @@ export function ReconciliationView() {
     reconcileLedger();
     reconciliationState.imported = true;
     bump();
-    showToast("Importation réussie avec mappage de colonnes.", "success");
+
+    const skippedCount = totalRows - reconciliationState.ledgerTransactions.length;
+    showToast(
+      skippedCount > 0
+        ? `Importation réussie avec mappage de colonnes (${skippedCount} ligne(s) ignorée(s) : montant ou date manquant/invalide).`
+        : "Importation réussie avec mappage de colonnes.",
+      skippedCount > 0 ? "warning" : "success"
+    );
   };
 
   const clearImport = () => {
@@ -709,9 +726,12 @@ export function ReconciliationView() {
   };
 
   const setReview = async (key: string, status: string) => {
-    await setReconDecision(key, status);
+    const saved = await setReconDecision(key, status);
     reconcileLedger();
     bump();
+    if (!saved) {
+      showToast("La décision a été appliquée mais n'a pas pu être enregistrée : elle sera perdue au prochain rechargement.", "warning");
+    }
   };
 
   const quickAddFromLedger = (r: any) => {

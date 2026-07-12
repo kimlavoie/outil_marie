@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { loadReconDecisions } from "../services/reconciliation.ts";
+import { showToast } from "../utils/utils.ts";
 import { ReconciliationView } from "./reconciliation-view.tsx";
 
 let root: Root | null = null;
@@ -13,7 +14,14 @@ function mount() {
 }
 
 export function initReconciliationHandlers() {
-  loadReconDecisions();
+  loadReconDecisions().then(success => {
+    if (!success) {
+      showToast(
+        "Impossible de charger les décisions de rapprochement précédemment enregistrées. Elles pourraient sembler manquantes.",
+        "error"
+      );
+    }
+  });
   mount();
 }
 

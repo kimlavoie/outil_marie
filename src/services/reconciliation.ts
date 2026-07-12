@@ -37,37 +37,48 @@ const reconciliationState = {
 
 // Loads previously-saved reconciliation decisions from IndexedDB into reconciliationState.decisions.
 // Called once on startup; safe to call again (e.g. after a decision changes) to stay in sync.
-async function loadReconDecisions() {
+// Returns false on failure (decisions left as-is) so the caller can warn the user — this module
+// stays DOM-free (see file header), so it reports success/failure instead of showing a toast itself.
+async function loadReconDecisions(): Promise<boolean> {
   try {
     const list = await getReconDecisionsFromDb();
     reconciliationState.decisions = {};
     list.forEach((d: any) => {
       reconciliationState.decisions[d.key] = d;
     });
+    return true;
   } catch (e) {
     logError("reconciliation", "chargement des décisions de rapprochement", e);
+    return false;
   }
 }
 
 // Marks (or clears, when status is "") a reconciliation line as manually validated/ignored.
 // Doesn't re-render anything itself (that's the caller's job — js/reconciliation-view.tsx calls
 // reconcileLedger() + its own re-render after awaiting this) to keep this file DOM-free.
-async function setReconDecision(key: string, status: string, note = "") {
-  if (!key) return;
+// Returns false when the IndexedDB write failed (the in-memory decision is still applied, so the
+// UI stays consistent for this session, but it won't survive a reload) so the caller can warn the
+// user instead of the failure passing unnoticed.
+async function setReconDecision(key: string, status: string, note = ""): Promise<boolean> {
+  if (!key) return true;
   if (!status) {
     delete reconciliationState.decisions[key];
     try {
       await deleteReconDecisionFromDb(key);
+      return true;
     } catch (e) {
       logError("reconciliation", "suppression d'une décision de rapprochement", e);
+      return false;
     }
   } else {
     const decision = { key, status, note, timestamp: new Date().toISOString() };
     reconciliationState.decisions[key] = decision;
     try {
       await saveReconDecisionToDb(decision);
+      return true;
     } catch (e) {
       logError("reconciliation", "sauvegarde d'une décision de rapprochement", e);
+      return false;
     }
   }
 }

@@ -1,84 +1,37 @@
-TODO - Ameliorations Outil Marie
-(genere le 2026-07-11)
+Suggestions d'amelioration (analyse du 2026-07-12)
 
-=======================================================
-CONTROLE UTILISATEUR SUR LES DONNEES (priorite produit)
-=======================================================
+PRIORITE HAUTE - robustesse & fiabilite
+- Validation des montants en temps reel : parseFloat/parseInt sans garde
+  (ex. financial-summary.ts:63-66), montants negatifs rejetes seulement
+  au blur (apres coup). Un tarif negatif ou avec 10 decimales peut passer.
+- Validation des imports Excel (grand livre) : reconciliation.ts:105-117
+  ne verifie que la presence des colonnes, pas que "Montant courant" soit
+  un nombre valide ou "Date versee" une date correcte. Un fichier GL mal
+  forme pourrait produire des rapprochements silencieusement faux.
+- Erreurs avalees silencieusement : plusieurs catch (ex.
+  reconciliation.ts:47-49) se contentent de logger sans avertir
+  l'utilisatrice. Si le chargement des decisions de rapprochement echoue,
+  elle continue a travailler sans le savoir.
 
-Principe directeur : l'utilisateur souhaite garder le plus de controle
-possible sur ses donnees. Plusieurs champs sont aujourd'hui calcules
-automatiquement (tarifs, taux, taxes, totaux, dates fiscales) sans
-possibilite de correction manuelle. Il serait utile d'ajouter, la ou
-c'est pertinent, un mecanisme d'"exception" (surcharge manuelle) qui
-laisse la valeur calculee par defaut mais permet a l'utilisateur de la
-remplacer explicitement quand la situation reelle diverge de la regle
-generale.
+PRIORITE MOYENNE - qualite du code
+- Typage "any" generalise : malgre strict:true, les objets metier
+  (Activity, Room, Salary, Service) sont types any[] dans store.ts:6-14.
+  Ca enleve la protection de TypeScript contre les fautes de frappe sur
+  les champs (bug silencieux garanti tot ou tard).
+- Couplage DOM direct dans activities/ : le module principal lit l'etat
+  directement depuis le DOM (querySelectorAll + .value avec assertion
+  non-null "!") plutot que depuis un state React comme le reste de
+  l'app (settings, dashboard, reconciliation). Fragile et difficile a
+  tester en comparaison.
 
-Note : les tarifs de salle ("Montant personnalise..." dans
-reservations/tariff.ts), les taux de salaire/supplementaire et les
-taux de service/equipement (champs "custom-rate-input" dans
-reservations/subrows.ts) supportent deja une surcharge manuelle -
-retires de cette liste apres verification du code.
+PRIORITE BASSE - UX
+- Pas de saisie en lot : impossible d'ajouter plusieurs salles ou tarifs
+  d'un coup ; tout passe par le formulaire un par un.
+- Pas de scroll virtuel : la liste d'activites recalcule tout a chaque
+  frappe clavier (financial-summary.ts:60-105) ; reste fluide jusqu'a
+  ~500-1000 activites mais a surveiller si le volume grossit.
 
-[X] Taxes (TPS 5% / TVQ 9,975%)
-    Fichier : src/activities/financial-summary.ts
-    (updateSubmissionFinancialSummary, computeActivityFinancials)
-    Taux fixes appliques sur le sous-total. Certaines activites
-    (organismes exoneres, ententes particulieres) auraient besoin
-    d'un taux ou d'un montant de taxes different, voire d'une
-    exoneration complete.
-
-[ ] Annee fiscale / numero de trimestre
-    Fichier : src/state/date-helpers.ts (getFiscalYear,
-    getQuarterNumber)
-    Derives automatiquement de la date de debut. Pour des corrections
-    comptables historiques, pouvoir forcer l'annee/trimestre sans
-    changer la date reelle de l'activite serait utile.
-
-[ ] Nombre de jours (dayCount)
-    Fichiers : src/state/migrations.ts (calculateDaysCount),
-    src/utils/format.ts
-    Genere automatiquement a partir de date_start/date_end ; une plage
-    inversee retombe a 0 puis est forcee a 1. Une surcharge manuelle
-    permettrait de corriger le nombre de jours factures sans devoir
-    modifier les dates elles-memes pour obtenir le bon compte.
-
-[ ] Resolution du tarif de salle (tariff_id, tariff_description,
-    tariff_gl_account_code)
-    Fichiers : src/activities/reservations/index.ts (resolution de
-    grille), src/state/migrations.ts
-    L'id du tarif, sa description et le code de compte GL sont
-    resolus automatiquement selon salle + parametre + type de client
-    (ou lors de la migration heritage). Une exception permettrait de
-    pointer une reservation vers un autre compte GL ou de corriger la
-    resolution apres qu'une grille tarifaire ait change retroactivement.
-
-Remarque : il faudra decider, pour chaque champ, si l'exception se
-manifeste comme un simple champ modifiable qui memorise "valeur
-calculee vs valeur forcee" (avec un indicateur visuel du type
-"surcharge manuelle") ou comme un champ separe optionnel. A determiner
-avec l'utilisateur au cas par cas avant l'implementation, plutot que
-d'appliquer un patron unique partout.
-
-=======================================================
-AUTRES PISTES A EVALUER
-=======================================================
-
-[ ] SAFETY_BACKUPS_MAX (5) et le delai d'auto-backup (1500ms) sont des
-    constantes fixes non exposees aux reglages utilisateur.
-    Fichiers : src/state/db.ts, src/services/backup/auto-backup.ts
-    A rendre configurable si un utilisateur perd un jour l'historique
-    de securite apres plusieurs operations destructives rapprochees.
-
-[ ] Aucun mecanisme de log/historique visible pour les surcharges
-    manuelles ("exceptions") suggerees ci-dessus une fois implementees.
-    Si l'utilisateur peut forcer une valeur calculee, il sera utile de
-    pouvoir voir, dans l'historique de version d'une activite (deja
-    existant via activities/version-history.ts), qu'une exception a
-    ete appliquee et par qui/quand.
-
-[ ] Export/rapport des exceptions actives : une fois la fonctionnalite
-    d'exception en place sur plusieurs champs, prevoir un moyen de
-    lister rapidement toutes les activites qui contiennent au moins
-    une valeur forcee manuellement, pour faciliter les revisions
-    comptables periodiques.
+CONFORMITE - loi 25
+- Voir loi25.txt (deja existant) : pas de consentement RP, pas de
+  politique de confidentialite. A traiter si l'app gere des donnees
+  de clients externes.

@@ -139,6 +139,9 @@ export function addStaffRow(
   });
   rejectNegativeAmountOnBlur(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!);
   rejectNegativeAmountOnBlur(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!);
+  rejectNegativeAmountOnBlur(row.querySelector<HTMLInputElement>(".staff-count-input")!);
+  rejectNegativeAmountOnBlur(row.querySelector<HTMLInputElement>(".staff-hours-input")!);
+  rejectNegativeAmountOnBlur(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!);
 
   updateStaffRowSubtotal(row);
 }
@@ -254,6 +257,8 @@ export function addServiceRow(
     el.addEventListener("change", updateSubmissionFinancialSummary);
   });
   rejectNegativeAmountOnBlur(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!);
+  rejectNegativeAmountOnBlur(row.querySelector<HTMLInputElement>(".service-count-input")!);
+  rejectNegativeAmountOnBlur(row.querySelector<HTMLInputElement>(".service-hours-input")!);
 
   updateServiceRowSubtotal(row);
 }
