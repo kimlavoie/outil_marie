@@ -130,6 +130,7 @@ export function RateVersionsEditor({
             className="form-input"
             value={row.effective_date}
             placeholder="AAAA-MM-JJ (vide = depuis toujours)"
+            aria-label="Date d'entrée en vigueur (AAAA-MM-JJ, vide = depuis toujours)"
             style={{ padding: "8px 12px", fontSize: "0.85rem" }}
             onChange={e => {
               const inputType = (e.nativeEvent as InputEvent).inputType;
@@ -148,6 +149,7 @@ export function RateVersionsEditor({
             step={0.01}
             value={row.rate}
             placeholder={withOvertime ? "Taux régulier $/h" : "Montant $"}
+            aria-label={withOvertime ? "Taux régulier en dollars par heure" : "Montant en dollars"}
             style={{ padding: "8px 12px", fontSize: "0.85rem" }}
             onChange={e => update(i, { rate: e.target.value })}
           />
@@ -161,6 +163,7 @@ export function RateVersionsEditor({
               value={row.overtime_rate ?? ""}
               placeholder="Taux temps sup. $/h"
               title="Taux horaire en temps supplémentaire (optionnel)"
+              aria-label="Taux horaire en temps supplémentaire (optionnel), en dollars par heure"
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               onChange={e => update(i, { overtime_rate: e.target.value })}
             />
@@ -214,12 +217,14 @@ export function TarifsEditor({
               className="form-input"
               value={row.label}
               placeholder="Ex: Interne"
+              aria-label="Nom du tarif"
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               onChange={e => update(i, { label: e.target.value })}
             />
             <select
               className="select-input"
               value={row.gl_account_code}
+              aria-label="Compte du grand livre associé au tarif"
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               onChange={e => update(i, { gl_account_code: e.target.value })}
             >

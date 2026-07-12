@@ -76,6 +76,7 @@ export function LinkedStaffSection({
             <select
               name={`${row.key}-salary`}
               className="select-input"
+              aria-label="Emploi lié"
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               value={row.salaryId}
               onChange={e => setLinkedStaff(linkedStaff.map((r, idx) => (idx === i ? { ...r, salaryId: e.target.value } : r)))}
@@ -95,6 +96,7 @@ export function LinkedStaffSection({
               step={1}
               value={row.count}
               placeholder="Quantité"
+              aria-label="Quantité de personnel"
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               onChange={e => setLinkedStaff(linkedStaff.map((r, idx) => (idx === i ? { ...r, count: e.target.value } : r)))}
             />
@@ -133,6 +135,7 @@ export function LinkedFeesSection({ linkedFees, setLinkedFees }: { linkedFees: L
               className="form-input"
               value={row.desc}
               placeholder="Ex: Montage et démontage"
+              aria-label="Description du frais lié"
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               onChange={e => setLinkedFees(linkedFees.map((r, idx) => (idx === i ? { ...r, desc: e.target.value } : r)))}
             />
@@ -144,12 +147,14 @@ export function LinkedFeesSection({ linkedFees, setLinkedFees }: { linkedFees: L
               step={0.01}
               value={row.amount}
               placeholder="Montant $"
+              aria-label="Montant du frais en dollars"
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               onChange={e => setLinkedFees(linkedFees.map((r, idx) => (idx === i ? { ...r, amount: e.target.value } : r)))}
             />
             <select
               name={`${row.key}-gl`}
               className="select-input"
+              aria-label="Compte du grand livre associé au frais"
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               value={row.glCode}
               onChange={e => setLinkedFees(linkedFees.map((r, idx) => (idx === i ? { ...r, glCode: e.target.value } : r)))}
@@ -190,6 +195,7 @@ export function LinkedTasksSection({ linkedTasks, setLinkedTasks }: { linkedTask
               className="form-input"
               value={row.desc}
               placeholder="Ex: Envoyer un courriel au responsable de la salle"
+              aria-label="Description de la tâche liée"
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               onChange={e => setLinkedTasks(linkedTasks.map((r, idx) => (idx === i ? { ...r, desc: e.target.value } : r)))}
             />

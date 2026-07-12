@@ -15,10 +15,9 @@ import { appState, saveDatabaseOrRollback, EVENT_TYPES } from "./state/state.ts"
 import { escapeHtml, getMultiSelectValues, setMultiSelectValues } from "./utils/utils.ts";
 import { activitiesState, renderActivities } from "./activities/render.ts";
 import { renderSettings } from "./components/settings/mount.ts";
-import { renderDashboard, renderDashboardCharts } from "./components/dashboard-mount.ts";
 import { renderReconciliation } from "./components/reconciliation-mount.ts";
 import { renderAccountReport } from "./services/account-report.ts";
-import { exportToExcel, renderBackupView, checkBackupReminder } from "./services/backup/index.ts";
+import { checkBackupReminder } from "./services/backup/reminder.ts";
 import { initGlobalSearch } from "./navigation/global-search.ts";
 import { initQuickAccessDropdown, renderQuickAccessAll } from "./navigation/quick-access.ts";
 import { updateActivePeriodDescription } from "./navigation/period-selector.ts";
@@ -101,13 +100,13 @@ function initNavigation() {
     saveDatabaseOrRollback(() => applyTheme(previousTheme), "Le changement de thème n'a pas été enregistré. Réessayez.").then(() => {
       // Re-draw charts in case colors need to adjust (Chart.js respects theme context changes if redrawn)
       if (document.getElementById("view-dashboard")?.classList.contains("active")) {
-        renderDashboardCharts();
+        import("./components/dashboard-mount.ts").then(m => m.renderDashboardCharts());
       }
     });
   });
 
   document.getElementById("quick-export-excel")?.addEventListener("click", () => {
-    exportToExcel();
+    import("./services/backup/index.ts").then(m => m.exportToExcel());
   });
 
   const filterRepSelect = document.getElementById("filter-report-account");
@@ -156,8 +155,9 @@ function initNavigation() {
   initGlobalSearch();
 }
 
-function renderView(view: string) {
+async function renderView(view: string) {
   if (view === "dashboard") {
+    const { renderDashboard } = await import("./components/dashboard-mount.ts");
     renderDashboard();
   } else if (view === "activities") {
     renderActivities();
@@ -168,6 +168,7 @@ function renderView(view: string) {
   } else if (view === "settings") {
     renderSettings();
   } else if (view === "backup") {
+    const { renderBackupView } = await import("./services/backup/index.ts");
     renderBackupView();
   }
   checkBackupReminder();

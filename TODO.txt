@@ -1,47 +1,37 @@
-Suggestions d'amelioration (analyse du 2026-07-12)
+Suggestions d'amelioration (analyse du 2026-07-12, 2e passe)
 
-PRIORITE HAUTE - robustesse & fiabilite [FAIT - 2026-07-12]
-- Validation des montants en temps reel : rejectNegativeAmountOnBlur est
-  maintenant cablee sur les champs quantite/heures/heures sup. (personnel
-  et equipements), pas seulement sur les montants $.
-- Validation des imports Excel (grand livre) : les lignes ignorees
-  (montant/date invalide) sont maintenant comptees et signalees a
-  l'utilisatrice par un toast apres l'import, au lieu d'etre filtrees
-  silencieusement.
-- Erreurs avalees silencieusement : loadReconDecisions() et
-  setReconDecision() retournent maintenant un statut de succes ; les
-  appelants React affichent un toast d'erreur si le chargement/la
-  sauvegarde des decisions de rapprochement echoue.
+PRIORITE MOYENNE - qualite, CI et accessibilite
+- Couverture de tests tres inegale sur les composants Settings :
+  src/components/settings/*.tsx (rooms, salaries, services, accounts,
+  pricing-grid-editor) ont 2 a 15% de couverture de lignes, alors que
+  c'est la que l'utilisatrice configure les donnees de base (salles,
+  tarifs, salaires). Une regression y serait silencieuse jusqu'a
+  l'usage reel.
+- Accessibilite minimale des formulaires : seulement 14 occurrences
+  d'aria-* dans tout src/, et plusieurs formulaires Settings
+  (common.tsx, linked-sections.tsx) n'ont aucun <label> associe. Pour
+  une utilisatrice dependant potentiellement d'un lecteur d'ecran ou
+  du zoom navigateur, les champs sans label explicite sont un vrai
+  obstacle.
+- Aucune documentation utilisateur : pas de README.md a la racine ni
+  ailleurs. Rien n'explique a l'utilisatrice non-technique comment
+  configurer la sauvegarde automatique, ce qu'est le File System
+  Access API, ou comment restaurer une sauvegarde en cas de probleme.
+  test/SMOKE_TEST_CHECKLIST.md existe mais c'est un doc de dev, pas
+  utilisateur.
+- Bundle principal non code-splitte : le chunk index-*.js fait 686 KB
+  (187 KB gzip) et Vite avertit du depassement de 500 KB. xlsx-viewer
+  et pdf-viewer sont deja separes, mais settings/activites/dashboard
+  restent dans un seul chunk ; un import() dynamique par vue
+  reduirait le temps de premier chargement.
 
-PRIORITE MOYENNE - qualite du code
-- Typage "any" generalise [PARTIEL - 2026-07-12] : store.ts a maintenant
-  de vraies interfaces (Room, Salary, Service, Account, PricingGrid,
-  SchedulableTask, etc.) pour appState.settings, deduplique avec les
-  types locaux qui existaient deja dans les composants settings.
-  financial-summary.ts en beneficie (plus de "s: any" sur les .find()
-  salaries/services). Activity reste "any" : son typage complet
-  (reservations, distributions, planning_tasks, imbrications diverses)
-  est un chantier separe, plus risque, a faire dans une session dediee.
-  pricing.ts garde volontairement des parametres "any" : il supporte a
-  la fois la forme moderne (tarifs[]) et l'ancienne forme plate
-  (rate_versions direct, pre-migration) par design (voir pricing.test.ts).
-- Couplage DOM direct dans activities/ : le module principal lit l'etat
-  directement depuis le DOM (querySelectorAll + .value avec assertion
-  non-null "!") plutot que depuis un state React comme le reste de
-  l'app (settings, dashboard, reconciliation). Fragile et difficile a
-  tester en comparaison. Pas traite : refonte trop large/risquee pour
-  etre faite a l'aveugle en une session (dizaines de fichiers, logique
-  de formulaire imperative bien etablie) ; a planifier comme un projet
-  dedie, module par module, avec tests manuels en continu.
-
-PRIORITE BASSE - UX
-- Pas de saisie en lot : impossible d'ajouter plusieurs salles ou tarifs
-  d'un coup ; tout passe par le formulaire un par un.
-- Pas de scroll virtuel : la liste d'activites recalcule tout a chaque
-  frappe clavier (financial-summary.ts:60-105) ; reste fluide jusqu'a
-  ~500-1000 activites mais a surveiller si le volume grossit.
-
-CONFORMITE - loi 25
-- Voir loi25.txt (deja existant) : pas de consentement RP, pas de
-  politique de confidentialite. A traiter si l'app gere des donnees
-  de clients externes.
+PRIORITE BASSE - dependances et robustesse navigateur
+- Dependance xlsx tiree d'un CDN externe non-npm : package.json:42
+  pointe vers https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz.
+  Cette dependance critique (import/export du grand livre) n'est pas
+  sur le registre npm, sans hash d'integrite verifiable ; en cas
+  d'indisponibilite du CDN, "npm ci" echoue.
+- pdf.worker.min.mjs de 1,25 MB non compresse dans le build : ne
+  figure pas dans le rapport gzip de Vite ; a verifier si GitHub Pages
+  le compresse correctement, sinon impact sur le premier chargement du
+  visualiseur PDF.
