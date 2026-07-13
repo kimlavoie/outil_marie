@@ -17,7 +17,8 @@ const TECHNICAL_SERVICES: string[] = [
   "Microphone",
   "Éclairage de scène",
   "Musique d'ambiance",
-  "Fichier audio, vidéo ou présentation PowerPoint"
+  "Fichier audio, vidéo ou présentation PowerPoint",
+  "Projecteur"
 ];
 const BAR_DRINK_TYPES: string[] = ["Avec alcool", "Sans alcool"];
 const BAR_SERVICE_TYPES: string[] = ["Service autonome", "Service d'hôtesses", "Distribution de breuvages et nettoyage de coupes"];

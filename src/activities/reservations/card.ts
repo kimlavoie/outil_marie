@@ -25,7 +25,9 @@ import {
   addServiceRow,
   addFeeRow,
   autoAddLinkedStaffAndFees,
-  autoAddTechnicalDirectorIfNeeded
+  autoAddTechnicalDirectorIfNeeded,
+  autoAddProjectorIfNeeded,
+  autoRemoveProjectorIfNeeded
 } from "./subrows.ts";
 import { addSlotRow, addNextSlotRow, buildSlotRangeGeneratorHtml, wireSlotRangeGenerator } from "./slots.ts";
 import { buildTariffClientTypeOptionsHtml, updateResolvedPriceDisplay, refreshReservationTariffSelect } from "./tariff.ts";
@@ -417,9 +419,21 @@ function addReservationCard(reservationData: any = null) {
   initPillToggleEl(card.querySelector<HTMLInputElement>(".room-technical-services-group")!);
   card.querySelector<HTMLInputElement>(".room-technical-services-group")!.addEventListener("click", e => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>(".pill-toggle");
-    if (btn && btn.classList.contains("active")) {
-      autoAddTechnicalDirectorIfNeeded(staffList);
-      updateSubmissionFinancialSummary();
+    if (btn) {
+      const isProjecteur = btn.dataset.value === "Projecteur";
+      const isActive = btn.classList.contains("active");
+      if (isActive) {
+        autoAddTechnicalDirectorIfNeeded(staffList);
+        if (isProjecteur) {
+          autoAddProjectorIfNeeded(servicesList);
+        }
+        updateSubmissionFinancialSummary();
+      } else {
+        if (isProjecteur) {
+          autoRemoveProjectorIfNeeded(servicesList);
+          updateSubmissionFinancialSummary();
+        }
+      }
     }
     autoSaveActivityForm();
   });
