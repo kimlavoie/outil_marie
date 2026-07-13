@@ -15,20 +15,30 @@ const ACTIVITY_DRAWER_HTML = `
         <span class="auto-save-text">Enregistré</span>
       </span>
     </div>
-    <button
-      id="activity-print-btn"
-      class="btn btn-secondary"
-      type="button"
-      style="margin-left: auto"
-      title="Exporter en PDF (imprimer)"
-    >
-      Exporter PDF
-    </button>
-    <button id="activity-drawer-close" class="btn-icon" aria-label="Fermer">
-      <svg viewBox="0 0 24 24">
-        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-      </svg>
-    </button>
+    <div style="display: flex; align-items: center; gap: 8px">
+      <button
+        id="activity-send-technical-director-btn"
+        class="btn btn-secondary"
+        type="button"
+        style="display: none"
+        title="Envoyer la plage horaire au directeur technique par courriel (Outlook)"
+      >
+        Envoyer au directeur technique
+      </button>
+      <button
+        id="activity-print-btn"
+        class="btn btn-secondary"
+        type="button"
+        title="Exporter en PDF (imprimer)"
+      >
+        Exporter PDF
+      </button>
+      <button id="activity-drawer-close" class="btn-icon" aria-label="Fermer">
+        <svg viewBox="0 0 24 24">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+        </svg>
+      </button>
+    </div>
   </div>
 
   <div id="activity-state-bar" class="activity-state-bar">

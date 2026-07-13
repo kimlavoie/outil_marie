@@ -36,6 +36,7 @@ import { initNewActivityModal, openNewActivityModal, closeNewActivityModal, crea
 import { applyActivityFormMode, getActivityFormMode, initActivityModeToggle, switchActivityTab, renderActivityStateBar, updateFormTabIndicators, commitActivityPatch } from "./form-state-bar.ts";
 import { renderPlanningTab, generatePlanningTasks, addPlanningTaskRow } from "./planning-tab.ts";
 import { generateBillingLines, renderBillingStateStatus } from "./billing-tab.ts";
+import { sendActivityScheduleToTechnicalDirector } from "./technical-director-notice.ts";
 
 // Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
 // comment for why this cast is needed/safe.
@@ -60,6 +61,11 @@ function initFormHandlers() {
   el("activity-drawer-close").addEventListener("click", cancelActivityDrawer);
   backdrop.addEventListener("click", cancelActivityDrawer);
   el("activity-print-btn").addEventListener("click", printActivitySheet);
+  el("activity-send-technical-director-btn").addEventListener("click", () => {
+    const id = el("form-activity-internal-id").value;
+    const act = appState.activities.find((a: any) => a.id === id);
+    if (act) sendActivityScheduleToTechnicalDirector(act);
+  });
 
   // "Non taxable" pill and "Ajuster les taxes..." icon: both render fresh on every
   // updateSubmissionFinancialSummary() call (see financial-summary.ts), so they're wired via
