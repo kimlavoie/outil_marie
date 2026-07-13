@@ -111,6 +111,7 @@ function renderBackupView() {
 const SAFETY_BACKUP_LABELS: Record<string, string> = {
   avant_restauration: "Avant restauration d'une sauvegarde",
   avant_reinitialisation: "Avant réinitialisation de la base",
+  avant_facturation_auto: "Avant génération automatique de facturation",
   migration: "Avant mise à jour du format des données"
 };
 

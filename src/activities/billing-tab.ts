@@ -3,12 +3,14 @@
  * services/fees, and the Facturée/Terminée state toggle buttons. Split out of activities-form.ts
  * (activity drawer form wiring).
  */
-import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
+import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate, saveSafetyBackupToDb } from "../state/state.ts";
 import { formatCurrency } from "../utils/utils.ts";
+import { logError } from "../utils/logger.ts";
 import { addDistributionRow, updateDistributionTotal } from "./financials.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
 import { commitActivityPatch } from "./form-state-bar.ts";
 import { deriveActivityState } from "./render.ts";
+import { renderSafetyBackupsList } from "../services/backup/reminder.ts";
 
 // Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
 // comment for why this cast is needed/safe.
@@ -20,12 +22,22 @@ function el<T extends Element = HTMLInputElement>(id: string): T {
 // personnel jobs, and autres frais already carry a configured GL account — items without one
 // are left out so the user adds/maps them manually, consistent with the existing distribution
 // row validation (an amount without a selected account blocks saving).
-export function generateBillingLines(act: any) {
-  if (
-    (act.distributions || []).length > 0 &&
-    !confirm("Des lignes de facturation existent déjà. Les remplacer par les lignes générées automatiquement ?")
-  ) {
+export async function generateBillingLines(act: any) {
+  const replacingExisting = (act.distributions || []).length > 0;
+  if (replacingExisting && !confirm("Des lignes de facturation existent déjà. Les remplacer par les lignes générées automatiquement ?")) {
     return;
+  }
+
+  // Génération automatique remplace toutes les lignes de facturation existantes d'un coup — un
+  // point de restauration nommé permet de revenir en arrière même après avoir fermé le formulaire,
+  // sans dépendre d'un Ctrl+Z. Voir "Sauvegarde & Exportations" > Sauvegardes de sécurité.
+  if (replacingExisting) {
+    try {
+      await saveSafetyBackupToDb("avant_facturation_auto", JSON.parse(JSON.stringify(appState)));
+      renderSafetyBackupsList();
+    } catch (err) {
+      logError("billing", "sauvegarde de sécurité avant génération automatique de facturation", err);
+    }
   }
 
   el("form-distribution-list").innerHTML = "";

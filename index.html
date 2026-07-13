@@ -386,7 +386,7 @@
               <option value="rate">Taux personnalisé</option>
               <option value="amount">Montant fixe</option>
             </select>
-            <input type="number" id="tax-override-tps-value" class="form-input" step="0.01" placeholder="Taux (%)" disabled />
+            <input type="number" id="tax-override-tps-value" class="form-input" min="0" step="0.01" placeholder="Taux (%)" disabled />
           </div>
           <textarea id="tax-override-tps-note" class="form-input" rows="2" placeholder="Note (raison de la modification)"></textarea>
         </div>
@@ -399,7 +399,7 @@
               <option value="rate">Taux personnalisé</option>
               <option value="amount">Montant fixe</option>
             </select>
-            <input type="number" id="tax-override-tvq-value" class="form-input" step="0.01" placeholder="Taux (%)" disabled />
+            <input type="number" id="tax-override-tvq-value" class="form-input" min="0" step="0.01" placeholder="Taux (%)" disabled />
           </div>
           <textarea id="tax-override-tvq-note" class="form-input" rows="2" placeholder="Note (raison de la modification)"></textarea>
         </div>

@@ -381,6 +381,18 @@ input[type="checkbox"] {
   content: "✓";
 }
 
+/* Overrides .complete when a room-booking conflict is detected, so the warning stays visible
+   even if the "Réservation de salles" accordion is collapsed. */
+.form-accordion-check.conflict {
+  border-color: var(--danger);
+  background-color: var(--danger);
+  color: #fff;
+}
+
+.form-accordion-check.conflict::before {
+  content: "!";
+}
+
 /* Auto-calculated/filled fields styling */
 .badge-auto {
   background-color: var(--primary-light);

@@ -64,6 +64,12 @@ function checkRoomReservationConflicts(reservations: any[]) {
   const bannerEl = document.getElementById("form-activity-room-conflicts");
   if (!bannerEl) return;
 
+  // The banner lives inside the collapsible "Réservation de salles" accordion — if it's collapsed,
+  // a conflict could go completely unseen. The check mark next to the section title stays visible
+  // even when collapsed, so it also gets an unmissable "conflict" state alongside the banner.
+  const checkEl = document.getElementById("accordion-check-rooms");
+  const sectionEl = document.getElementById("accordion-section-rooms") as HTMLDetailsElement | null;
+
   const currentId = (document.getElementById("form-activity-internal-id") as HTMLInputElement).value;
   const conflicts: { roomName: string; otherActivityName: string }[] = [];
 
@@ -90,6 +96,10 @@ function checkRoomReservationConflicts(reservations: any[]) {
   if (conflicts.length === 0) {
     bannerEl.style.display = "none";
     bannerEl.innerHTML = "";
+    if (checkEl) {
+      checkEl.classList.remove("conflict");
+      checkEl.removeAttribute("title");
+    }
     return;
   }
 
@@ -105,6 +115,15 @@ function checkRoomReservationConflicts(reservations: any[]) {
       </div>
     </div>
   `;
+
+  if (checkEl) {
+    checkEl.classList.add("conflict");
+    checkEl.setAttribute("title", "Conflit de réservation détecté");
+  }
+  // Force the accordion open so a conflict can never be hidden behind a collapsed section.
+  if (sectionEl && !sectionEl.open) {
+    sectionEl.open = true;
+  }
 }
 
 function getDaysOfWeekInRange(startDateStr: string, endDateStr: string) {

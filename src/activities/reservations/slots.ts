@@ -39,6 +39,8 @@ function addSlotRow(container: HTMLElement, date = "", startTime = "", endTime =
   slotDateInput.addEventListener("blur", () => validateDateFieldFiscalYear(slotDateInput));
   validateDateFieldFiscalYear(slotDateInput);
   row.querySelector<HTMLInputElement>(".delete-slot-row-btn")!.addEventListener("click", () => {
+    const hasContent = row.querySelector<HTMLInputElement>(".slot-date-input")!.value.trim() !== "";
+    if (hasContent && !confirm("Retirer ce créneau ?")) return;
     row.remove();
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();

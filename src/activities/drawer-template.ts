@@ -381,7 +381,10 @@ const ACTIVITY_DRAWER_HTML = `
         <!-- Accounts Dynamic Distribution Interface -->
         <div class="distribution-section">
           <div class="distribution-header">
-            <span class="field-label">Ventilation par compte de revenus (avec Numéro Facture, RI ou Encaissement par compte)</span>
+            <span class="field-label">
+              Ventilation par compte de revenus (avec Numéro Facture, RI ou Encaissement par compte)
+              <span class="help-tooltip-trigger" title="Chaque ligne indique quel montant va dans quel compte comptable. Le bouton « Générer les lignes de facturation » remplit automatiquement ces lignes à partir des salles, du personnel, des équipements et des frais déjà saisis (seuls les éléments ayant un compte budgétaire configuré sont ajoutés).">?</span>
+            </span>
             <div style="display: flex; gap: 8px">
               <button
                 type="button"

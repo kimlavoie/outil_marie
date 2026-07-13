@@ -107,11 +107,12 @@ export function PricingGridEditor({
   };
 
   const setCellAmount = (paramId: string, ctId: string, amount: number) => {
+    const clampedAmount = Math.max(0, amount);
     const existing = activeGrid.cells.find(c => c.parameter_id === paramId && c.client_type_id === ctId);
     if (existing) {
-      updateActiveGrid({ cells: activeGrid.cells.map(c => (c === existing ? { ...c, amount } : c)) });
+      updateActiveGrid({ cells: activeGrid.cells.map(c => (c === existing ? { ...c, amount: clampedAmount } : c)) });
     } else {
-      updateActiveGrid({ cells: [...activeGrid.cells, { parameter_id: paramId, client_type_id: ctId, amount }] });
+      updateActiveGrid({ cells: [...activeGrid.cells, { parameter_id: paramId, client_type_id: ctId, amount: clampedAmount }] });
     }
   };
 

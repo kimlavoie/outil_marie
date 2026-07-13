@@ -14,7 +14,7 @@ import { showToast, elById } from "../utils/utils.ts";
 import { activitiesState, renderActivities } from "./render.ts";
 import { fillActivityFormFields, renderActivityStateBar, switchActivityTab } from "./form.ts";
 import { updateFormDatesHelper, saveActivityVersion } from "./history/index.ts";
-import { activityUndoSnapshotTimer } from "./autosave.ts";
+import { activityUndoSnapshotTimer, showAutoSaveStatus } from "./autosave.ts";
 
 // Persists which activity record (and which of its tabs) is currently open in the drawer, so
 // reloading/reopening the app can drop the user back exactly where they left off. Kept in its own
@@ -97,6 +97,7 @@ function openActivityDrawer(id: string, calendarReturn: any = null) {
   elById("form-activity-coba").value = act.coba || "";
   fillActivityFormFields(act);
   renderActivityStateBar(act);
+  showAutoSaveStatus("saved");
 
   const submitBtn = elById("activity-drawer-submit");
   if (submitBtn) {

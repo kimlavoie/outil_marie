@@ -19,39 +19,31 @@ import { reconciliationState, reconcileLedger } from "../services/reconciliation
 import { getActivityFormMode, updateFormTabIndicators } from "./form.ts";
 import { scheduleActivityUndoSnapshot } from "./history/index.ts";
 
-let autoSaveTimeoutId: ReturnType<typeof setTimeout> | null = null;
-
-function showAutoSaveStatus(status: string) {
-  const internalId = elById("form-activity-internal-id").value;
-  if (internalId && activitiesState.draftActivityId === internalId) {
-    const statusEl = elById("auto-save-status");
-    if (statusEl) statusEl.classList.remove("active");
-    return;
-  }
-
+// The status badge stays visible at all times (never fades out) so the user always has a clear,
+// permanent answer to "is my work saved?" instead of having to trust a message that disappears.
+function showAutoSaveStatus(status: "saving" | "saved") {
   const statusEl = elById("auto-save-status");
   if (!statusEl) return;
 
   const spinner = statusEl.querySelector<HTMLElement>(".auto-save-spinner");
   const text = statusEl.querySelector<HTMLElement>(".auto-save-text");
 
-  if (autoSaveTimeoutId) {
-    clearTimeout(autoSaveTimeoutId);
-    autoSaveTimeoutId = null;
+  const internalId = elById("form-activity-internal-id").value;
+  if (internalId && activitiesState.draftActivityId === internalId) {
+    statusEl.className = "auto-save-status draft";
+    if (spinner) spinner.style.display = "none";
+    if (text) text.textContent = "Brouillon (pas encore enregistré)";
+    return;
   }
 
   if (status === "saving") {
-    statusEl.className = "auto-save-status active saving";
+    statusEl.className = "auto-save-status saving";
     if (spinner) spinner.style.display = "inline-block";
     if (text) text.textContent = "Enregistrement...";
   } else if (status === "saved") {
-    statusEl.className = "auto-save-status active saved";
+    statusEl.className = "auto-save-status saved";
     if (spinner) spinner.style.display = "none";
     if (text) text.textContent = "Enregistré";
-
-    autoSaveTimeoutId = setTimeout(() => {
-      statusEl.classList.remove("active");
-    }, 2000);
   }
 }
 

@@ -15,7 +15,8 @@ import {
   setExclusivePillValueEl,
   initExclusivePillToggleEl,
   setPillGroupActiveEl,
-  buildGlAccountOptionsHtml
+  buildGlAccountOptionsHtml,
+  rejectNegativeAmountOnBlur
 } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
 import { updateFormDatesHelper } from "../history/index.ts";
@@ -119,13 +120,19 @@ function addReservationCard(reservationData: any = null) {
 
       <div class="form-group-row room-tariff-fields-row" style="display: flex; gap: 12px; margin-bottom: 12px;">
         <div class="form-group" style="flex: 1; margin-bottom: 0;">
-          <label for="${uid}-room-tariff-parameter">Tarif - Paramètre</label>
+          <label for="${uid}-room-tariff-parameter">
+            Tarif - Paramètre
+            <span class="help-tooltip-trigger" title="La grille tarifaire de cette salle (configurée dans Paramètres → Salles) peut avoir plusieurs versions selon la date ou la situation. Ce choix détermine laquelle s'applique ici.">?</span>
+          </label>
           <select id="${uid}-room-tariff-parameter" class="select-input room-tariff-parameter" style="padding: 10px 14px; width: 100%;">
             <option value="">Sélectionner...</option>
           </select>
         </div>
         <div class="form-group room-tariff-client-type-group" style="flex: 1; margin-bottom: 0; display: flex; flex-direction: column;">
-          <label for="${uid}-room-tariff-client-type">Tarif - Type de client</label>
+          <label for="${uid}-room-tariff-client-type">
+            Tarif - Type de client
+            <span class="help-tooltip-trigger" title="Interne ou externe : le tarif facturé (et le compte budgétaire utilisé) peut différer selon le type de client sélectionné dans « Responsable de la facturation ».">?</span>
+          </label>
           <select id="${uid}-room-tariff-client-type" class="select-input room-tariff-client-type" style="padding: 10px 14px; width: 100%;">
             <option value="">Sélectionner...</option>
           </select>
@@ -231,7 +238,7 @@ function addReservationCard(reservationData: any = null) {
           <button type="button" class="btn btn-secondary room-add-staff-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
         <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.2fr 0.6fr 0.6fr 0.6fr 1fr 1fr 50px 38px; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px;">
-          <span>Emploi</span><span>Qté</span><span>Heures</span><span title="Heures en temps supplémentaire">Heures sup.</span><span>Code budgétaire</span><span>Sous-total</span><span></span><span></span>
+          <span>Emploi</span><span>Qté</span><span>Heures</span><span title="Heures en temps supplémentaire">Heures sup.</span><span title="Le tarif à facturer pour ce poste — détermine le compte budgétaire utilisé sur la ligne de facturation générée">Code budgétaire</span><span>Sous-total</span><span></span><span></span>
         </div>
         <div class="distribution-list room-staff-list"></div>
       </div>
@@ -242,7 +249,7 @@ function addReservationCard(reservationData: any = null) {
           <button type="button" class="btn btn-secondary room-add-service-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
         <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.3fr 0.6fr 0.6fr 1fr 1fr 50px 38px; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px;">
-          <span>Équipement</span><span>Qté</span><span title="Utilisé seulement pour les équipements facturés à l'heure">Heures</span><span>Compte à facturer</span><span>Sous-total</span><span></span><span></span>
+          <span>Équipement</span><span>Qté</span><span title="Utilisé seulement pour les équipements facturés à l'heure">Heures</span><span title="Le tarif à facturer pour cet équipement — détermine le compte budgétaire utilisé sur la ligne de facturation générée">Compte à facturer</span><span>Sous-total</span><span></span><span></span>
         </div>
         <div class="distribution-list room-services-list"></div>
       </div>
@@ -350,6 +357,7 @@ function addReservationCard(reservationData: any = null) {
       autoSaveActivityForm();
     });
   });
+  rejectNegativeAmountOnBlur(card.querySelector<HTMLInputElement>(".room-tariff-custom-amount")!);
 
   const installToggle = card.querySelector<HTMLInputElement>(".reservation-install-toggle")!;
   const installFields = card.querySelector<HTMLInputElement>(".reservation-install-fields")!;

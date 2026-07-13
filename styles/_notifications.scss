@@ -1,24 +1,20 @@
-/* Auto-save status indicator styles */
+/* Auto-save status indicator styles: always visible (no fade-out) so the save state is never
+   in doubt — see activities/autosave.ts showAutoSaveStatus. */
 .auto-save-status {
   font-size: 0.72rem;
   color: var(--text-muted);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  opacity: 0;
   transition:
-    opacity 0.3s ease,
-    color 0.3s ease;
+    color 0.3s ease,
+    border-color 0.3s ease;
   margin-left: 12px;
   padding: 4px 10px;
   border-radius: var(--radius-sm);
   background-color: var(--bg-main);
   border: 1px solid var(--border-color);
   pointer-events: none;
-}
-
-.auto-save-status.active {
-  opacity: 1;
 }
 
 .auto-save-status.saving {
@@ -29,6 +25,12 @@
 .auto-save-status.saved {
   color: var(--success-text);
   border-color: var(--success);
+}
+
+.auto-save-status.draft {
+  color: var(--text-muted);
+  border-color: var(--border-color);
+  font-style: italic;
 }
 
 .auto-save-spinner {

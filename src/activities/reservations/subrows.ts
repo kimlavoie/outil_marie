@@ -115,6 +115,8 @@ export function addStaffRow(
   const tarifSelect = row.querySelector<HTMLSelectElement>(".staff-tarif-select")!;
 
   row.querySelector<HTMLInputElement>(".delete-staff-row-btn")!.addEventListener("click", () => {
+    const hasContent = row.querySelector<HTMLSelectElement>(".staff-salary-select")!.value !== "";
+    if (hasContent && !confirm("Retirer ce membre du personnel de la réservation ?")) return;
     wrapper.remove();
     updateSubmissionFinancialSummary();
     autoSaveActivityForm();
@@ -234,6 +236,8 @@ export function addServiceRow(
   const tarifSelect = row.querySelector<HTMLSelectElement>(".service-tarif-select")!;
 
   row.querySelector<HTMLInputElement>(".delete-service-row-btn")!.addEventListener("click", () => {
+    const hasContent = row.querySelector<HTMLSelectElement>(".service-select")!.value !== "";
+    if (hasContent && !confirm("Retirer cet équipement/service de la réservation ?")) return;
     wrapper.remove();
     updateSubmissionFinancialSummary();
     autoSaveActivityForm();
@@ -314,6 +318,10 @@ export function addFeeRow(
 
   const row = el(rowId);
   row.querySelector<HTMLInputElement>(".delete-fee-row-btn")!.addEventListener("click", () => {
+    const hasContent =
+      row.querySelector<HTMLInputElement>(".fee-desc-input")!.value.trim() !== "" ||
+      (parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input")!.value) || 0) > 0;
+    if (hasContent && !confirm("Retirer ces frais de la réservation ?")) return;
     row.remove();
     updateSubmissionFinancialSummary();
     autoSaveActivityForm();

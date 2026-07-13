@@ -88,12 +88,18 @@ test("addDistributionRow's account select is populated with every configured GL 
   assert.ok(opts.some(t => t?.includes("892-2")));
 });
 
-test("addDistributionRow's delete button removes the row from the DOM", () => {
+test("addDistributionRow's delete button removes the row from the DOM after confirmation", () => {
   addDistributionRow("892-1", 100);
   assert.equal(document.querySelectorAll("#form-distribution-list .distribution-row").length, 1);
 
-  const delBtn = document.querySelector(".delete-dist-row-btn") as HTMLElement;
-  delBtn.dispatchEvent(new (globalThis as any).Event("click", { bubbles: true }));
+  const originalConfirm = (globalThis as any).confirm;
+  (globalThis as any).confirm = () => true;
+  try {
+    const delBtn = document.querySelector(".delete-dist-row-btn") as HTMLElement;
+    delBtn.dispatchEvent(new (globalThis as any).Event("click", { bubbles: true }));
+  } finally {
+    (globalThis as any).confirm = originalConfirm;
+  }
 
   assert.equal(document.querySelectorAll("#form-distribution-list .distribution-row").length, 0);
 });

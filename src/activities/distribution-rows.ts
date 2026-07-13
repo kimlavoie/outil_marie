@@ -31,6 +31,10 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "", detail
   // Attach listeners
   const newRow = elById(rowId);
   newRow.querySelector(".delete-dist-row-btn")!.addEventListener("click", () => {
+    const amt = parseFloat(newRow.querySelector<HTMLInputElement>(".dist-amount-input")!.value) || 0;
+    const acc = newRow.querySelector<HTMLInputElement>(".dist-account-select-wrapper .searchable-select-value")?.value || "";
+    const hasContent = amt > 0 || !!acc;
+    if (hasContent && !confirm("Retirer cette ligne de répartition ?")) return;
     newRow.remove();
     updateDistributionTotal();
     autoSaveActivityForm();

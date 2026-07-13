@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { dom } from "./dom-mock.ts";
+import "./indexeddb-mock.ts";
 
 test.after(() => dom.window.close());
 
@@ -9,7 +10,7 @@ test.after(() => dom.window.close());
 // services/fees line-generation directly against a hand-built DOM fixture (mirroring the real
 // markup produced by src/activities/reservations/subrows.ts) rather than driving the full
 // reservation-card UI, since only these three lists (and #form-distribution-list) matter here.
-import { appState } from "../src/state/state.ts";
+import { appState, getSafetyBackupsFromDb } from "../src/state/state.ts";
 import { generateBillingLines } from "../src/activities/billing-tab.ts";
 
 function baseSettings(overrides: any = {}) {
@@ -144,4 +145,26 @@ test("generateBillingLines asks for confirmation before replacing existing distr
   // Declined: the pre-existing markup (empty #form-distribution-list, since the skeleton never
   // called addDistributionRow) must be left untouched rather than regenerated.
   assert.equal(document.querySelectorAll("#form-distribution-list .distribution-row").length, 0);
+});
+
+test("generateBillingLines takes a named safety backup before replacing existing distribution lines", async () => {
+  (globalThis as any).confirm = () => true;
+  const existing = { id: "act-1", distributions: [{ account_code: "GL-OLD", amount: 10 }] };
+
+  const before = (await getSafetyBackupsFromDb()).length;
+  await generateBillingLines(existing);
+  const after = await getSafetyBackupsFromDb();
+
+  assert.equal(after.length, before + 1);
+  assert.equal(after[0].label, "avant_facturation_auto");
+  // The regeneration itself still ran after the snapshot was taken.
+  assert.equal(document.querySelectorAll("#form-distribution-list .distribution-row").length > 0, true);
+});
+
+test("generateBillingLines does not take a safety backup when there was nothing to replace", async () => {
+  const before = (await getSafetyBackupsFromDb()).length;
+  await generateBillingLines({ distributions: [] });
+  const after = await getSafetyBackupsFromDb();
+
+  assert.equal(after.length, before);
 });

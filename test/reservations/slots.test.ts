@@ -78,7 +78,13 @@ test("addSlotRow's delete button removes the row from the DOM", () => {
   addSlotRow(container, "2025-08-01");
   assert.equal(container.querySelectorAll(".reservation-slot-row").length, 1);
 
-  (container.querySelector(".delete-slot-row-btn") as HTMLElement).dispatchEvent(new (globalThis as any).Event("click", { bubbles: true }));
+  const originalConfirm = (globalThis as any).confirm;
+  (globalThis as any).confirm = () => true;
+  try {
+    (container.querySelector(".delete-slot-row-btn") as HTMLElement).dispatchEvent(new (globalThis as any).Event("click", { bubbles: true }));
+  } finally {
+    (globalThis as any).confirm = originalConfirm;
+  }
   assert.equal(container.querySelectorAll(".reservation-slot-row").length, 0);
 });
 

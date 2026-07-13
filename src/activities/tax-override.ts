@@ -28,9 +28,9 @@ function readTaxSection(tax: "tps" | "tvq"): TaxOverride | undefined {
   const mode = elById<HTMLSelectElement>(`tax-override-${tax}-mode`).value;
   if (mode === "default") return undefined;
 
-  const rawValue = parseFloat(elById<HTMLInputElement>(`tax-override-${tax}-value`).value);
+  const rawValue = Math.max(0, parseFloat(elById<HTMLInputElement>(`tax-override-${tax}-value`).value) || 0);
   const note = elById<HTMLTextAreaElement>(`tax-override-${tax}-note`).value.trim();
-  const value = isNaN(rawValue) ? 0 : mode === "rate" ? rawValue / 100 : rawValue;
+  const value = mode === "rate" ? rawValue / 100 : rawValue;
 
   return { mode: mode as "rate" | "amount", value, note };
 }

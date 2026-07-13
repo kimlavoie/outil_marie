@@ -74,10 +74,24 @@ test("computeActivityDiff summarizes reservation and distribution changes rather
 test("checkRoomReservationConflicts detects conflicts and sets banner innerHTML", () => {
   const internalIdEl = { value: "act-1" };
   const bannerEl = { style: {} as any, innerHTML: "" };
+  const checkEl = {
+    classList: {
+      classes: new Set<string>(),
+      add(c: string) { this.classes.add(c); },
+      remove(c: string) { this.classes.delete(c); },
+      contains(c: string) { return this.classes.has(c); }
+    },
+    attrs: {} as Record<string, string>,
+    setAttribute(name: string, value: string) { this.attrs[name] = value; },
+    removeAttribute(name: string) { delete this.attrs[name]; }
+  };
+  const sectionEl = { open: false };
   (globalThis as any).document = {
     getElementById(id: string) {
       if (id === "form-activity-internal-id") return internalIdEl;
       if (id === "form-activity-room-conflicts") return bannerEl;
+      if (id === "accordion-check-rooms") return checkEl;
+      if (id === "accordion-section-rooms") return sectionEl;
       return null;
     }
   };
@@ -108,6 +122,13 @@ test("checkRoomReservationConflicts detects conflicts and sets banner innerHTML"
   assert.equal(bannerEl.style.display, "block");
   assert.ok(bannerEl.innerHTML.includes("Salle A"));
   assert.ok(bannerEl.innerHTML.includes("Autre Activité"));
+  assert.equal(checkEl.classList.contains("conflict"), true);
+  assert.equal(sectionEl.open, true, "the accordion should be forced open so the conflict can't be missed while collapsed");
+
+  // Resolving the conflict should clear both the check mark and (if reopened by hand) not force it back open.
+  checkRoomReservationConflicts([]);
+  assert.equal(bannerEl.style.display, "none");
+  assert.equal(checkEl.classList.contains("conflict"), false);
 });
 
 test("getDaysOfWeekInRange returns correct days of week", () => {
