@@ -68,7 +68,7 @@ test("SalariesPanel shows the overtime rate note when an overtime rate is set", 
     baseState({
       settings: {
         ...appState.settings,
-        salaries: [salary({ rate_versions: [{ id: "rv1", effective_date: "", rate: 25, overtime_rate: 37.5 }] })]
+        salaries: [salary({ job: "Directeur technique", rate_versions: [{ id: "rv1", effective_date: "", rate: 25, overtime_rate: 37.5 }] })]
       }
     })
   );
@@ -150,7 +150,7 @@ test("SalaryModal editing an existing salary updates it in place instead of dupl
 
 test("SalaryModal rejects a negative overtime rate", () => {
   const { container } = render(<SalaryModal id={null} onClose={() => {}} bump={() => {}} />);
-  fireEvent.change(container.querySelector("#form-salary-job")!, { target: { value: "Test" } });
+  fireEvent.change(container.querySelector("#form-salary-job")!, { target: { value: "Directeur technique" } });
   const numberInputs = container.querySelectorAll('input[type="number"]');
   fireEvent.change(numberInputs[0], { target: { value: "20" } });
   fireEvent.change(numberInputs[1], { target: { value: "-5" } });

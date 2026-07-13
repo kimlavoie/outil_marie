@@ -85,14 +85,22 @@ test.beforeEach(() => {
   resetIncompleteRowWarnings();
 });
 
-test("addStaffRow computes the subtotal from the salary's active rate (rate x hours + overtime rate x overtime hours) x count", () => {
+test("addStaffRow computes the subtotal from the salary's active rate (regular rate or overtime rate depending on checkbox)", () => {
   const container = freshContainer();
-  addStaffRow(container, "salary-dt", 2, 5, 2, "GL-DT");
+  // Test regular rate
+  addStaffRow(container, "salary-dt", 2, 5, 0, "GL-DT");
+  const row1 = container.querySelector(".distribution-row") as HTMLElement;
+  const subtotal1 = row1.querySelector(".staff-subtotal-display")!.textContent;
+  // 50 * 5 * 2 = 500
+  assert.match(subtotal1!, /500,00/);
 
-  const row = container.querySelector(".distribution-row") as HTMLElement;
-  const subtotal = row.querySelector(".staff-subtotal-display")!.textContent;
-  // (50 * 5 + 75 * 2) * 2 = (250 + 150) * 2 = 800
-  assert.match(subtotal!, /800,00/);
+  // Test overtime rate
+  const container2 = freshContainer();
+  addStaffRow(container2, "salary-dt", 2, 0, 5, "GL-DT");
+  const row2 = container2.querySelector(".distribution-row") as HTMLElement;
+  const subtotal2 = row2.querySelector(".staff-subtotal-display")!.textContent;
+  // 75 * 5 * 2 = 750
+  assert.match(subtotal2!, /750,00/);
 });
 
 test("addStaffRow shows the custom rate fields only when useCustomRate is true, and updateStaffRowSubtotal reads them", () => {
@@ -146,16 +154,27 @@ test("collectStaffFromForm reads back count/hours/overtime/gl_account_code for e
   const card = freshContainer();
   card.innerHTML = `<div class="room-staff-list"></div>`;
   const staffList = card.querySelector(".room-staff-list") as HTMLElement;
-  addStaffRow(staffList, "salary-dt", 2, 5, 1, "GL-DT");
+  
+  // Add a regular staff row
+  addStaffRow(staffList, "salary-dt", 2, 5, 0, "GL-DT");
+  
+  // Add an overtime staff row
+  addStaffRow(staffList, "salary-dt", 1, 0, 3, "GL-DT");
 
   const staff = collectStaffFromForm(card);
-  assert.equal(staff.length, 1);
+  assert.equal(staff.length, 2);
+  
   assert.equal(staff[0].salary_id, "salary-dt");
   assert.equal(staff[0].count, 2);
   assert.equal(staff[0].hours, 5);
-  assert.equal(staff[0].overtime_hours, 1);
+  assert.equal(staff[0].overtime_hours, 0);
   assert.equal(staff[0].gl_account_code, "GL-DT");
-  assert.equal(staff[0].tarif_id, "");
+  
+  assert.equal(staff[1].salary_id, "salary-dt");
+  assert.equal(staff[1].count, 1);
+  assert.equal(staff[1].hours, 0);
+  assert.equal(staff[1].overtime_hours, 3);
+  assert.equal(staff[1].gl_account_code, "GL-DT");
 });
 
 test("collectStaffFromForm drops rows with no salary selected but warns instead of silently discarding entered data", () => {

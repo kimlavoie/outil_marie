@@ -8,6 +8,7 @@ import { formatCurrency } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
 import { addDistributionRow, updateDistributionTotal } from "./financials.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
+import { getStaffRowHours } from "./reservations/subrows.ts";
 import { commitActivityPatch } from "./form-state-bar.ts";
 import { deriveActivityState } from "./render.ts";
 import { renderSafetyBackupsList } from "../services/backup/reminder.ts";
@@ -76,8 +77,7 @@ export async function generateBillingLines(act: any) {
     }
 
     const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
-    const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
-    const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
+    const { hours, overtimeHours } = getStaffRowHours(row);
     const amount = rate * hours * count + overtimeRate * overtimeHours * count;
     if (amount > 0) {
       let details = `${count} ${salary.job}${count > 1 ? "s" : ""} de ${hours}h à ${formatCurrency(rate)}/h`;

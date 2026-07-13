@@ -24,7 +24,7 @@ function baseSettings(overrides: any = {}) {
     salaries: [
       {
         id: "sal1",
-        job: "Technicien",
+        job: "Directeur technique",
         rate_versions: [{ id: "rv1", effective_date: "", rate: 20, overtime_rate: 30 }]
       }
     ],
@@ -48,12 +48,14 @@ function setupSkeleton() {
       <div class="room-staff-list">
         <div class="distribution-row-wrapper">
           <div class="distribution-row">
-            <select class="staff-salary-select"><option value="sal1" selected>Technicien</option></select>
+            <select class="staff-salary-select"><option value="sal1" selected>Directeur technique</option></select>
             <select class="staff-gl-select"><option value="GL-STAFF" selected>GL-STAFF</option></select>
             <input type="checkbox" class="staff-use-custom-rate">
             <input class="staff-count-input" value="2">
             <input class="staff-hours-input" value="4">
-            <input class="staff-overtime-hours-input" value="1">
+            <div class="staff-overtime-container">
+              <input type="checkbox" class="staff-overtime-checkbox" checked>
+            </div>
           </div>
         </div>
       </div>
@@ -98,10 +100,10 @@ test("generateBillingLines adds a staff line costing (rate x hours + overtime ra
   generateBillingLines({ distributions: [] });
 
   const rows = distributionRows();
-  // (20 * 4 * 2) + (30 * 1 * 2) = 160 + 60 = 220
-  const staffRow = rows.find(r => r.details && r.details.includes("Technicien"));
+  // 30 * 4 * 2 = 240
+  const staffRow = rows.find(r => r.details && r.details.includes("Directeur technique"));
   assert.ok(staffRow, "expected a staff distribution row");
-  assert.equal(staffRow!.amount, "220");
+  assert.equal(staffRow!.amount, "240");
 });
 
 test("generateBillingLines adds an hourly service line costing rate x hours x count", () => {
@@ -125,13 +127,14 @@ test("generateBillingLines carries over an 'autre frais' row as-is (account/amou
 
 test("generateBillingLines skips a staff/service line entirely when its computed amount is 0", () => {
   (document.querySelector(".staff-hours-input") as HTMLInputElement).value = "0";
-  (document.querySelector(".staff-overtime-hours-input") as HTMLInputElement).value = "0";
+  const overtimeCheckbox = document.querySelector(".staff-overtime-checkbox") as HTMLInputElement;
+  if (overtimeCheckbox) overtimeCheckbox.checked = false;
   (document.querySelector(".service-hours-input") as HTMLInputElement).value = "0";
 
   generateBillingLines({ distributions: [] });
 
   const rows = distributionRows();
-  assert.equal(rows.some(r => r.details && r.details.includes("Technicien")), false);
+  assert.equal(rows.some(r => r.details && r.details.includes("Directeur technique")), false);
   assert.equal(rows.some(r => r.details && r.details.includes("Projecteur")), false);
   // The fee line is unaffected and still generated.
   assert.equal(rows.some(r => r.details === "Frais divers"), true);

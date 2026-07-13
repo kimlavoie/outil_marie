@@ -45,6 +45,54 @@ function buildTarifOptionsHtml(
   return html;
 }
 
+export function getStaffRowHours(row: HTMLElement): { hours: number; overtimeHours: number } {
+  const salaryId = row.querySelector<HTMLSelectElement>(".staff-salary-select")!.value;
+  const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+  const isDT = salaryId === TECHNICAL_DIRECTOR_SALARY_ID || (salary && salary.job && salary.job.toLowerCase() === "directeur technique");
+  
+  const rawHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
+  
+  if (isDT) {
+    const overtimeCheckbox = row.querySelector<HTMLInputElement>(".staff-overtime-checkbox");
+    const isOvertime = overtimeCheckbox && overtimeCheckbox.checked;
+    return {
+      hours: isOvertime ? 0 : rawHours,
+      overtimeHours: isOvertime ? rawHours : 0
+    };
+  } else {
+    return {
+      hours: rawHours,
+      overtimeHours: 0
+    };
+  }
+}
+
+export function updateStaffRowOvertimeVisibility(row: HTMLElement, isOvertimeChecked = false) {
+  const salarySelect = row.querySelector<HTMLSelectElement>(".staff-salary-select")!;
+  const salaryId = salarySelect.value;
+  const container = row.querySelector<HTMLElement>(".staff-overtime-container")!;
+  if (!container) return;
+
+  const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+  const isDT = salaryId === TECHNICAL_DIRECTOR_SALARY_ID || (salary && salary.job && salary.job.toLowerCase() === "directeur technique");
+
+  if (isDT) {
+    container.innerHTML = `
+      <label style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; cursor: pointer;" title="Cocher si le directeur technique est à temps supplémentaire">
+        <input type="checkbox" class="staff-overtime-checkbox" ${isOvertimeChecked ? "checked" : ""} style="width: 16px; height: 16px; margin: 0;">
+      </label>
+    `;
+    const checkbox = container.querySelector<HTMLInputElement>(".staff-overtime-checkbox")!;
+    checkbox.addEventListener("change", () => {
+      updateStaffRowSubtotal(row);
+      updateSubmissionFinancialSummary();
+      autoSaveActivityForm();
+    });
+  } else {
+    container.innerHTML = "";
+  }
+}
+
 export function addStaffRow(
   container: HTMLElement,
   salaryId = "",
@@ -64,6 +112,11 @@ export function addStaffRow(
     .map(s => `<option value="${s.id}" ${s.id === salaryId ? "selected" : ""}>${s.job}</option>`)
     .join("");
 
+  const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+  const isDT = salaryId === TECHNICAL_DIRECTOR_SALARY_ID || (salary && salary.job && salary.job.toLowerCase() === "directeur technique");
+  const displayedHours = (isDT && overtimeHours > 0) ? overtimeHours : hours;
+  const isOvertimeChecked = isDT && overtimeHours > 0;
+
   container.insertAdjacentHTML(
     "beforeend",
     `
@@ -74,8 +127,8 @@ export function addStaffRow(
           ${salaryOptionsHtml}
         </select>
         <input type="number" id="${rowId}-count" class="form-input staff-count-input" min="1" step="1" value="${count || 1}" placeholder="Qté" style="padding: 8px 12px; font-size: 0.85rem;">
-        <input type="number" id="${rowId}-hours" class="form-input staff-hours-input" min="0" step="0.25" value="${hours || 0}" placeholder="Heures" style="padding: 8px 12px; font-size: 0.85rem;">
-        <input type="number" id="${rowId}-overtime-hours" class="form-input staff-overtime-hours-input" min="0" step="0.25" value="${overtimeHours || 0}" placeholder="Heures sup." title="Heures en temps supplémentaire" style="padding: 8px 12px; font-size: 0.85rem;">
+        <input type="number" id="${rowId}-hours" class="form-input staff-hours-input" min="0" step="0.25" value="${displayedHours || 0}" placeholder="Heures" style="padding: 8px 12px; font-size: 0.85rem;">
+        <div class="staff-overtime-container" style="display: flex; align-items: center; justify-content: center; height: 100%;"></div>
         ${buildSearchableSelectHtml("staff-gl-select-wrapper", "staff-gl-select", "Choisir...", `${rowId}-gl`)}
         <label style="font-size: 0.72rem; display: flex; align-items: center; gap: 4px; color: var(--text-muted); cursor: pointer; user-select: none; white-space: nowrap;">
           <input type="checkbox" id="${rowId}-use-custom-rate" class="staff-use-custom-rate" ${useCustomRate ? "checked" : ""} style="width: auto; margin: 0;">
@@ -117,6 +170,8 @@ export function addStaffRow(
   });
 
   row.querySelector<HTMLSelectElement>(".staff-salary-select")!.addEventListener("change", () => {
+    updateStaffRowOvertimeVisibility(row, false);
+    updateStaffRowSubtotal(row);
     updateSubmissionFinancialSummary();
     autoSaveActivityForm();
   });
@@ -151,8 +206,8 @@ export function addStaffRow(
   rejectNegativeAmountOnBlur(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!);
   rejectNegativeAmountOnBlur(row.querySelector<HTMLInputElement>(".staff-count-input")!);
   rejectNegativeAmountOnBlur(row.querySelector<HTMLInputElement>(".staff-hours-input")!);
-  rejectNegativeAmountOnBlur(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!);
 
+  updateStaffRowOvertimeVisibility(row, isOvertimeChecked);
   updateStaffRowSubtotal(row);
 }
 
@@ -161,8 +216,7 @@ export function updateStaffRowSubtotal(row: HTMLElement) {
   const wrapper = row.closest(".distribution-row-wrapper");
   const useCustomRate = wrapper?.querySelector<HTMLInputElement>(".staff-use-custom-rate")?.checked || false;
   const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
-  const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
-  const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
+  const { hours, overtimeHours } = getStaffRowHours(row);
   const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
   const dateStr = getEarliestSlotDateFromDom();
 
@@ -421,12 +475,13 @@ export function collectStaffFromForm(card: HTMLElement) {
   const rows = Array.from(card.querySelectorAll<HTMLInputElement>(".room-staff-list .distribution-row")!).map(row => {
     const wrapper = row.closest(".distribution-row-wrapper");
     const useCustomRate = row.querySelector<HTMLInputElement>(".staff-use-custom-rate")?.checked || false;
+    const { hours, overtimeHours } = getStaffRowHours(row);
     return {
       id: row.dataset.id || generateUid("staff"),
       salary_id: row.querySelector<HTMLInputElement>(".staff-salary-select")!.value,
       count: parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0,
-      hours: parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0,
-      overtime_hours: parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0,
+      hours: hours,
+      overtime_hours: overtimeHours,
       tarif_id: useCustomRate ? "__custom__" : "",
       auto_generated: row.dataset.autoGenerated === "1",
       custom_rate: wrapper && useCustomRate ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!.value) || 0 : 0,

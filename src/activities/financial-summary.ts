@@ -6,7 +6,7 @@
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
 import { formatCurrency, escapeHtml, rateToPercentString, getRoomsTariffTotal, elById } from "../utils/utils.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
-import { updateStaffRowSubtotal, updateServiceRowSubtotal } from "./reservations/subrows.ts";
+import { updateStaffRowSubtotal, updateServiceRowSubtotal, getStaffRowHours } from "./reservations/subrows.ts";
 
 type TaxOverride = { mode: "rate" | "amount"; value: number; note: string };
 
@@ -70,8 +70,7 @@ function computeFormRevenueSubtotal(): { roomsTotal: number; staffTotal: number;
     const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
     const useCustomRate = row.querySelector<HTMLInputElement>(".staff-use-custom-rate")?.checked || false;
     const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
-    const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
-    const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
+    const { hours, overtimeHours } = getStaffRowHours(row);
     let rate = 0;
     let overtimeRate = 0;
     if (useCustomRate) {

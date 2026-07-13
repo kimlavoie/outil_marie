@@ -33,7 +33,8 @@ export function SalariesPanel({ active, openModal, bump }: { active: boolean; op
         {salaries.map((sal: { id: string; job: string; rate_versions?: any[] }) => {
           const currentRate = getActiveSalaryRate(sal, "");
           const currentOvertimeRate = getActiveSalaryOvertimeRate(sal, "");
-          const overtimeNote = currentOvertimeRate > 0 ? ` · ${currentOvertimeRate.toFixed(2)} $ / heure (temps sup.)` : "";
+          const isDT = sal.id === "salary-dt" || (sal.job && sal.job.toLowerCase() === "directeur technique");
+          const overtimeNote = isDT && currentOvertimeRate > 0 ? ` · ${currentOvertimeRate.toFixed(2)} $ / heure (temps sup.)` : "";
           const versionsCount = (sal.rate_versions || []).length;
           const versionsNote = versionsCount > 1 ? ` (${versionsCount} versions)` : "";
           return (
@@ -91,18 +92,20 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
       return;
     }
 
+    const isDirecteurTechnique = originalId === "salary-dt" || jobName.toLowerCase() === "directeur technique";
+
     let rateErrorMsg = "";
     const rateVersions: { id: string; effective_date: string; rate: number; overtime_rate: number }[] = [];
     rateRows.forEach(row => {
       const dateStr = row.effective_date.trim();
       const rateStr = row.rate.trim();
-      const overtimeRateStr = (row.overtime_rate || "").trim();
+      const overtimeRateStr = isDirecteurTechnique ? (row.overtime_rate || "").trim() : "";
       const rate = parseFloat(rateStr);
-      const overtimeRate = overtimeRateStr ? parseFloat(overtimeRateStr) : 0;
+      const overtimeRate = isDirecteurTechnique && overtimeRateStr ? parseFloat(overtimeRateStr) : 0;
       if (!dateStr && !rateStr && !overtimeRateStr) return;
       if (!rateStr || isNaN(rate) || rate < 0) {
         rateErrorMsg = "Veuillez saisir un taux horaire valide (supérieur ou égal à 0) pour chaque version.";
-      } else if (overtimeRateStr && (isNaN(overtimeRate) || overtimeRate < 0)) {
+      } else if (isDirecteurTechnique && overtimeRateStr && (isNaN(overtimeRate) || overtimeRate < 0)) {
         rateErrorMsg = "Veuillez saisir un taux de temps supplémentaire valide (supérieur ou égal à 0), ou le laisser vide.";
       } else if (dateStr && !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
         rateErrorMsg = "La date d'entrée en vigueur doit être au format AAAA-MM-JJ, ou vide.";
@@ -151,6 +154,8 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
     });
   };
 
+  const isDirecteurTechnique = originalId === "salary-dt" || job.trim().toLowerCase() === "directeur technique";
+
   return (
     <Modal
       id="salary-modal"
@@ -190,14 +195,14 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
           Saisissez les taux horaires applicables. Vous pouvez planifier des changements de taux futurs ou passés en indiquant une date d'effet (format AAAA-MM-JJ). Si aucune date n'est spécifiée, le taux s'applique par défaut (depuis toujours).
         </p>
         {rateRows.length > 0 && (
-          <div className="distribution-row-header" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr auto", gap: 12, padding: "0 0 4px 0", borderBottom: "1px solid var(--border-color)", marginBottom: 8, fontSize: "0.75rem", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: "bold" }}>
+          <div className="distribution-row-header" style={{ display: "grid", gridTemplateColumns: isDirecteurTechnique ? "1.4fr 1fr 1fr auto" : undefined, gap: 12, padding: "0 0 4px 0", borderBottom: "1px solid var(--border-color)", marginBottom: 8, fontSize: "0.75rem", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: "bold" }}>
             <div>Date d'effet</div>
-            <div>Taux régulier ($/h)</div>
-            <div>Taux temps sup. ($/h)</div>
+            <div>{isDirecteurTechnique ? "Taux régulier ($/h)" : "Taux horaire ($/h)"}</div>
+            {isDirecteurTechnique && <div>Taux temps sup. ($/h)</div>}
             <div></div>
           </div>
         )}
-        <RateVersionsEditor rows={rateRows} onChange={setRateRows} withOvertime />
+        <RateVersionsEditor rows={rateRows} onChange={setRateRows} withOvertime={isDirecteurTechnique} />
       </div>
     </Modal>
   );
