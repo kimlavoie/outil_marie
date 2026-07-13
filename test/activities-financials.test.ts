@@ -18,7 +18,7 @@ appState.settings = {
     {
       id: "sal1",
       job: "",
-      tarifs: [{ id: "tarif-sal1", label: "", gl_account_code: "", rate_versions: [{ id: "rv1", effective_date: "", rate: 20, overtime_rate: 30 }] }]
+      rate_versions: [{ id: "rv1", effective_date: "", rate: 20, overtime_rate: 30 }]
     }
   ],
   services: [

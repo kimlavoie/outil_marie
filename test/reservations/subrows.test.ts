@@ -298,4 +298,46 @@ test("autoRemoveProjectorIfNeeded does not remove the projector rental row if it
   assert.equal(servicesList.querySelectorAll(".service-select").length, 1);
 });
 
+test("addStaffRow supports start_time and end_time inputs, automatically calculates hours and propagates from first slot", () => {
+  const card = freshContainer();
+  card.className = "reservation-card";
+  card.innerHTML = `
+    <div class="reservation-slots-list">
+      <div class="distribution-row reservation-slot-row">
+        <input type="text" class="slot-date-input" value="2026-07-13">
+        <input type="time" class="slot-start-time-input" value="09:00">
+        <input type="time" class="slot-end-time-input" value="17:00">
+      </div>
+    </div>
+    <div class="room-staff-list"></div>
+  `;
+
+  const staffList = card.querySelector(".room-staff-list") as HTMLElement;
+
+  addStaffRow(staffList, "salary-dt", 1, 0, 0, "GL-DT");
+
+  const row = staffList.querySelector(".distribution-row") as HTMLElement;
+  const startInput = row.querySelector(".staff-start-time-input") as HTMLInputElement;
+  const endInput = row.querySelector(".staff-end-time-input") as HTMLInputElement;
+  const hoursInput = row.querySelector(".staff-hours-input") as HTMLInputElement;
+
+  assert.equal(startInput.value, "09:00");
+  assert.equal(endInput.value, "17:00");
+  assert.equal(hoursInput.value, "8");
+
+  startInput.value = "10:00";
+  startInput.dispatchEvent(new (globalThis as any).Event("input"));
+  assert.equal(hoursInput.value, "7");
+
+  startInput.value = "22:00";
+  endInput.value = "02:00";
+  startInput.dispatchEvent(new (globalThis as any).Event("input"));
+  assert.equal(hoursInput.value, "4");
+
+  const staff = collectStaffFromForm(card);
+  assert.equal(staff.length, 1);
+  assert.equal(staff[0].start_time, "22:00");
+  assert.equal(staff[0].end_time, "02:00");
+});
+
 export {};

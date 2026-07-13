@@ -117,7 +117,7 @@ export function migrateServicesConfig(services: any[]) {
 }
 
 // Migrate legacy activity records to the current data shape (room_name -> rooms, new fields)
-export function migrateActivities(activities: any[], settings: { rooms: any[]; services: any[] }) {
+export function migrateActivities(activities: any[], settings: { rooms: any[]; services: any[]; salaries?: any[] }) {
   activities.forEach(act => {
     if (act.room_name !== undefined) {
       if (!act.rooms) act.rooms = act.room_name ? [act.room_name] : [];

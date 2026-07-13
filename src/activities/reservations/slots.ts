@@ -8,6 +8,7 @@ import { formatDateStrLocal, parseLocalDateStr } from "../../state/state.ts";
 import { generateUid, showToast, initPillToggleEl, maskDateInput } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
 import { updateFormDatesHelper } from "../history/index.ts";
+import { propagateFirstSlotTimesToStaff } from "./subrows.ts";
 
 function el<T extends Element = HTMLInputElement>(id: string): T {
   return document.getElementById(id) as unknown as T;
@@ -38,6 +39,24 @@ function addSlotRow(container: HTMLElement, date = "", startTime = "", endTime =
   slotDateInput.addEventListener("change", () => validateDateFieldFiscalYear(slotDateInput));
   slotDateInput.addEventListener("blur", () => validateDateFieldFiscalYear(slotDateInput));
   validateDateFieldFiscalYear(slotDateInput);
+
+  const startInput = row.querySelector<HTMLInputElement>(".slot-start-time-input")!;
+  const endInput = row.querySelector<HTMLInputElement>(".slot-end-time-input")!;
+  const handleSlotTimeChange = () => {
+    const card = row.closest(".reservation-card");
+    if (card) {
+      propagateFirstSlotTimesToStaff(card as HTMLElement);
+    }
+  };
+  startInput.addEventListener("input", handleSlotTimeChange);
+  startInput.addEventListener("change", handleSlotTimeChange);
+  endInput.addEventListener("input", handleSlotTimeChange);
+  endInput.addEventListener("change", handleSlotTimeChange);
+
+  if (startTime && endTime) {
+    handleSlotTimeChange();
+  }
+
   row.querySelector<HTMLInputElement>(".delete-slot-row-btn")!.addEventListener("click", () => {
     const hasContent = row.querySelector<HTMLInputElement>(".slot-date-input")!.value.trim() !== "";
     if (hasContent && !confirm("Retirer ce créneau ?")) return;

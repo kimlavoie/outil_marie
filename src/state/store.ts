@@ -24,7 +24,7 @@ export interface Tarif {
 export interface Salary {
   id: string;
   job: string;
-  tarifs: Tarif[];
+  rate_versions: RateVersion[];
 }
 
 export interface Service {
