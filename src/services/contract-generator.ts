@@ -140,8 +140,13 @@ async function generateXlsx(act: any, variant: "contrat" | "soumission") {
   }
 
   const blob = await zip.generateAsync({ type: "blob" });
-  const prefix = variant === "contrat" ? "Contrat" : "Soumission";
-  const filename = `${prefix}_${act.id}_${(act.name || "activite").replace(/[^\w-]+/g, "_")}.xlsx`;
+  const prefix = variant === "contrat" ? "contrat" : "soumission";
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const dateStr = `${yyyy}_${mm}_${dd}`;
+  const filename = `${prefix}_${dateStr}_${(act.name || "activite").replace(/[^\w-]+/g, "_")}.xlsx`;
   return { blob, filename };
 }
 

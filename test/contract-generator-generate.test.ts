@@ -12,6 +12,12 @@ test.after(() => dom.window.close());
 import { appState } from "../src/state/state.ts";
 import { generateContractXlsx, generateSoumissionXlsx } from "../src/services/contract-generator.ts";
 
+const now = new Date();
+const yyyy = now.getFullYear();
+const mm = String(now.getMonth() + 1).padStart(2, "0");
+const dd = String(now.getDate()).padStart(2, "0");
+const dateStr = `${yyyy}_${mm}_${dd}`;
+
 // generateXlsx() fetches the CONTRAT.xlsx template at runtime (via `fetch`, as a browser would);
 // stub it with the real template file from /public so the zip-assembly code under test runs
 // against real, valid OOXML parts instead of a hand-rolled fake.
@@ -64,7 +70,7 @@ test("generateContractXlsx produces a valid, non-empty .xlsx with the header dra
   assert.ok(result);
   assert.ok(result!.blob.size > 0);
   // \w in the source's sanitizing regex is ASCII-only, so accented letters get replaced too.
-  assert.equal(result!.filename, "Contrat_act-1_Activit_de_test.xlsx");
+  assert.equal(result!.filename, `contrat_${dateStr}_Activit_de_test.xlsx`);
 
   const buffer = Buffer.from(await result!.blob.arrayBuffer());
   // A zip/xlsx file always starts with the "PK" local-file-header signature.
@@ -88,7 +94,7 @@ test("generateSoumissionXlsx produces a valid .xlsx without the header drawing",
   const result = await generateSoumissionXlsx(makeActivity({ id: "act-2", name: "Autre Activité" }));
 
   assert.ok(result);
-  assert.equal(result!.filename, "Soumission_act-2_Autre_Activit_.xlsx");
+  assert.equal(result!.filename, `soumission_${dateStr}_Autre_Activit_.xlsx`);
 
   const buffer = Buffer.from(await result!.blob.arrayBuffer());
   const zip = await JSZip.loadAsync(buffer);
@@ -103,7 +109,7 @@ test("generateSoumissionXlsx produces a valid .xlsx without the header drawing",
 test("generateContractXlsx falls back to 'activite' in the filename when the activity has no name", async () => {
   stubFetchOk();
   const result = await generateContractXlsx(makeActivity({ id: "act-3", name: "" }));
-  assert.equal(result!.filename, "Contrat_act-3_activite.xlsx");
+  assert.equal(result!.filename, `contrat_${dateStr}_activite.xlsx`);
 });
 
 test("generateContractXlsx shows an error toast and returns nothing when the template can't be fetched", async () => {

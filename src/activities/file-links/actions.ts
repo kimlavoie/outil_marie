@@ -62,8 +62,13 @@ async function pickAndLinkFile(activityId: string, kind: "submission" | "contrac
 }
 
 async function generateAndLinkFile(act: any, kind: "contract" | "submission") {
-  const prefix = kind === "contract" ? "Contrat" : "Soumission";
-  const filename = `${prefix}_${act.id}_${(act.name || "activite").replace(/[^\w-]+/g, "_")}.xlsx`;
+  const prefix = kind === "contract" ? "contrat" : "soumission";
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const dateStr = `${yyyy}_${mm}_${dd}`;
+  const filename = `${prefix}_${dateStr}_${(act.name || "activite").replace(/[^\w-]+/g, "_")}.xlsx`;
 
   if ((window as any).showSaveFilePicker) {
     let handle;

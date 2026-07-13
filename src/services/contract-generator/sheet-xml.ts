@@ -8,7 +8,7 @@
  */
 import { computeActivityFinancials } from "../../activities/financials.ts";
 import { getAggregateEventDates } from "../../activities/reservations/index.ts";
-import { getReservationRoomLabel } from "../../utils/utils.ts";
+import { getReservationRoomLabel, formatCurrency } from "../../utils/utils.ts";
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../../state/state.ts";
 import { S } from "./styles.ts";
 import { SheetBuilder, formatDateFr, wrapRowHeight } from "./sheet-builder.ts";
@@ -134,7 +134,11 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
           }
           const amount = rate * (s.hours || 0) * (s.count || 0) + overtimeRate * (s.overtime_hours || 0) * (s.count || 0);
           const heures = s.overtime_hours ? `${s.hours || 0} (+${s.overtime_hours} sup.)` : String(s.hours || 0);
-          sb.itemRow(salary?.job || "(rôle non défini)", s.count || 0, heures, amount);
+          const jobName = salary?.job || "(rôle non défini)";
+          const rateText = s.overtime_hours
+            ? `${jobName} (${formatCurrency(rate)}/h, sup. ${formatCurrency(overtimeRate)}/h)`
+            : `${jobName} (${formatCurrency(rate)}/h)`;
+          sb.itemRow(rateText, s.count || 0, heures, amount);
         });
       }
 
@@ -151,7 +155,11 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
           }
           const isHourly = service && service.type === "hourly";
           const amount = isHourly ? rate * (s.hours || 0) * (s.count || 0) : rate * (s.count || 0);
-          sb.itemRow(service?.name || "(service non défini)", s.count || 0, isHourly ? s.hours || 0 : "-", amount);
+          const serviceName = service?.name || "(service non défini)";
+          const rateText = isHourly
+            ? `${serviceName} (${formatCurrency(rate)}/h)`
+            : `${serviceName} (${formatCurrency(rate)})`;
+          sb.itemRow(rateText, s.count || 0, isHourly ? s.hours || 0 : "-", amount);
         });
       }
 
