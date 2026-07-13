@@ -468,3 +468,41 @@ input[type="checkbox"] {
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+
+/* Staff Options Pills */
+.staff-pills-container {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.staff-toggle-pill {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  user-select: none;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+}
+
+.staff-toggle-pill:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.staff-toggle-pill.active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
