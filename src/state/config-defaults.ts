@@ -305,59 +305,32 @@ const DEFAULT_CONFIG = {
     {
       id: "salary-dt",
       job: "Directeur technique",
-      tarifs: [
-        { id: "tarif-dt", label: "", gl_account_code: "", rate_versions: [{ id: "rv-dt", effective_date: "", rate: 74, overtime_rate: 0 }] }
-      ]
+      rate_versions: [{ id: "rv-dt", effective_date: "", rate: 74, overtime_rate: 0 }]
     },
     {
       id: "salary-tc",
       job: "Technicien contractuel",
-      tarifs: [
-        { id: "tarif-tc", label: "", gl_account_code: "", rate_versions: [{ id: "rv-tc", effective_date: "", rate: 57, overtime_rate: 0 }] }
-      ]
+      rate_versions: [{ id: "rv-tc", effective_date: "", rate: 57, overtime_rate: 0 }]
     },
     {
       id: "salary-aet",
       job: "Appariteur étudiant technicien",
-      tarifs: [
-        {
-          id: "tarif-aet",
-          label: "",
-          gl_account_code: "",
-          rate_versions: [{ id: "rv-aet", effective_date: "", rate: 37, overtime_rate: 0 }]
-        }
-      ]
+      rate_versions: [{ id: "rv-aet", effective_date: "", rate: 37, overtime_rate: 0 }]
     },
     {
       id: "salary-hote",
       job: "Hôte",
-      tarifs: [
-        {
-          id: "tarif-hote",
-          label: "",
-          gl_account_code: "",
-          rate_versions: [{ id: "rv-hote", effective_date: "", rate: 27, overtime_rate: 0 }]
-        }
-      ]
+      rate_versions: [{ id: "rv-hote", effective_date: "", rate: 27, overtime_rate: 0 }]
     },
     {
       id: "salary-as",
       job: "Agent de sécurité",
-      tarifs: [
-        { id: "tarif-as", label: "", gl_account_code: "", rate_versions: [{ id: "rv-as", effective_date: "", rate: 50, overtime_rate: 0 }] }
-      ]
+      rate_versions: [{ id: "rv-as", effective_date: "", rate: 50, overtime_rate: 0 }]
     },
     {
       id: "salary-sauveteur",
       job: "Sauveteur",
-      tarifs: [
-        {
-          id: "tarif-sauveteur",
-          label: "",
-          gl_account_code: "",
-          rate_versions: [{ id: "rv-sauveteur", effective_date: "", rate: 42, overtime_rate: 0 }]
-        }
-      ]
+      rate_versions: [{ id: "rv-sauveteur", effective_date: "", rate: 42, overtime_rate: 0 }]
     }
   ],
   services: [

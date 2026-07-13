@@ -63,7 +63,9 @@ function collectReservationsFromForm() {
       tariffDescription = card.querySelector<HTMLInputElement>(".room-tariff-custom-desc")!.value.trim();
       const rawAmount = card.querySelector<HTMLInputElement>(".room-tariff-custom-amount")!.value.trim();
       tariffAmount = parseFloat(rawAmount) || 0;
-      tariffGlAccountCode = card.querySelector<HTMLSelectElement>(".room-tariff-custom-gl")!.value;
+      tariffGlAccountCode = card.querySelector<HTMLInputElement>(".room-tariff-custom-gl-wrapper .searchable-select-value")?.value ||
+                            card.querySelector<HTMLSelectElement>(".room-tariff-custom-gl")?.value ||
+                            "";
       // A filled-in description with a missing/invalid amount silently defaulted to a free ($0)
       // tariff — warn instead so the user notices before the activity gets saved that way.
       if (tariffDescription && (!rawAmount || isNaN(parseFloat(rawAmount)))) {

@@ -64,23 +64,23 @@ function computeFormRevenueSubtotal(): { roomsTotal: number; staffTotal: number;
   const eventDateStart = getAggregateEventDates(reservations).date_start;
 
   let staffTotal = 0;
-  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
+  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row-wrapper").forEach(wrapper => {
+    const row = wrapper.querySelector<HTMLElement>(".distribution-row")!;
     updateStaffRowSubtotal(row);
     const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
-    const tarifId = row.querySelector<HTMLInputElement>(".staff-tarif-select")!.value;
+    const useCustomRate = row.querySelector<HTMLInputElement>(".staff-use-custom-rate")?.checked || false;
     const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
     const overtimeHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-overtime-hours-input")!.value) || 0;
     let rate = 0;
     let overtimeRate = 0;
-    if (tarifId === "__custom__") {
-      const wrapper = row.closest(".distribution-row-wrapper");
-      rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!.value) || 0 : 0;
-      overtimeRate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!.value) || 0 : 0;
+    if (useCustomRate) {
+      rate = parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!.value) || 0;
+      overtimeRate = parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!.value) || 0;
     } else {
       const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
-      rate = salary ? getActiveSalaryRate(salary, eventDateStart, tarifId) : 0;
-      overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, tarifId) : 0;
+      rate = salary ? getActiveSalaryRate(salary, eventDateStart) : 0;
+      overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart) : 0;
     }
     staffTotal += rate * hours * count + overtimeRate * overtimeHours * count;
   });

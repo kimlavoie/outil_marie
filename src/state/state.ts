@@ -135,9 +135,9 @@ async function loadDatabase(): Promise<void> {
       let migrationFailed = false;
       try {
         migrateRoomsConfig(appState.settings.rooms);
-        migrateSalariesConfig(appState.settings.salaries);
         migrateServicesConfig(appState.settings.services);
         migrateActivities(appState.activities, appState.settings);
+        migrateSalariesConfig(appState.settings.salaries);
       } catch (e) {
         migrationFailed = true;
         logError("state", "migration des données au chargement", e);

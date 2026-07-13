@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { appState, saveDatabaseOrRollback, getActiveSalaryRate, getActiveSalaryOvertimeRate } from "../../state/state.ts";
-import { showToast, generateUid, newRateVersionRow } from "../../utils/utils.ts";
+import { showToast, generateUid, newRateVersionRow, RateVersionRow } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
-import { DeleteIcon, Modal, TarifsEditor, TarifRow } from "./common.tsx";
+import { DeleteIcon, Modal, RateVersionsEditor } from "./common.tsx";
 
 export function SalariesPanel({ active, openModal, bump }: { active: boolean; openModal: (id: string | null) => void; bump: () => void }) {
   const salaries: any[] = appState.settings.salaries || [];
@@ -30,12 +30,12 @@ export function SalariesPanel({ active, openModal, bump }: { active: boolean; op
         </button>
       </div>
       <div className="settings-list">
-        {salaries.map((sal: { id: string; job: string; tarifs: { label: string }[] }) => {
-          const tarifs = sal.tarifs || [];
+        {salaries.map((sal: { id: string; job: string; rate_versions?: any[] }) => {
           const currentRate = getActiveSalaryRate(sal, "");
           const currentOvertimeRate = getActiveSalaryOvertimeRate(sal, "");
           const overtimeNote = currentOvertimeRate > 0 ? ` · ${currentOvertimeRate.toFixed(2)} $ / heure (temps sup.)` : "";
-          const tarifNote = tarifs.length > 1 ? ` (${tarifs.length} tarifs)` : "";
+          const versionsCount = (sal.rate_versions || []).length;
+          const versionsNote = versionsCount > 1 ? ` (${versionsCount} versions)` : "";
           return (
             <div key={sal.id} className="settings-list-item" onClick={() => openModal(sal.id)}>
               <div className="settings-list-item-info">
@@ -44,7 +44,7 @@ export function SalariesPanel({ active, openModal, bump }: { active: boolean; op
                 </span>
                 <span className="settings-list-item-desc">
                   {currentRate.toFixed(2)} $ / heure{overtimeNote}
-                  {tarifNote}
+                  {versionsNote}
                 </span>
               </div>
               <div className="flex gap-2" onClick={e => e.stopPropagation()}>
@@ -64,7 +64,7 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
   const isOpen = id !== undefined;
   const originalId = id || "";
   const [job, setJob] = useState("");
-  const [tarifs, setTarifs] = useState<TarifRow[]>([]);
+  const [rateRows, setRateRows] = useState<RateVersionRow[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -72,19 +72,14 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
     const sal = originalId ? salaries.find((s: { id: string }) => s.id === originalId) : null;
     if (sal) {
       setJob(sal.job);
-      setTarifs(
-        (sal.tarifs || []).map((t: any) => ({
-          key: generateUid("tarif-row"),
-          label: t.label || "",
-          gl_account_code: t.gl_account_code || "",
-          rateRows: (t.rate_versions || []).map((v: any) =>
-            newRateVersionRow(v.effective_date, String(v.rate), v.overtime_rate !== undefined ? String(v.overtime_rate) : "")
-          )
-        }))
+      setRateRows(
+        (sal.rate_versions || []).map((v: any) =>
+          newRateVersionRow(v.effective_date, String(v.rate), v.overtime_rate !== undefined ? String(v.overtime_rate) : "")
+        )
       );
     } else {
       setJob("");
-      setTarifs([{ key: generateUid("tarif-row"), label: "", gl_account_code: "", rateRows: [newRateVersionRow()] }]);
+      setRateRows([newRateVersionRow()]);
     }
   }, [isOpen, originalId]);
 
@@ -97,34 +92,31 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
     }
 
     let rateErrorMsg = "";
-    const tarifsResult = tarifs.map(tarif => {
-      const rateVersions: { id: string; effective_date: string; rate: number; overtime_rate: number }[] = [];
-      tarif.rateRows.forEach(row => {
-        const dateStr = row.effective_date.trim();
-        const rateStr = row.rate.trim();
-        const overtimeRateStr = (row.overtime_rate || "").trim();
-        const rate = parseFloat(rateStr);
-        const overtimeRate = overtimeRateStr ? parseFloat(overtimeRateStr) : 0;
-        if (!dateStr && !rateStr && !overtimeRateStr) return;
-        if (!rateStr || isNaN(rate) || rate < 0) {
-          rateErrorMsg = "Veuillez saisir un taux horaire valide (supérieur ou égal à 0) pour chaque version.";
-        } else if (overtimeRateStr && (isNaN(overtimeRate) || overtimeRate < 0)) {
-          rateErrorMsg = "Veuillez saisir un taux de temps supplémentaire valide (supérieur ou égal à 0), ou le laisser vide.";
-        } else if (dateStr && !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-          rateErrorMsg = "La date d'entrée en vigueur doit être au format AAAA-MM-JJ, ou vide.";
-        } else {
-          rateVersions.push({ id: generateUid("rv"), effective_date: dateStr, rate, overtime_rate: overtimeRate });
-        }
-      });
-      return { id: generateUid("tarif"), label: tarif.label.trim(), gl_account_code: tarif.gl_account_code, rate_versions: rateVersions };
+    const rateVersions: { id: string; effective_date: string; rate: number; overtime_rate: number }[] = [];
+    rateRows.forEach(row => {
+      const dateStr = row.effective_date.trim();
+      const rateStr = row.rate.trim();
+      const overtimeRateStr = (row.overtime_rate || "").trim();
+      const rate = parseFloat(rateStr);
+      const overtimeRate = overtimeRateStr ? parseFloat(overtimeRateStr) : 0;
+      if (!dateStr && !rateStr && !overtimeRateStr) return;
+      if (!rateStr || isNaN(rate) || rate < 0) {
+        rateErrorMsg = "Veuillez saisir un taux horaire valide (supérieur ou égal à 0) pour chaque version.";
+      } else if (overtimeRateStr && (isNaN(overtimeRate) || overtimeRate < 0)) {
+        rateErrorMsg = "Veuillez saisir un taux de temps supplémentaire valide (supérieur ou égal à 0), ou le laisser vide.";
+      } else if (dateStr && !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        rateErrorMsg = "La date d'entrée en vigueur doit être au format AAAA-MM-JJ, ou vide.";
+      } else {
+        rateVersions.push({ id: generateUid("rv"), effective_date: dateStr, rate, overtime_rate: overtimeRate });
+      }
     });
 
     if (rateErrorMsg) {
       showToast(rateErrorMsg, "warning");
       return;
     }
-    if (tarifsResult.length === 0 || tarifsResult.every(t => t.rate_versions.length === 0)) {
-      showToast("Veuillez saisir au moins un tarif avec un taux horaire.", "warning");
+    if (rateVersions.length === 0) {
+      showToast("Veuillez saisir au moins un taux horaire.", "warning");
       return;
     }
 
@@ -140,9 +132,9 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
     const prevSalaries = [...salaries];
     if (originalId) {
       const idx = salaries.findIndex((s: { id: string }) => s.id === originalId);
-      if (idx !== -1) salaries[idx] = { id: originalId, job: jobName, tarifs: tarifsResult };
+      if (idx !== -1) salaries[idx] = { id: originalId, job: jobName, rate_versions: rateVersions };
     } else {
-      salaries.push({ id: generateUid("salary"), job: jobName, tarifs: tarifsResult });
+      salaries.push({ id: generateUid("salary"), job: jobName, rate_versions: rateVersions });
     }
     salaries.sort((a: { job: string }, b: { job: string }) => a.job.localeCompare(b.job));
     appState.settings.salaries = salaries;
@@ -181,20 +173,31 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
         />
       </div>
       <div className="distribution-section">
-        <div className="distribution-header">
-          <span className="field-label">Tarifs (compte budgétaire et historique de taux horaires)</span>
+        <div className="distribution-header" style={{ marginBottom: 4 }}>
+          <span className="field-label">Historique des taux horaires (taux régulier et temps supplémentaire)</span>
           <button
             type="button"
             className="btn btn-secondary"
             style={{ padding: "6px 12px", fontSize: "0.8rem" }}
             onClick={() =>
-              setTarifs([...tarifs, { key: generateUid("tarif-row"), label: "", gl_account_code: "", rateRows: [newRateVersionRow()] }])
+              setRateRows([...rateRows, newRateVersionRow()])
             }
           >
-            + Ajouter un tarif
+            + Ajouter une version de tarif
           </button>
         </div>
-        <TarifsEditor rows={tarifs} onChange={setTarifs} withOvertime />
+        <p className="form-help-text" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: 12, lineHeight: "1.4" }}>
+          Saisissez les taux horaires applicables. Vous pouvez planifier des changements de taux futurs ou passés en indiquant une date d'effet (format AAAA-MM-JJ). Si aucune date n'est spécifiée, le taux s'applique par défaut (depuis toujours).
+        </p>
+        {rateRows.length > 0 && (
+          <div className="distribution-row-header" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr auto", gap: 12, padding: "0 0 4px 0", borderBottom: "1px solid var(--border-color)", marginBottom: 8, fontSize: "0.75rem", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: "bold" }}>
+            <div>Date d'effet</div>
+            <div>Taux régulier ($/h)</div>
+            <div>Taux temps sup. ($/h)</div>
+            <div></div>
+          </div>
+        )}
+        <RateVersionsEditor rows={rateRows} onChange={setRateRows} withOvertime />
       </div>
     </Modal>
   );

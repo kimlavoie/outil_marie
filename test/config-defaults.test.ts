@@ -40,7 +40,7 @@ test("migrateRoomsConfig on DEFAULT_CONFIG rooms is a no-op (already-migrated pr
   assert.deepEqual(config.rooms, before);
 });
 
-test("migrateSalariesConfig and migrateServicesConfig on DEFAULT_CONFIG entries are a no-op (already using tarifs[])", () => {
+test("migrateSalariesConfig and migrateServicesConfig on DEFAULT_CONFIG entries are a no-op (already using target formats)", () => {
   const config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
   const salariesBefore = JSON.parse(JSON.stringify(config.salaries));
   const servicesBefore = JSON.parse(JSON.stringify(config.services));

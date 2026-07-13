@@ -31,14 +31,7 @@ import {
 const SALARY_DT = {
   id: "salary-dt",
   job: "Directeur technique",
-  tarifs: [
-    {
-      id: "tarif-dt",
-      label: "",
-      gl_account_code: "GL-DT",
-      rate_versions: [{ id: "rv-dt", effective_date: "", rate: 50, overtime_rate: 75 }]
-    }
-  ]
+  rate_versions: [{ id: "rv-dt", effective_date: "", rate: 50, overtime_rate: 75 }]
 };
 
 const SERVICE_HOURLY = {
@@ -61,7 +54,7 @@ function baseState(overrides: any = {}) {
       theme: "dark",
       rooms: [],
       departments: [],
-      accounts: [],
+      accounts: [{ code: "GL-DT", description: "Directeur technique" }],
       last_backup_date: "",
       backup_reminder_days: 7,
       salaries: [SALARY_DT],
@@ -91,7 +84,7 @@ test.beforeEach(() => {
 
 test("addStaffRow computes the subtotal from the salary's active rate (rate x hours + overtime rate x overtime hours) x count", () => {
   const container = freshContainer();
-  addStaffRow(container, "salary-dt", 2, 5, 2, "tarif-dt");
+  addStaffRow(container, "salary-dt", 2, 5, 2, "GL-DT");
 
   const row = container.querySelector(".distribution-row") as HTMLElement;
   const subtotal = row.querySelector(".staff-subtotal-display")!.textContent;
@@ -99,9 +92,9 @@ test("addStaffRow computes the subtotal from the salary's active rate (rate x ho
   assert.match(subtotal!, /800,00/);
 });
 
-test("addStaffRow shows the custom rate fields only when tarif is __custom__, and updateStaffRowSubtotal reads them", () => {
+test("addStaffRow shows the custom rate fields only when useCustomRate is true, and updateStaffRowSubtotal reads them", () => {
   const container = freshContainer();
-  addStaffRow(container, "salary-dt", 1, 4, 0, "__custom__", false, 100, 0, "");
+  addStaffRow(container, "salary-dt", 1, 4, 0, "GL-DT", false, 100, 0, true);
 
   const wrapper = container.querySelector(".distribution-row-wrapper") as HTMLElement;
   const customFields = wrapper.querySelector(".staff-custom-fields") as HTMLElement;
@@ -114,9 +107,9 @@ test("addStaffRow shows the custom rate fields only when tarif is __custom__, an
   assert.match(subtotal!, /400,00/);
 });
 
-test("addStaffRow hides the custom rate fields for a normal (non-custom) tarif", () => {
+test("addStaffRow hides the custom rate fields for a normal (non-custom) rate", () => {
   const container = freshContainer();
-  addStaffRow(container, "salary-dt", 1, 1, 0, "tarif-dt");
+  addStaffRow(container, "salary-dt", 1, 1, 0, "GL-DT", false, 0, 0, false);
   const wrapper = container.querySelector(".distribution-row-wrapper") as HTMLElement;
   const customFields = wrapper.querySelector(".staff-custom-fields") as HTMLElement;
   assert.equal(customFields.style.display, "none");
@@ -146,11 +139,11 @@ test("addServiceRow rates a fixed service by count only and hides the hours inpu
   assert.equal(hoursInput.style.visibility, "hidden");
 });
 
-test("collectStaffFromForm reads back count/hours/overtime/tarif for every staff row on the card", () => {
+test("collectStaffFromForm reads back count/hours/overtime/gl_account_code for every staff row on the card", () => {
   const card = freshContainer();
   card.innerHTML = `<div class="room-staff-list"></div>`;
   const staffList = card.querySelector(".room-staff-list") as HTMLElement;
-  addStaffRow(staffList, "salary-dt", 2, 5, 1, "tarif-dt");
+  addStaffRow(staffList, "salary-dt", 2, 5, 1, "GL-DT");
 
   const staff = collectStaffFromForm(card);
   assert.equal(staff.length, 1);
@@ -158,7 +151,8 @@ test("collectStaffFromForm reads back count/hours/overtime/tarif for every staff
   assert.equal(staff[0].count, 2);
   assert.equal(staff[0].hours, 5);
   assert.equal(staff[0].overtime_hours, 1);
-  assert.equal(staff[0].tarif_id, "tarif-dt");
+  assert.equal(staff[0].gl_account_code, "GL-DT");
+  assert.equal(staff[0].tarif_id, "");
 });
 
 test("collectStaffFromForm drops rows with no salary selected but warns instead of silently discarding entered data", () => {

@@ -86,8 +86,8 @@ function handleJsonBackupFile(file: File) {
         // unrelated save() can't accidentally write the half-migrated data to disk instead.
         try {
           migrateRoomsConfig(appState.settings.rooms);
-          migrateSalariesConfig(appState.settings.salaries);
           migrateActivities(appState.activities, appState.settings);
+          migrateSalariesConfig(appState.settings.salaries);
         } catch (err) {
           logError("backup", "migration des données lors de la restauration", err);
           setAppState(preRestoreSnapshot);

@@ -62,29 +62,23 @@ export function migrateRoomsConfig(rooms: any[]) {
   });
 }
 
-// Migrate legacy flat salary rate (a single gl_account_code and rate_versions history per job)
-// to tarifs[]: each tarif carries its own budget account AND its own rate history, so a job can
-// be billed under several budget codes (mirrors migrateServicesConfig's tarifs[] for equipment).
+// Migrate salaries config to direct rate_versions history per job, discarding tarifs[]
+// and their associated budget codes (which are now selected in the activity form directly).
 export function migrateSalariesConfig(salaries: any[]) {
   (salaries || []).forEach(sal => {
-    if (sal.tarifs) return;
+    if (sal.tarifs) {
+      const firstTarif = sal.tarifs[0];
+      sal.rate_versions = firstTarif ? firstTarif.rate_versions : [];
+      delete sal.tarifs;
+    }
     if (!sal.rate_versions) {
       sal.rate_versions = [{ id: generateUid("rv"), effective_date: "", rate: sal.rate || 0 }];
       delete sal.rate;
+      delete sal.gl_account_code;
     }
     sal.rate_versions.forEach((v: any) => {
       if (v.overtime_rate === undefined) v.overtime_rate = 0;
     });
-    sal.tarifs = [
-      {
-        id: generateUid("tarif"),
-        label: "",
-        gl_account_code: sal.gl_account_code || "",
-        rate_versions: sal.rate_versions
-      }
-    ];
-    delete sal.gl_account_code;
-    delete sal.rate_versions;
   });
 }
 
@@ -442,6 +436,21 @@ export function migrateActivities(activities: any[], settings: { rooms: any[]; s
           const tarif = service && (service.tarifs || []).find((t: any) => t.gl_account_code === s.gl_account_code);
           s.tarif_id = tarif ? tarif.id : "";
           delete s.gl_account_code;
+        }
+      });
+
+      // Migrate staff rows: ensure overtime_hours is defined and copy gl_account_code from tarif if missing
+      (r.staff || []).forEach((s: any) => {
+        if (s.overtime_hours === undefined) s.overtime_hours = 0;
+        if (s.gl_account_code === undefined) {
+          if (s.tarif_id === "__custom__") {
+            s.gl_account_code = s.custom_gl_account_code || "";
+          } else {
+            const salary = (settings.salaries || []).find((sal: any) => sal.id === s.salary_id);
+            const tarifs = (salary && salary.tarifs) || [];
+            const tarif = tarifs.find((t: any) => t.id === s.tarif_id) || tarifs[0];
+            s.gl_account_code = tarif ? tarif.gl_account_code : "";
+          }
         }
       });
     });

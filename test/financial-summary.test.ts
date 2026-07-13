@@ -20,7 +20,7 @@ import { addDistributionRow } from "../src/activities/distribution-rows.ts";
 const SALARY_DT = {
   id: "salary-dt",
   job: "Directeur technique",
-  tarifs: [{ id: "tarif-dt", label: "", gl_account_code: "", rate_versions: [{ id: "rv-dt", effective_date: "", rate: 50, overtime_rate: 75 }] }]
+  rate_versions: [{ id: "rv-dt", effective_date: "", rate: 50, overtime_rate: 75 }]
 };
 
 const SERVICE_HOURLY = {
@@ -96,7 +96,7 @@ test("computeFormRevenueSubtotal sums room tariff, staff, services and fees stra
     tariff_id: "param-1::ct-1",
     tariff_amount: 100,
     slots: [{ id: "slot-1", date: "2025-08-01", start_time: "09:00", end_time: "17:00" }],
-    staff: [{ id: "staff-1", salary_id: "salary-dt", count: 1, hours: 5, overtime_hours: 0, tarif_id: "tarif-dt" }],
+    staff: [{ id: "staff-1", salary_id: "salary-dt", count: 1, hours: 5, overtime_hours: 0, gl_account_code: "GL-DT", tarif_id: "" }],
     services: [{ id: "svc-1", service_id: "service-hourly", count: 1, hours: 2, tarif_id: "tarif-hourly" }],
     fees: [{ id: "fee-1", description: "Montage", amount: 50, gl_account_code: "" }]
   });

@@ -108,8 +108,8 @@ test("auto-selects the first configured salary and shows its stats by default", 
       settings: {
         ...baseState().settings,
         salaries: [
-          { id: "sal-1", job: "Technicien", tarifs: [{ id: "t1", rate_versions: [{ effective_date: "", rate: 25 }] }] },
-          { id: "sal-2", job: "Régisseur", tarifs: [{ id: "t1", rate_versions: [{ effective_date: "", rate: 30 }] }] }
+          { id: "sal-1", job: "Technicien", rate_versions: [{ id: "rv-1", effective_date: "", rate: 25 }] },
+          { id: "sal-2", job: "Régisseur", rate_versions: [{ id: "rv-2", effective_date: "", rate: 30 }] }
         ]
       },
       activities: [
@@ -133,8 +133,8 @@ test("switching the employee select updates the displayed stats", () => {
       settings: {
         ...baseState().settings,
         salaries: [
-          { id: "sal-1", job: "Technicien", tarifs: [{ id: "t1", rate_versions: [{ effective_date: "", rate: 25 }] }] },
-          { id: "sal-2", job: "Régisseur", tarifs: [{ id: "t1", rate_versions: [{ effective_date: "", rate: 40 }] }] }
+          { id: "sal-1", job: "Technicien", rate_versions: [{ id: "rv-1", effective_date: "", rate: 25 }] },
+          { id: "sal-2", job: "Régisseur", rate_versions: [{ id: "rv-2", effective_date: "", rate: 40 }] }
         ]
       },
       activities: [
@@ -165,7 +165,7 @@ test("shows 'Aucune activité facturée' when the selected employee has no contr
     baseState({
       settings: {
         ...baseState().settings,
-        salaries: [{ id: "sal-1", job: "Technicien", tarifs: [{ id: "t1", rate_versions: [{ effective_date: "", rate: 25 }] }] }]
+        salaries: [{ id: "sal-1", job: "Technicien", rate_versions: [{ id: "rv-1", effective_date: "", rate: 25 }] }]
       },
       activities: []
     })
@@ -180,7 +180,7 @@ test("lists one row per selected quarter, with the correct hours/amount aggregat
     baseState({
       settings: {
         ...baseState().settings,
-        salaries: [{ id: "sal-1", job: "Technicien", tarifs: [{ id: "t1", rate_versions: [{ effective_date: "", rate: 10 }] }] }]
+        salaries: [{ id: "sal-1", job: "Technicien", rate_versions: [{ id: "rv-1", effective_date: "", rate: 10 }] }]
       },
       selected_quarters: [1, 2],
       activities: [
@@ -213,7 +213,7 @@ test("lists the contributing activities detail table, most recent first", () => 
     baseState({
       settings: {
         ...baseState().settings,
-        salaries: [{ id: "sal-1", job: "Technicien", tarifs: [{ id: "t1", rate_versions: [{ effective_date: "", rate: 10 }] }] }]
+        salaries: [{ id: "sal-1", job: "Technicien", rate_versions: [{ id: "rv-1", effective_date: "", rate: 10 }] }]
       },
       activities: [
         activity({

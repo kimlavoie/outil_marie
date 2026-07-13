@@ -32,17 +32,17 @@ export function getActiveRateVersionField(versions: any[], dateStr: string, fiel
   return applicable[field] || 0;
 }
 
-// Returns the tarif (named price point with its own budget account and rate history) matching
-// `tarifId` on `salary`, defaulting to the first configured tarif when none/an unknown id is
-// given (mirrors getServiceTarif's default of showing its first <option> until the user picks).
+// Returns the tarif matching `tarifId` on `salary`. Since salaries no longer have multiple
+// tarifs but have rate_versions directly, this returns the salary object itself if it contains
+// rate_versions, falling back to tarifs list for backwards compatibility.
 export function getSalaryTarif(salary: any, tarifId?: string): any | null {
+  if (salary && salary.rate_versions) return salary;
   const tarifs = (salary && salary.tarifs) || [];
-  if (tarifs.length === 0) return salary && salary.rate_versions ? salary : null;
+  if (tarifs.length === 0) return null;
   return tarifs.find((t: any) => t.id === tarifId) || tarifs[0];
 }
 
-// Returns the salary rate in effect for `dateStr` on the given salary's tarif (same resolution
-// rule as getActivePricingGrid, applied to that tarif's own rate_versions history)
+// Returns the salary rate in effect for `dateStr` (same resolution rule as getActivePricingGrid)
 export function getActiveSalaryRate(salary: any, dateStr: string, tarifId?: string): number {
   const tarif = getSalaryTarif(salary, tarifId);
   return getActiveRateVersionField(tarif && tarif.rate_versions, dateStr, "rate");

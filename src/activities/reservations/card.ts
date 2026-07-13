@@ -153,9 +153,7 @@ function addReservationCard(reservationData: any = null) {
         </div>
         <div class="form-group" style="flex: 1.5; margin-bottom: 0;">
           <label for="${uid}-room-tariff-custom-gl">Code budgétaire</label>
-          <select id="${uid}-room-tariff-custom-gl" class="select-input room-tariff-custom-gl" style="padding: 10px 14px; width: 100%;">
-            ${buildGlAccountOptionsHtml(isCustomTariff ? reservationData.tariff_gl_account_code : "")}
-          </select>
+          ${buildSearchableSelectHtml("room-tariff-custom-gl-wrapper", "room-tariff-custom-gl", "Choisir un compte...", `${uid}-room-tariff-custom-gl`)}
         </div>
       </div>
 
@@ -359,6 +357,21 @@ function addReservationCard(reservationData: any = null) {
   });
   rejectNegativeAmountOnBlur(card.querySelector<HTMLInputElement>(".room-tariff-custom-amount")!);
 
+  const glItems = appState.settings.accounts.map(acc => ({
+    value: acc.code,
+    label: `${acc.code} (${acc.description})`
+  }));
+
+  initSearchableSelectEl(
+    card.querySelector<HTMLElement>(".room-tariff-custom-gl-wrapper")!,
+    glItems,
+    value => {
+      updateSubmissionFinancialSummary();
+      autoSaveActivityForm();
+    },
+    isCustomTariff ? reservationData.tariff_gl_account_code : ""
+  );
+
   const installToggle = card.querySelector<HTMLInputElement>(".reservation-install-toggle")!;
   const installFields = card.querySelector<HTMLInputElement>(".reservation-install-fields")!;
   installToggle.addEventListener("click", () => {
@@ -485,11 +498,11 @@ function addReservationCard(reservationData: any = null) {
         s.count,
         s.hours,
         s.overtime_hours,
-        s.tarif_id,
+        s.gl_account_code || "",
         s.auto_generated,
         s.custom_rate || 0,
         s.custom_overtime_rate || 0,
-        s.custom_gl_account_code || ""
+        s.tarif_id === "__custom__"
       )
     );
     (reservationData.services || []).forEach((s: any) =>

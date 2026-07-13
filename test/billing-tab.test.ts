@@ -25,7 +25,7 @@ function baseSettings(overrides: any = {}) {
       {
         id: "sal1",
         job: "Technicien",
-        tarifs: [{ id: "tarif1", gl_account_code: "GL-STAFF", rate_versions: [{ effective_date: "", rate: 20, overtime_rate: 30 }] }]
+        rate_versions: [{ id: "rv1", effective_date: "", rate: 20, overtime_rate: 30 }]
       }
     ],
     services: [
@@ -49,7 +49,8 @@ function setupSkeleton() {
         <div class="distribution-row-wrapper">
           <div class="distribution-row">
             <select class="staff-salary-select"><option value="sal1" selected>Technicien</option></select>
-            <select class="staff-tarif-select"><option value="tarif1" selected>Tarif régulier</option></select>
+            <select class="staff-gl-select"><option value="GL-STAFF" selected>GL-STAFF</option></select>
+            <input type="checkbox" class="staff-use-custom-rate">
             <input class="staff-count-input" value="2">
             <input class="staff-hours-input" value="4">
             <input class="staff-overtime-hours-input" value="1">

@@ -53,27 +53,27 @@ export async function generateBillingLines(act: any) {
     }
   });
 
-  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row").forEach(row => {
+  document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row-wrapper").forEach(wrapper => {
+    const row = wrapper.querySelector<HTMLElement>(".distribution-row")!;
     const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
     const salary = ((appState.settings.salaries as any[]) || []).find((s: any) => s.id === salaryId);
-    const tarifId = row.querySelector<HTMLSelectElement>(".staff-tarif-select")!.value;
     if (!salary) return;
 
-    let glAccountCode = "";
+    const glAccountCode = row.querySelector<HTMLInputElement>(".staff-gl-select-wrapper .searchable-select-value")?.value ||
+                          row.querySelector<HTMLSelectElement>(".staff-gl-select")?.value ||
+                          "";
+    if (!glAccountCode) return;
+
+    const useCustomRate = row.querySelector<HTMLInputElement>(".staff-use-custom-rate")?.checked || false;
     let rate = 0;
     let overtimeRate = 0;
-    if (tarifId === "__custom__") {
-      const wrapper = row.closest(".distribution-row-wrapper");
-      glAccountCode = wrapper ? wrapper.querySelector<HTMLSelectElement>(".staff-custom-gl-select")!.value : "";
-      rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!.value) || 0 : 0;
-      overtimeRate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!.value) || 0 : 0;
+    if (useCustomRate) {
+      rate = parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!.value) || 0;
+      overtimeRate = parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!.value) || 0;
     } else {
-      const tarif = salary && ((salary.tarifs as any[]) || []).find((t: any) => t.id === tarifId);
-      glAccountCode = tarif ? tarif.gl_account_code : "";
-      rate = getActiveSalaryRate(salary, eventDateStart, tarifId);
-      overtimeRate = getActiveSalaryOvertimeRate(salary, eventDateStart, tarifId);
+      rate = getActiveSalaryRate(salary, eventDateStart);
+      overtimeRate = getActiveSalaryOvertimeRate(salary, eventDateStart);
     }
-    if (!glAccountCode) return;
 
     const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
@@ -98,7 +98,9 @@ export async function generateBillingLines(act: any) {
     let rate = 0;
     if (tarifId === "__custom__") {
       const wrapper = row.closest(".distribution-row-wrapper");
-      glAccountCode = wrapper ? wrapper.querySelector<HTMLSelectElement>(".service-custom-gl-select")!.value : "";
+      glAccountCode = wrapper ? (wrapper.querySelector<HTMLInputElement>(".service-custom-gl-select-wrapper .searchable-select-value")?.value ||
+                                 wrapper.querySelector<HTMLSelectElement>(".service-custom-gl-select")?.value ||
+                                 "") : "";
       rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!.value) || 0 : 0;
     } else {
       const tarif = service && ((service.tarifs as any[]) || []).find((t: any) => t.id === tarifId);

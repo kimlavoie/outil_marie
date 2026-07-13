@@ -208,7 +208,7 @@ test("migrateRoomsConfig always ensures linked_* arrays exist", () => {
 
 // --- migrateSalariesConfig ---
 
-test("migrateSalariesConfig moves legacy rate/gl_account_code into tarifs[], defaulting overtime_rate to 0", () => {
+test("migrateSalariesConfig moves legacy rate/gl_account_code into rate_versions directly, defaulting overtime_rate to 0", () => {
   const salaries = [{ name: "Hôte", rate: 20, gl_account_code: "892-001" } as any];
 
   migrateSalariesConfig(salaries);
@@ -216,33 +216,32 @@ test("migrateSalariesConfig moves legacy rate/gl_account_code into tarifs[], def
   const sal = salaries[0];
   assert.equal((sal as any).rate, undefined);
   assert.equal((sal as any).gl_account_code, undefined);
-  assert.equal((sal as any).rate_versions, undefined); // moved under the tarif, not left at top level
-  assert.equal(sal.tarifs.length, 1);
-  const tarif = sal.tarifs[0];
-  assert.equal(tarif.gl_account_code, "892-001");
-  assert.equal(tarif.rate_versions.length, 1);
-  assert.equal(tarif.rate_versions[0].rate, 20);
-  assert.equal(tarif.rate_versions[0].overtime_rate, 0);
+  assert.equal(sal.rate_versions.length, 1);
+  assert.equal(sal.rate_versions[0].rate, 20);
+  assert.equal(sal.rate_versions[0].overtime_rate, 0);
 });
 
-test("migrateSalariesConfig fills in missing overtime_rate on existing rate_versions without a gl_account_code", () => {
+test("migrateSalariesConfig fills in missing overtime_rate on existing rate_versions", () => {
   const salaries = [{ name: "Sauveteur", rate_versions: [{ effective_date: "", rate: 25 }] } as any];
 
   migrateSalariesConfig(salaries);
 
-  const tarif = salaries[0].tarifs[0];
-  assert.equal(tarif.gl_account_code, "");
-  assert.equal(tarif.rate_versions[0].rate, 25);
-  assert.equal(tarif.rate_versions[0].overtime_rate, 0);
+  const sal = salaries[0];
+  assert.equal(sal.rate_versions[0].rate, 25);
+  assert.equal(sal.rate_versions[0].overtime_rate, 0);
 });
 
-test("migrateSalariesConfig leaves a salary that already has tarifs untouched", () => {
-  const existingTarifs = [{ id: "t1", label: "", gl_account_code: "111", rate_versions: [{ effective_date: "", rate: 99 }] }];
+test("migrateSalariesConfig converts existing tarifs[] to direct rate_versions and discards tarifs", () => {
+  const existingTarifs = [{ id: "t1", label: "", gl_account_code: "111", rate_versions: [{ effective_date: "", rate: 99, overtime_rate: 10 }] }];
   const salaries = [{ name: "Déjà migré", tarifs: existingTarifs } as any];
 
   migrateSalariesConfig(salaries);
 
-  assert.strictEqual(salaries[0].tarifs, existingTarifs);
+  const sal = salaries[0];
+  assert.equal(sal.tarifs, undefined);
+  assert.equal(sal.rate_versions.length, 1);
+  assert.equal(sal.rate_versions[0].rate, 99);
+  assert.equal(sal.rate_versions[0].overtime_rate, 10);
 });
 
 // --- migrateServicesConfig ---

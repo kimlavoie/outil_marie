@@ -81,13 +81,8 @@ test("computeEmployeeStats calculates normal hours, overtime hours and amounts a
     {
       id: "salary-dt",
       job: "Directeur technique",
-      tarifs: [
-        {
-          id: "tarif-dt",
-          rate_versions: [
-            { id: "rv-dt", effective_date: "", rate: 50, overtime_rate: 75 }
-          ]
-        }
+      rate_versions: [
+        { id: "rv-dt", effective_date: "", rate: 50, overtime_rate: 75 }
       ]
     }
   ];

@@ -43,7 +43,7 @@ function salary(overrides: any = {}) {
   return {
     id: "sal-1",
     job: "Technicien de scène",
-    tarifs: [{ id: "t1", label: "Standard", gl_account_code: "", rate_versions: [{ id: "rv1", effective_date: "", rate: 25, overtime_rate: 0 }] }],
+    rate_versions: [{ id: "rv1", effective_date: "", rate: 25, overtime_rate: 0 }],
     ...overrides
   };
 }
@@ -68,7 +68,7 @@ test("SalariesPanel shows the overtime rate note when an overtime rate is set", 
     baseState({
       settings: {
         ...appState.settings,
-        salaries: [salary({ tarifs: [{ id: "t1", label: "Standard", gl_account_code: "", rate_versions: [{ id: "rv1", effective_date: "", rate: 25, overtime_rate: 37.5 }] }] })]
+        salaries: [salary({ rate_versions: [{ id: "rv1", effective_date: "", rate: 25, overtime_rate: 37.5 }] })]
       }
     })
   );
@@ -111,7 +111,7 @@ test("SalaryModal adding a new job with a valid rate persists it to appState.set
   await waitFor(() => assert.ok(closed));
   assert.equal(appState.settings.salaries.length, 2);
   assert.equal(appState.settings.salaries[0].job, "Accueil");
-  assert.equal(appState.settings.salaries[0].tarifs[0].rate_versions[0].rate, 18);
+  assert.equal(appState.settings.salaries[0].rate_versions[0].rate, 18);
 });
 
 test("SalaryModal rejects an empty job name without persisting", () => {
