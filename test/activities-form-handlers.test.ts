@@ -57,8 +57,6 @@ function setupFixture() {
     <button id="add-activity-btn-quick"></button>
     <button id="add-estimation-btn-quick"></button>
     <button id="activity-drawer-close"></button>
-    <button id="activity-print-btn"></button>
-    <button id="activity-send-technical-director-btn"></button>
     <div id="accordion-section-financial-summary">
       <div id="submission-financial-summary"></div>
     </div>

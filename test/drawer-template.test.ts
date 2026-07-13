@@ -12,7 +12,6 @@ import { renderActivityDrawerShell } from "../src/activities/drawer-template.ts"
 const REQUIRED_IDS = [
   "activity-drawer-title",
   "auto-save-status",
-  "activity-print-btn",
   "activity-drawer-close",
   "activity-state-bar",
   "activity-form",

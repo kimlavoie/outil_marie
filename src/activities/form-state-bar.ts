@@ -8,7 +8,6 @@ import { appState, saveDatabaseOrRollback } from "../state/state.ts";
 import { activitiesState, getPlanningProgress, buildProgressBarHtml, getActivityStateBadgeClass, getActivityStateLabel, renderActivities } from "./render.ts";
 import { persistDrawerUiState } from "./financials.ts";
 import { saveActivityVersion } from "./history/index.ts";
-import { activityHasTechnicalDirector } from "./technical-director-notice.ts";
 
 // Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
 // comment for why this cast is needed/safe.
@@ -91,11 +90,6 @@ export function renderActivityStateBar(act: any) {
 export function updateFormTabIndicators(act: any) {
   if (!act) return;
 
-  // 0. "Envoyer au directeur technique" button — only relevant once a reservation actually has a
-  // technical director assigned (see technical-director-notice.ts), so it stays hidden the rest of
-  // the time instead of prompting for an email that has nothing to send.
-  const sendDtBtn = document.getElementById("activity-send-technical-director-btn");
-  if (sendDtBtn) sendDtBtn.style.display = activityHasTechnicalDirector(act) ? "" : "none";
 
   // 1. Formulaire tab
   const formInd = document.getElementById("tab-ind-form");
