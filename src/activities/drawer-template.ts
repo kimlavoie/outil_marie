@@ -49,7 +49,7 @@ const ACTIVITY_DRAWER_HTML = `
       Facturation <span class="tab-indicator" id="tab-ind-billing"></span>
     </button>
     <button type="button" class="activity-tab-btn" data-activity-tab="supporting-docs">
-      Pièces justificatives <span class="tab-indicator" id="tab-ind-supporting-docs"></span>
+      Pièces justificatives
     </button>
     <button type="button" class="activity-tab-btn" data-activity-tab="history">Historique</button>
     <button type="button" class="activity-tab-btn" data-activity-tab="notes">

@@ -98,16 +98,6 @@ export function updateFormTabIndicators(act: any) {
     formInd.title = hasForm ? "Formulaire PDF lié" : "Aucun formulaire lié";
   }
 
-  // 1bis. Pièces justificatives tab — simple linked/not-linked badge. An exact file count would
-  // require an async directory listing on every state-bar refresh (this function runs on every
-  // commitActivityPatch, for any field), so it's kept to the folder-link presence only.
-  const docsInd = document.getElementById("tab-ind-supporting-docs");
-  if (docsInd) {
-    const hasFolder = !!act.supporting_docs?.folder_link_id;
-    docsInd.innerHTML = hasFolder ? "🟢" : "⚪";
-    docsInd.title = hasFolder ? "Dossier de pièces justificatives lié" : "Aucun dossier lié";
-  }
-
   // 2. Soumission et contrat tab
   const subInd = document.getElementById("tab-ind-submission");
   if (subInd) {
