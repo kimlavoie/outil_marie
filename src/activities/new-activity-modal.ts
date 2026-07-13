@@ -94,6 +94,7 @@ function buildNewActivityRecord(id: string, name: string, mode: string) {
     submission: { file_link_id: "", generated_at: "", sent_at: "" },
     contract: { file_link_id: "", approved_at: "" },
     form: { file_link_id: "", linked_at: "" },
+    supporting_docs: { folder_link_id: "", linked_at: "" },
     planning_tasks: [],
     billed_at: "",
     completed_at: "",

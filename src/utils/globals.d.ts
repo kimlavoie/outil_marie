@@ -10,6 +10,7 @@ declare global {
     // File System Access API (Chrome/Edge only).
     showOpenFilePicker?: () => Promise<any[]>;
     showSaveFilePicker?: (options?: any) => Promise<any>;
+    showDirectoryPicker?: (options?: { mode?: "read" | "readwrite" }) => Promise<any>;
   }
 }
 

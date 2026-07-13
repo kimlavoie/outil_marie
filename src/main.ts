@@ -13,6 +13,7 @@ import { initCustomDatepickers } from "./activities/datepicker.ts";
 import { initCalendarModal, initViewCalendarButtons } from "./components/calendar-view.tsx";
 import { initActivitiesSort } from "./activities/history/index.ts";
 import { openActivityDrawer, initActivityDetailsModal, initTaxOverrideModal, getSavedDrawerUiState } from "./activities/financials.ts";
+import { initFilePreviewModal } from "./activities/file-preview/dispatch.ts";
 import { switchActivityTab } from "./activities/form.ts";
 import { renderHelpCenter } from "./help-center.ts";
 import { renderActivityDrawerShell } from "./activities/drawer-template.ts";
@@ -46,6 +47,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initNewActivityModal();
   initActivityDetailsModal();
   initTaxOverrideModal();
+  initFilePreviewModal();
   initReconciliationHandlers();
   initBackupHandlers();
   initCustomDatepickers();

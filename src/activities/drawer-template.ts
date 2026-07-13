@@ -48,6 +48,9 @@ const ACTIVITY_DRAWER_HTML = `
     <button type="button" class="activity-tab-btn" data-activity-tab="billing">
       Facturation <span class="tab-indicator" id="tab-ind-billing"></span>
     </button>
+    <button type="button" class="activity-tab-btn" data-activity-tab="supporting-docs">
+      Pièces justificatives <span class="tab-indicator" id="tab-ind-supporting-docs"></span>
+    </button>
     <button type="button" class="activity-tab-btn" data-activity-tab="history">Historique</button>
     <button type="button" class="activity-tab-btn" data-activity-tab="notes">
       Notes <span class="tab-indicator" id="tab-ind-notes"></span>
@@ -71,6 +74,19 @@ const ACTIVITY_DRAWER_HTML = `
         </div>
         <!-- Dynamic PDF preview container -->
         <div id="form-pdf-preview" style="margin-top: 20px"></div>
+      </div>
+
+      <!-- ============ TAB: Pièces justificatives ============ -->
+      <div id="activity-tab-panel-supporting-docs" class="activity-tab-panel">
+        <div style="margin-bottom: 16px; font-size: 0.85rem; color: var(--text-muted)">
+          Liez un dossier contenant les pièces justificatives de cette activité (factures, reçus, etc.) afin de les consulter en tout temps.
+        </div>
+        <div class="distribution-section">
+          <div class="distribution-header">
+            <span class="field-label">Dossier de pièces justificatives</span>
+          </div>
+          <div id="supporting-docs-status" class="file-link-status"></div>
+        </div>
       </div>
 
       <!-- ============ TAB: Soumission et contrat ============ -->

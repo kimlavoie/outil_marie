@@ -186,6 +186,12 @@
   flex-grow: 1;
 }
 
+// Used by viewers that already manage their own internal scroll/padding (PDF/Excel/Word/text/image
+// previews) so the modal doesn't add a second, redundant scroll container around them.
+.modal-content--flush {
+  padding: 0;
+}
+
 .modal-footer {
   padding: 16px 24px;
   border-top: 1px solid var(--border-color);

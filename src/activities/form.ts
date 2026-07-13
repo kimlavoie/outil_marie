@@ -29,6 +29,7 @@ import {
 import { undoActivityFormChange, redoActivityFormChange, loadAndRenderActivityHistory, updateFormDatesHelper } from "./history/index.ts";
 import { submitActivityForm } from "./history/index.ts";
 import { renderFileLinkStatus } from "./file-links/index.ts";
+import { renderSupportingDocsStatus } from "./supporting-docs/index.ts";
 import { addReservationCard, addSlotRow, initReservationsSection } from "./reservations/index.ts";
 
 import { initNewActivityModal, openNewActivityModal, closeNewActivityModal, createActivity, createDraftActivity, duplicateActivityAndOpen } from "./new-activity-modal.ts";
@@ -338,6 +339,7 @@ function fillActivityFormFields(act: any) {
   });
 
   renderFileLinkStatus("form", act);
+  renderSupportingDocsStatus(act);
   renderFileLinkStatus("submission", act);
   renderFileLinkStatus("contract", act);
   updateSubmissionFinancialSummary();

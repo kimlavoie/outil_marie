@@ -334,3 +334,59 @@
 .xlsx-table-container tr:nth-child(even) {
   background-color: var(--bg-main);
 }
+
+/* ==========================================================================
+   GENERIC FILE PREVIEW MODAL — text / image / docx viewers
+   (PDF and Excel reuse the pdf-custom-viewer/xlsx-custom-viewer styles above)
+   ========================================================================== */
+.text-preview-content {
+  margin: 0;
+  padding: 20px 24px;
+  max-height: 75vh;
+  overflow: auto;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-primary);
+}
+
+.text-preview-truncated-notice {
+  padding: 10px 24px 20px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.image-preview-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  max-height: 75vh;
+  overflow: auto;
+}
+
+.image-preview-content {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+}
+
+// docx-preview renders the actual page(s) — including their real width, margins, background and
+// shadow (it injects its own `.docx-preview-doc-wrapper > section.docx-preview-doc { background:
+// white; box-shadow: ...; }` rule) — so unlike the old mammoth-based preview, this wrapper only
+// needs to provide scrolling and a neutral surround; it must not re-impose its own fake "paper"
+// look on top of the library's, and must not center a flex child wider than the container (that
+// hides its left edge behind the container's edge instead of scrolling to it).
+.docx-preview-page {
+  max-height: 75vh;
+  overflow: auto;
+  padding: 24px;
+  background-color: var(--bg-main);
+}
+
+.docx-preview-content img {
+  max-width: 100%;
+}
