@@ -68,6 +68,10 @@ async function openFilePreviewModal(file: File): Promise<void> {
       const buffer = await file.arrayBuffer();
       const { renderDocxPreview } = await import("./docx-viewer.ts");
       await renderDocxPreview(mount, buffer);
+    } else if (ext === ".eml") {
+      const buffer = await file.arrayBuffer();
+      const { renderEmlPreview } = await import("./eml-viewer.ts");
+      renderEmlPreview(mount, buffer);
     } else if (TEXT_EXTENSIONS.has(ext)) {
       const buffer = await file.arrayBuffer();
       const { renderTextPreview } = await import("./text-viewer.ts");
