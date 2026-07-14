@@ -15,7 +15,8 @@ import {
   setExclusivePillValueEl,
   initExclusivePillToggleEl,
   setPillGroupActiveEl,
-  rejectNegativeAmountOnBlur
+  rejectNegativeAmountOnBlur,
+  maskTimeInput
 } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
 import { updateFormDatesHelper } from "../history/index.ts";
@@ -265,6 +266,7 @@ function addReservationCard(reservationData: any = null) {
   );
 
   const card = el(uid);
+  card.querySelectorAll<HTMLInputElement>('input[type="time"]').forEach(maskTimeInput);
 
   // Remember the amount/tariff in effect when this reservation was saved so the resolved-price
   // display can flag it if the room's pricing grid has since changed for that date (getActivePricingGrid).

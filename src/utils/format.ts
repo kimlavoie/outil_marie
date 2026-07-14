@@ -90,6 +90,67 @@ function maskDateInput(input: HTMLInputElement | null) {
   });
 }
 
+function formatTimeMask(rawValue: string): string {
+  let value = rawValue.replace(/\D/g, ""); // Keep only digits
+  if (value.length > 4) {
+    value = value.substring(0, 4);
+  }
+
+  let formatted = "";
+  if (value.length > 0) {
+    formatted += value.substring(0, 2); // HH
+  }
+  if (value.length > 2) {
+    formatted += ":" + value.substring(2, 4); // :MM
+  }
+
+  return formatted;
+}
+
+// Clamps/pads a partial digit run into a full "HH:MM" value, defaulting missing minutes to "00"
+// (e.g. "9" -> "09:00", "14" -> "14:00", "930" -> "09:30").
+function normalizeTimeDigits(digits: string): string {
+  const hh = Math.min(23, parseInt(digits.substring(0, 2), 10) || 0);
+  const mm = digits.length > 2 ? Math.min(59, parseInt(digits.padEnd(4, "0").substring(2, 4), 10)) : 0;
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
+// Turns a native <input type="time"> into a plain masked text field: Chromium/Firefox route Tab
+// through internal hour/minute segments and a picker-icon button before leaving a real time
+// input, and leave the whole value blank if the user only typed the hour. Masking as text removes
+// that picker icon from the tab order entirely, and completes a bare hour (e.g. "14") to "14:00"
+// on Tab/blur so a round hour can be entered with two digits and a Tab instead of typing minutes.
+function maskTimeInput(input: HTMLInputElement | null) {
+  if (!input) return;
+  input.type = "text";
+  input.setAttribute("inputmode", "numeric");
+  input.setAttribute("maxlength", "5");
+  if (!input.placeholder) input.placeholder = "--:--";
+
+  input.addEventListener("input", (e: Event) => {
+    const inputType = (e as InputEvent).inputType;
+    if (inputType === "deleteContentBackward" || inputType === "deleteContentForward") {
+      return;
+    }
+
+    input.value = formatTimeMask(input.value);
+  });
+
+  const completeIfPartial = () => {
+    const digits = input.value.replace(/\D/g, "");
+    if (digits.length > 0 && digits.length < 4) {
+      input.value = normalizeTimeDigits(digits);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  };
+
+  input.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key === "Tab") completeIfPartial();
+  });
+  input.addEventListener("blur", completeIfPartial);
+}
+
 function maskPhoneInput(input: HTMLInputElement | null) {
   if (!input) return;
   input.addEventListener("input", (e: Event) => {
@@ -127,5 +188,7 @@ export {
   calculateDaysCount,
   formatDateMask,
   maskDateInput,
+  formatTimeMask,
+  maskTimeInput,
   maskPhoneInput
 };

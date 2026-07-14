@@ -5,7 +5,8 @@ import {
   generateUid,
   buildSearchableSelectHtml,
   initSearchableSelectEl,
-  rejectNegativeAmountOnBlur
+  rejectNegativeAmountOnBlur,
+  maskTimeInput
 } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
 
@@ -270,6 +271,8 @@ export function addStaffRow(
   const startTimeInput = row.querySelector<HTMLInputElement>(".staff-start-time-input")!;
   const endTimeInput = row.querySelector<HTMLInputElement>(".staff-end-time-input")!;
   const hoursInput = row.querySelector<HTMLInputElement>(".staff-hours-input")!;
+  maskTimeInput(startTimeInput);
+  maskTimeInput(endTimeInput);
 
   const handleTimeChange = () => {
     const startVal = startTimeInput.value;

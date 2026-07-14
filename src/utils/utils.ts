@@ -20,6 +20,8 @@ export {
   calculateDaysCount,
   formatDateMask,
   maskDateInput,
+  formatTimeMask,
+  maskTimeInput,
   maskPhoneInput
 } from "./format.ts";
 export type { RateVersionRow } from "./format.ts";

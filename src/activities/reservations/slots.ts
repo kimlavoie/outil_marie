@@ -5,7 +5,7 @@
 import { validateDateFieldFiscalYear } from "../datepicker.ts";
 import { WEEKDAY_PILL_OPTIONS } from "../form.ts";
 import { formatDateStrLocal, parseLocalDateStr } from "../../state/state.ts";
-import { generateUid, showToast, initPillToggleEl, maskDateInput } from "../../utils/utils.ts";
+import { generateUid, showToast, initPillToggleEl, maskDateInput, maskTimeInput } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
 import { updateFormDatesHelper } from "../history/index.ts";
 import { propagateFirstSlotTimesToStaff } from "./subrows.ts";
@@ -42,6 +42,8 @@ function addSlotRow(container: HTMLElement, date = "", startTime = "", endTime =
 
   const startInput = row.querySelector<HTMLInputElement>(".slot-start-time-input")!;
   const endInput = row.querySelector<HTMLInputElement>(".slot-end-time-input")!;
+  maskTimeInput(startInput);
+  maskTimeInput(endInput);
   const handleSlotTimeChange = () => {
     const card = row.closest(".reservation-card");
     if (card) {
@@ -147,6 +149,8 @@ function wireSlotRangeGenerator(card: HTMLElement) {
   const rangeEndInput = generatorEl.querySelector<HTMLInputElement>(".slot-range-end-date")!;
   maskDateInput(rangeStartInput);
   maskDateInput(rangeEndInput);
+  maskTimeInput(generatorEl.querySelector<HTMLInputElement>(".slot-range-start-time")!);
+  maskTimeInput(generatorEl.querySelector<HTMLInputElement>(".slot-range-end-time")!);
   for (const input of [rangeStartInput, rangeEndInput]) {
     input.addEventListener("input", () => validateDateFieldFiscalYear(input));
     input.addEventListener("change", () => validateDateFieldFiscalYear(input));
