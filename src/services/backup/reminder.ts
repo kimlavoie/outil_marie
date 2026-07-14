@@ -2,9 +2,10 @@
  * backup/reminder.ts - "Have you backed up recently?" banner/badge logic, the list of automatic
  * safety snapshots taken before a destructive operation, and diagnostic log export.
  */
-import { appState, getSafetyBackupsFromDb } from "../../state/state.ts";
+import { appState, getSafetyBackupsFromDb, saveDatabaseOrRollback } from "../../state/state.ts";
 import { logError, getLogHistory } from "../../utils/logger.ts";
-import { showToast } from "../../utils/utils.ts";
+import { showToast, escapeHtml } from "../../utils/utils.ts";
+import { parseLocalDateStr } from "../../state/date-helpers.ts";
 
 // Backup reminder helpers and views
 function getDaysSinceLastBackup(): number | null {
@@ -106,6 +107,161 @@ function renderBackupView() {
   }
 
   renderSafetyBackupsList();
+  updateDeletedActivitiesBadge();
+}
+
+// Soft-deleted activities (see appState.activities[].deleted) so a user who removed one by
+// mistake can bring it back without restoring an entire JSON backup. Activities are only flagged
+// `deleted`, never physically removed from appState (see src/activities/context-menu.ts and
+// src/activities/bulk-actions.ts), so restoring is just clearing that flag. Kept behind a modal
+// (opened from the "Voir les activités supprimées" button) with a search box instead of an inline
+// list, since that list has no upper bound over the life of the app.
+function getDeletedActivities() {
+  return appState.activities.filter((a: any) => a.deleted);
+}
+
+function updateDeletedActivitiesBadge() {
+  const badge = document.getElementById("deleted-activities-count-badge");
+  if (!badge) return;
+  const count = getDeletedActivities().length;
+  badge.textContent = count > 0 ? `(${count})` : "";
+}
+
+function formatActivityDateLabel(act: any): string {
+  if (!act.date_start) return "";
+  try {
+    return ` — ${parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { year: "numeric", month: "short", day: "numeric" })}`;
+  } catch {
+    return "";
+  }
+}
+
+function renderDeletedActivitiesModalList(searchTerm = "") {
+  const container = document.getElementById("deleted-activities-modal-list");
+  if (!container) return;
+
+  const query = searchTerm.trim().toLowerCase();
+  const deletedActivities = getDeletedActivities().filter((act: any) => {
+    if (!query) return true;
+    const name = act.name && act.name.trim() !== "" ? act.name : "Activité sans nom";
+    return name.toLowerCase().includes(query) || String(act.id).toLowerCase().includes(query);
+  });
+
+  if (deletedActivities.length === 0) {
+    container.innerHTML = `<span style="font-size: 0.85rem; color: var(--text-secondary)">${
+      query ? "Aucune activité supprimée ne correspond à la recherche." : "Aucune activité supprimée pour le moment."
+    }</span>`;
+    return;
+  }
+
+  container.innerHTML = "";
+  deletedActivities.forEach((act: any) => {
+    const row = document.createElement("div");
+    row.style.cssText =
+      "display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm);";
+
+    const label = document.createElement("button");
+    label.type = "button";
+    label.style.cssText =
+      "background: none; border: none; padding: 0; font-size: 0.85rem; text-align: left; cursor: pointer; color: var(--text-primary); flex: 1;";
+    const name = act.name && act.name.trim() !== "" ? act.name : "Activité sans nom";
+    label.innerHTML = `${escapeHtml(name)}${escapeHtml(formatActivityDateLabel(act))}`;
+    label.title = "Voir l'aperçu de l'activité";
+    label.addEventListener("click", () => previewDeletedActivity(act.id));
+    row.appendChild(label);
+
+    const btn = document.createElement("button");
+    btn.className = "btn btn-secondary";
+    btn.textContent = "Restaurer";
+    btn.style.cssText = "padding: 4px 10px; font-size: 0.8rem; flex-shrink: 0;";
+    btn.addEventListener("click", () => restoreDeletedActivity(act.id));
+    row.appendChild(btn);
+
+    container.appendChild(row);
+  });
+}
+
+function openDeletedActivitiesModal(preserveSearch?: string) {
+  const modal = document.getElementById("deleted-activities-modal");
+  const backdrop = document.getElementById("modal-backdrop");
+  const searchInput = document.getElementById("deleted-activities-search") as HTMLInputElement | null;
+  if (!modal || !backdrop) return;
+
+  if (searchInput) searchInput.value = preserveSearch || "";
+  renderDeletedActivitiesModalList(preserveSearch || "");
+  modal.classList.add("active");
+  backdrop.classList.add("active");
+}
+
+function closeDeletedActivitiesModal() {
+  document.getElementById("deleted-activities-modal")?.classList.remove("active");
+  document.getElementById("modal-backdrop")?.classList.remove("active");
+}
+
+// Set right before closing the deleted-activities modal to open the activity details preview, and
+// consumed by the details modal's close buttons (see initDeletedActivitiesModal below) to reopen
+// the deleted-activities modal instead of leaving the user back at the bare backup view. Only
+// consumed once, so closing the details modal when it was opened any other way is unaffected.
+let returnToDeletedModalAfterPreview: string | null = null;
+
+// Preview reuses the existing read-only "Voir les détails" modal (see
+// src/activities/print-sheet.ts) rather than a bespoke view — it already renders a full activity
+// summary and doesn't care whether the activity is flagged deleted. Both modals share the same
+// #modal-backdrop, so the deleted-activities modal is closed first to avoid stacking them; closing
+// the details modal afterwards reopens the deleted-activities modal (see
+// returnToDeletedModalAfterPreview above).
+async function previewDeletedActivity(id: string) {
+  const searchInput = document.getElementById("deleted-activities-search") as HTMLInputElement | null;
+  returnToDeletedModalAfterPreview = searchInput?.value || "";
+  closeDeletedActivitiesModal();
+  const { openActivityDetailsModal } = await import("../../activities/financials.ts");
+  openActivityDetailsModal(id);
+}
+
+function handleActivityDetailsModalClosed() {
+  if (returnToDeletedModalAfterPreview === null) return;
+  const preservedSearch = returnToDeletedModalAfterPreview;
+  returnToDeletedModalAfterPreview = null;
+  openDeletedActivitiesModal(preservedSearch);
+}
+
+async function restoreDeletedActivity(id: string) {
+  const target = appState.activities.find((a: any) => a.id === id);
+  if (!target) return;
+
+  target.deleted = false;
+  const saved = await saveDatabaseOrRollback(() => {
+    target.deleted = true;
+  }, "La restauration n'a pas été enregistrée. Réessayez.");
+
+  if (saved) {
+    showToast("Activité restaurée.", "success");
+    updateDeletedActivitiesBadge();
+    const searchInput = document.getElementById("deleted-activities-search") as HTMLInputElement | null;
+    renderDeletedActivitiesModalList(searchInput?.value || "");
+    const { reconciliationState, reconcileLedger } = await import("../reconciliation.ts");
+    if (reconciliationState.ledgerTransactions.length > 0) {
+      reconcileLedger();
+    }
+    const { renderAll } = await import("../../navigation.ts");
+    renderAll();
+  }
+}
+
+function initDeletedActivitiesModal() {
+  document.getElementById("backup-open-deleted-activities")?.addEventListener("click", () => openDeletedActivitiesModal());
+  document.getElementById("deleted-activities-modal-close")?.addEventListener("click", closeDeletedActivitiesModal);
+  document.getElementById("deleted-activities-modal-close-btn")?.addEventListener("click", closeDeletedActivitiesModal);
+
+  const searchInput = document.getElementById("deleted-activities-search") as HTMLInputElement | null;
+  searchInput?.addEventListener("input", () => renderDeletedActivitiesModalList(searchInput.value));
+
+  // Reopens the deleted-activities modal after the activity details preview is closed, but only
+  // when it was opened from there (see returnToDeletedModalAfterPreview above) — these two
+  // buttons also close the details modal when opened normally (e.g. "Voir les détails" on a
+  // non-deleted activity row), where this is a no-op.
+  document.getElementById("activity-details-modal-close")?.addEventListener("click", handleActivityDetailsModalClosed);
+  document.getElementById("activity-details-modal-close-btn")?.addEventListener("click", handleActivityDetailsModalClosed);
 }
 
 const SAFETY_BACKUP_LABELS: Record<string, string> = {
@@ -189,6 +345,12 @@ export {
   checkBackupReminder,
   renderBackupView,
   renderSafetyBackupsList,
+  updateDeletedActivitiesBadge,
+  renderDeletedActivitiesModalList,
+  openDeletedActivitiesModal,
+  closeDeletedActivitiesModal,
+  restoreDeletedActivity,
+  initDeletedActivitiesModal,
   downloadSafetyBackup,
   exportDiagnosticLogs
 };

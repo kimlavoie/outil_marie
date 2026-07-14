@@ -10,7 +10,13 @@ import { appState, saveDatabase, saveSafetyBackupToDb, seedDatabase } from "../.
 import { showToast } from "../../utils/utils.ts";
 import { exportToExcel } from "../excel-export.ts";
 import { handleJsonBackupFile } from "./restore.ts";
-import { checkBackupReminder, renderBackupView, renderSafetyBackupsList, exportDiagnosticLogs } from "./reminder.ts";
+import {
+  checkBackupReminder,
+  renderBackupView,
+  renderSafetyBackupsList,
+  initDeletedActivitiesModal,
+  exportDiagnosticLogs
+} from "./reminder.ts";
 import { initAutoBackup, connectAutoBackupFile, reconnectAutoBackupPermission, disconnectAutoBackup } from "./auto-backup.ts";
 
 function initBackupHandlers() {
@@ -133,6 +139,8 @@ function initBackupHandlers() {
   }
   initAutoBackup();
 
+  initDeletedActivitiesModal();
+
   // Global banner "Reconnecter" button (visible on every view)
   const autoBackupBannerBtn = document.getElementById("auto-backup-reminder-btn");
   if (autoBackupBannerBtn) {
@@ -151,6 +159,12 @@ export {
   checkBackupReminder,
   renderBackupView,
   renderSafetyBackupsList,
+  updateDeletedActivitiesBadge,
+  renderDeletedActivitiesModalList,
+  openDeletedActivitiesModal,
+  closeDeletedActivitiesModal,
+  restoreDeletedActivity,
+  initDeletedActivitiesModal,
   downloadSafetyBackup,
   exportDiagnosticLogs
 } from "./reminder.ts";

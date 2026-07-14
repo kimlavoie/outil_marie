@@ -351,6 +351,41 @@
       </div>
     </div>
 
+    <!-- Deleted Activities Modal: browse/search soft-deleted activities and restore or preview them
+         (see src/services/backup/reminder.ts) -->
+    <div
+      id="deleted-activities-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="deleted-activities-modal-title"
+      style="width: 650px"
+    >
+      <div class="modal-header">
+        <h3 class="modal-title" id="deleted-activities-modal-title">Activités supprimées</h3>
+        <button id="deleted-activities-modal-close" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <input
+          type="text"
+          id="deleted-activities-search"
+          class="form-input"
+          placeholder="Rechercher une activité supprimée..."
+          style="margin-bottom: 12px"
+        />
+        <div id="deleted-activities-modal-list" style="display: flex; flex-direction: column; gap: 8px">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="deleted-activities-modal-close-btn" class="btn btn-secondary">Fermer</button>
+      </div>
+    </div>
+
     <!-- Tax Override Modal: per-activity TPS/TVQ exception (rate or flat amount), with a note -->
     <div
       id="tax-override-modal"

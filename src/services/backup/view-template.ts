@@ -157,6 +157,19 @@ const BACKUP_VIEW_HTML = `
     </div>
   </div>
 
+  <!-- Recovery for soft-deleted activities -->
+  <div class="stat-card" style="gap: 16px; margin-bottom: 24px">
+    <h3 class="chart-title">Activités supprimées</h3>
+    <p style="font-size: 0.9rem; color: var(--text-secondary)">
+      Les activités supprimées ne sont pas effacées immédiatement : vous pouvez les retrouver et les récupérer.
+    </p>
+    <div>
+      <button id="backup-open-deleted-activities" class="btn btn-secondary">
+        Voir les activités supprimées <span id="deleted-activities-count-badge"></span>
+      </button>
+    </div>
+  </div>
+
   <!-- Danger Zone to clear local database -->
   <div class="stat-card" style="gap: 16px; border-color: rgba(244, 63, 94, 0.2); background-color: rgba(244, 63, 94, 0.02)">
     <h3 class="chart-title" style="color: var(--danger)">Zone de Danger</h3>
