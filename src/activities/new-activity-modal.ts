@@ -64,6 +64,7 @@ function buildNewActivityRecord(id: string, name: string, mode: string) {
     responsable: "",
     responsable_first_name: "",
     responsable_last_name: "",
+    responsable_same_as_manager: false,
     name,
     attendees_count: 0,
     date_start: "",

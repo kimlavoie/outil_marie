@@ -210,6 +210,12 @@ const ACTIVITY_DRAWER_HTML = `
             <span>Responsable de la facturation</span>
           </summary>
           <div class="form-accordion-content">
+            <div class="form-group form-checkbox-group">
+              <label class="form-checkbox-label">
+                <input type="checkbox" id="form-activity-responsable-same-as-manager" />
+                <span>Même personne que le responsable de l'activité</span>
+              </label>
+            </div>
             <div class="form-group-row">
               <div class="form-group">
                 <label for="form-activity-responsable-firstname">Prénom du responsable</label>

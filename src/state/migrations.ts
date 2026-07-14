@@ -17,6 +17,7 @@ export function sanitizeActivitiesList(rawActivities: any[]): any[] {
       if (typeof act.responsable !== "string") act.responsable = "";
       if (typeof act.responsable_first_name !== "string") act.responsable_first_name = "";
       if (typeof act.responsable_last_name !== "string") act.responsable_last_name = "";
+      if (typeof act.responsable_same_as_manager !== "boolean") act.responsable_same_as_manager = false;
       if (!Array.isArray(act.distributions)) act.distributions = [];
       if (!Array.isArray(act.reservations)) act.reservations = [];
       act.distributions = act.distributions.filter((d: any) => d && typeof d === "object");

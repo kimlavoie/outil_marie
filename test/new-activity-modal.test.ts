@@ -51,6 +51,7 @@ function setupDom() {
     <input id="form-activity-internal-id" value="" />
     <input id="form-activity-name" value="" />
     <input id="form-activity-attendees" value="" />
+    <input type="checkbox" id="form-activity-responsable-same-as-manager" />
     <input id="form-activity-responsable-firstname" value="" />
     <input id="form-activity-responsable-lastname" value="" />
     <select id="form-activity-client-type"></select>

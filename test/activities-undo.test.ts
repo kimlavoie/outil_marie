@@ -36,6 +36,7 @@ function setupDom() {
     <input id="form-activity-id" value="2025-001" />
     <input id="form-activity-name" value="Conférence" />
     <input id="form-activity-attendees" value="0" />
+    <input type="checkbox" id="form-activity-responsable-same-as-manager" />
     <input id="form-activity-responsable-firstname" value="" />
     <input id="form-activity-responsable-lastname" value="" />
     <select id="form-activity-client-type"></select>

@@ -233,6 +233,18 @@ function initFormHandlers() {
     externalGroup.style.display = (e.target as HTMLInputElement).value === "externe" ? "block" : "none";
   });
 
+  // "Même personne que le responsable de l'activité" checkbox: mirrors the manager's name into
+  // the billing responsable fields and locks them, instead of the user re-typing it a second time.
+  el("form-activity-responsable-same-as-manager").addEventListener("change", e => {
+    applyResponsableSameAsManager((e.target as HTMLInputElement).checked);
+  });
+  el("form-activity-manager-firstname").addEventListener("input", () => {
+    if (el("form-activity-responsable-same-as-manager").checked) applyResponsableSameAsManager(true);
+  });
+  el("form-activity-manager-lastname").addEventListener("input", () => {
+    if (el("form-activity-responsable-same-as-manager").checked) applyResponsableSameAsManager(true);
+  });
+
   // Estimation / Soumission mode toggle
   initActivityModeToggle();
 
@@ -293,6 +305,21 @@ function initFormHandlers() {
   });
 }
 
+// Mirrors the activity manager's name into the billing responsable fields and locks them (readonly)
+// while the "même personne" checkbox is checked, so the two stay in sync without re-typing.
+function applyResponsableSameAsManager(checked: boolean) {
+  const firstNameEl = el("form-activity-responsable-firstname");
+  const lastNameEl = el("form-activity-responsable-lastname");
+  firstNameEl.readOnly = checked;
+  lastNameEl.readOnly = checked;
+  firstNameEl.classList.toggle("form-input-readonly", checked);
+  lastNameEl.classList.toggle("form-input-readonly", checked);
+  if (checked) {
+    firstNameEl.value = el("form-activity-manager-firstname").value;
+    lastNameEl.value = el("form-activity-manager-lastname").value;
+  }
+}
+
 // Fills the activity form fields (everything except the id/internal-id keys)
 // from an existing activity object. Used by both Edit Mode and Duplicate Mode.
 function fillActivityFormFields(act: any) {
@@ -317,6 +344,8 @@ function fillActivityFormFields(act: any) {
   el("form-activity-manager-province").value = act.activity_manager?.province || "";
   el("form-activity-manager-postal-code").value = act.activity_manager?.postal_code || "";
   el("form-activity-manager-external-group").style.display = act.activity_manager?.type === "externe" ? "block" : "none";
+  el("form-activity-responsable-same-as-manager").checked = !!act.responsable_same_as_manager;
+  applyResponsableSameAsManager(!!act.responsable_same_as_manager);
   el("form-activity-reservations").innerHTML = "";
   (act.reservations || []).forEach((r: any) => addReservationCard(r));
   // A brand-new activity starts with one réservation and one créneau pre-filled, so the user

@@ -74,6 +74,13 @@ function setupFixture() {
     </select>
     <div id="form-activity-manager-external-group"></div>
 
+    <input type="checkbox" id="form-activity-responsable-same-as-manager">
+    <input id="form-activity-manager-firstname">
+    <input id="form-activity-manager-lastname">
+    <input id="form-activity-manager-phone">
+    <input id="form-activity-responsable-firstname">
+    <input id="form-activity-responsable-lastname">
+
     <select id="form-activity-event-type">
       <option value=""></option>
       <option value="conference">Conférence</option>

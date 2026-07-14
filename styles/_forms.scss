@@ -336,6 +336,12 @@ input[type="checkbox"] {
   border-color: var(--danger, #d32f2f);
 }
 
+.form-input-readonly {
+  background-color: var(--bg-secondary, #f2f2f2);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
 /* Activity form accordion sections */
 .form-accordion-section {
   margin-bottom: 12px;

@@ -66,6 +66,7 @@ function autoSaveActivityForm() {
 
   const attendeesInput = elById("form-activity-attendees").value.trim();
   const attendeesCount = parseInt(attendeesInput) || 0;
+  const responsableSameAsManager = elById("form-activity-responsable-same-as-manager").checked;
   const responsableFirstName = elById("form-activity-responsable-firstname").value.trim();
   const responsableLastName = elById("form-activity-responsable-lastname").value.trim();
   const responsable = [responsableFirstName, responsableLastName].filter(Boolean).join(" ");
@@ -121,6 +122,7 @@ function autoSaveActivityForm() {
     responsable,
     responsable_first_name: responsableFirstName,
     responsable_last_name: responsableLastName,
+    responsable_same_as_manager: responsableSameAsManager,
     name,
     attendees_count: attendeesCount,
     date_start: start,

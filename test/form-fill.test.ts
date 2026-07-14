@@ -53,6 +53,7 @@ function setupFormSkeleton() {
     <input id="form-activity-coba">
     <input id="form-activity-name">
     <input id="form-activity-attendees">
+    <input type="checkbox" id="form-activity-responsable-same-as-manager">
     <input id="form-activity-responsable-firstname">
     <input id="form-activity-responsable-lastname">
     <select id="form-activity-client-type">
