@@ -141,7 +141,7 @@ function addReservationCard(reservationData: any = null) {
         </div>
       </div>
       <div class="room-tariff-resolved-price-display" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: -6px; margin-bottom: 12px; display: none;">
-        Tarif résolu : <strong class="resolved-price-val">0,00 $</strong> / jour
+        Tarif résolu : <strong class="resolved-price-val">0,00 $</strong> <span class="resolved-price-unit">/ jour</span>
       </div>
       <div class="room-tariff-stale-warning" style="font-size: 0.85rem; color: var(--warning-text); margin-top: -6px; margin-bottom: 12px; display: none;"></div>
       <div class="form-group-row room-tariff-custom-group" style="display: ${isCustomTariff ? "flex" : "none"}; gap: 12px; margin-bottom: 12px;">
@@ -150,7 +150,7 @@ function addReservationCard(reservationData: any = null) {
           <input type="text" id="${uid}-room-tariff-custom-desc" class="form-input room-tariff-custom-desc" placeholder="Ex: Rabais ponctuel" value="${isCustomTariff ? escapeHtml(reservationData.tariff_description) : ""}">
         </div>
         <div class="form-group" style="flex: 1; margin-bottom: 0;">
-          <label for="${uid}-room-tariff-custom-amount">Montant ($ par jour)</label>
+          <label for="${uid}-room-tariff-custom-amount" class="room-tariff-custom-amount-label">Montant ($ par jour)</label>
           <input type="number" id="${uid}-room-tariff-custom-amount" class="form-input room-tariff-custom-amount" min="0" step="0.01" value="${isCustomTariff ? reservationData.tariff_amount : ""}">
         </div>
         <div class="form-group" style="flex: 1.5; margin-bottom: 0;">

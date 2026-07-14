@@ -5,7 +5,7 @@
  * Split out of activities-financials.ts (see that file for the rest of the module's history).
  */
 import { appState, EVENT_TYPES } from "../state/state.ts";
-import { formatCurrency, escapeHtml, getReservationRoomLabel, showLoadingOverlay, hideLoadingOverlay, elById } from "../utils/utils.ts";
+import { formatCurrency, escapeHtml, getReservationRoomLabel, showLoadingOverlay, hideLoadingOverlay, elById, calculateHoursFromTimes } from "../utils/utils.ts";
 import { isNonEmptyString } from "../utils/validation.ts";
 import { getActivityStateLabel } from "./render.ts";
 import { computeActivityFinancials, overrideMarkerHtml } from "./financial-summary.ts";
@@ -84,19 +84,38 @@ function buildPrintActivitySheetHtml(act: any) {
 
   const roomsRows = reservations
     .map((r: any) => {
-      const days = (r.slots || []).length;
+      const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+      const isHourly = room && room.rate_type === "hourly";
       const slotsText =
         (r.slots || [])
           .map((s: any) => `${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
           .join(", ") || "-";
+
+      let durationText = "";
+      let rateUnit = "";
+      let subtotal = 0;
+      if (isHourly) {
+        const hours = (r.slots || []).reduce((sum: number, s: any) => {
+          return sum + calculateHoursFromTimes(s.start_time, s.end_time);
+        }, 0);
+        durationText = `${hours} h`;
+        rateUnit = "/ h";
+        subtotal = (r.tariff_amount || 0) * hours;
+      } else {
+        const days = (r.slots || []).length;
+        durationText = `${days} jour${days > 1 ? "s" : ""}`;
+        rateUnit = "/ jour";
+        subtotal = (r.tariff_amount || 0) * days;
+      }
+
       return `
         <tr>
           <td>${escapeHtml(getReservationRoomLabel(r))}</td>
           <td>${slotsText}</td>
           <td>${escapeHtml(r.tariff_description) || "-"}</td>
-          <td>${formatCurrency(r.tariff_amount || 0)}</td>
-          <td>${days}</td>
-          <td>${formatCurrency((r.tariff_amount || 0) * days)}</td>
+          <td>${formatCurrency(r.tariff_amount || 0)} ${rateUnit}</td>
+          <td>${durationText}</td>
+          <td>${formatCurrency(subtotal)}</td>
         </tr>
       `;
     })
@@ -138,7 +157,7 @@ function buildPrintActivitySheetHtml(act: any) {
       <h2>Réservations de salle</h2>
       <table class="print-sheet-table">
         <thead>
-          <tr><th>Salle</th><th>Créneaux</th><th>Tarif</th><th>Montant / jour</th><th>Jours</th><th>Sous-total</th></tr>
+          <tr><th>Salle</th><th>Créneaux</th><th>Tarif</th><th>Tarif unitaire</th><th>Durée</th><th>Sous-total</th></tr>
         </thead>
         <tbody>${roomsRows || `<tr><td colspan="6">Aucune réservation.</td></tr>`}</tbody>
       </table>
@@ -193,16 +212,29 @@ function buildActivityDetailsHtml(act: any) {
 
   const roomsRows = reservations
     .map((r: any) => {
-      const days = (r.slots || []).length;
+      const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+      const isHourly = room && room.rate_type === "hourly";
       const slotsText =
         (r.slots || [])
           .map((s: any) => `${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
           .join(", ") || "-";
+
+      let durationText = "";
+      if (isHourly) {
+        const hours = (r.slots || []).reduce((sum: number, s: any) => {
+          return sum + calculateHoursFromTimes(s.start_time, s.end_time);
+        }, 0);
+        durationText = `${hours} h`;
+      } else {
+        const days = (r.slots || []).length;
+        durationText = `${days} jour${days > 1 ? "s" : ""}`;
+      }
+
       return `
         <tr>
           <td>${escapeHtml(getReservationRoomLabel(r))}</td>
           <td>${slotsText}</td>
-          <td>${days}</td>
+          <td>${durationText}</td>
         </tr>
       `;
     })
@@ -273,7 +305,7 @@ function buildActivityDetailsHtml(act: any) {
       <h2>Réservations de salle</h2>
       <table class="print-sheet-table">
         <thead>
-          <tr><th>Salle</th><th>Créneaux</th><th>Jours</th></tr>
+          <tr><th>Salle</th><th>Créneaux</th><th>Durée</th></tr>
         </thead>
         <tbody>${roomsRows}</tbody>
       </table>

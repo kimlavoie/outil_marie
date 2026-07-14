@@ -16,12 +16,14 @@ export function PricingGridEditor({
   grids,
   setGrids,
   activeGridIndex,
-  setActiveGridIndex
+  setActiveGridIndex,
+  rateType = "daily"
 }: {
   grids: PricingGrid[];
   setGrids: React.Dispatch<React.SetStateAction<PricingGrid[]>>;
   activeGridIndex: number;
   setActiveGridIndex: React.Dispatch<React.SetStateAction<number>>;
+  rateType?: "daily" | "hourly";
 }) {
   const [showHelp, setShowHelp] = useState(false);
   const [activeHelpPopup, setActiveHelpPopup] = useState<string | null>(null);
@@ -201,7 +203,7 @@ export function PricingGridEditor({
                 salle.
               </li>
               <li>
-                <strong>3. Saisie des tarifs :</strong> Remplissez les prix journaliers en dollars ($) dans la table générée à l'intersection
+                <strong>3. Saisie des tarifs :</strong> Remplissez les tarifs ({rateType === "hourly" ? "horaires" : "journaliers"}) en dollars ($) dans la table générée à l'intersection
                 de chaque ligne et colonne.
               </li>
             </ul>
@@ -548,7 +550,7 @@ export function PricingGridEditor({
             >
               3
             </span>
-            <span>Grille des tarifs ($/jour)</span>
+            <span>Grille des tarifs ($/{rateType === "hourly" ? "heure" : "jour"})</span>
             {renderHelpButton("tarifs")}
           </span>
         </div>
@@ -575,7 +577,7 @@ export function PricingGridEditor({
             <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "var(--primary)" }}>💡 Aide : Grille des tarifs</strong>
             </div>
-            <p style={{ margin: 0 }}>Saisissez le tarif par jour en dollars ($) pour chaque combinaison (agencement de la salle × type de client).</p>
+            <p style={{ margin: 0 }}>Saisissez le tarif {rateType === "hourly" ? "par heure" : "par jour"} en dollars ($) pour chaque combinaison (agencement de la salle × type de client).</p>
           </div>
         )}
 
@@ -596,7 +598,7 @@ export function PricingGridEditor({
             </div>
           ) : (
             <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginBottom: 12 }}>Saisissez les tarifs par jour applicables pour chaque combinaison.</p>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginBottom: 12 }}>Saisissez les tarifs {rateType === "hourly" ? "par heure" : "par jour"} applicables pour chaque combinaison.</p>
               <table className="detail-dist-table" style={{ minWidth: 140 + activeGrid.client_types.length * 140 }}>
                 <thead>
                   <tr>

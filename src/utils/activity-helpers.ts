@@ -6,7 +6,7 @@
  * imports generateUid/calculateDaysCount from format.ts) is unaffected by this split.
  */
 import { appState } from "../state/state.ts";
-import { escapeHtml } from "./format.ts";
+import { escapeHtml, calculateHoursFromTimes } from "./format.ts";
 
 // Joined list of distinct RI/Facture references across an activity's per-account distributions
 function getActivityReferences(act: any) {
@@ -14,10 +14,21 @@ function getActivityReferences(act: any) {
   return [...new Set(refs)].join(", ");
 }
 
-// Sum of tarif_amount × nombre de créneaux (chaque créneau = 1 jour) across all reservations
+// Sum of tarif_amount × duration (days or hours depending on room settings) across all reservations
 // booked for an activity
 function getRoomsTariffTotal(act: any) {
-  return (act.reservations || []).reduce((sum: number, r: any) => sum + (r.tariff_amount || 0) * (r.slots || []).length, 0);
+  return (act.reservations || []).reduce((sum: number, r: any) => {
+    const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+    const isHourly = room && room.rate_type === "hourly";
+    if (isHourly) {
+      const hours = (r.slots || []).reduce((slotSum: number, s: any) => {
+        return slotSum + calculateHoursFromTimes(s.start_time, s.end_time);
+      }, 0);
+      return sum + (r.tariff_amount || 0) * hours;
+    } else {
+      return sum + (r.tariff_amount || 0) * (r.slots || []).length;
+    }
+  }, 0);
 }
 
 // Sentinel room_name value for a reservation on a room outside the settings configuration

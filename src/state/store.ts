@@ -93,6 +93,7 @@ export interface Room {
   name: string;
   color: string;
   abbreviation?: string;
+  rate_type?: "daily" | "hourly";
   pricing_grids: PricingGrid[];
   linked_rooms: string[];
   linked_staff: LinkedStaff[];

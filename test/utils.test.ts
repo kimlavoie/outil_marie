@@ -28,6 +28,40 @@ test("getRoomsTariffTotal sums tariff_amount x number of créneaux across every 
   assert.equal(getRoomsTariffTotal(activity as any), 350);
 });
 
+test("getRoomsTariffTotal handles hourly room calculations", () => {
+  const roomName = "SALLE HOURLY TEST";
+  appState.settings.rooms.push({
+    name: roomName,
+    rate_type: "hourly",
+    color: "#ff0000",
+    pricing_grids: [],
+    linked_rooms: [],
+    linked_staff: [],
+    linked_fees: [],
+    linked_tasks: []
+  });
+
+  const activity = {
+    reservations: [
+      {
+        room_name: roomName,
+        slots: [
+          { date: "2025-01-01", start_time: "09:00", end_time: "17:30" }, // 8.5 hours
+          { date: "2025-01-02", start_time: "10:15", end_time: "12:45" }  // 2.5 hours
+        ],
+        tariff_amount: 100 // 100$/h
+      }
+    ]
+  };
+
+  try {
+    const total = getRoomsTariffTotal(activity as any);
+    assert.equal(total, 1100); // (8.5 + 2.5) * 100 = 1100
+  } finally {
+    appState.settings.rooms = appState.settings.rooms.filter(r => r.name !== roomName);
+  }
+});
+
 test("getRoomsTariffTotal returns 0 when the activity has no reservations", () => {
   assert.equal(getRoomsTariffTotal({}), 0);
   assert.equal(getRoomsTariffTotal({ reservations: [] }), 0);

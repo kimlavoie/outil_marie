@@ -6,7 +6,8 @@ import {
   buildSearchableSelectHtml,
   initSearchableSelectEl,
   rejectNegativeAmountOnBlur,
-  maskTimeInput
+  maskTimeInput,
+  calculateHoursFromTimes
 } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
 
@@ -24,18 +25,7 @@ function getEarliestSlotDateFromDom(): string {
   return dates[0] || "";
 }
 
-export function calculateHoursFromTimes(start: string, end: string): number {
-  if (!start || !end) return 0;
-  const [startH, startM] = start.split(":").map(Number);
-  const [endH, endM] = end.split(":").map(Number);
-  if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) return 0;
-  
-  let diffMin = (endH * 60 + endM) - (startH * 60 + startM);
-  if (diffMin < 0) {
-    diffMin += 24 * 60; // Shift crosses midnight
-  }
-  return Math.round((diffMin / 60) * 100) / 100;
-}
+
 
 export function propagateFirstSlotTimesToStaff(card: HTMLElement) {
   const firstSlot = card.querySelector(".reservation-slots-list .reservation-slot-row");

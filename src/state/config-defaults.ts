@@ -385,4 +385,8 @@ const DEFAULT_CONFIG = {
   tax_rates: { tps: 0.05, tvq: 0.09975 }
 };
 
+DEFAULT_CONFIG.rooms.forEach((r: any) => {
+  r.rate_type = "daily";
+});
+
 export { DEFAULT_CONFIG };

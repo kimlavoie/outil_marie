@@ -8,7 +8,7 @@
  */
 import { computeActivityFinancials } from "../../activities/financials.ts";
 import { getAggregateEventDates } from "../../activities/reservations/index.ts";
-import { getReservationRoomLabel, formatCurrency } from "../../utils/utils.ts";
+import { getReservationRoomLabel, formatCurrency, calculateHoursFromTimes } from "../../utils/utils.ts";
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../../state/state.ts";
 import { S } from "./styles.ts";
 import { SheetBuilder, formatDateFr, wrapRowHeight } from "./sheet-builder.ts";
@@ -115,8 +115,18 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
         sb.detailRow("Démontage", r.dismantle.start_time || "?", r.dismantle.end_time || "?", "");
       }
 
-      sb.itemTableHeader("Tarification", "Taux/jour", "Jours", "Sous-total");
-      sb.itemRow("Location de la salle", r.tariff_amount || 0, slots.length, (r.tariff_amount || 0) * slots.length);
+      const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+      const isHourly = room && room.rate_type === "hourly";
+      if (isHourly) {
+        const hours = slots.reduce((sum: number, s: any) => {
+          return sum + calculateHoursFromTimes(s.start_time, s.end_time);
+        }, 0);
+        sb.itemTableHeader("Tarification", "Taux/h", "Heures", "Sous-total");
+        sb.itemRow("Location de la salle", r.tariff_amount || 0, hours, (r.tariff_amount || 0) * hours);
+      } else {
+        sb.itemTableHeader("Tarification", "Taux/jour", "Jours", "Sous-total");
+        sb.itemRow("Location de la salle", r.tariff_amount || 0, slots.length, (r.tariff_amount || 0) * slots.length);
+      }
 
       const staff = r.staff || [];
       if (staff.length > 0) {

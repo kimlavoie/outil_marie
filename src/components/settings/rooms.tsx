@@ -47,10 +47,11 @@ export function RoomsPanel({ active, openModal, bump }: { active: boolean; openM
         </button>
       </div>
       <div className="settings-list">
-        {appState.settings.rooms.map((r: { name: string; abbreviation?: string; pricing_grids?: unknown[] }) => {
+        {appState.settings.rooms.map((r: { name: string; abbreviation?: string; pricing_grids?: unknown[]; rate_type?: string }) => {
           const tarifs = getFlattenedRoomTarifs(r, "");
+          const unit = r.rate_type === "hourly" ? "h" : "jour";
           const tarifsDesc = tarifs.length
-            ? tarifs.map((t: { description: string; amount: number }) => `${t.description}: ${formatCurrency(t.amount)}/jour`).join(" · ")
+            ? tarifs.map((t: { description: string; amount: number }) => `${t.description}: ${formatCurrency(t.amount)}/${unit}`).join(" · ")
             : "Aucun tarif défini";
           const versionCount = (r.pricing_grids || []).length;
           const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
@@ -87,6 +88,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
   const [roomName, setRoomName] = useState("");
   const [abbreviation, setAbbreviation] = useState("");
   const [color, setColor] = useState("#4f46e5");
+  const [rateType, setRateType] = useState<"daily" | "hourly">("daily");
   const [grids, setGrids] = useState<PricingGrid[]>([]);
   const [activeGridIndex, setActiveGridIndex] = useState(0);
   const [linkedRooms, setLinkedRooms] = useState<string[]>([]);
@@ -101,6 +103,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
     setRoomName(room ? room.name : "");
     setAbbreviation((room && room.abbreviation) || "");
     setColor(room ? getRoomColor(room.name) : FALLBACK_ROOM_COLORS[appState.settings.rooms.length % FALLBACK_ROOM_COLORS.length]);
+    setRateType(room && room.rate_type === "hourly" ? "hourly" : "daily");
 
     let initialGrids: PricingGrid[] = room ? JSON.parse(JSON.stringify(room.pricing_grids || [])) : [];
     if (initialGrids.length === 0) {
@@ -208,6 +211,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
       name: newName,
       abbreviation: abbreviation.trim(),
       color,
+      rate_type: rateType,
       pricing_grids: grids,
       linked_rooms: linkedRooms,
       linked_staff: linkedStaffPayload,
@@ -318,16 +322,29 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
           <label htmlFor="form-room-color">Couleur</label>
           <input
             type="color"
-            id="form-room-color"
+            id="ison-room-color"
             className="form-input"
             value={color}
             style={{ width: 56, padding: 4, cursor: "pointer" }}
             onChange={e => setColor(e.target.value)}
           />
         </div>
+        <div className="form-group" style={{ flexGrow: 0 }}>
+          <label htmlFor="form-room-rate-type">Facturation</label>
+          <select
+            id="form-room-rate-type"
+            className="form-input"
+            style={{ width: 130 }}
+            value={rateType}
+            onChange={e => setRateType(e.target.value as "daily" | "hourly")}
+          >
+            <option value="daily">À la journée</option>
+            <option value="hourly">À l'heure</option>
+          </select>
+        </div>
       </div>
 
-      <PricingGridEditor grids={grids} setGrids={setGrids} activeGridIndex={activeGridIndex} setActiveGridIndex={setActiveGridIndex} />
+      <PricingGridEditor grids={grids} setGrids={setGrids} activeGridIndex={activeGridIndex} setActiveGridIndex={setActiveGridIndex} rateType={rateType} />
 
       <LinkedRoomsSection rooms={appState.settings.rooms} originalName={originalName} linkedRooms={linkedRooms} toggleLinkedRoom={toggleLinkedRoom} />
 

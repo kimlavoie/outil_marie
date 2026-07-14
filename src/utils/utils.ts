@@ -18,6 +18,7 @@ export {
   rateToPercentString,
   newRateVersionRow,
   calculateDaysCount,
+  calculateHoursFromTimes,
   formatDateMask,
   maskDateInput,
   formatTimeMask,

@@ -60,6 +60,7 @@ export function migrateRoomsConfig(rooms: any[]) {
     if (!room.linked_staff) room.linked_staff = [];
     if (!room.linked_fees) room.linked_fees = [];
     if (!room.linked_tasks) room.linked_tasks = [];
+    if (!room.rate_type) room.rate_type = "daily";
   });
 }
 

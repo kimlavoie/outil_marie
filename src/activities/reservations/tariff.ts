@@ -32,6 +32,9 @@ function buildTariffClientTypeOptionsHtml(roomName: string, dateStr: string, sel
   const grid = roomConfig ? getActivePricingGrid(roomConfig, dateStr) : null;
   if (!grid) return "";
 
+  const isHourly = roomConfig && roomConfig.rate_type === "hourly";
+  const unitSuffix = isHourly ? "h" : "jour";
+
   let selectedCtId = "";
   if (selectedTariffId && selectedTariffId !== "__custom__" && selectedTariffId.includes("::")) {
     const parts = selectedTariffId.split("::");
@@ -47,7 +50,7 @@ function buildTariffClientTypeOptionsHtml(roomName: string, dateStr: string, sel
       if (selectedParamId && selectedParamId !== "__custom__") {
         const cell = grid.cells.find((c: any) => c.parameter_id === selectedParamId && c.client_type_id === ct.id);
         if (cell) {
-          suffix = ` (${cell.amount}$/jour)`;
+          suffix = ` (${cell.amount}$/${unitSuffix})`;
         }
       }
       return `<option value="${ct.id}" ${selectedCtId === ct.id ? "selected" : ""}>${escapeHtml(ct.name)}${suffix}</option>`;
@@ -70,8 +73,20 @@ function updateResolvedPriceDisplay(card: HTMLElement) {
 
   if (staleEl) staleEl.style.display = "none";
 
+  const roomConfig = appState.settings.rooms.find((r: any) => r.name === roomName);
+  const isHourly = roomConfig && roomConfig.rate_type === "hourly";
+
+  const unitEl = card.querySelector<HTMLElement>(".resolved-price-unit");
+  if (unitEl) {
+    unitEl.textContent = isHourly ? "/ h" : "/ jour";
+  }
+
+  const customLabelEl = card.querySelector<HTMLElement>(".room-tariff-custom-amount-label");
+  if (customLabelEl) {
+    customLabelEl.textContent = isHourly ? "Montant ($ par heure)" : "Montant ($ par jour)";
+  }
+
   if (roomName && roomName !== OTHER_ROOM_VALUE && paramVal && paramVal !== "__custom__" && clientTypeVal) {
-    const roomConfig = appState.settings.rooms.find((r: any) => r.name === roomName);
     const slots = collectSlotsFromCard(card);
     const firstSlotDate = slots.length ? [...slots].map(s => s.date).sort()[0] : "";
     const grid = roomConfig ? getActivePricingGrid(roomConfig, firstSlotDate) : null;
@@ -89,7 +104,8 @@ function updateResolvedPriceDisplay(card: HTMLElement) {
       if (staleEl && storedTariffId === `${paramVal}::${clientTypeVal}` && storedTariffAmount !== undefined) {
         const storedAmount = parseFloat(storedTariffAmount);
         if (!isNaN(storedAmount) && storedAmount !== price) {
-          staleEl.textContent = `⚠ Tarif obsolète : cette réservation a été enregistrée à ${formatCurrency(storedAmount)}/jour, mais la grille tarifaire actuelle indique maintenant ${formatCurrency(price)}/jour pour cette date.`;
+          const warningSuffix = isHourly ? "/h" : "/jour";
+          staleEl.textContent = `⚠ Tarif obsolète : cette réservation a été enregistrée à ${formatCurrency(storedAmount)}${warningSuffix}, mais la grille tarifaire actuelle indique maintenant ${formatCurrency(price)}${warningSuffix} pour cette date.`;
           staleEl.style.display = "block";
         }
       }

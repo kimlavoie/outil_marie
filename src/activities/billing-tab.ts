@@ -4,7 +4,7 @@
  * (activity drawer form wiring).
  */
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate, saveSafetyBackupToDb } from "../state/state.ts";
-import { formatCurrency } from "../utils/utils.ts";
+import { formatCurrency, calculateHoursFromTimes } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
 import { addDistributionRow, updateDistributionTotal } from "./financials.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
@@ -48,9 +48,20 @@ export async function generateBillingLines(act: any) {
 
   reservations.forEach((r: any) => {
     if (r.tariff_gl_account_code && r.tariff_amount > 0) {
-      const days = r.slots.length;
-      const details = `Location salle ${r.room_name} - ${days} jour${days > 1 ? "s" : ""} à ${formatCurrency(r.tariff_amount)}`;
-      addDistributionRow(r.tariff_gl_account_code, r.tariff_amount * days, "", details, true);
+      const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+      const isHourly = room && room.rate_type === "hourly";
+      if (isHourly) {
+        const hours = (r.slots || []).reduce((sum: number, s: any) => {
+          return sum + calculateHoursFromTimes(s.start_time, s.end_time);
+        }, 0);
+        const amount = r.tariff_amount * hours;
+        const details = `Location salle ${r.room_name} - ${hours} heure${hours > 1 ? "s" : ""} à ${formatCurrency(r.tariff_amount)}/h`;
+        addDistributionRow(r.tariff_gl_account_code, amount, "", details, true);
+      } else {
+        const days = r.slots.length;
+        const details = `Location salle ${r.room_name} - ${days} jour${days > 1 ? "s" : ""} à ${formatCurrency(r.tariff_amount)}/jour`;
+        addDistributionRow(r.tariff_gl_account_code, r.tariff_amount * days, "", details, true);
+      }
     }
   });
 

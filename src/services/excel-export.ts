@@ -174,12 +174,13 @@ function runExportToExcel(getExcelColName: (colIdx: number) => string, xlsxInsta
     lib.utils.book_append_sheet(wb, ws, "ACTIVITÉS");
 
     // Sheet 2: Configuration Salles (une ligne par cellule de la grille tarifaire active)
-    const roomsData = [["SALLE", "GRILLE (ENTRÉE EN VIGUEUR)", "TARIF", "MONTANT ($/JOUR)"]];
+    const roomsData = [["SALLE", "TYPE DE TARIF", "GRILLE (ENTRÉE EN VIGUEUR)", "TARIF", "MONTANT ($)"]];
     appState.settings.rooms.forEach(r => {
       const grid = getActivePricingGrid(r, "");
       const tarifs = grid ? getFlattenedRoomTarifs(r, "") : [];
+      const rateTypeLabel = r.rate_type === "hourly" ? "À l'heure" : "À la journée";
       (tarifs.length ? tarifs : [{ description: "", amount: "" }]).forEach(t => {
-        roomsData.push([r.name, grid ? grid.effective_date || "Depuis toujours" : "", t.description, t.amount]);
+        roomsData.push([r.name, rateTypeLabel, grid ? grid.effective_date || "Depuis toujours" : "", t.description, t.amount]);
       });
     });
     const wsRooms = lib.utils.aoa_to_sheet(roomsData);
