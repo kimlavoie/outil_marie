@@ -196,4 +196,30 @@ test("addDistributionRow sums multiple rows into the distribution total", () => 
   assert.equal(document.querySelectorAll("#form-distribution-list .distribution-row").length, 2);
 });
 
+test("computeFormRevenueSubtotal excludes room tariff from subtotal for internal activities", () => {
+  // Inject client type select to simulate internal activity
+  const select = document.createElement("select");
+  select.id = "form-activity-client-type";
+  select.innerHTML = '<option value="interne" selected>Interne</option>';
+  document.body.appendChild(select);
+
+  addReservationCard({
+    id: "res-1",
+    room_name: "Salle Test",
+    tariff_id: "param-1::ct-1",
+    tariff_amount: 100,
+    slots: [{ id: "slot-1", date: "2025-08-01", start_time: "09:00", end_time: "17:00" }],
+    staff: [{ id: "staff-1", salary_id: "salary-dt", count: 1, hours: 5, overtime_hours: 0, gl_account_code: "GL-DT", tarif_id: "" }],
+    services: [{ id: "svc-1", service_id: "service-hourly", count: 1, hours: 2, tarif_id: "tarif-hourly" }],
+    fees: [{ id: "fee-1", description: "Montage", amount: 50, gl_account_code: "" }]
+  });
+
+  const totals = computeFormRevenueSubtotal();
+  assert.equal(totals.roomsTotal, 100); // room tariff is still tracked
+  assert.equal(totals.staffTotal, 250);
+  assert.equal(totals.servicesTotal, 40);
+  assert.equal(totals.feesTotal, 50);
+  assert.equal(totals.subtotal, 340); // 440 - 100 room tariff = 340
+});
+
 export {};

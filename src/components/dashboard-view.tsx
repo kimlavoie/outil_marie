@@ -207,9 +207,9 @@ export function DashboardView() {
           <span className="stat-desc">Calculés sur toutes les activités</span>
         </div>
         <div className="stat-card">
-          <span className="stat-label">Revenus internes (sans frais)</span>
+          <span className="stat-label">Montant théorique interne</span>
           <span className="stat-value">{formatCurrency(stats.totalInternalFree)}</span>
-          <span className="stat-desc">Valeur théorique estimée</span>
+          <span className="stat-desc">Valeur théorique des tarifs de salle</span>
         </div>
         <div className="stat-card">
           <span className="stat-label">Nombre d'activités</span>

@@ -172,3 +172,59 @@ test("generateBillingLines does not take a safety backup when there was nothing 
 
   assert.equal(after.length, before);
 });
+
+test("generateBillingLines generates room tariff distribution row for external client, but not for internal client", () => {
+  // 1. Test external client
+  document.body.innerHTML = `
+    <input id="form-activity-client-type" value="externe">
+    <div id="form-activity-reservations">
+      <div class="reservation-card" id="res-1">
+        <input class="searchable-select-value" value="Salle Test">
+        <input class="room-tariff-parameter" value="__custom__">
+        <input class="room-tariff-client-type" value="">
+        <input class="room-tariff-custom-desc" value="Location Salle">
+        <input class="room-tariff-custom-amount" value="150">
+        <input class="room-tariff-custom-gl" value="GL-ROOM">
+        <div class="reservation-slots-list">
+          <div class="reservation-slot-row">
+            <input class="slot-date-input" value="2025-08-01">
+            <input class="slot-start-time-input" value="">
+            <input class="slot-end-time-input" value="">
+          </div>
+        </div>
+        <div class="reservation-install-toggle"></div>
+        <div class="reservation-dismantle-toggle"></div>
+        <div class="room-bar-toggle-group"><button class="pill-toggle"></button></div>
+        <div class="room-bar-drink-group"></div>
+        <div class="room-bar-service-type-group"></div>
+        <input class="room-bar-hostess-count" value="0">
+        <input class="room-bar-special-order" value="">
+        <input class="room-host-duties-count" value="0">
+        <div class="room-staff-list"></div>
+        <div class="room-services-list"></div>
+        <div class="room-fees-list"></div>
+      </div>
+    </div>
+    <div id="form-distribution-list"></div>
+  `;
+
+  appState.settings.rooms = [{ name: "Salle Test", rate_type: "daily" } as any];
+  appState.settings.accounts = [{ code: "GL-ROOM", description: "Location" }];
+
+  generateBillingLines({ distributions: [] });
+
+  let rows = distributionRows();
+  let roomRow = rows.find(r => r.account === "GL-ROOM");
+  assert.ok(roomRow, "expected a room distribution row for external client");
+  assert.equal(roomRow!.amount, "150");
+
+  // 2. Test internal client
+  (document.getElementById("form-activity-client-type") as HTMLInputElement).value = "interne";
+  document.getElementById("form-distribution-list")!.innerHTML = "";
+
+  generateBillingLines({ distributions: [] });
+
+  rows = distributionRows();
+  roomRow = rows.find(r => r.account === "GL-ROOM");
+  assert.equal(roomRow, undefined, "expected no room distribution row for internal client");
+});

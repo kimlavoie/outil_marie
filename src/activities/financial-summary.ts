@@ -108,7 +108,12 @@ function computeFormRevenueSubtotal(): { roomsTotal: number; staffTotal: number;
     feesTotal += parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input")!.value) || 0;
   });
 
-  return { roomsTotal, staffTotal, servicesTotal, feesTotal, subtotal: roomsTotal + staffTotal + servicesTotal + feesTotal };
+  const clientTypeEl = document.getElementById("form-activity-client-type") as HTMLSelectElement | null;
+  const internalId = (document.getElementById("form-activity-internal-id") as HTMLInputElement | null)?.value;
+  const act = appState.activities.find((a: any) => a.id === internalId);
+  const isInternal = clientTypeEl ? clientTypeEl.value === "interne" : (act ? act.client_type === "interne" : false);
+
+  return { roomsTotal, staffTotal, servicesTotal, feesTotal, subtotal: (isInternal ? 0 : roomsTotal) + staffTotal + servicesTotal + feesTotal };
 }
 
 // Recomputes and displays the room/personnel/frais subtotal, TPS, TVQ, and total. TPS/TVQ use
@@ -198,7 +203,8 @@ function computeActivityFinancials(act: any) {
     });
   });
 
-  const subtotal = roomsTotal + staffTotal + servicesTotal + feesTotal;
+  const isInternal = act.client_type === "interne";
+  const subtotal = (isInternal ? 0 : roomsTotal) + staffTotal + servicesTotal + feesTotal;
   const taxes = computeTaxes(subtotal, act);
   return {
     roomsTotal,

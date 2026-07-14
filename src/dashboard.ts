@@ -33,8 +33,8 @@ function computeDashboardStats(activities: any[], selectedYear: string, selected
     const activityRevenue = act.distributions.reduce((sum: number, dist: any) => sum + dist.amount, 0);
     totalRevenue += activityRevenue;
 
-    // Internal free valuation: client is internal, and no actual charge (revenue is zero)
-    if (act.client_type === "interne" && activityRevenue === 0) {
+    // Internal free valuation: client is internal
+    if (act.client_type === "interne") {
       totalInternalFree += getRoomsTariffTotal(act);
     }
   });

@@ -18,13 +18,13 @@ test("sums revenue and counts only filled activities within the selected period"
   assert.equal(stats.filledCount, 1);
 });
 
-test("values free internal bookings at their room tariff when no revenue was charged", () => {
+test("values internal bookings at their room tariff even when actual revenue was charged", () => {
   const activities = [
     {
       name: "Réunion interne",
       date_start: "2025-08-01",
       client_type: "interne",
-      distributions: [], // no revenue recorded
+      distributions: [{ amount: 50 }],
       reservations: [{ slots: [{ date: "2025-08-01" }], tariff_amount: 175 }]
     }
   ];
@@ -33,13 +33,13 @@ test("values free internal bookings at their room tariff when no revenue was cha
   assert.equal(stats.totalInternalFree, 175);
 });
 
-test("does not value internal bookings that were actually charged", () => {
+test("does not value external bookings in totalInternalFree", () => {
   const activities = [
     {
-      name: "Réunion interne facturée",
+      name: "Réunion externe",
       date_start: "2025-08-01",
-      client_type: "interne",
-      distributions: [{ amount: 50 }],
+      client_type: "externe",
+      distributions: [],
       reservations: [{ slots: [{ date: "2025-08-01" }], tariff_amount: 175 }]
     }
   ];
