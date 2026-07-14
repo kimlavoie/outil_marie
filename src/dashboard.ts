@@ -155,4 +155,68 @@ function computeEmployeeStats(
   };
 }
 
-export { computeDashboardStats, computeEmployeeStats };
+function computeJobsYearlyHours(
+  activities: any[],
+  selectedYear: string,
+  salariesList: any[]
+) {
+  const jobHoursMap: Record<
+    string,
+    { jobId: string; jobName: string; normalHours: number; overtimeHours: number; totalHours: number }
+  > = {};
+
+  salariesList.forEach((s: any) => {
+    jobHoursMap[s.id] = {
+      jobId: s.id,
+      jobName: s.job,
+      normalHours: 0,
+      overtimeHours: 0,
+      totalHours: 0
+    };
+  });
+
+  activities.forEach(act => {
+    if (act.deleted) return;
+    const isFilled = act.name.trim() !== "";
+    if (!isFilled) return;
+
+    const actYear = getFiscalYear(act.date_start);
+    if (actYear !== selectedYear) return;
+
+    const reservations = act.reservations || [];
+    reservations.forEach((r: any) => {
+      (r.staff || []).forEach((s: any) => {
+        const jobId = s.salary_id;
+        if (!jobId) return;
+
+        const normalHrs = (s.hours || 0) * (s.count || 0);
+        const overtimeHrs = (s.overtime_hours || 0) * (s.count || 0);
+        const combined = normalHrs + overtimeHrs;
+
+        if (jobHoursMap[jobId]) {
+          jobHoursMap[jobId].normalHours += normalHrs;
+          jobHoursMap[jobId].overtimeHours += overtimeHrs;
+          jobHoursMap[jobId].totalHours += combined;
+        } else {
+          const fallbackJobName = (salariesList.find((sal: any) => sal.id === jobId)?.job) || jobId;
+          jobHoursMap[jobId] = {
+            jobId,
+            jobName: fallbackJobName,
+            normalHours: normalHrs,
+            overtimeHours: overtimeHrs,
+            totalHours: combined
+          };
+        }
+      });
+    });
+  });
+
+  return Object.values(jobHoursMap).sort((a, b) => {
+    if (b.totalHours !== a.totalHours) {
+      return b.totalHours - a.totalHours;
+    }
+    return a.jobName.localeCompare(b.jobName);
+  });
+}
+
+export { computeDashboardStats, computeEmployeeStats, computeJobsYearlyHours };

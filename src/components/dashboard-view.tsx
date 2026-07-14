@@ -12,7 +12,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { appState, getFiscalYear, getQuarterNumber, getQuarter } from "../state/state.ts";
 import { getReservationRoomLabel, formatCurrency } from "../utils/utils.ts";
-import { computeDashboardStats, computeEmployeeStats } from "../dashboard.ts";
+import { computeDashboardStats, computeEmployeeStats, computeJobsYearlyHours } from "../dashboard.ts";
 import { reconciliationState } from "../services/reconciliation.ts";
 
 function buildQuarterlyRevenuesConfig(textColor: string, gridColor: string) {
@@ -176,11 +176,12 @@ function useChart(canvasRef: RefObject<HTMLCanvasElement | null>, buildConfig: (
 
 export function DashboardView() {
   const stats = computeDashboardStats(appState.activities, appState.selected_year, appState.selected_quarters, reconciliationState.results);
+  const salaries = appState.settings.salaries || [];
+  const jobYearlyStats = computeJobsYearlyHours(appState.activities, appState.selected_year, salaries);
   const isDark = appState.settings.theme === "dark";
   const gridColor = isDark ? "#1f2937" : "#e2e8f0";
   const textColor = isDark ? "#9ca3af" : "#475569";
 
-  const salaries = appState.settings.salaries || [];
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>(() => {
     return salaries.length > 0 ? salaries[0].id : "";
   });
@@ -241,13 +242,53 @@ export function DashboardView() {
         </div>
       </div>
 
-      <div className="charts-grid" style={{ gridTemplateColumns: "1fr" }}>
+      <div className="charts-grid" style={{ gridTemplateColumns: "1fr", marginTop: "20px" }}>
         <div className="chart-card" style={{ minHeight: 320 }}>
           <div className="chart-header">
             <span className="chart-title">Volume des revenus par compte de Grand Livre (Top Comptes)</span>
           </div>
           <div className="chart-container">
             <canvas ref={accountsRef} />
+          </div>
+        </div>
+      </div>
+
+      <div className="charts-grid" style={{ gridTemplateColumns: "1fr", marginTop: "20px" }}>
+        <div className="chart-card" style={{ minHeight: "auto" }}>
+          <div className="chart-header">
+            <span className="chart-title">Heures totales par type d'emploi pour l'année financière {appState.selected_year}</span>
+          </div>
+          <div className="table-responsive">
+            <table style={{ width: "100%", fontSize: "0.85rem" }}>
+              <thead>
+                <tr>
+                  <th>Type d'emploi</th>
+                  <th className="text-right">Heures Reg.</th>
+                  <th className="text-right">Heures Sup.</th>
+                  <th className="text-right">Total Heures</th>
+                </tr>
+              </thead>
+              <tbody>
+                {jobYearlyStats.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center" style={{ color: "var(--text-muted)", padding: "16px" }}>
+                      Aucun type d'emploi configuré ou aucune heure enregistrée.
+                    </td>
+                  </tr>
+                ) : (
+                  jobYearlyStats.map(stat => (
+                    <tr key={stat.jobId}>
+                      <td style={{ fontWeight: 500 }}>{stat.jobName}</td>
+                      <td className="text-right">{stat.normalHours.toFixed(1)} h</td>
+                      <td className="text-right">{stat.overtimeHours.toFixed(1)} h</td>
+                      <td className="text-right" style={{ fontWeight: 600 }}>
+                        {stat.totalHours.toFixed(1)} h
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

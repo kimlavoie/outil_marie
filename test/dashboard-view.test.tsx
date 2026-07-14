@@ -199,7 +199,7 @@ test("lists one row per selected quarter, with the correct hours/amount aggregat
   );
 
   const { container } = render(<DashboardView />);
-  const rows = container.querySelectorAll(".table-responsive")[0].querySelectorAll("tbody tr");
+  const rows = container.querySelectorAll(".table-responsive")[1].querySelectorAll("tbody tr");
   assert.equal(rows.length, 2);
   assert.match(rows[0].textContent!, /Trimestre 1/);
   assert.match(rows[0].textContent!, /3.0 h/);
@@ -233,10 +233,49 @@ test("lists the contributing activities detail table, most recent first", () => 
   );
 
   const { container } = render(<DashboardView />);
-  const detailRows = container.querySelectorAll(".table-responsive")[1].querySelectorAll("tbody tr");
+  const detailRows = container.querySelectorAll(".table-responsive")[2].querySelectorAll("tbody tr");
   assert.equal(detailRows.length, 2);
   assert.match(detailRows[0].textContent!, /Activité de décembre/);
   assert.match(detailRows[1].textContent!, /Activité de août/);
+});
+
+test("renders the yearly job hours summary table correctly", () => {
+  setAppState(
+    baseState({
+      settings: {
+        ...baseState().settings,
+        salaries: [
+          { id: "sal-1", job: "Technicien", rate_versions: [] },
+          { id: "sal-2", job: "Hôte", rate_versions: [] }
+        ]
+      },
+      activities: [
+        activity({
+          id: "act-1",
+          date_start: "2025-08-01",
+          reservations: [
+            { staff: [{ salary_id: "sal-1", hours: 4, count: 2, overtime_hours: 1 }] }
+          ]
+        })
+      ]
+    })
+  );
+
+  const { container } = render(<DashboardView />);
+  const table = container.querySelectorAll(".table-responsive")[0];
+  const rows = table.querySelectorAll("tbody tr");
+
+  assert.equal(rows.length, 2);
+
+  // Row for Technicien: 4 * 2 = 8h reg, 1 * 2 = 2h sup. Total = 10h
+  assert.match(rows[0].textContent!, /Technicien/);
+  assert.match(rows[0].textContent!, /8.0 h/);
+  assert.match(rows[0].textContent!, /2.0 h/);
+  assert.match(rows[0].textContent!, /10.0 h/);
+
+  // Row for Hôte: 0h
+  assert.match(rows[1].textContent!, /Hôte/);
+  assert.match(rows[1].textContent!, /0.0 h/);
 });
 
 export {};

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { computeDashboardStats, computeEmployeeStats } from "../src/dashboard.ts";
+import { computeDashboardStats, computeEmployeeStats, computeJobsYearlyHours } from "../src/dashboard.ts";
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];
@@ -160,6 +160,80 @@ test("computeEmployeeStats calculates normal hours, overtime hours and amounts a
   assert.equal(result.contributingActivities[0].normalHours, 10);
   assert.equal(result.contributingActivities[0].overtimeHours, 4);
   assert.equal(result.contributingActivities[0].amount, 800);
+});
+
+test("computeJobsYearlyHours aggregates hours per job type for the selected fiscal year", () => {
+  const salariesList = [
+    { id: "sal-1", job: "Technicien", rate_versions: [] },
+    { id: "sal-2", job: "Hôte", rate_versions: [] }
+  ];
+
+  const activities = [
+    {
+      name: "Activité A",
+      date_start: "2025-08-01",
+      reservations: [
+        {
+          staff: [
+            { salary_id: "sal-1", count: 2, hours: 5, overtime_hours: 1 },
+            { salary_id: "sal-2", count: 1, hours: 4, overtime_hours: 0 }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Activité B",
+      date_start: "2026-02-01",
+      reservations: [
+        {
+          staff: [
+            { salary_id: "sal-1", count: 1, hours: 3, overtime_hours: 2 }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Activité C (autre année)",
+      date_start: "2024-08-01",
+      reservations: [
+        {
+          staff: [
+            { salary_id: "sal-1", count: 1, hours: 10, overtime_hours: 0 }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Activité Supprimée",
+      date_start: "2025-09-01",
+      deleted: true,
+      reservations: [
+        {
+          staff: [
+            { salary_id: "sal-1", count: 1, hours: 10, overtime_hours: 0 }
+          ]
+        }
+      ]
+    }
+  ];
+
+  const result = computeJobsYearlyHours(activities as any[], "2025-2026", salariesList);
+
+  assert.equal(result.length, 2);
+
+  // sal-1: Act A: (5 * 2) = 10 normal, (1 * 2) = 2 overtime. Act B: (3 * 1) = 3 normal, (2 * 1) = 2 overtime. Total: 13 normal, 4 overtime = 17 total.
+  assert.equal(result[0].jobId, "sal-1");
+  assert.equal(result[0].jobName, "Technicien");
+  assert.equal(result[0].normalHours, 13);
+  assert.equal(result[0].overtimeHours, 4);
+  assert.equal(result[0].totalHours, 17);
+
+  // sal-2: Act A: (4 * 1) = 4 normal, 0 overtime. Total: 4.
+  assert.equal(result[1].jobId, "sal-2");
+  assert.equal(result[1].jobName, "Hôte");
+  assert.equal(result[1].normalHours, 4);
+  assert.equal(result[1].overtimeHours, 0);
+  assert.equal(result[1].totalHours, 4);
 });
 
 export {};
