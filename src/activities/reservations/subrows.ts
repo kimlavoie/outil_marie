@@ -542,7 +542,7 @@ export function autoAddLinkedStaffAndFees(card: HTMLElement, roomName: string) {
   (room.linked_staff || []).forEach((s: any) => addStaffRow(staffList, s.salary_id, s.count, 0, 0, "", true));
 
   const feesList = card.querySelector<HTMLInputElement>(".room-fees-list")!;
-  (room.linked_fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, f.gl_account_code, true));
+  (room.linked_fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, "", true));
 }
 
 // Rows dropped by collectStaffFromForm/collectServicesFromForm/collectFeesFromForm because they're

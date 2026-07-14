@@ -54,7 +54,6 @@ export interface LinkedFee {
   id: string;
   description: string;
   amount: number;
-  gl_account_code: string;
 }
 
 export interface LinkedTask {
@@ -65,6 +64,7 @@ export interface LinkedTask {
 export interface GridParameter {
   id: string;
   name: string;
+  details?: string;
 }
 
 export interface GridClientType {

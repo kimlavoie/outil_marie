@@ -390,7 +390,7 @@ export function PricingGridEditor({
           ) : (
             <div className="distribution-list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {activeGrid.parameters.map((p, i) => (
-                <div key={p.id} className="distribution-row room-tarif-row" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}>
+                <div key={p.id} className="distribution-row room-tarif-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "center" }}>
                   <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
                     <span style={{ position: "absolute", left: 10, color: "var(--text-muted)", fontSize: "0.85rem", pointerEvents: "none" }}>☰</span>
                     <input
@@ -403,6 +403,16 @@ export function PricingGridEditor({
                       onChange={e => updateParameter(i, { name: e.target.value })}
                     />
                   </div>
+                  <input
+                    type="text"
+                    name={`${p.id}-details`}
+                    className="form-input"
+                    value={p.details || ""}
+                    placeholder="Détails (optionnel, ex: max 200 places)"
+                    title="Affiché au survol dans le tableau et entre parenthèses dans le formulaire d'activité"
+                    style={{ padding: "8px 12px", fontSize: "0.85rem", width: "100%" }}
+                    onChange={e => updateParameter(i, { details: e.target.value })}
+                  />
                   <button type="button" className="btn-icon" title="Supprimer" onClick={() => deleteParameter(i)}>
                     <DeleteIcon />
                   </button>
@@ -587,7 +597,7 @@ export function PricingGridEditor({
           ) : (
             <div>
               <p style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginBottom: 12 }}>Saisissez les tarifs par jour applicables pour chaque combinaison.</p>
-              <table className="detail-dist-table">
+              <table className="detail-dist-table" style={{ minWidth: 140 + activeGrid.client_types.length * 140 }}>
                 <thead>
                   <tr>
                     <th style={{ background: "transparent", borderBottom: "2px solid var(--border-color)" }}></th>
@@ -601,7 +611,8 @@ export function PricingGridEditor({
                           color: "var(--text-primary)",
                           padding: "10px 8px",
                           borderBottom: "2px solid var(--border-color)",
-                          background: "var(--bg-main)"
+                          background: "var(--bg-main)",
+                          minWidth: 140
                         }}
                       >
                         {ct.name || "(Sans nom)"}
@@ -617,21 +628,25 @@ export function PricingGridEditor({
                 <tbody>
                   {activeGrid.parameters.map(p => (
                     <tr key={p.id}>
-                      <td className="bold" style={{ whiteSpace: "nowrap", padding: "12px 10px", fontWeight: 600, color: "var(--text-primary)", borderBottom: "1px solid var(--border-color)" }}>
+                      <td
+                        className="bold"
+                        title={p.details || undefined}
+                        style={{ whiteSpace: "nowrap", padding: "12px 10px", fontWeight: 600, color: "var(--text-primary)", borderBottom: "1px solid var(--border-color)", cursor: p.details ? "help" : undefined }}
+                      >
                         {p.name || "(Sans nom)"}
                       </td>
                       {activeGrid.client_types.map(ct => {
                         const cell = activeGrid.cells.find(c => c.parameter_id === p.id && c.client_type_id === ct.id);
                         return (
                           <td key={ct.id} style={{ textAlign: "center", padding: "8px", borderBottom: "1px solid var(--border-color)" }}>
-                            <div style={{ display: "inline-flex", alignItems: "center", position: "relative", width: "100%", maxWidth: 120 }}>
+                            <div style={{ display: "inline-flex", alignItems: "center", position: "relative", width: "100%", minWidth: 100, maxWidth: 120 }}>
                               <span style={{ position: "absolute", left: 10, color: "var(--text-muted)", fontSize: "0.85rem", pointerEvents: "none" }}>$</span>
                               <input
                                 type="number"
                                 name={`cell-${p.id}-${ct.id}`}
                                 min={0}
                                 step={0.01}
-                                className="form-input"
+                                className="form-input no-spinner"
                                 value={cell ? cell.amount : ""}
                                 placeholder="0.00"
                                 style={{ padding: "8px 8px 8px 24px", fontSize: "0.85rem", textAlign: "right", width: "100%" }}

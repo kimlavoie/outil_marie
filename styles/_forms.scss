@@ -125,6 +125,11 @@ input[type="checkbox"] {
   grid-template-columns: 2fr 1fr auto;
 }
 
+/* Linked fee rows (settings) only have a description + amount field, no GL account */
+.distribution-row.linked-fee-row {
+  grid-template-columns: 2fr 1fr auto;
+}
+
 /* Reservation card in the activity form (salle + tarif + créneaux + services) */
 .reservation-card {
   border: 1px dashed var(--border-color);

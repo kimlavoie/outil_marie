@@ -118,11 +118,10 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
       }))
     );
     setLinkedFees(
-      ((room && room.linked_fees) || []).map((f: { description: string; amount: number; gl_account_code: string }) => ({
+      ((room && room.linked_fees) || []).map((f: { description: string; amount: number }) => ({
         key: generateUid("linked-fee-row"),
         desc: f.description,
-        amount: String(f.amount),
-        glCode: f.gl_account_code || ""
+        amount: String(f.amount)
       }))
     );
     setLinkedTasks(
@@ -180,7 +179,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
       return;
     }
 
-    const linkedFeesPayload: { id: string; description: string; amount: number; gl_account_code: string }[] = [];
+    const linkedFeesPayload: { id: string; description: string; amount: number }[] = [];
     let feeErrorMsg = "";
     linkedFees.forEach(row => {
       const desc = row.desc.trim();
@@ -192,7 +191,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
       } else if (!amtStr || isNaN(amt) || amt < 0) {
         feeErrorMsg = "Veuillez saisir un montant valide pour chaque frais lié.";
       } else {
-        linkedFeesPayload.push({ id: generateUid("linked-fee"), description: desc, amount: amt, gl_account_code: row.glCode });
+        linkedFeesPayload.push({ id: generateUid("linked-fee"), description: desc, amount: amt });
       }
     });
     if (feeErrorMsg) {
@@ -272,7 +271,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
         isOpen={false}
         onClose={onClose}
         onSubmit={submit}
-        width="760px"
+        width="1000px"
       >
         <div />
       </Modal>
@@ -287,7 +286,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
       isOpen={isOpen}
       onClose={onClose}
       onSubmit={submit}
-      width="780px"
+      width="1000px"
     >
       <div className="form-group-row">
         <div className="form-group" style={{ flexGrow: 1 }}>

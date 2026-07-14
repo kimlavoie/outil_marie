@@ -19,7 +19,10 @@ function buildTariffParameterOptionsHtml(roomName: string, dateStr: string, sele
   }
 
   return grid.parameters
-    .map((p: any) => `<option value="${p.id}" ${selectedParamId === p.id ? "selected" : ""}>${escapeHtml(p.name)}</option>`)
+    .map((p: any) => {
+      const details = p.details ? ` (${escapeHtml(p.details)})` : "";
+      return `<option value="${p.id}" ${selectedParamId === p.id ? "selected" : ""}>${escapeHtml(p.name)}${details}</option>`;
+    })
     .join("");
 }
 

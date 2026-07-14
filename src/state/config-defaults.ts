@@ -30,7 +30,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -44,7 +44,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -58,7 +58,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -72,7 +72,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -86,7 +86,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -100,7 +100,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -114,7 +114,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -128,7 +128,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -142,7 +142,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -156,7 +156,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -170,7 +170,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -184,7 +184,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -198,7 +198,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -212,7 +212,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -226,7 +226,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -240,7 +240,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
@@ -254,7 +254,7 @@ const DEFAULT_CONFIG = {
       ],
       linked_rooms: [] as string[],
       linked_staff: [] as { id: string; salary_id: string; count: number }[],
-      linked_fees: [] as { id: string; description: string; amount: number; gl_account_code: string }[],
+      linked_fees: [] as { id: string; description: string; amount: number }[],
       linked_tasks: [] as { id: string; description: string }[]
     }
   ],

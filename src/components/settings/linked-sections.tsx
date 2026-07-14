@@ -1,5 +1,5 @@
 import { generateUid } from "../../utils/utils.ts";
-import { DeleteIcon, GlAccountOptions } from "./common.tsx";
+import { DeleteIcon } from "./common.tsx";
 
 export interface LinkedStaffRow {
   key: string;
@@ -10,7 +10,6 @@ export interface LinkedFeeRow {
   key: string;
   desc: string;
   amount: string;
-  glCode: string;
 }
 export interface LinkedTaskRow {
   key: string;
@@ -121,14 +120,14 @@ export function LinkedFeesSection({ linkedFees, setLinkedFees }: { linkedFees: L
           type="button"
           className="btn btn-secondary"
           style={{ padding: "6px 12px", fontSize: "0.8rem" }}
-          onClick={() => setLinkedFees([...linkedFees, { key: generateUid("linked-fee-row"), desc: "", amount: "", glCode: "" }])}
+          onClick={() => setLinkedFees([...linkedFees, { key: generateUid("linked-fee-row"), desc: "", amount: "" }])}
         >
           + Ajouter
         </button>
       </div>
       <div className="distribution-list">
         {linkedFees.map((row, i) => (
-          <div key={row.key} className="distribution-row">
+          <div key={row.key} className="distribution-row linked-fee-row">
             <input
               type="text"
               name={`${row.key}-desc`}
@@ -151,16 +150,6 @@ export function LinkedFeesSection({ linkedFees, setLinkedFees }: { linkedFees: L
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               onChange={e => setLinkedFees(linkedFees.map((r, idx) => (idx === i ? { ...r, amount: e.target.value } : r)))}
             />
-            <select
-              name={`${row.key}-gl`}
-              className="select-input"
-              aria-label="Compte du grand livre associé au frais"
-              style={{ padding: "8px 12px", fontSize: "0.85rem" }}
-              value={row.glCode}
-              onChange={e => setLinkedFees(linkedFees.map((r, idx) => (idx === i ? { ...r, glCode: e.target.value } : r)))}
-            >
-              <GlAccountOptions />
-            </select>
             <button type="button" className="btn-icon" onClick={() => setLinkedFees(linkedFees.filter((_, idx) => idx !== i))}>
               <DeleteIcon />
             </button>
