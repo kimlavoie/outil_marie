@@ -183,6 +183,26 @@ function addReservationCard(reservationData: any = null) {
         </div>
         ${buildSlotRangeGeneratorHtml(uid)}
         <div class="distribution-list reservation-slots-list"></div>
+        <div
+          class="reservation-slots-days-helper"
+          style="
+            margin-top: 8px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            display: none;
+            align-items: center;
+            gap: 6px;
+          "
+        >
+          <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: var(--primary)">
+            <path
+              d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm3.3 14.3L11 12.5V7h1.5v4.7l3.7 2.2-.7 1.4z"
+            />
+          </svg>
+          <span
+            ><strong>Jours de la semaine :</strong> <span class="reservation-slots-days-list" style="color: var(--text-primary)"></span
+          ></span>
+        </div>
       </div>
 
       <div class="form-group">

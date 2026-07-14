@@ -5,16 +5,20 @@
  */
 import { appState, parseLocalDateStr } from "../../state/state.ts";
 import { escapeHtml, OTHER_ROOM_VALUE } from "../../utils/utils.ts";
-import { collectReservationsFromForm, getAggregateEventDates } from "../reservations/index.ts";
+import { collectReservationsFromForm } from "../reservations/index.ts";
 
 function updateFormDatesHelper() {
-  const helperEl = document.getElementById("form-activity-dates-helper");
-  const listEl = document.getElementById("form-activity-days-list");
-
   const reservations = collectReservationsFromForm();
 
-  if (helperEl && listEl) {
-    const { date_start: startVal, date_end: endVal } = getAggregateEventDates(reservations);
+  const cards = document.querySelectorAll<HTMLElement>("#form-activity-reservations .reservation-card");
+  cards.forEach((card, i) => {
+    const helperEl = card.querySelector<HTMLElement>(".reservation-slots-days-helper");
+    const listEl = card.querySelector<HTMLElement>(".reservation-slots-days-list");
+    if (!helperEl || !listEl) return;
+
+    const dates = ((reservations[i] && reservations[i].slots) || []).map((s: any) => s.date).filter(Boolean);
+    const startVal = dates.length ? dates.reduce((min: string, d: string) => (d < min ? d : min)) : "";
+    const endVal = dates.length ? dates.reduce((max: string, d: string) => (d > max ? d : max)) : "";
     const daysText = getDaysOfWeekInRange(startVal, endVal);
     if (daysText) {
       listEl.textContent = daysText;
@@ -22,7 +26,7 @@ function updateFormDatesHelper() {
     } else {
       helperEl.style.display = "none";
     }
-  }
+  });
 
   checkRoomReservationConflicts(reservations);
 }
