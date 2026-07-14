@@ -68,7 +68,7 @@ function freshState(marker: string) {
       theme: "dark",
       rooms: [],
       departments: [],
-      accounts: [],
+      accounts: [{ code: "892-0000-00-000", description: "SCOLAIRE" }],
       last_backup_date: "",
       backup_reminder_days: 7,
       salaries: [],
@@ -111,6 +111,11 @@ test("connectAutoBackupFile persists the handle, writes the current appState, an
   assert.equal(regFile.writes.length, 1);
   const written = JSON.parse(regFile.writes[0]);
   assert.equal(written.selected_year, "MARKER-CONNECT");
+
+  // Should also write the Excel report file
+  const excelFile = handle.files["rapport_activites.xlsx"];
+  assert.ok(excelFile);
+  assert.equal(excelFile.writes.length, 1);
 
   const status = document.getElementById("auto-backup-status")!;
   assert.match(status.textContent!, /Actif/);

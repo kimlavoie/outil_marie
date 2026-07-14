@@ -8,6 +8,7 @@
  * - backup_heure.json (every hour)
  * - backup_jour.json (every day)
  * - backup_semaine.json (every week)
+ * - rapport_activites.xlsx (Excel report updated on every database save)
  */
 import { logError } from "../../utils/logger.ts";
 import { openVersionedDb } from "../../state/db-utils.ts";
@@ -28,6 +29,7 @@ let lastWrite15Min: Date | null = null;
 let lastWriteHeure: Date | null = null;
 let lastWriteJour: Date | null = null;
 let lastWriteSemaine: Date | null = null;
+let lastWriteExcel: Date | null = null;
 
 function upgradeAutoBackupDb(db: IDBDatabase, oldVersion: number) {
   if (oldVersion < 1 && !db.objectStoreNames.contains(AUTO_BACKUP_STORE)) {
@@ -75,6 +77,7 @@ async function idbGetLastWrites(): Promise<{
   heure: Date | null;
   jour: Date | null;
   semaine: Date | null;
+  excel: Date | null;
 }> {
   const db = await openAutoBackupDb();
   return new Promise((resolve) => {
@@ -85,6 +88,7 @@ async function idbGetLastWrites(): Promise<{
     const reqH = store.get("last_write_heure");
     const reqJ = store.get("last_write_jour");
     const reqS = store.get("last_write_semaine");
+    const reqE = store.get("last_write_excel");
 
     let doneCount = 0;
     const res = {
@@ -93,11 +97,12 @@ async function idbGetLastWrites(): Promise<{
       heure: null as Date | null,
       jour: null as Date | null,
       semaine: null as Date | null,
+      excel: null as Date | null,
     };
 
     const checkDone = () => {
       doneCount++;
-      if (doneCount === 5) resolve(res);
+      if (doneCount === 6) resolve(res);
     };
 
     reqReg.onsuccess = () => { if (reqReg.result) res.regulier = new Date(reqReg.result); checkDone(); };
@@ -110,6 +115,8 @@ async function idbGetLastWrites(): Promise<{
     reqJ.onerror = checkDone;
     reqS.onsuccess = () => { if (reqS.result) res.semaine = new Date(reqS.result); checkDone(); };
     reqS.onerror = checkDone;
+    reqE.onsuccess = () => { if (reqE.result) res.excel = new Date(reqE.result); checkDone(); };
+    reqE.onerror = checkDone;
   });
 }
 
@@ -133,6 +140,7 @@ async function idbClearAllLastWrites(): Promise<void> {
     store.delete("last_write_heure");
     store.delete("last_write_jour");
     store.delete("last_write_semaine");
+    store.delete("last_write_excel");
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
@@ -210,7 +218,7 @@ function renderAutoBackupStatus(status: string, filename?: string) {
 
   container.appendChild(statusRow);
 
-  // Files grid showing detailed status of the 5 backups
+  // Files grid showing detailed status of the 6 backups
   const filesGrid = document.createElement("div");
   filesGrid.style.display = "grid";
   filesGrid.style.gridTemplateColumns = "repeat(auto-fill, minmax(200px, 1fr))";
@@ -223,7 +231,8 @@ function renderAutoBackupStatus(status: string, filename?: string) {
     { label: "Aux 15 minutes", file: "backup_15min.json", date: lastWrite15Min, showDate: false },
     { label: "À l'heure", file: "backup_heure.json", date: lastWriteHeure, showDate: false },
     { label: "À la journée", file: "backup_jour.json", date: lastWriteJour, showDate: true },
-    { label: "À la semaine", file: "backup_semaine.json", date: lastWriteSemaine, showDate: true }
+    { label: "À la semaine", file: "backup_semaine.json", date: lastWriteSemaine, showDate: true },
+    { label: "Rapport Excel", file: "rapport_activites.xlsx", date: lastWriteExcel, showDate: false }
   ];
 
   backupsInfo.forEach(item => {
@@ -294,6 +303,7 @@ async function initAutoBackup() {
     lastWriteHeure = writes.heure;
     lastWriteJour = writes.jour;
     lastWriteSemaine = writes.semaine;
+    lastWriteExcel = writes.excel;
 
     const perm = await stored.queryPermission({ mode: "readwrite" });
     renderAutoBackupStatus(perm === "granted" ? "connected" : "needs-permission", stored.name);
@@ -322,6 +332,7 @@ async function connectAutoBackupFile() {
     lastWriteHeure = null;
     lastWriteJour = null;
     lastWriteSemaine = null;
+    lastWriteExcel = null;
     await idbClearAllLastWrites();
 
     renderAutoBackupStatus("connected", handle.name);
@@ -360,6 +371,7 @@ async function disconnectAutoBackup() {
   lastWriteHeure = null;
   lastWriteJour = null;
   lastWriteSemaine = null;
+  lastWriteExcel = null;
   renderAutoBackupStatus("disconnected");
 }
 
@@ -451,6 +463,24 @@ async function writeAutoBackupNow() {
 
       lastWriteSemaine = now;
       await idbSetLastWrite("last_write_semaine", now);
+    }
+
+    // 6. Excel report: always written
+    try {
+      const xlsxModule = await import("xlsx");
+      const { generateExcelWorkbook } = await import("../excel-export.ts");
+      const wb = generateExcelWorkbook(xlsxModule);
+      const wbout = xlsxModule.write(wb, { bookType: "xlsx", type: "array" });
+
+      const fileExcel = await autoBackupHandle.getFileHandle("rapport_activites.xlsx", { create: true });
+      const writableExcel = await fileExcel.createWritable();
+      await writableExcel.write(wbout);
+      await writableExcel.close();
+
+      lastWriteExcel = now;
+      await idbSetLastWrite("last_write_excel", now);
+    } catch (excelErr) {
+      logError("backup", "écriture du rapport Excel automatique", excelErr);
     }
 
     renderAutoBackupStatus("connected", autoBackupHandle.name);
