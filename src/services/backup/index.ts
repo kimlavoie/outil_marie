@@ -9,7 +9,7 @@ import { logError } from "../../utils/logger.ts";
 import { appState, saveDatabase, saveSafetyBackupToDb, seedDatabase } from "../../state/state.ts";
 import { showToast } from "../../utils/utils.ts";
 import { exportToExcel } from "../excel-export.ts";
-import { handleJsonBackupFile } from "./restore.ts";
+import { handleJsonBackupFile, initRestoreActivityPreview } from "./restore.ts";
 import {
   checkBackupReminder,
   renderBackupView,
@@ -140,6 +140,7 @@ function initBackupHandlers() {
   initAutoBackup();
 
   initDeletedActivitiesModal();
+  initRestoreActivityPreview();
 
   // Global banner "Reconnecter" button (visible on every view)
   const autoBackupBannerBtn = document.getElementById("auto-backup-reminder-btn");

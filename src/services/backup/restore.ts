@@ -380,6 +380,36 @@ async function runSelectiveRestore(
   }
 }
 
+// Set right before hiding the restore-options modal to open the activity details preview, and
+// consumed by the details modal's close buttons (see initRestoreActivityPreview below) to reopen
+// the restore modal instead of leaving the user back at the bare backup view. Mirrors
+// returnToDeletedModalAfterPreview in reminder.ts.
+let returnToRestoreModalAfterPreview = false;
+
+// Preview reuses the existing read-only "Voir les détails" modal, fed directly from the raw
+// activity object found in the uploaded backup file (it never comes from appState, since these
+// activities may not exist in the current database yet).
+async function previewBackupActivity(act: any) {
+  returnToRestoreModalAfterPreview = true;
+  document.getElementById("restore-options-modal")?.classList.remove("active");
+
+  const { buildActivityDetailsHtml } = await import("../../activities/print-sheet.ts");
+  const content = document.getElementById("activity-details-content");
+  if (content) content.innerHTML = buildActivityDetailsHtml(act);
+  document.getElementById("activity-details-modal")?.classList.add("active");
+}
+
+function handleActivityDetailsModalClosedForRestore() {
+  if (!returnToRestoreModalAfterPreview) return;
+  returnToRestoreModalAfterPreview = false;
+  document.getElementById("restore-options-modal")?.classList.add("active");
+}
+
+function initRestoreActivityPreview() {
+  document.getElementById("activity-details-modal-close")?.addEventListener("click", handleActivityDetailsModalClosedForRestore);
+  document.getElementById("activity-details-modal-close-btn")?.addEventListener("click", handleActivityDetailsModalClosedForRestore);
+}
+
 function showRestoreOptionsModal(parsed: any) {
   // Ensure DOM elements exist (fallback for tests)
   ensureRestoreModalHtml();
@@ -389,7 +419,7 @@ function showRestoreOptionsModal(parsed: any) {
   const customPanel = document.getElementById("restore-custom-panel")!;
   const specActContainer = document.getElementById("restore-specific-activities-container")!;
   const checklist = document.getElementById("restore-activities-checklist")!;
-  const searchInput = document.getElementById("restore-activity-search") as HTMLInputElement;
+  let searchInput = document.getElementById("restore-activity-search") as HTMLInputElement;
 
   // Reset modal state
   modal.classList.add("active");
@@ -494,9 +524,18 @@ function showRestoreOptionsModal(parsed: any) {
       checkbox.checked = true; // checked by default
 
       const textSpan = document.createElement("span");
-      textSpan.style.cssText = "flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
+      textSpan.style.cssText =
+        "flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: underline dotted;";
       const dateStr = a.date_start ? ` (${a.date_start})` : "";
       textSpan.textContent = `${a.id} - ${a.name || "Sans nom"}${dateStr}`;
+      textSpan.title = "Voir l'aperçu de l'activité";
+      // Prevent the click from bubbling to the wrapping <label>, which would otherwise toggle
+      // the checkbox (labels toggle their associated control on any click inside them).
+      textSpan.addEventListener("click", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        previewBackupActivity(a);
+      });
 
       const stateBadge = document.createElement("span");
       stateBadge.style.cssText = "font-size: 0.7rem; padding: 2px 6px; border-radius: var(--radius-full); font-weight: 600;";
@@ -525,8 +564,8 @@ function showRestoreOptionsModal(parsed: any) {
 
   // Bind search input
   searchInput.replaceWith(searchInput.cloneNode(true));
-  const newSearchInput = document.getElementById("restore-activity-search") as HTMLInputElement;
-  newSearchInput.addEventListener("input", () => {
+  searchInput = document.getElementById("restore-activity-search") as HTMLInputElement;
+  searchInput.addEventListener("input", () => {
     renderActivitiesList();
   });
 
@@ -666,4 +705,4 @@ function handleJsonBackupFile(file: File) {
   reader.readAsText(file);
 }
 
-export { handleJsonBackupFile };
+export { handleJsonBackupFile, initRestoreActivityPreview };
