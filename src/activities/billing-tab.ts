@@ -46,8 +46,11 @@ export async function generateBillingLines(act: any) {
   const reservations = collectReservationsFromForm();
   const eventDateStart = getAggregateEventDates(reservations).date_start;
 
+  const clientTypeEl = document.getElementById("form-activity-client-type") as HTMLSelectElement | null;
+  const isInternal = clientTypeEl ? clientTypeEl.value === "interne" : (act.client_type === "interne");
+
   reservations.forEach((r: any) => {
-    if (r.tariff_gl_account_code && r.tariff_amount > 0) {
+    if (r.tariff_gl_account_code && r.tariff_amount > 0 && !isInternal) {
       const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
       const isHourly = room && room.rate_type === "hourly";
       if (isHourly) {

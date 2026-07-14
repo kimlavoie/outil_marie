@@ -20,7 +20,7 @@ export function SalariesPanel({ active, openModal, bump }: { active: boolean; op
   return (
     <div id="panel-salaries" className={`settings-panel${active ? " active" : ""}`}>
       <div className="settings-panel-header">
-        <h3 className="settings-panel-title">Gestion des Salaires / Emplois</h3>
+        <h3 className="settings-panel-title">Gestion de la main-d'oeuvre</h3>
         <button
           className="btn btn-primary btn-secondary"
           style={{ padding: "6px 12px", fontSize: "0.8rem" }}

@@ -74,7 +74,7 @@ test("SettingsView switches tabs on click", () => {
 test("SettingsView responds to commands", async () => {
   const { rerender, getByText } = render(<SettingsView command={{ seq: 1, type: "openPanel", panel: "salaries" }} />);
   
-  const salariesTab = getByText("Salaires");
+  const salariesTab = getByText("Main-d'oeuvre");
   assert.ok(salariesTab.className.includes("active"));
   
   // Test openAccountModal command

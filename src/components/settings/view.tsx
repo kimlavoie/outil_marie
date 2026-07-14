@@ -109,7 +109,7 @@ export function SettingsView({ command }: { command: Command }) {
     { key: "accounts", label: "Comptes GL" },
     { key: "rooms", label: "Salles & Tarifs" },
     { key: "departments", label: "Départements" },
-    { key: "salaries", label: "Salaires" },
+    { key: "salaries", label: "Main-d'oeuvre" },
     { key: "services", label: "Équipements" },
     { key: "global-tasks", label: "Tâches globales" },
     { key: "schedulable-tasks", label: "Tâches programmables" },
