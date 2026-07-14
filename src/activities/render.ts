@@ -319,15 +319,27 @@ function renderActivities() {
     let daysCount = 0;
     if (act.date_start || act.date_end) {
       if (act.date_start && act.date_end) {
-        daysCount = calculateDaysCount(act.date_start, act.date_end);
-        const start = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
-        const end = parseLocalDateStr(act.date_end).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
-        datesText = daysCount > 0 ? `${start} au ${end} (${daysCount}j)` : `⚠ ${start} au ${end} (dates invalides)`;
+        if (act.date_start === act.date_end) {
+          datesText = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { weekday: "short", month: "short", day: "numeric" });
+        } else {
+          daysCount = calculateDaysCount(act.date_start, act.date_end);
+          const start = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { weekday: "short", month: "short", day: "numeric" });
+          const end = parseLocalDateStr(act.date_end).toLocaleDateString("fr-CA", { weekday: "short", month: "short", day: "numeric" });
+          datesText = daysCount > 0
+            ? `<div style="display: flex; flex-direction: column; gap: 2px; line-height: 1.2;">
+                 <span>${start}</span>
+                 <span style="font-size: 0.75rem; color: var(--text-muted);">au ${end}</span>
+               </div>`
+            : `<div style="display: flex; flex-direction: column; gap: 2px; line-height: 1.2; color: var(--danger);">
+                 <span>⚠ ${start}</span>
+                 <span style="font-size: 0.75rem;">au ${end}</span>
+               </div>`;
+        }
       } else if (act.date_start) {
-        const start = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
+        const start = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { weekday: "short", month: "short", day: "numeric" });
         datesText = `À partir du ${start}`;
       } else if (act.date_end) {
-        const end = parseLocalDateStr(act.date_end).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
+        const end = parseLocalDateStr(act.date_end).toLocaleDateString("fr-CA", { weekday: "short", month: "short", day: "numeric" });
         datesText = `Jusqu'au ${end}`;
       }
     }

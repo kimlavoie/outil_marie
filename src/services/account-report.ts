@@ -169,9 +169,13 @@ function renderAccountReport() {
         const act = e.activity;
         let datesText = "-";
         if (act.date_start && act.date_end) {
-          const start = new Date(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
-          const end = new Date(act.date_end).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
-          datesText = `${start} au ${end}`;
+          if (act.date_start === act.date_end) {
+            datesText = new Date(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
+          } else {
+            const start = new Date(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
+            const end = new Date(act.date_end).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
+            datesText = `${start} au ${end}`;
+          }
         }
 
         tableRowsHtml += `
