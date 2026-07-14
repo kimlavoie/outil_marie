@@ -196,6 +196,7 @@ function wireSlotRangeGenerator(card: HTMLElement) {
     generatorEl.style.display = "none";
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();
+    autoSaveActivityForm();
   });
 }
 

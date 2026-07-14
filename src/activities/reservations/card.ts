@@ -419,6 +419,7 @@ function addReservationCard(reservationData: any = null) {
     addNextSlotRow(slotsList);
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();
+    autoSaveActivityForm();
   });
   wireSlotRangeGenerator(card);
   if (reservationData) {
