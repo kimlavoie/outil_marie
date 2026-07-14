@@ -123,10 +123,9 @@ const BACKUP_VIEW_HTML = `
 
   <div style="display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px">
     <div class="stat-card" style="gap: 16px">
-      <h3 class="chart-title">Sauvegarde automatique (fichier local)</h3>
+      <h3 class="chart-title">Sauvegarde automatique (dossier local)</h3>
       <p style="font-size: 0.9rem; color: var(--text-secondary)">
-        Choisissez un fichier sur votre ordinateur : l'application y réécrira automatiquement une copie à jour des données à
-        chaque modification. Fonctionne sur Chrome et Edge uniquement.
+        Choisissez un dossier sur votre ordinateur : l'application y conservera automatiquement plusieurs versions de vos données (régulier, 15 minutes, à l'heure, à la journée et à la semaine) à chaque modification. Fonctionne sur Chrome et Edge uniquement.
       </p>
       <div id="auto-backup-status" style="font-size: 0.9rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
         <!-- Populated dynamically via JS -->

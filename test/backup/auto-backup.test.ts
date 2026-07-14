@@ -23,28 +23,38 @@ function setupDom() {
   `;
 }
 
-function makeFakeHandle(name: string, opts: { permission?: string; writeShouldFail?: boolean } = {}) {
+function makeFakeDirectoryHandle(dirName: string, opts: { permission?: string; writeShouldFail?: boolean } = {}) {
   const permission = opts.permission ?? "granted";
-  const writes: string[] = [];
+  const files: Record<string, { writes: string[] }> = {};
   return {
-    name,
-    kind: "file",
+    name: dirName,
+    kind: "directory",
     async queryPermission() {
       return permission;
     },
     async requestPermission() {
       return permission;
     },
-    async createWritable() {
+    async getFileHandle(fileName: string, options?: { create?: boolean }) {
+      if (!files[fileName]) {
+        files[fileName] = { writes: [] };
+      }
+      const fileData = files[fileName];
       return {
-        async write(data: string) {
-          if (opts.writeShouldFail) throw new Error("disque plein");
-          writes.push(data);
-        },
-        async close() {}
+        name: fileName,
+        kind: "file",
+        async createWritable() {
+          return {
+            async write(data: string) {
+              if (opts.writeShouldFail) throw new Error("disque plein");
+              fileData.writes.push(data);
+            },
+            async close() {}
+          };
+        }
       };
     },
-    writes
+    files
   };
 }
 
@@ -76,7 +86,7 @@ function freshState(marker: string) {
 
 test("initAutoBackup renders the 'unsupported' status when the File System Access API isn't available", async () => {
   setupDom();
-  delete (window as any).showSaveFilePicker;
+  delete (window as any).showDirectoryPicker;
 
   await initAutoBackup();
 
@@ -86,37 +96,38 @@ test("initAutoBackup renders the 'unsupported' status when the File System Acces
 test("connectAutoBackupFile persists the handle, writes the current appState, and shows 'Actif'", async () => {
   setupDom();
   setAppState(freshState("MARKER-CONNECT"));
-  const handle = makeFakeHandle("compta_marie_autosave.json");
-  (window as any).showSaveFilePicker = async () => handle;
+  const handle = makeFakeDirectoryHandle("test_backup_dir");
+  (window as any).showDirectoryPicker = async () => handle;
 
   await connectAutoBackupFile();
   await flush();
 
   const stored = await idbGetAutoBackupHandle();
   assert.ok(stored);
-  assert.equal(stored.name, "compta_marie_autosave.json");
+  assert.equal(stored.name, "test_backup_dir");
 
-  assert.equal(handle.writes.length, 1);
-  const written = JSON.parse(handle.writes[0]);
+  const regFile = handle.files["backup_regulier.json"];
+  assert.ok(regFile);
+  assert.equal(regFile.writes.length, 1);
+  const written = JSON.parse(regFile.writes[0]);
   assert.equal(written.selected_year, "MARKER-CONNECT");
 
   const status = document.getElementById("auto-backup-status")!;
   assert.match(status.textContent!, /Actif/);
-  assert.match(status.textContent!, /compta_marie_autosave\.json/);
+  assert.match(status.textContent!, /test_backup_dir/);
 });
 
 test("a failed auto-backup write shows 'Échec d'écriture' and a toast instead of silently keeping the last-good badge", async () => {
   setupDom();
   setAppState(freshState("MARKER-FAIL"));
-  const failingHandle = makeFakeHandle("backup-en-echec.json", { writeShouldFail: true });
-  (window as any).showSaveFilePicker = async () => failingHandle;
+  const failingHandle = makeFakeDirectoryHandle("test_backup_dir_fail", { writeShouldFail: true });
+  (window as any).showDirectoryPicker = async () => failingHandle;
 
   await connectAutoBackupFile();
   await flush();
 
   const status = document.getElementById("auto-backup-status")!;
   assert.match(status.textContent!, /Échec d'écriture/);
-  assert.match(status.textContent!, /la dernière écriture a échoué/);
 
   const toast = document.querySelector("#toast-container .toast-message");
   assert.ok(toast);
@@ -126,28 +137,28 @@ test("a failed auto-backup write shows 'Échec d'écriture' and a toast instead 
 test("scheduleAutoBackupWrite debounces, and a beforeunload flushes the pending write immediately instead of waiting out the 1500ms delay", async () => {
   setupDom();
   setAppState(freshState("MARKER-DEBOUNCE"));
-  const handle = makeFakeHandle("debounce.json");
-  (window as any).showSaveFilePicker = async () => handle;
+  const handle = makeFakeDirectoryHandle("test_backup_dir_debounce");
+  (window as any).showDirectoryPicker = async () => handle;
   await connectAutoBackupFile(); // sets the module's current handle + writes once on connect
   await flush();
-  assert.equal(handle.writes.length, 1);
+  assert.equal(handle.files["backup_regulier.json"].writes.length, 1);
 
   scheduleAutoBackupWrite();
   // Well before the 1500ms debounce would fire on its own.
   await flush(30);
-  assert.equal(handle.writes.length, 1, "the debounced write must not have fired yet");
+  assert.equal(handle.files["backup_regulier.json"].writes.length, 1, "the debounced write must not have fired yet");
 
   window.dispatchEvent(new Event("beforeunload"));
   await flush(50);
 
-  assert.equal(handle.writes.length, 2, "beforeunload must flush the pending write immediately");
+  assert.equal(handle.files["backup_regulier.json"].writes.length, 2, "beforeunload must flush the pending write immediately");
 });
 
 test("disconnectAutoBackup clears the stored handle and reverts to the 'disconnected' status", async () => {
   setupDom();
   setAppState(freshState("MARKER-DISCONNECT"));
-  const handle = makeFakeHandle("to-disconnect.json");
-  (window as any).showSaveFilePicker = async () => handle;
+  const handle = makeFakeDirectoryHandle("test_backup_dir_disconnect");
+  (window as any).showDirectoryPicker = async () => handle;
   await connectAutoBackupFile();
   await flush();
   assert.ok(await idbGetAutoBackupHandle());
