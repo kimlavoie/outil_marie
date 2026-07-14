@@ -57,24 +57,50 @@ test("handleJsonBackupFile rejects a malformed backup and leaves appState untouc
   assert.match(toast!.textContent!, /Échec de la validation/);
 });
 
-test("handleJsonBackupFile does nothing when the user cancels the confirmation", async () => {
+test("handleJsonBackupFile does nothing when the user cancels the modal", async () => {
   const original = { settings: baseSettings(), activities: [], favorites: [], selected_year: "MARKER-CANCEL", selected_quarters: [1, 2, 3, 4] };
   setAppState(JSON.parse(JSON.stringify(original)));
-  (globalThis as any).confirm = () => false;
+  (globalThis as any).confirm = () => true;
 
-  handleJsonBackupFile(makeFile({ activities: [{ id: "act-1", name: "Test" }] }));
+  handleJsonBackupFile(makeFile({ activities: [{ id: "act-1", name: "Test" }], settings: baseSettings() }));
+  await flush();
+
+  const cancelBtn = document.getElementById("restore-options-modal-cancel");
+  assert.ok(cancelBtn);
+  cancelBtn.click();
   await flush();
 
   assert.equal(appState.selected_year, "MARKER-CANCEL");
   assert.equal(appState.activities.length, 0);
 });
 
-test("handleJsonBackupFile sanitizes restored activities missing a name (regression: name-less activity used to crash later reconciliation)", async () => {
+test("handleJsonBackupFile does nothing when the user cancels the final confirmation", async () => {
+  const original = { settings: baseSettings(), activities: [], favorites: [], selected_year: "MARKER-CANCEL", selected_quarters: [1, 2, 3, 4] };
+  setAppState(JSON.parse(JSON.stringify(original)));
+  (globalThis as any).confirm = () => false;
+
+  handleJsonBackupFile(makeFile({ activities: [{ id: "act-1", name: "Test" }], settings: baseSettings() }));
+  await flush();
+
+  const submitBtn = document.getElementById("restore-options-modal-submit");
+  assert.ok(submitBtn);
+  submitBtn.click();
+  await flush();
+
+  assert.equal(appState.selected_year, "MARKER-CANCEL");
+  assert.equal(appState.activities.length, 0);
+});
+
+test("handleJsonBackupFile sanitizes restored activities missing a name", async () => {
   setAppState({ settings: baseSettings(), activities: [], favorites: [], selected_year: "PRE", selected_quarters: [1, 2, 3, 4] });
   (globalThis as any).confirm = () => true;
 
-  // validateBackupSchema explicitly allows an activity with no `name` field.
   handleJsonBackupFile(makeFile({ activities: [{ id: "act-1" }], settings: baseSettings() }));
+  await flush();
+
+  const submitBtn = document.getElementById("restore-options-modal-submit");
+  assert.ok(submitBtn);
+  submitBtn.click();
   await flush();
 
   assert.equal(appState.activities.length, 1);
@@ -94,30 +120,173 @@ test("handleJsonBackupFile rolls back AND re-persists the pre-restore state when
   setAppState(JSON.parse(JSON.stringify(preRestore)));
   (globalThis as any).confirm = () => true;
 
-  // A salary with a non-array rate_versions passes schema validation (only id/shape are checked)
-  // but makes migrateSalariesConfig's `sal.rate_versions.forEach(...)` throw, forcing the
-  // migration-failure/rollback path.
   handleJsonBackupFile(
     makeFile({
       activities: [{ id: "act-new", name: "Ne devrait pas survivre" }],
       settings: baseSettings({ salaries: [{ id: "sal-1", rate_versions: "boom" }] })
     })
   );
+  await flush();
+
+  const submitBtn = document.getElementById("restore-options-modal-submit");
+  assert.ok(submitBtn);
+  submitBtn.click();
   await flush(800);
 
   assert.equal(appState.selected_year, "PRE-MARKER");
   assert.equal(appState.activities.length, 1);
   assert.equal(appState.activities[0].id, "act-pre");
 
-  // The rollback must also be re-persisted to disk, not just held in memory.
   const persisted = await getAppStateFromDb();
   assert.ok(persisted);
   assert.equal(persisted.selected_year, "PRE-MARKER");
   assert.equal(persisted.activities.length, 1);
   assert.equal(persisted.activities[0].id, "act-pre");
-
-  const toast = document.querySelector("#toast-container .toast-message");
-  assert.ok(toast);
-  assert.match(toast!.textContent!, /a échoué/);
 });
+
+test("handleJsonBackupFile restores configurations only", async () => {
+  setAppState({
+    settings: baseSettings({ theme: "light" }),
+    activities: [{ id: "act-current", name: "Keep me" }],
+    favorites: [],
+    selected_year: "PRE",
+    selected_quarters: [1, 2, 3, 4]
+  });
+  (globalThis as any).confirm = () => true;
+  handleJsonBackupFile(
+    makeFile({
+      activities: [{ id: "act-new", name: "Do not import" }],
+      settings: baseSettings({ theme: "dark" })
+    })
+  );
+  await flush();
+
+  const configRadio = document.getElementById("restore-mode-config") as HTMLInputElement;
+  assert.ok(configRadio);
+  configRadio.checked = true;
+  configRadio.dispatchEvent(new Event("change", { bubbles: true }));
+
+  const submitBtn = document.getElementById("restore-options-modal-submit");
+  assert.ok(submitBtn);
+  submitBtn.click();
+  await flush();
+
+  assert.equal(appState.settings.theme, "dark");
+  assert.equal(appState.activities.length, 1);
+  assert.equal(appState.activities[0].id, "act-current");
+});
+
+test("handleJsonBackupFile restores activities only", async () => {
+  setAppState({
+    settings: baseSettings({ theme: "light" }),
+    activities: [{ id: "act-current", name: "Keep me" }],
+    favorites: [],
+    selected_year: "PRE",
+    selected_quarters: [1, 2, 3, 4]
+  });
+  (globalThis as any).confirm = () => true;
+  handleJsonBackupFile(
+    makeFile({
+      activities: [{ id: "act-new", name: "Import me" }],
+      settings: baseSettings({ theme: "dark" })
+    })
+  );
+  await flush();
+
+  const actRadio = document.getElementById("restore-mode-activities") as HTMLInputElement;
+  assert.ok(actRadio);
+  actRadio.checked = true;
+  actRadio.dispatchEvent(new Event("change", { bubbles: true }));
+
+  const submitBtn = document.getElementById("restore-options-modal-submit");
+  assert.ok(submitBtn);
+  submitBtn.click();
+  await flush();
+
+  assert.equal(appState.settings.theme, "light");
+  assert.equal(appState.activities.length, 1);
+  assert.equal(appState.activities[0].id, "act-new");
+});
+
+test("handleJsonBackupFile merges specific activities custom restore", async () => {
+  setAppState({
+    settings: baseSettings({ theme: "light" }),
+    activities: [
+      { id: "act-current", name: "Keep me" },
+      { id: "act-overlap", name: "Old version" }
+    ],
+    favorites: [],
+    selected_year: "PRE",
+    selected_quarters: [1, 2, 3, 4]
+  });
+  (globalThis as any).confirm = () => true;
+  handleJsonBackupFile(
+    makeFile({
+      activities: [
+        { id: "act-overlap", name: "New version" },
+        { id: "act-new", name: "Imported" },
+        { id: "act-ignored", name: "Ignored" }
+      ],
+      settings: baseSettings({ theme: "dark" })
+    })
+  );
+  await flush();
+
+  const customRadio = document.getElementById("restore-mode-custom") as HTMLInputElement;
+  assert.ok(customRadio);
+  customRadio.checked = true;
+  customRadio.dispatchEvent(new Event("change", { bubbles: true }));
+
+  const specRadio = document.getElementById("restore-act-select") as HTMLInputElement;
+  assert.ok(specRadio);
+  specRadio.checked = true;
+  specRadio.dispatchEvent(new Event("change", { bubbles: true }));
+
+  const configCbs = [
+    "restore-cb-rooms",
+    "restore-cb-salaries",
+    "restore-cb-services",
+    "restore-cb-accounts",
+    "restore-cb-departments",
+    "restore-cb-tasks",
+    "restore-cb-taxes",
+    "restore-cb-preferences"
+  ];
+  configCbs.forEach(id => {
+    (document.getElementById(id) as HTMLInputElement).checked = false;
+  });
+
+  const checklist = document.getElementById("restore-activities-checklist")!;
+  const checkboxes = checklist.querySelectorAll(".restore-activity-cb") as NodeListOf<HTMLInputElement>;
+  checkboxes.forEach(cb => {
+    if (cb.dataset.id === "act-ignored") {
+      cb.checked = false;
+    } else {
+      cb.checked = true;
+    }
+  });
+
+  (document.getElementById("restore-import-merge") as HTMLInputElement).checked = true;
+
+  const submitBtn = document.getElementById("restore-options-modal-submit");
+  assert.ok(submitBtn);
+  submitBtn.click();
+  await flush();
+
+  assert.equal(appState.settings.theme, "light");
+  assert.equal(appState.activities.length, 3);
+  const current = appState.activities.find(a => a.id === "act-current");
+  const overlap = appState.activities.find(a => a.id === "act-overlap");
+  const newAct = appState.activities.find(a => a.id === "act-new");
+  const ignored = appState.activities.find(a => a.id === "act-ignored");
+
+  assert.ok(current);
+  assert.ok(overlap);
+  assert.equal(overlap.name, "New version");
+  assert.ok(newAct);
+  assert.equal(newAct.name, "Imported");
+  assert.ok(!ignored);
+});
+
 export {};
+

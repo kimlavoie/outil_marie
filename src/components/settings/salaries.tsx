@@ -184,18 +184,31 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
             type="button"
             className="btn btn-secondary"
             style={{ padding: "6px 12px", fontSize: "0.8rem" }}
-            onClick={() =>
-              setRateRows([...rateRows, newRateVersionRow()])
-            }
+            onClick={() => setRateRows([...rateRows, newRateVersionRow()])}
           >
             + Ajouter une version de tarif
           </button>
         </div>
         <p className="form-help-text" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: 12, lineHeight: "1.4" }}>
-          Saisissez les taux horaires applicables. Vous pouvez planifier des changements de taux futurs ou passés en indiquant une date d'effet (format AAAA-MM-JJ). Si aucune date n'est spécifiée, le taux s'applique par défaut (depuis toujours).
+          Saisissez les taux horaires applicables. Vous pouvez planifier des changements de taux futurs ou passés en indiquant une date
+          d'effet (format AAAA-MM-JJ). Si aucune date n'est spécifiée, le taux s'applique par défaut (depuis toujours).
         </p>
         {rateRows.length > 0 && (
-          <div className="distribution-row-header" style={{ display: "grid", gridTemplateColumns: isDirecteurTechnique ? "1.4fr 1fr 1fr auto" : undefined, gap: 12, padding: "0 0 4px 0", borderBottom: "1px solid var(--border-color)", marginBottom: 8, fontSize: "0.75rem", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: "bold" }}>
+          <div
+            className="distribution-row-header"
+            style={{
+              display: "grid",
+              gridTemplateColumns: isDirecteurTechnique ? "1.4fr 1fr 1fr auto" : undefined,
+              gap: 12,
+              padding: "0 0 4px 0",
+              borderBottom: "1px solid var(--border-color)",
+              marginBottom: 8,
+              fontSize: "0.75rem",
+              textTransform: "uppercase",
+              color: "var(--text-muted)",
+              fontWeight: "bold"
+            }}
+          >
             <div>Date d'effet</div>
             <div>{isDirecteurTechnique ? "Taux régulier ($/h)" : "Taux horaire ($/h)"}</div>
             {isDirecteurTechnique && <div>Taux temps sup. ($/h)</div>}

@@ -228,13 +228,5 @@ function populateDropdowns() {
   }
 }
 
-export {
-  applyTheme,
-  switchToView,
-  initNavigation,
-  renderView,
-  renderAll,
-  populateDropdowns,
-  renderQuickAccessAll
-};
+export { applyTheme, switchToView, initNavigation, renderView, renderAll, populateDropdowns, renderQuickAccessAll };
 export { initPeriodSelector } from "./navigation/period-selector.ts";

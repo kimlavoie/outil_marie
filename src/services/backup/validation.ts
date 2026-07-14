@@ -76,10 +76,7 @@ function validateBackupSchema(parsed: any): { valid: boolean; error?: string } {
       arrayItemsMatch(activities, (a: any) => isPlainObject(a) && isNonEmptyString(a.id)),
       "Chaque activité de la liste ('activities') doit être un objet avec un identifiant ('id') non vide."
     ],
-    [
-      new Set(activityIds).size === activityIds.length,
-      "Le fichier contient des activités avec des identifiants ('id') en double."
-    ],
+    [new Set(activityIds).size === activityIds.length, "Le fichier contient des activités avec des identifiants ('id') en double."],
     [
       arrayItemsMatch(activities, validateActivityDeepShape),
       "Une ou plusieurs activités contiennent des données invalides (réservations, distributions ou dates dont le type est incorrect)."

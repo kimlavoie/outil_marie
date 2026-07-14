@@ -96,7 +96,7 @@ export class XlsxViewer {
         `<button type="button" class="xlsx-sheet-tab${name === this.activeSheet ? " active" : ""}" data-sheet="${escapeHtml(name)}">${escapeHtml(name)}</button>`
     ).join("");
 
-    this.tabsEl.querySelectorAll<HTMLButtonElement>(".xlsx-sheet-tab").forEach((btn) => {
+    this.tabsEl.querySelectorAll<HTMLButtonElement>(".xlsx-sheet-tab").forEach(btn => {
       btn.addEventListener("click", () => {
         const sheet = btn.dataset.sheet;
         if (!sheet || sheet === this.activeSheet) return;

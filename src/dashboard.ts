@@ -155,15 +155,9 @@ function computeEmployeeStats(
   };
 }
 
-function computeJobsYearlyHours(
-  activities: any[],
-  selectedYear: string,
-  salariesList: any[]
-) {
-  const jobHoursMap: Record<
-    string,
-    { jobId: string; jobName: string; normalHours: number; overtimeHours: number; totalHours: number }
-  > = {};
+function computeJobsYearlyHours(activities: any[], selectedYear: string, salariesList: any[]) {
+  const jobHoursMap: Record<string, { jobId: string; jobName: string; normalHours: number; overtimeHours: number; totalHours: number }> =
+    {};
 
   salariesList.forEach((s: any) => {
     jobHoursMap[s.id] = {
@@ -198,7 +192,7 @@ function computeJobsYearlyHours(
           jobHoursMap[jobId].overtimeHours += overtimeHrs;
           jobHoursMap[jobId].totalHours += combined;
         } else {
-          const fallbackJobName = (salariesList.find((sal: any) => sal.id === jobId)?.job) || jobId;
+          const fallbackJobName = salariesList.find((sal: any) => sal.id === jobId)?.job || jobId;
           jobHoursMap[jobId] = {
             jobId,
             jobName: fallbackJobName,

@@ -129,7 +129,10 @@ export function PricingGridEditor({
         marginBottom: 20
       }}
     >
-      <div className="distribution-header" style={{ marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div
+        className="distribution-header"
+        style={{ marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+      >
         <span className="field-label" style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--text-primary)" }}>
           ⚙️ Configuration des Tarifs
         </span>
@@ -194,8 +197,8 @@ export function PricingGridEditor({
                 correspondant à la date de début de l'activité. Une version sans date sert de tarif par défaut (<em>Depuis toujours</em>).
               </li>
               <li>
-                <strong>1. Configurations / Types d'événement (Lignes) :</strong> Ce sont les agencements de la salle (ex: <em>Parterre</em>,{" "}
-                <em>Demi-parterre</em>) ou les types d'activités (ex: <em>Spectacle</em>, <em>Réunion</em>, <em>Réception</em>).
+                <strong>1. Configurations / Types d'événement (Lignes) :</strong> Ce sont les agencements de la salle (ex: <em>Parterre</em>
+                , <em>Demi-parterre</em>) ou les types d'activités (ex: <em>Spectacle</em>, <em>Réunion</em>, <em>Réception</em>).
               </li>
               <li>
                 <strong>2. Types de client (Colonnes) :</strong> Catégories de locataires (ex: <em>Interne</em>, <em>Privé</em>,{" "}
@@ -203,8 +206,8 @@ export function PricingGridEditor({
                 salle.
               </li>
               <li>
-                <strong>3. Saisie des tarifs :</strong> Remplissez les tarifs ({rateType === "hourly" ? "horaires" : "journaliers"}) en dollars ($) dans la table générée à l'intersection
-                de chaque ligne et colonne.
+                <strong>3. Saisie des tarifs :</strong> Remplissez les tarifs ({rateType === "hourly" ? "horaires" : "journaliers"}) en
+                dollars ($) dans la table générée à l'intersection de chaque ligne et colonne.
               </li>
             </ul>
             <div
@@ -259,7 +262,10 @@ export function PricingGridEditor({
           marginBottom: 16
         }}
       >
-        <label htmlFor="room-grid-effective-date" style={{ fontWeight: 600, fontSize: "0.8rem", display: "flex", alignItems: "center", marginBottom: 6 }}>
+        <label
+          htmlFor="room-grid-effective-date"
+          style={{ fontWeight: 600, fontSize: "0.8rem", display: "flex", alignItems: "center", marginBottom: 6 }}
+        >
           <span>Date d'entrée en vigueur de cette version</span>
           {renderHelpButton("versions")}
         </label>
@@ -286,9 +292,9 @@ export function PricingGridEditor({
               <strong style={{ color: "var(--primary)" }}>📅 Aide : Gestion des versions</strong>
             </div>
             <p style={{ margin: 0 }}>
-              Les tarifs peuvent changer avec le temps. Le système applique automatiquement la grille dont la date d'entrée en vigueur est la
-              plus récente et antérieure ou égale à la date de début de l'activité. Une version sans date sert de tarif par défaut (toujours
-              active).
+              Les tarifs peuvent changer avec le temps. Le système applique automatiquement la grille dont la date d'entrée en vigueur est
+              la plus récente et antérieure ou égale à la date de début de l'activité. Une version sans date sert de tarif par défaut
+              (toujours active).
             </p>
           </div>
         )}
@@ -301,7 +307,9 @@ export function PricingGridEditor({
           onChange={e => {
             const inputType = (e.nativeEvent as InputEvent).inputType;
             const value =
-              inputType === "deleteContentBackward" || inputType === "deleteContentForward" ? e.target.value : formatDateMask(e.target.value);
+              inputType === "deleteContentBackward" || inputType === "deleteContentForward"
+                ? e.target.value
+                : formatDateMask(e.target.value);
             updateActiveGrid({ effective_date: value });
           }}
         />
@@ -315,9 +323,18 @@ export function PricingGridEditor({
         {/* Étape 1 : Configurations / Types d'événement (Lignes) */}
         <div
           className="form-group"
-          style={{ position: "relative", padding: 14, border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", background: "var(--bg-card)" }}
+          style={{
+            position: "relative",
+            padding: 14,
+            border: "1px solid var(--border-color)",
+            borderRadius: "var(--radius-md)",
+            background: "var(--bg-card)"
+          }}
         >
-          <div className="distribution-header" style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div
+            className="distribution-header"
+            style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+          >
             <span className="field-label" style={{ fontSize: "0.85rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
               <span
                 style={{
@@ -392,9 +409,17 @@ export function PricingGridEditor({
           ) : (
             <div className="distribution-list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {activeGrid.parameters.map((p, i) => (
-                <div key={p.id} className="distribution-row room-tarif-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "center" }}>
+                <div
+                  key={p.id}
+                  className="distribution-row room-tarif-row"
+                  style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "center" }}
+                >
                   <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <span style={{ position: "absolute", left: 10, color: "var(--text-muted)", fontSize: "0.85rem", pointerEvents: "none" }}>☰</span>
+                    <span
+                      style={{ position: "absolute", left: 10, color: "var(--text-muted)", fontSize: "0.85rem", pointerEvents: "none" }}
+                    >
+                      ☰
+                    </span>
                     <input
                       type="text"
                       name={`${p.id}-name`}
@@ -427,9 +452,18 @@ export function PricingGridEditor({
         {/* Étape 2 : Types de client (Colonnes) */}
         <div
           className="form-group"
-          style={{ position: "relative", padding: 14, border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", background: "var(--bg-card)" }}
+          style={{
+            position: "relative",
+            padding: 14,
+            border: "1px solid var(--border-color)",
+            borderRadius: "var(--radius-md)",
+            background: "var(--bg-card)"
+          }}
         >
-          <div className="distribution-header" style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div
+            className="distribution-header"
+            style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+          >
             <span className="field-label" style={{ fontSize: "0.85rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
               <span
                 style={{
@@ -450,7 +484,12 @@ export function PricingGridEditor({
               <span>Types de client (Colonnes)</span>
               {renderHelpButton("clients")}
             </span>
-            <button type="button" className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: "0.75rem" }} onClick={addClientType}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ padding: "4px 10px", fontSize: "0.75rem" }}
+              onClick={addClientType}
+            >
               + Ajouter
             </button>
           </div>
@@ -500,7 +539,11 @@ export function PricingGridEditor({
           ) : (
             <div className="distribution-list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {activeGrid.client_types.map((ct, i) => (
-                <div key={ct.id} className="distribution-row room-tarif-row" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr auto", gap: 8, alignItems: "center" }}>
+                <div
+                  key={ct.id}
+                  className="distribution-row room-tarif-row"
+                  style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr auto", gap: 8, alignItems: "center" }}
+                >
                   <input
                     type="text"
                     name={`${ct.id}-name`}
@@ -531,7 +574,15 @@ export function PricingGridEditor({
       </div>
 
       {/* Étape 3 : Saisie des Tarifs (Matrice) */}
-      <div style={{ position: "relative", padding: 14, border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", background: "var(--bg-card)" }}>
+      <div
+        style={{
+          position: "relative",
+          padding: 14,
+          border: "1px solid var(--border-color)",
+          borderRadius: "var(--radius-md)",
+          background: "var(--bg-card)"
+        }}
+      >
         <div className="distribution-header" style={{ marginBottom: 10 }}>
           <span className="field-label" style={{ fontSize: "0.85rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
             <span
@@ -577,7 +628,10 @@ export function PricingGridEditor({
             <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "var(--primary)" }}>💡 Aide : Grille des tarifs</strong>
             </div>
-            <p style={{ margin: 0 }}>Saisissez le tarif {rateType === "hourly" ? "par heure" : "par jour"} en dollars ($) pour chaque combinaison (agencement de la salle × type de client).</p>
+            <p style={{ margin: 0 }}>
+              Saisissez le tarif {rateType === "hourly" ? "par heure" : "par jour"} en dollars ($) pour chaque combinaison (agencement de la
+              salle × type de client).
+            </p>
           </div>
         )}
 
@@ -593,12 +647,14 @@ export function PricingGridEditor({
                 borderRadius: "var(--radius-sm)"
               }}
             >
-              💡 Remplissez d'abord les étapes 1 (Configurations / Types d'événement) et 2 (Types de client) ci-dessus pour générer la grille des
-              tarifs.
+              💡 Remplissez d'abord les étapes 1 (Configurations / Types d'événement) et 2 (Types de client) ci-dessus pour générer la
+              grille des tarifs.
             </div>
           ) : (
             <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginBottom: 12 }}>Saisissez les tarifs {rateType === "hourly" ? "par heure" : "par jour"} applicables pour chaque combinaison.</p>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginBottom: 12 }}>
+                Saisissez les tarifs {rateType === "hourly" ? "par heure" : "par jour"} applicables pour chaque combinaison.
+              </p>
               <table className="detail-dist-table" style={{ minWidth: 140 + activeGrid.client_types.length * 140 }}>
                 <thead>
                   <tr>
@@ -619,7 +675,9 @@ export function PricingGridEditor({
                       >
                         {ct.name || "(Sans nom)"}
                         {ct.gl_account_code && (
-                          <span style={{ display: "block", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: "normal", marginTop: 2 }}>
+                          <span
+                            style={{ display: "block", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: "normal", marginTop: 2 }}
+                          >
                             GL: {ct.gl_account_code}
                           </span>
                         )}
@@ -633,7 +691,14 @@ export function PricingGridEditor({
                       <td
                         className="bold"
                         title={p.details || undefined}
-                        style={{ whiteSpace: "nowrap", padding: "12px 10px", fontWeight: 600, color: "var(--text-primary)", borderBottom: "1px solid var(--border-color)", cursor: p.details ? "help" : undefined }}
+                        style={{
+                          whiteSpace: "nowrap",
+                          padding: "12px 10px",
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                          borderBottom: "1px solid var(--border-color)",
+                          cursor: p.details ? "help" : undefined
+                        }}
                       >
                         {p.name || "(Sans nom)"}
                       </td>
@@ -641,8 +706,27 @@ export function PricingGridEditor({
                         const cell = activeGrid.cells.find(c => c.parameter_id === p.id && c.client_type_id === ct.id);
                         return (
                           <td key={ct.id} style={{ textAlign: "center", padding: "8px", borderBottom: "1px solid var(--border-color)" }}>
-                            <div style={{ display: "inline-flex", alignItems: "center", position: "relative", width: "100%", minWidth: 100, maxWidth: 120 }}>
-                              <span style={{ position: "absolute", left: 10, color: "var(--text-muted)", fontSize: "0.85rem", pointerEvents: "none" }}>$</span>
+                            <div
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                position: "relative",
+                                width: "100%",
+                                minWidth: 100,
+                                maxWidth: 120
+                              }}
+                            >
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  left: 10,
+                                  color: "var(--text-muted)",
+                                  fontSize: "0.85rem",
+                                  pointerEvents: "none"
+                                }}
+                              >
+                                $
+                              </span>
                               <input
                                 type="number"
                                 name={`cell-${p.id}-${ct.id}`}

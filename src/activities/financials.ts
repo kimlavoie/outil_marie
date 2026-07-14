@@ -4,7 +4,12 @@
  * (activities-history.ts, main.ts, navigation.ts, calendar-view.tsx, reconciliation-view.tsx,
  * contract-generator.ts) don't need to change.
  */
-export { computeFormRevenueSubtotal, updateSubmissionFinancialSummary, computeActivityFinancials, updateDistributionTotal } from "./financial-summary.ts";
+export {
+  computeFormRevenueSubtotal,
+  updateSubmissionFinancialSummary,
+  computeActivityFinancials,
+  updateDistributionTotal
+} from "./financial-summary.ts";
 export {
   buildPrintActivitySheetHtml,
   printActivitySheet,

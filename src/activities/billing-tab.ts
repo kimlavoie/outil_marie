@@ -47,7 +47,7 @@ export async function generateBillingLines(act: any) {
   const eventDateStart = getAggregateEventDates(reservations).date_start;
 
   const clientTypeEl = document.getElementById("form-activity-client-type") as HTMLSelectElement | null;
-  const isInternal = clientTypeEl ? clientTypeEl.value === "interne" : (act.client_type === "interne");
+  const isInternal = clientTypeEl ? clientTypeEl.value === "interne" : act.client_type === "interne";
 
   reservations.forEach((r: any) => {
     if (r.tariff_gl_account_code && r.tariff_amount > 0 && !isInternal) {
@@ -74,9 +74,10 @@ export async function generateBillingLines(act: any) {
     const salary = ((appState.settings.salaries as any[]) || []).find((s: any) => s.id === salaryId);
     if (!salary) return;
 
-    const glAccountCode = row.querySelector<HTMLInputElement>(".staff-gl-select-wrapper .searchable-select-value")?.value ||
-                          row.querySelector<HTMLSelectElement>(".staff-gl-select")?.value ||
-                          "";
+    const glAccountCode =
+      row.querySelector<HTMLInputElement>(".staff-gl-select-wrapper .searchable-select-value")?.value ||
+      row.querySelector<HTMLSelectElement>(".staff-gl-select")?.value ||
+      "";
     if (!glAccountCode) return;
 
     const useCustomRate = row.querySelector<HTMLInputElement>(".staff-use-custom-rate")?.checked || false;
@@ -112,9 +113,11 @@ export async function generateBillingLines(act: any) {
     let rate = 0;
     if (tarifId === "__custom__") {
       const wrapper = row.closest(".distribution-row-wrapper");
-      glAccountCode = wrapper ? (wrapper.querySelector<HTMLInputElement>(".service-custom-gl-select-wrapper .searchable-select-value")?.value ||
-                                 wrapper.querySelector<HTMLSelectElement>(".service-custom-gl-select")?.value ||
-                                 "") : "";
+      glAccountCode = wrapper
+        ? wrapper.querySelector<HTMLInputElement>(".service-custom-gl-select-wrapper .searchable-select-value")?.value ||
+          wrapper.querySelector<HTMLSelectElement>(".service-custom-gl-select")?.value ||
+          ""
+        : "";
       rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!.value) || 0 : 0;
     } else {
       const tarif = service && ((service.tarifs as any[]) || []).find((t: any) => t.id === tarifId);

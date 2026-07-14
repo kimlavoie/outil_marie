@@ -200,3 +200,47 @@
   gap: 12px;
   background-color: var(--bg-main);
 }
+
+/* Option card style for restore selections */
+.restore-option-card {
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background-color: var(--bg-card);
+
+  &:hover {
+    border-color: var(--primary);
+    background-color: var(--primary-light);
+  }
+
+  &.active {
+    border-color: var(--primary);
+    background-color: var(--primary-light);
+    box-shadow: var(--shadow-glow);
+  }
+
+  input[type="radio"] {
+    margin-top: 4px;
+    cursor: pointer;
+  }
+}
+
+.restore-activities-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 3px;
+  }
+}
+

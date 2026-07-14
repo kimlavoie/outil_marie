@@ -54,14 +54,11 @@ function restoreActivitySnapshot(snapshot: any) {
   fillActivityFormFields(appState.activities[idx]);
   renderActivityStateBar(appState.activities[idx]);
 
-  saveDatabaseOrRollback(
-    () => {
-      appState.activities[idx] = previous;
-      fillActivityFormFields(previous);
-      renderActivityStateBar(previous);
-    },
-    "L'annulation/rétablissement n'a pas été enregistré. Réessayez."
-  ).then(() => {
+  saveDatabaseOrRollback(() => {
+    appState.activities[idx] = previous;
+    fillActivityFormFields(previous);
+    renderActivityStateBar(previous);
+  }, "L'annulation/rétablissement n'a pas été enregistré. Réessayez.").then(() => {
     if (reconciliationState.ledgerTransactions.length > 0) {
       reconcileLedger();
     }

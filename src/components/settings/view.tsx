@@ -130,7 +130,11 @@ export function SettingsView({ command }: { command: Command }) {
         <div className="settings-content">
           <AccountsPanel active={activeTab === "accounts"} bump={bump} openModal={v => setModal("accounts", setAccountModalCode, v)} />
           <RoomsPanel active={activeTab === "rooms"} openModal={v => setModal("rooms", setRoomModalName, v)} bump={bump} />
-          <DepartmentsPanel active={activeTab === "departments"} openModal={v => setModal("departments", setDeptModalName, v)} bump={bump} />
+          <DepartmentsPanel
+            active={activeTab === "departments"}
+            openModal={v => setModal("departments", setDeptModalName, v)}
+            bump={bump}
+          />
           <SalariesPanel active={activeTab === "salaries"} openModal={v => setModal("salaries", setSalaryModalId, v)} bump={bump} />
           <ServicesPanel active={activeTab === "services"} openModal={v => setModal("services", setServiceModalId, v)} bump={bump} />
           <GlobalTasksPanel

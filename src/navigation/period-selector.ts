@@ -104,13 +104,10 @@ function initPeriodSelector() {
         appState.selected_quarters = appState.selected_quarters.filter(x => x !== q);
       }
 
-      saveDatabaseOrRollback(
-        () => {
-          appState.selected_quarters = prevQuarters;
-          btn.classList.toggle("active");
-        },
-        "La sélection de trimestre n'a pas été enregistrée. Réessayez."
-      ).then(() => {
+      saveDatabaseOrRollback(() => {
+        appState.selected_quarters = prevQuarters;
+        btn.classList.toggle("active");
+      }, "La sélection de trimestre n'a pas été enregistrée. Réessayez.").then(() => {
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();
         }

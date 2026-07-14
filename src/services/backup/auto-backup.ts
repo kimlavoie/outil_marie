@@ -80,7 +80,7 @@ async function idbGetLastWrites(): Promise<{
   excel: Date | null;
 }> {
   const db = await openAutoBackupDb();
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const tx = db.transaction(AUTO_BACKUP_STORE, "readonly");
     const store = tx.objectStore(AUTO_BACKUP_STORE);
     const reqReg = store.get("last_write_regulier");
@@ -97,7 +97,7 @@ async function idbGetLastWrites(): Promise<{
       heure: null as Date | null,
       jour: null as Date | null,
       semaine: null as Date | null,
-      excel: null as Date | null,
+      excel: null as Date | null
     };
 
     const checkDone = () => {
@@ -105,17 +105,35 @@ async function idbGetLastWrites(): Promise<{
       if (doneCount === 6) resolve(res);
     };
 
-    reqReg.onsuccess = () => { if (reqReg.result) res.regulier = new Date(reqReg.result); checkDone(); };
+    reqReg.onsuccess = () => {
+      if (reqReg.result) res.regulier = new Date(reqReg.result);
+      checkDone();
+    };
     reqReg.onerror = checkDone;
-    req15.onsuccess = () => { if (req15.result) res.min15 = new Date(req15.result); checkDone(); };
+    req15.onsuccess = () => {
+      if (req15.result) res.min15 = new Date(req15.result);
+      checkDone();
+    };
     req15.onerror = checkDone;
-    reqH.onsuccess = () => { if (reqH.result) res.heure = new Date(reqH.result); checkDone(); };
+    reqH.onsuccess = () => {
+      if (reqH.result) res.heure = new Date(reqH.result);
+      checkDone();
+    };
     reqH.onerror = checkDone;
-    reqJ.onsuccess = () => { if (reqJ.result) res.jour = new Date(reqJ.result); checkDone(); };
+    reqJ.onsuccess = () => {
+      if (reqJ.result) res.jour = new Date(reqJ.result);
+      checkDone();
+    };
     reqJ.onerror = checkDone;
-    reqS.onsuccess = () => { if (reqS.result) res.semaine = new Date(reqS.result); checkDone(); };
+    reqS.onsuccess = () => {
+      if (reqS.result) res.semaine = new Date(reqS.result);
+      checkDone();
+    };
     reqS.onerror = checkDone;
-    reqE.onsuccess = () => { if (reqE.result) res.excel = new Date(reqE.result); checkDone(); };
+    reqE.onsuccess = () => {
+      if (reqE.result) res.excel = new Date(reqE.result);
+      checkDone();
+    };
     reqE.onerror = checkDone;
   });
 }
@@ -190,7 +208,8 @@ function renderAutoBackupStatus(status: string, filename?: string) {
   statusRow.style.marginBottom = "8px";
 
   const badge = document.createElement("span");
-  badge.className = status === "connected" ? "badge badge-success" : status === "write-error" ? "badge badge-danger" : "badge badge-warning";
+  badge.className =
+    status === "connected" ? "badge badge-success" : status === "write-error" ? "badge badge-danger" : "badge badge-warning";
   badge.textContent = status === "connected" ? "Actif" : status === "write-error" ? "Échec d'écriture" : "Action requise";
   statusRow.appendChild(badge);
 
@@ -417,7 +436,7 @@ async function writeAutoBackupNow() {
     await idbSetLastWrite("last_write_regulier", now);
 
     // 2. 15 minutes backup
-    if (!lastWrite15Min || (now.getTime() - lastWrite15Min.getTime() >= 15 * 60 * 1000)) {
+    if (!lastWrite15Min || now.getTime() - lastWrite15Min.getTime() >= 15 * 60 * 1000) {
       const file15 = await autoBackupHandle.getFileHandle("backup_15min.json", { create: true });
       const writable15 = await file15.createWritable();
       await writable15.write(JSON.stringify(appState, null, 2));
@@ -428,7 +447,7 @@ async function writeAutoBackupNow() {
     }
 
     // 3. Hourly backup
-    if (!lastWriteHeure || (now.getTime() - lastWriteHeure.getTime() >= 60 * 60 * 1000)) {
+    if (!lastWriteHeure || now.getTime() - lastWriteHeure.getTime() >= 60 * 60 * 1000) {
       const fileH = await autoBackupHandle.getFileHandle("backup_heure.json", { create: true });
       const writableH = await fileH.createWritable();
       await writableH.write(JSON.stringify(appState, null, 2));
@@ -439,11 +458,11 @@ async function writeAutoBackupNow() {
     }
 
     // 4. Daily backup
-    const isDifferentDay = !lastWriteJour || (
+    const isDifferentDay =
+      !lastWriteJour ||
       now.getFullYear() !== lastWriteJour.getFullYear() ||
       now.getMonth() !== lastWriteJour.getMonth() ||
-      now.getDate() !== lastWriteJour.getDate()
-    );
+      now.getDate() !== lastWriteJour.getDate();
     if (isDifferentDay) {
       const fileJ = await autoBackupHandle.getFileHandle("backup_jour.json", { create: true });
       const writableJ = await fileJ.createWritable();
@@ -455,7 +474,7 @@ async function writeAutoBackupNow() {
     }
 
     // 5. Weekly backup
-    if (!lastWriteSemaine || (now.getTime() - lastWriteSemaine.getTime() >= 7 * 24 * 60 * 60 * 1000)) {
+    if (!lastWriteSemaine || now.getTime() - lastWriteSemaine.getTime() >= 7 * 24 * 60 * 60 * 1000) {
       const fileS = await autoBackupHandle.getFileHandle("backup_semaine.json", { create: true });
       const writableS = await fileS.createWritable();
       await writableS.write(JSON.stringify(appState, null, 2));

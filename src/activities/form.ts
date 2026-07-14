@@ -31,8 +31,23 @@ import { renderFileLinkStatus } from "./file-links/index.ts";
 import { renderSupportingDocsStatus } from "./supporting-docs/index.ts";
 import { addReservationCard, addSlotRow, initReservationsSection } from "./reservations/index.ts";
 
-import { initNewActivityModal, openNewActivityModal, closeNewActivityModal, createActivity, createDraftActivity, duplicateActivityAndOpen } from "./new-activity-modal.ts";
-import { applyActivityFormMode, getActivityFormMode, initActivityModeToggle, switchActivityTab, renderActivityStateBar, updateFormTabIndicators, commitActivityPatch } from "./form-state-bar.ts";
+import {
+  initNewActivityModal,
+  openNewActivityModal,
+  closeNewActivityModal,
+  createActivity,
+  createDraftActivity,
+  duplicateActivityAndOpen
+} from "./new-activity-modal.ts";
+import {
+  applyActivityFormMode,
+  getActivityFormMode,
+  initActivityModeToggle,
+  switchActivityTab,
+  renderActivityStateBar,
+  updateFormTabIndicators,
+  commitActivityPatch
+} from "./form-state-bar.ts";
 import { renderPlanningTab, generatePlanningTasks, addPlanningTaskRow } from "./planning-tab.ts";
 import { generateBillingLines, renderBillingStateStatus } from "./billing-tab.ts";
 

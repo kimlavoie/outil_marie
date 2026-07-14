@@ -4,7 +4,14 @@
  */
 import { logError } from "../utils/logger.ts";
 import { appState, getFiscalYear, getQuarterNumber, getActivePricingGrid, getFlattenedRoomTarifs } from "../state/state.ts";
-import { showToast, showLoadingOverlay, hideLoadingOverlay, getRoomsTariffTotal, getActivityReferences, getReservationRoomLabel } from "../utils/utils.ts";
+import {
+  showToast,
+  showLoadingOverlay,
+  hideLoadingOverlay,
+  getRoomsTariffTotal,
+  getActivityReferences,
+  getReservationRoomLabel
+} from "../utils/utils.ts";
 
 // Converts a 1-based column index to its Excel letter (1 -> "A", 27 -> "AA"), exported alongside
 // runExportToExcel so both can be exercised directly by tests without going through the

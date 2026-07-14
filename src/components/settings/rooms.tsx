@@ -51,7 +51,9 @@ export function RoomsPanel({ active, openModal, bump }: { active: boolean; openM
           const tarifs = getFlattenedRoomTarifs(r, "");
           const unit = r.rate_type === "hourly" ? "h" : "jour";
           const tarifsDesc = tarifs.length
-            ? tarifs.map((t: { description: string; amount: number }) => `${t.description}: ${formatCurrency(t.amount)}/${unit}`).join(" · ")
+            ? tarifs
+                .map((t: { description: string; amount: number }) => `${t.description}: ${formatCurrency(t.amount)}/${unit}`)
+                .join(" · ")
             : "Aucun tarif défini";
           const versionCount = (r.pricing_grids || []).length;
           const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
@@ -344,9 +346,20 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
         </div>
       </div>
 
-      <PricingGridEditor grids={grids} setGrids={setGrids} activeGridIndex={activeGridIndex} setActiveGridIndex={setActiveGridIndex} rateType={rateType} />
+      <PricingGridEditor
+        grids={grids}
+        setGrids={setGrids}
+        activeGridIndex={activeGridIndex}
+        setActiveGridIndex={setActiveGridIndex}
+        rateType={rateType}
+      />
 
-      <LinkedRoomsSection rooms={appState.settings.rooms} originalName={originalName} linkedRooms={linkedRooms} toggleLinkedRoom={toggleLinkedRoom} />
+      <LinkedRoomsSection
+        rooms={appState.settings.rooms}
+        originalName={originalName}
+        linkedRooms={linkedRooms}
+        toggleLinkedRoom={toggleLinkedRoom}
+      />
 
       <LinkedStaffSection linkedStaff={linkedStaff} setLinkedStaff={setLinkedStaff} salaries={appState.settings.salaries || []} />
 

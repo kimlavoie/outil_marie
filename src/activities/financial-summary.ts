@@ -58,7 +58,13 @@ function overrideMarkerHtml(override: TaxOverride | undefined): string {
 // updateDistributionTotal() (which uses the subtotal, untaxed, as the reference the entered GL
 // distributions should add up to — the settings.accounts codes are all revenue accounts, no tax
 // account exists among them).
-function computeFormRevenueSubtotal(): { roomsTotal: number; staffTotal: number; servicesTotal: number; feesTotal: number; subtotal: number } {
+function computeFormRevenueSubtotal(): {
+  roomsTotal: number;
+  staffTotal: number;
+  servicesTotal: number;
+  feesTotal: number;
+  subtotal: number;
+} {
   const reservations = collectReservationsFromForm();
   const roomsTotal = getRoomsTariffTotal({ reservations });
   const eventDateStart = getAggregateEventDates(reservations).date_start;
@@ -111,9 +117,15 @@ function computeFormRevenueSubtotal(): { roomsTotal: number; staffTotal: number;
   const clientTypeEl = document.getElementById("form-activity-client-type") as HTMLSelectElement | null;
   const internalId = (document.getElementById("form-activity-internal-id") as HTMLInputElement | null)?.value;
   const act = appState.activities.find((a: any) => a.id === internalId);
-  const isInternal = clientTypeEl ? clientTypeEl.value === "interne" : (act ? act.client_type === "interne" : false);
+  const isInternal = clientTypeEl ? clientTypeEl.value === "interne" : act ? act.client_type === "interne" : false;
 
-  return { roomsTotal, staffTotal, servicesTotal, feesTotal, subtotal: (isInternal ? 0 : roomsTotal) + staffTotal + servicesTotal + feesTotal };
+  return {
+    roomsTotal,
+    staffTotal,
+    servicesTotal,
+    feesTotal,
+    subtotal: (isInternal ? 0 : roomsTotal) + staffTotal + servicesTotal + feesTotal
+  };
 }
 
 // Recomputes and displays the room/personnel/frais subtotal, TPS, TVQ, and total. TPS/TVQ use
@@ -250,5 +262,11 @@ function updateDistributionTotal() {
   }
 }
 
-export { computeFormRevenueSubtotal, updateSubmissionFinancialSummary, computeActivityFinancials, updateDistributionTotal, overrideMarkerHtml };
+export {
+  computeFormRevenueSubtotal,
+  updateSubmissionFinancialSummary,
+  computeActivityFinancials,
+  updateDistributionTotal,
+  overrideMarkerHtml
+};
 export type { TaxOverride };

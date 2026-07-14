@@ -34,7 +34,6 @@ window.addEventListener("unhandledrejection", e => {
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
-
   await loadDatabase();
   applyTheme(appState.settings.theme || "dark");
   renderActivityDrawerShell();

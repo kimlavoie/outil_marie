@@ -5,7 +5,15 @@
  * Split out of activities-financials.ts (see that file for the rest of the module's history).
  */
 import { appState, EVENT_TYPES } from "../state/state.ts";
-import { formatCurrency, escapeHtml, getReservationRoomLabel, showLoadingOverlay, hideLoadingOverlay, elById, calculateHoursFromTimes } from "../utils/utils.ts";
+import {
+  formatCurrency,
+  escapeHtml,
+  getReservationRoomLabel,
+  showLoadingOverlay,
+  hideLoadingOverlay,
+  elById,
+  calculateHoursFromTimes
+} from "../utils/utils.ts";
 import { isNonEmptyString } from "../utils/validation.ts";
 import { getActivityStateLabel } from "./render.ts";
 import { computeActivityFinancials, overrideMarkerHtml } from "./financial-summary.ts";

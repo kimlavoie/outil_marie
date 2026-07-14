@@ -7,7 +7,13 @@ import { scheduleAutoBackupWrite } from "../services/backup/auto-backup.ts";
 
 import { type AppState, appState, setAppState } from "./store.ts";
 import { getDefaultFiscalYear } from "./date-helpers.ts";
-import { sanitizeActivitiesList, migrateRoomsConfig, migrateSalariesConfig, migrateServicesConfig, migrateActivities } from "./migrations.ts";
+import {
+  sanitizeActivitiesList,
+  migrateRoomsConfig,
+  migrateSalariesConfig,
+  migrateServicesConfig,
+  migrateActivities
+} from "./migrations.ts";
 import { getAppStateFromDb, saveAppStateToDb, saveSafetyBackupToDb, clearAllActivityVersionsFromDb } from "./db.ts";
 
 // Free technical services (no fee): paid technical items (location de projecteur, piano à
@@ -292,7 +298,15 @@ export {
 };
 
 export { activityMatchesTask } from "./tasks.ts";
-export { getFiscalYear, getQuarterNumber, getDefaultFiscalYear, getFiscalYearRange, getQuarter, parseLocalDateStr, formatDateStrLocal } from "./date-helpers.ts";
+export {
+  getFiscalYear,
+  getQuarterNumber,
+  getDefaultFiscalYear,
+  getFiscalYearRange,
+  getQuarter,
+  parseLocalDateStr,
+  formatDateStrLocal
+} from "./date-helpers.ts";
 export {
   openAppDb,
   getReconDecisionsFromDb,
@@ -307,7 +321,13 @@ export {
   saveSafetyBackupToDb,
   getSafetyBackupsFromDb
 } from "./db.ts";
-export { sanitizeActivitiesList, migrateRoomsConfig, migrateSalariesConfig, migrateServicesConfig, migrateActivities } from "./migrations.ts";
+export {
+  sanitizeActivitiesList,
+  migrateRoomsConfig,
+  migrateSalariesConfig,
+  migrateServicesConfig,
+  migrateActivities
+} from "./migrations.ts";
 export {
   getActivePricingGrid,
   getActiveRateVersionField,

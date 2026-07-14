@@ -69,13 +69,10 @@ function showActivityContextMenu(e: MouseEvent, id: string) {
           target.deleted = true;
         }
         appState.favorites = (appState.favorites || []).filter((f: any) => f !== id);
-        saveDatabaseOrRollback(
-          () => {
-            if (target) target.deleted = prevDeleted;
-            appState.favorites = prevFavorites;
-          },
-          "La suppression n'a pas été enregistrée. Réessayez."
-        ).then(() => {
+        saveDatabaseOrRollback(() => {
+          if (target) target.deleted = prevDeleted;
+          appState.favorites = prevFavorites;
+        }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => {
           if (reconciliationState.ledgerTransactions.length > 0) {
             reconcileLedger();
           }

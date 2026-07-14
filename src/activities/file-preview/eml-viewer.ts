@@ -123,10 +123,7 @@ function findBestBody(raw: string, depth = 0): { html: string | null; text: stri
 }
 
 function renderEmlPreview(mount: HTMLElement, buffer: ArrayBuffer): void {
-  const raw = new TextDecoder("utf-8")
-    .decode(buffer)
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n");
+  const raw = new TextDecoder("utf-8").decode(buffer).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const { headers } = splitHeadersAndBody(raw);
   const subject = decodeEncodedWords(headers.get("subject") || "(sans objet)");
   const from = decodeEncodedWords(headers.get("from") || "");

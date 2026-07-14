@@ -37,7 +37,7 @@ const HELP_SECTIONS: HelpSection[] = [
         Faites un clic droit sur n'importe quelle ligne d'activité du journal des activités pour ouvrir un menu d'actions rapides : 
         <em>Ajouter/Retirer des accès rapides (favoris)</em>, <em>Ouvrir dans un nouvel onglet</em>, <em>Voir les détails</em>, <em>Dupliquer</em> ou <em>Supprimer</em>.
       </p>
-    `,
+    `
   },
   {
     icon: "⚖️",
@@ -68,7 +68,7 @@ const HELP_SECTIONS: HelpSection[] = [
           </ul>
         </li>
       </ol>
-    `,
+    `
   },
   {
     icon: "📊",
@@ -86,7 +86,7 @@ const HELP_SECTIONS: HelpSection[] = [
         <li><strong>Statistiques d'employés</strong> : Utilisez la barre de recherche des employés en bas de page pour consulter le cumul des heures régulières, des heures supplémentaires et du coût salarial total par employé pour l'année.</li>
       </ul>
       <p>💡 <em>Astuce :</em> Utilisez le sélecteur de période en haut de l'écran pour filtrer les statistiques par année financière et par trimestres (T1 à T4).</p>
-    `,
+    `
   },
   {
     icon: "⚙️",
@@ -104,7 +104,7 @@ const HELP_SECTIONS: HelpSection[] = [
           Pour chaque salle, associez des configurations de salle (lignes de la matrice) et des types de client (colonnes de la matrice) pour générer automatiquement une grille de prix journaliers. Vous pouvez y ajouter des dates d'effet pour changer les tarifs dans le temps. S'il n'y a pas de cas particulier, créez une configuration simple nommée "Standard".
         </li>
       </ul>
-    `,
+    `
   },
   {
     icon: "💾",
@@ -122,7 +122,7 @@ const HELP_SECTIONS: HelpSection[] = [
       <p><strong>Restaurer mes données :</strong></p>
       <p>En cas de changement d'ordinateur ou de suppression d'historique de navigateur, retournez dans <strong>Sauvegarde & Exportations</strong>, cliquez sur "Restaurer" et sélectionnez votre fichier JSON sauvegardé pour retrouver toutes vos données.</p>
       <p><strong>Exportation Excel :</strong> Vous pouvez également faire un export Excel complet de vos données à des fins d'archivage ou d'analyse externe.</p>
-    `,
+    `
   },
   {
     icon: "⌨️",
@@ -164,7 +164,7 @@ const HELP_SECTIONS: HelpSection[] = [
         </tbody>
       </table>
       <p>💡 <em>Astuce navigation :</em> Utilisez le bouton de bascule de thème en bas à gauche pour passer du mode Clair au mode Sombre selon votre confort visuel.</p>
-    `,
+    `
   },
   {
     icon: "❓",
@@ -180,8 +180,8 @@ const HELP_SECTIONS: HelpSection[] = [
         <li><strong>Grand Livre (GL)</strong> : Registre comptable officiel externe du Cégep qui recense toutes les écritures financières.</li>
         <li><strong>COBA</strong> : Système de gestion du cégep où sont enregistrées les réservations scolaires officielles.</li>
       </ul>
-    `,
-  },
+    `
+  }
 ];
 
 export function renderHelpCenter(): void {

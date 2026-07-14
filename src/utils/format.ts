@@ -58,8 +58,8 @@ function calculateHoursFromTimes(start: string, end: string): number {
   const [startH, startM] = start.split(":").map(Number);
   const [endH, endM] = end.split(":").map(Number);
   if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) return 0;
-  
-  let diffMin = (endH * 60 + endM) - (startH * 60 + startM);
+
+  let diffMin = endH * 60 + endM - (startH * 60 + startM);
   if (diffMin < 0) {
     diffMin += 24 * 60; // Shift crosses midnight
   }

@@ -112,7 +112,9 @@ function closeFilePreviewModal(): void {
   // A PdfViewer/XlsxViewer in pseudo-fullscreen moves its element to document.body; clearing the
   // mount here would otherwise leave that detached element behind since it's no longer a
   // descendant of #file-preview-mount.
-  const orphanedFullscreenViewer = document.querySelector(".pdf-custom-viewer.pdf-fullscreen-mode, .xlsx-custom-viewer.xlsx-fullscreen-mode");
+  const orphanedFullscreenViewer = document.querySelector(
+    ".pdf-custom-viewer.pdf-fullscreen-mode, .xlsx-custom-viewer.xlsx-fullscreen-mode"
+  );
   orphanedFullscreenViewer?.remove();
 
   const mount = document.getElementById("file-preview-mount");

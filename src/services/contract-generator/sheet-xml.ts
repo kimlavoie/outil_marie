@@ -166,9 +166,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
           const isHourly = service && service.type === "hourly";
           const amount = isHourly ? rate * (s.hours || 0) * (s.count || 0) : rate * (s.count || 0);
           const serviceName = service?.name || "(service non défini)";
-          const rateText = isHourly
-            ? `${serviceName} (${formatCurrency(rate)}/h)`
-            : `${serviceName} (${formatCurrency(rate)})`;
+          const rateText = isHourly ? `${serviceName} (${formatCurrency(rate)}/h)` : `${serviceName} (${formatCurrency(rate)})`;
           sb.itemRow(rateText, s.count || 0, isHourly ? s.hours || 0 : "-", amount);
         });
       }

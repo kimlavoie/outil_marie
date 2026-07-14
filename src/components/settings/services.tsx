@@ -185,12 +185,7 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
       </div>
       <div className="form-group">
         <label htmlFor="form-service-type">Type de frais</label>
-        <select
-          id="form-service-type"
-          className="select-input"
-          value={type}
-          onChange={e => setType(e.target.value as "fixed" | "hourly")}
-        >
+        <select id="form-service-type" className="select-input" value={type} onChange={e => setType(e.target.value as "fixed" | "hourly")}>
           <option value="fixed">Frais fixe</option>
           <option value="hourly">Frais horaire</option>
         </select>

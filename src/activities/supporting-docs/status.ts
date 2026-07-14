@@ -61,9 +61,7 @@ function wireActionButtons(container: HTMLElement, act: any) {
 
 function filterAndSortEntries(entries: SupportingDocEntry[], query: string, sortKey: SortKey): SupportingDocEntry[] {
   const q = query.trim().toLowerCase();
-  const filtered = q
-    ? entries.filter(e => e.name.toLowerCase().includes(q) || e.relativePath.toLowerCase().includes(q))
-    : entries.slice();
+  const filtered = q ? entries.filter(e => e.name.toLowerCase().includes(q) || e.relativePath.toLowerCase().includes(q)) : entries.slice();
 
   const [field, dir] = sortKey.split("-") as ["name" | "date" | "size", "asc" | "desc"];
   filtered.sort((a, b) => {
@@ -238,7 +236,9 @@ async function renderSupportingDocsStatus(act: any): Promise<void> {
   `;
 
   wireActionButtons(container, act);
-  container.querySelector("#supporting-docs-download-all-btn")?.addEventListener("click", () => downloadFolderAsZip(resolved.name, entries));
+  container
+    .querySelector("#supporting-docs-download-all-btn")
+    ?.addEventListener("click", () => downloadFolderAsZip(resolved.name, entries));
 
   const listMount = container.querySelector("#supporting-docs-list-mount") as HTMLElement;
   const searchInput = container.querySelector("#supporting-docs-search") as HTMLInputElement;

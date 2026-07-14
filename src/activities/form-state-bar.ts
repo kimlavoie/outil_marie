@@ -5,7 +5,14 @@
  * "Enregistrer" submit). Split out of activities-form.ts (activity drawer form wiring).
  */
 import { appState, saveDatabaseOrRollback } from "../state/state.ts";
-import { activitiesState, getPlanningProgress, buildProgressBarHtml, getActivityStateBadgeClass, getActivityStateLabel, renderActivities } from "./render.ts";
+import {
+  activitiesState,
+  getPlanningProgress,
+  buildProgressBarHtml,
+  getActivityStateBadgeClass,
+  getActivityStateLabel,
+  renderActivities
+} from "./render.ts";
 import { persistDrawerUiState } from "./financials.ts";
 import { saveActivityVersion } from "./history/index.ts";
 
@@ -89,7 +96,6 @@ export function renderActivityStateBar(act: any) {
 
 export function updateFormTabIndicators(act: any) {
   if (!act) return;
-
 
   // 1. Formulaire tab
   const formInd = document.getElementById("tab-ind-form");

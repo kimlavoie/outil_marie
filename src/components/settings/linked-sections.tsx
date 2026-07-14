@@ -37,7 +37,12 @@ export function LinkedRoomsSection({
         {rooms
           .filter(r => r.name !== originalName)
           .map(r => (
-            <button key={r.name} type="button" className={`pill-toggle${linkedRooms.includes(r.name) ? " active" : ""}`} onClick={() => toggleLinkedRoom(r.name)}>
+            <button
+              key={r.name}
+              type="button"
+              className={`pill-toggle${linkedRooms.includes(r.name) ? " active" : ""}`}
+              onClick={() => toggleLinkedRoom(r.name)}
+            >
               {r.name}
             </button>
           ))}
@@ -111,7 +116,13 @@ export function LinkedStaffSection({
 }
 
 // Extra fees automatically added to the reservation when this room is booked.
-export function LinkedFeesSection({ linkedFees, setLinkedFees }: { linkedFees: LinkedFeeRow[]; setLinkedFees: (rows: LinkedFeeRow[]) => void }) {
+export function LinkedFeesSection({
+  linkedFees,
+  setLinkedFees
+}: {
+  linkedFees: LinkedFeeRow[];
+  setLinkedFees: (rows: LinkedFeeRow[]) => void;
+}) {
   return (
     <div className="distribution-section">
       <div className="distribution-header">
@@ -161,7 +172,13 @@ export function LinkedFeesSection({ linkedFees, setLinkedFees }: { linkedFees: L
 }
 
 // Planning tasks automatically generated for the activity manager when this room is booked.
-export function LinkedTasksSection({ linkedTasks, setLinkedTasks }: { linkedTasks: LinkedTaskRow[]; setLinkedTasks: (rows: LinkedTaskRow[]) => void }) {
+export function LinkedTasksSection({
+  linkedTasks,
+  setLinkedTasks
+}: {
+  linkedTasks: LinkedTaskRow[];
+  setLinkedTasks: (rows: LinkedTaskRow[]) => void;
+}) {
   return (
     <div className="distribution-section">
       <div className="distribution-header">

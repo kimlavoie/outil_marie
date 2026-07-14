@@ -40,9 +40,9 @@ export function TaxesPanel({ active }: { active: boolean }) {
         <h3 className="settings-panel-title">Taxes</h3>
       </div>
       <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", maxWidth: 520 }}>
-        Taux par défaut appliqués au sous-total de chaque activité. À ajuster uniquement si le taux légal change — pour un cas
-        particulier propre à une seule activité (organisme exonéré, entente particulière), utilisez plutôt "Ajuster les taxes..." dans
-        le formulaire de cette activité.
+        Taux par défaut appliqués au sous-total de chaque activité. À ajuster uniquement si le taux légal change — pour un cas particulier
+        propre à une seule activité (organisme exonéré, entente particulière), utilisez plutôt "Ajuster les taxes..." dans le formulaire de
+        cette activité.
       </p>
       <div className="form-group" style={{ maxWidth: 280 }}>
         <label htmlFor="form-tax-rate-tps">TPS (%)</label>
