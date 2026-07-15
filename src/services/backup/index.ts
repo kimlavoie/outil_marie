@@ -142,11 +142,15 @@ function initBackupHandlers() {
   initDeletedActivitiesModal();
   initRestoreActivityPreview();
 
-  // Global banner "Reconnecter" button (visible on every view)
+  // Global banner button (visible on every view): "Connecter" when no folder is set up yet,
+  // "Réactiver" when the permission lapsed on an already-connected folder (see
+  // updateAutoBackupBanner in auto-backup.ts, which sets banner.dataset.action).
   const autoBackupBannerBtn = document.getElementById("auto-backup-reminder-btn");
   if (autoBackupBannerBtn) {
     autoBackupBannerBtn.addEventListener("click", () => {
-      reconnectAutoBackupPermission();
+      const banner = document.getElementById("auto-backup-reminder-banner");
+      if (banner?.dataset.action === "connect") connectAutoBackupFile();
+      else reconnectAutoBackupPermission();
     });
   }
 }

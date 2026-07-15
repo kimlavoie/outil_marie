@@ -33,6 +33,12 @@
   font-style: italic;
 }
 
+.auto-save-status.warning {
+  color: var(--danger-text);
+  border-color: var(--danger);
+  font-weight: 600;
+}
+
 .auto-save-spinner {
   width: 14px;
   height: 14px;

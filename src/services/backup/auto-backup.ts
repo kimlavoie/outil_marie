@@ -13,7 +13,7 @@
 import { logError } from "../../utils/logger.ts";
 import { openVersionedDb } from "../../state/db-utils.ts";
 import { appState, saveAppStateToDb } from "../../state/state.ts";
-import { showToast } from "../../utils/utils.ts";
+import { showToast, escapeHtml } from "../../utils/utils.ts";
 import { checkBackupReminder, renderBackupView } from "./reminder.ts";
 
 const AUTO_BACKUP_DB_NAME = "outil_marie_autobackup";
@@ -288,15 +288,27 @@ function renderAutoBackupStatus(status: string, filename?: string) {
   container.appendChild(filesGrid);
 }
 
-// Shows/hides the app-wide banner (visible on every view, not just the
-// Sauvegarde & Export screen) so a lapsed permission doesn't go unnoticed.
+// Shows/hides the app-wide banner (visible on every view, not just the Sauvegarde & Export
+// screen) so neither a never-connected auto-backup nor a lapsed permission goes unnoticed — the
+// "have you backed up recently?" banner in reminder.ts can stay quiet for a week after a single
+// manual export even while this, the actually-automatic safety net, sits off. banner.dataset.action
+// records which the button should do, since "Connecter" and "Réactiver" call different functions.
 function updateAutoBackupBanner(status: string, filename?: string) {
   const banner = document.getElementById("auto-backup-reminder-banner");
-  if (!banner) return;
+  const textEl = document.getElementById("auto-backup-reminder-text");
+  const btn = document.getElementById("auto-backup-reminder-btn");
+  if (!banner || !textEl || !btn) return;
 
   if (status === "needs-permission") {
-    const fnEl = document.getElementById("auto-backup-reminder-filename");
-    if (fnEl) fnEl.textContent = filename || "";
+    textEl.innerHTML = `La sauvegarde automatique vers le dossier <strong>${escapeHtml(filename || "")}</strong> a expiré. Cliquez sur <strong>Réactiver</strong> pour autoriser à nouveau l'écriture et sécuriser votre travail.`;
+    btn.textContent = "Réactiver";
+    banner.dataset.action = "reconnect";
+    banner.style.display = "flex";
+  } else if (status === "disconnected") {
+    textEl.textContent =
+      "Aucune sauvegarde automatique n'est configurée. Connectez un dossier pour protéger votre travail en cas de problème avec cet ordinateur.";
+    btn.textContent = "Connecter";
+    banner.dataset.action = "connect";
     banner.style.display = "flex";
   } else {
     banner.style.display = "none";

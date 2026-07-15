@@ -173,6 +173,28 @@ function cancelActivityDrawer() {
   closeActivityDrawer();
 }
 
+// A draft activity (see createDraftActivity in new-activity-modal.ts — the "Estimation" quick
+// button) lives only in appState in memory until "Enregistrer" is clicked: autoSaveActivityForm
+// deliberately skips writing it to IndexedDB so an abandoned estimation never pollutes the real
+// activity list. That's fine for an abandoned/empty draft, but a named draft the user has actually
+// filled in would otherwise vanish with zero warning on an accidental tab close or reload/crash.
+// Mirrors cancelActivityDrawer's own "empty name = nothing worth keeping" rule below.
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", e => {
+    const drawer = document.getElementById("activity-drawer");
+    if (!drawer?.classList.contains("active")) return;
+
+    const id = elById("form-activity-internal-id").value;
+    if (!id || activitiesState.draftActivityId !== id) return;
+
+    const nameInput = elById("form-activity-name");
+    if (!nameInput?.value.trim()) return;
+
+    e.preventDefault();
+    e.returnValue = "";
+  });
+}
+
 export {
   generateNextActivityId,
   openActivityDrawer,

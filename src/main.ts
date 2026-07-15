@@ -33,8 +33,23 @@ window.addEventListener("unhandledrejection", e => {
   showToast("Une erreur inattendue est survenue. Voir la console pour les détails.", "error");
 });
 
+// Asks the browser not to auto-evict this origin's storage (IndexedDB) under disk pressure.
+// Best-effort: unsupported browsers skip it silently, and even where supported the browser can
+// still refuse (no UI prompt on Chrome/Edge — it's granted heuristically based on site engagement).
+async function requestPersistentStorage() {
+  try {
+    if (!navigator.storage?.persist) return;
+    const alreadyPersisted = await navigator.storage.persisted?.();
+    if (alreadyPersisted) return;
+    await navigator.storage.persist();
+  } catch (e) {
+    logError("main", "demande de stockage persistant", e);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   await loadDatabase();
+  void requestPersistentStorage();
   applyTheme(appState.settings.theme || "dark");
   renderActivityDrawerShell();
   renderActivitiesViewShell();

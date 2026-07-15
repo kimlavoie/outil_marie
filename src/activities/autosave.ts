@@ -21,7 +21,7 @@ import { scheduleActivityUndoSnapshot } from "./history/index.ts";
 
 // The status badge stays visible at all times (never fades out) so the user always has a clear,
 // permanent answer to "is my work saved?" instead of having to trust a message that disappears.
-function showAutoSaveStatus(status: "saving" | "saved") {
+function showAutoSaveStatus(status: "saving" | "saved" | "warning", message?: string) {
   const statusEl = elById("auto-save-status");
   if (!statusEl) return;
 
@@ -44,6 +44,13 @@ function showAutoSaveStatus(status: "saving" | "saved") {
     statusEl.className = "auto-save-status saved";
     if (spinner) spinner.style.display = "none";
     if (text) text.textContent = "Enregistré";
+  } else if (status === "warning") {
+    // Used when autoSaveActivityForm bails out without writing anything (e.g. empty name) so the
+    // badge doesn't keep showing a stale "Enregistré" from before the field was cleared — that
+    // would tell the user their edits are safe when they're actually not persisted anywhere yet.
+    statusEl.className = "auto-save-status warning";
+    if (spinner) spinner.style.display = "none";
+    if (text) text.textContent = message || "Non enregistré";
   }
 }
 
@@ -59,6 +66,7 @@ function autoSaveActivityForm() {
   const name = elById("form-activity-name").value.trim();
 
   if (!isNonEmptyString(name)) {
+    showAutoSaveStatus("warning", "Nom requis — modifications non enregistrées");
     return;
   }
 
