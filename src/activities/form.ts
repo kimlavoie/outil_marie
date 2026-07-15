@@ -125,7 +125,26 @@ function initFormHandlers() {
           loadAndRenderActivityHistory(id);
         }
       }
+      if (tabName === "supporting-docs") {
+        const id = el("form-activity-internal-id").value;
+        const act = appState.activities.find((a: any) => a.id === id);
+        // Re-list the linked folder from disk every time the tab is opened: files added/removed
+        // from the file system outside the app (e.g. via the Explorer) aren't reflected in the
+        // list rendered when the drawer was first populated.
+        if (act) renderSupportingDocsStatus(act);
+      }
     });
+  });
+
+  // Also re-list the linked pièces justificatives folder when the browser window regains focus
+  // while that tab is showing — covers the common flow of switching to the Explorer, dropping a
+  // file into the linked folder, then alt-tabbing back without touching the activity tabs.
+  window.addEventListener("focus", () => {
+    if (!drawer.classList.contains("active")) return;
+    if (!el("activity-tab-panel-supporting-docs").classList.contains("active")) return;
+    const id = el("form-activity-internal-id").value;
+    const act = appState.activities.find((a: any) => a.id === id);
+    if (act) renderSupportingDocsStatus(act);
   });
 
   // Back to calendar button (only visible when opened from the calendar view)

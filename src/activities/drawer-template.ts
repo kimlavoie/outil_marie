@@ -78,7 +78,7 @@ const ACTIVITY_DRAWER_HTML = `
           <div class="distribution-header">
             <span class="field-label">Dossier de pièces justificatives</span>
           </div>
-          <div id="supporting-docs-status" class="file-link-status"></div>
+          <div id="supporting-docs-status"></div>
         </div>
       </div>
 

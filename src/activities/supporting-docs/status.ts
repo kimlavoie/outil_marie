@@ -57,6 +57,7 @@ function actionButtonsHtml(): string {
 function wireActionButtons(container: HTMLElement, act: any) {
   container.querySelector("#supporting-docs-relink-btn")?.addEventListener("click", () => pickAndLinkFolder(act.id));
   container.querySelector("#supporting-docs-unlink-btn")?.addEventListener("click", () => unlinkFolder(act.id));
+  container.querySelector("#supporting-docs-refresh-btn")?.addEventListener("click", () => renderSupportingDocsStatus(act));
 }
 
 function filterAndSortEntries(entries: SupportingDocEntry[], query: string, sortKey: SortKey): SupportingDocEntry[] {
@@ -168,8 +169,10 @@ async function renderSupportingDocsStatus(act: any): Promise<void> {
   const linkId = act.supporting_docs?.folder_link_id;
   if (!linkId) {
     container.innerHTML = `
-      <span style="color: var(--text-muted);">Aucun dossier lié</span>
-      <button type="button" class="btn btn-secondary" id="supporting-docs-link-btn" style="padding: 6px 12px; font-size: 0.85rem;">Lier un dossier</button>
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="color: var(--text-muted);">Aucun dossier lié</span>
+        <button type="button" class="btn btn-secondary" id="supporting-docs-link-btn" style="padding: 6px 12px; font-size: 0.85rem;">Lier un dossier</button>
+      </div>
     `;
     container.querySelector("#supporting-docs-link-btn")?.addEventListener("click", () => pickAndLinkFolder(act.id));
     return;
@@ -185,9 +188,11 @@ async function renderSupportingDocsStatus(act: any): Promise<void> {
 
   if (!resolved) {
     container.innerHTML = `
-      <span class="badge badge-warning">Autorisation requise</span>
-      <button type="button" class="btn btn-primary" id="supporting-docs-authorize-btn" style="padding: 6px 12px; font-size: 0.85rem;">Autoriser l'accès</button>
-      ${actionButtonsHtml()}
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span class="badge badge-warning">Autorisation requise</span>
+        <button type="button" class="btn btn-primary" id="supporting-docs-authorize-btn" style="padding: 6px 12px; font-size: 0.85rem;">Autoriser l'accès</button>
+        ${actionButtonsHtml()}
+      </div>
     `;
     container.querySelector("#supporting-docs-authorize-btn")?.addEventListener("click", () => renderSupportingDocsStatus(act));
     wireActionButtons(container, act);
@@ -200,8 +205,10 @@ async function renderSupportingDocsStatus(act: any): Promise<void> {
   } catch (e: any) {
     if (document.getElementById(SUPPORTING_DOCS_CONTAINER_ID) !== container) return;
     container.innerHTML = `
-      <span style="color: var(--danger-text);">Impossible d'accéder au dossier « ${escapeHtml(resolved.name)} » : ${escapeHtml(e.message || e.name || "erreur inconnue")}</span>
-      ${actionButtonsHtml()}
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="color: var(--danger-text);">Impossible d'accéder au dossier « ${escapeHtml(resolved.name)} » : ${escapeHtml(e.message || e.name || "erreur inconnue")}</span>
+        ${actionButtonsHtml()}
+      </div>
     `;
     wireActionButtons(container, act);
     return;
@@ -217,6 +224,7 @@ async function renderSupportingDocsStatus(act: any): Promise<void> {
   container.innerHTML = `
     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
       <span class="badge badge-success">Dossier lié : ${escapeHtml(resolved.name)}</span>
+      <button type="button" class="btn btn-secondary" id="supporting-docs-refresh-btn" style="padding: 6px 12px; font-size: 0.85rem;">Actualiser</button>
       ${downloadAllBtnHtml}
       ${actionButtonsHtml()}
     </div>
