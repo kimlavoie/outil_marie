@@ -96,7 +96,9 @@ function buildPrintActivitySheetHtml(act: any) {
       const isHourly = room && room.rate_type === "hourly";
       const slotsText =
         (r.slots || [])
-          .map((s: any) => `${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
+          .map((s: any) =>
+            escapeHtml(`${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
+          )
           .join(", ") || "-";
 
       let durationText = "";
@@ -224,7 +226,9 @@ function buildActivityDetailsHtml(act: any) {
       const isHourly = room && room.rate_type === "hourly";
       const slotsText =
         (r.slots || [])
-          .map((s: any) => `${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
+          .map((s: any) =>
+            escapeHtml(`${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
+          )
           .join(", ") || "-";
 
       let durationText = "";
