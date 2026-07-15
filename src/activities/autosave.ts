@@ -110,6 +110,12 @@ function autoSaveActivityForm() {
   const eventTypeOther = elById("form-activity-event-type-other").value.trim();
 
   const distributions: any[] = [];
+  // A row only makes it into `distributions` when it has both an account and a positive amount
+  // (see the `if` below) — anything else is silently dropped from what gets saved. That's fine
+  // right after picking an account, before an amount has been typed at all, but if something was
+  // typed and it didn't parse into a usable amount (e.g. "0"), the row vanishes from the saved
+  // data with no indication, even though it's still sitting there in the form. Warn in that case,
+  // mirroring getIncompleteRowWarnings() for reservation rows above.
   document.querySelectorAll("#form-distribution-list .distribution-row").forEach(row => {
     const acc = row.querySelector<HTMLInputElement>(".dist-account-select-wrapper .searchable-select-value")?.value;
     const amtStr = row.querySelector<HTMLInputElement>(".dist-amount-input")?.value.trim() || "";
@@ -120,6 +126,8 @@ function autoSaveActivityForm() {
 
     if (acc && amt > 0) {
       distributions.push({ account_code: acc, amount: amt, reference, details, auto_generated });
+    } else if (acc && amtStr) {
+      showToast("Une ligne de répartition a un montant invalide et n'a pas été enregistrée.", "warning");
     }
   });
 

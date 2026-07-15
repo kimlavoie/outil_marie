@@ -14,7 +14,7 @@ import { showToast, elById } from "../utils/utils.ts";
 import { activitiesState, renderActivities } from "./render.ts";
 import { fillActivityFormFields, renderActivityStateBar, switchActivityTab } from "./form.ts";
 import { updateFormDatesHelper, saveActivityVersion } from "./history/index.ts";
-import { activityUndoSnapshotTimer, showAutoSaveStatus } from "./autosave.ts";
+import { activityUndoSnapshotTimer, showAutoSaveStatus, autoSaveActivityForm } from "./autosave.ts";
 
 // Persists which activity record (and which of its tabs) is currently open in the drawer, so
 // reloading/reopening the app can drop the user back exactly where they left off. Kept in its own
@@ -179,19 +179,30 @@ function cancelActivityDrawer() {
 // activity list. That's fine for an abandoned/empty draft, but a named draft the user has actually
 // filled in would otherwise vanish with zero warning on an accidental tab close or reload/crash.
 // Mirrors cancelActivityDrawer's own "empty name = nothing worth keeping" rule below.
+//
+// For a regular (non-draft) activity, text-field edits are only written to IndexedDB up to 500ms
+// after the user stops typing (see the debounced "input" listener in form.ts) — a "change" event
+// (blur, picking from a select) saves immediately, but a hard close (crash, killed process, lid
+// closed) while still mid-keystroke would otherwise lose whatever hasn't been debounced yet.
+// Firing one more autosave here is the same best-effort flush already used for the auto-backup
+// folder write (see scheduleAutoBackupWrite's own beforeunload handler in auto-backup.ts).
 if (typeof window !== "undefined") {
   window.addEventListener("beforeunload", e => {
     const drawer = document.getElementById("activity-drawer");
     if (!drawer?.classList.contains("active")) return;
 
     const id = elById("form-activity-internal-id").value;
-    if (!id || activitiesState.draftActivityId !== id) return;
+    if (!id) return;
 
-    const nameInput = elById("form-activity-name");
-    if (!nameInput?.value.trim()) return;
+    if (activitiesState.draftActivityId === id) {
+      const nameInput = elById("form-activity-name");
+      if (!nameInput?.value.trim()) return;
+      e.preventDefault();
+      e.returnValue = "";
+      return;
+    }
 
-    e.preventDefault();
-    e.returnValue = "";
+    autoSaveActivityForm();
   });
 }
 
