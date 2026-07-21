@@ -88,7 +88,7 @@ test.beforeEach(() => {
 test("addStaffRow computes the subtotal from the salary's active rate (regular rate or overtime rate depending on checkbox)", () => {
   const container = freshContainer();
   // Test regular rate
-  addStaffRow(container, "salary-dt", 2, 5, 0, "GL-DT");
+  addStaffRow(container, "salary-dt", 2, 5, 0, false);
   const row1 = container.querySelector(".distribution-row") as HTMLElement;
   const subtotal1 = row1.querySelector(".staff-subtotal-display")!.textContent;
   // 50 * 5 * 2 = 500
@@ -96,7 +96,7 @@ test("addStaffRow computes the subtotal from the salary's active rate (regular r
 
   // Test overtime rate
   const container2 = freshContainer();
-  addStaffRow(container2, "salary-dt", 2, 0, 5, "GL-DT");
+  addStaffRow(container2, "salary-dt", 2, 0, 5, false);
   const row2 = container2.querySelector(".distribution-row") as HTMLElement;
   const subtotal2 = row2.querySelector(".staff-subtotal-display")!.textContent;
   // 75 * 5 * 2 = 750
@@ -324,7 +324,7 @@ test("addStaffRow supports start_time and end_time inputs, automatically calcula
 
   const staffList = card.querySelector(".room-staff-list") as HTMLElement;
 
-  addStaffRow(staffList, "salary-dt", 1, 0, 0, "GL-DT");
+  addStaffRow(staffList, "salary-dt", 1, 0, 0, false);
 
   const row = staffList.querySelector(".distribution-row") as HTMLElement;
   const startInput = row.querySelector(".staff-start-time-input") as HTMLInputElement;

@@ -135,6 +135,8 @@ function autoSaveActivityForm() {
   const responsableCity = elById("form-activity-responsable-city")?.value.trim() || "";
   const responsableProvince = elById("form-activity-responsable-province")?.value.trim() || "";
   const responsablePostalCode = elById("form-activity-responsable-postal-code")?.value.trim() || "";
+  const barRevenueInput = elById("form-activity-bar-revenue")?.value.trim() || "";
+  const barRevenue = parseFloat(barRevenueInput) || 0;
 
   const payload = {
     id: rawId,
@@ -150,6 +152,7 @@ function autoSaveActivityForm() {
     date_end: end,
     description,
     notes,
+    bar_revenue: barRevenue,
     activity_manager: {
       first_name: managerFirstName,
       last_name: managerLastName,

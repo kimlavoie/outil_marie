@@ -3,8 +3,6 @@ import {
   escapeHtml,
   formatCurrency,
   generateUid,
-  buildSearchableSelectHtml,
-  initSearchableSelectEl,
   rejectNegativeAmountOnBlur,
   maskTimeInput,
   calculateHoursFromTimes

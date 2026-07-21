@@ -11,7 +11,7 @@ test.after(() => dom.window.close());
 // markup produced by src/activities/reservations/subrows.ts) rather than driving the full
 // reservation-card UI, since only these three lists (and #form-distribution-list) matter here.
 import { appState, getSafetyBackupsFromDb } from "../src/state/state.ts";
-import { generateBillingLines } from "../src/activities/billing-tab.ts";
+import { generateBillingLines, hasHostessBarService, updateBarRevenueSectionVisibility } from "../src/activities/billing-tab.ts";
 
 function baseSettings(overrides: any = {}) {
   return {
@@ -269,3 +269,51 @@ test("generateBillingLines includes room setup_fee when configured on room", () 
   assert.ok(setupRow, "expected a setup fee distribution row");
   assert.equal(setupRow!.amount, "50");
 });
+
+test("hasHostessBarService returns true when an activity has a reservation with active bar service of type Service d'hôtesses", () => {
+  const actWithHostess = {
+    reservations: [
+      {
+        bar_service: { active: true, service_type: "Service d'hôtesses" }
+      }
+    ]
+  };
+  const actOther = {
+    reservations: [
+      {
+        bar_service: { active: true, service_type: "Service autonome" }
+      }
+    ]
+  };
+  const actInactive = {
+    reservations: [
+      {
+        bar_service: { active: false, service_type: "Service d'hôtesses" }
+      }
+    ]
+  };
+
+  assert.equal(hasHostessBarService(actWithHostess), true);
+  assert.equal(hasHostessBarService(actOther), false);
+  assert.equal(hasHostessBarService(actInactive), false);
+});
+
+test("updateBarRevenueSectionVisibility shows or hides the section based on hostess bar service", () => {
+  document.body.innerHTML = `
+    <div id="billing-bar-revenue-section" style="display: none;"></div>
+    <div id="form-activity-reservations"></div>
+  `;
+
+  const section = document.getElementById("billing-bar-revenue-section")!;
+
+  // 1. Initially hidden for empty activity
+  updateBarRevenueSectionVisibility({ reservations: [] });
+  assert.equal(section.style.display, "none");
+
+  // 2. Visible for activity with hostess bar service
+  updateBarRevenueSectionVisibility({
+    reservations: [{ bar_service: { active: true, service_type: "Service d'hôtesses" } }]
+  });
+  assert.equal(section.style.display, "block");
+});
+

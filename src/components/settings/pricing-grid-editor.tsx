@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { generateUid, formatDateMask, showToast } from "../../utils/utils.ts";
-import { DeleteIcon, GlAccountOptions } from "./common.tsx";
+import { DeleteIcon } from "./common.tsx";
 import type { GridParameter, GridClientType, GridCell, PricingGrid } from "../../state/store.ts";
 
 // Re-exported under this file's original names — GridParameter is the canonical (store.ts) name,

@@ -404,6 +404,22 @@ const ACTIVITY_DRAWER_HTML = `
           </div>
         </div>
 
+        <div class="distribution-section" id="billing-bar-revenue-section" style="display: none;">
+          <div class="distribution-header">
+            <span class="field-label">
+              Revenus du bar
+              <span class="help-tooltip-trigger" title="Indiquez les revenus générés par le service de bar. Ce montant est conservé à titre indicatif et n'est pas inclus dans la ventilation budgétaire ni les totaux facturés.">?</span>
+            </span>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="form-activity-bar-revenue">Montant des revenus du bar ($)</label>
+            <input type="number" id="form-activity-bar-revenue" class="form-input" min="0" step="0.01" placeholder="0,00 $" style="max-width: 250px;" />
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+              Note : Ces revenus sont enregistrés à titre indicatif et ne sont pas comptabilisés dans le total de facturation.
+            </div>
+          </div>
+        </div>
+
         <div class="distribution-section">
           <div class="distribution-header">
             <span class="field-label">État de la facturation</span>

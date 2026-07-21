@@ -57,7 +57,8 @@ function baseState() {
       salaries: [],
       services: [],
       global_tasks: [],
-      schedulable_tasks: []
+      schedulable_tasks: [],
+      tax_rates: { tps: 0.05, tvq: 0.09975 }
     },
     activities: [
       {

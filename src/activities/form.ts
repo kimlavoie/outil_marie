@@ -49,7 +49,7 @@ import {
   commitActivityPatch
 } from "./form-state-bar.ts";
 import { renderPlanningTab, generatePlanningTasks, addPlanningTaskRow } from "./planning-tab.ts";
-import { generateBillingLines, renderBillingStateStatus } from "./billing-tab.ts";
+import { generateBillingLines, renderBillingStateStatus, updateBarRevenueSectionVisibility } from "./billing-tab.ts";
 
 // Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
 // comment for why this cast is needed/safe.
@@ -124,6 +124,9 @@ function initFormHandlers() {
         if (id) {
           loadAndRenderActivityHistory(id);
         }
+      }
+      if (tabName === "billing") {
+        updateBarRevenueSectionVisibility();
       }
       if (tabName === "supporting-docs") {
         const id = el("form-activity-internal-id").value;
@@ -232,10 +235,12 @@ function initFormHandlers() {
   reservationsContainer.addEventListener("input", () => {
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();
+    updateBarRevenueSectionVisibility();
   });
   reservationsContainer.addEventListener("change", () => {
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();
+    updateBarRevenueSectionVisibility();
   });
 
   // Note: Personnel requis / Services / Autres frais buttons are wired per reservation card in
@@ -463,6 +468,11 @@ function fillActivityFormFields(act: any) {
   updateSubmissionFinancialSummary();
   renderPlanningTab(act);
   renderBillingStateStatus(act);
+  const barRevenueEl = document.getElementById("form-activity-bar-revenue") as HTMLInputElement | null;
+  if (barRevenueEl) {
+    barRevenueEl.value = typeof act.bar_revenue === "number" && act.bar_revenue > 0 ? String(act.bar_revenue) : (act.bar_revenue || "");
+  }
+  updateBarRevenueSectionVisibility(act);
 }
 
 /* ==========================================================================

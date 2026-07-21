@@ -166,3 +166,34 @@ export function renderBillingStateStatus(act: any) {
     renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
   });
 }
+
+// Checks whether an activity or the current form state has a bar service of type "Service d'hôtesses"
+export function hasHostessBarService(act?: any): boolean {
+  if (act && Array.isArray(act.reservations)) {
+    if (act.reservations.some((r: any) => r.bar_service?.active && r.bar_service?.service_type === "Service d'hôtesses")) {
+      return true;
+    }
+  }
+  const container = document.getElementById("form-activity-reservations");
+  if (!container) return false;
+  const cards = container.querySelectorAll<HTMLElement>(".reservation-card");
+  for (const card of Array.from(cards)) {
+    const activeBtn = card.querySelector<HTMLElement>(".room-bar-toggle-group .pill-toggle.active");
+    if (activeBtn) {
+      const serviceTypeBtn = card.querySelector<HTMLElement>(".room-bar-service-type-group .pill-toggle.active");
+      if (serviceTypeBtn && serviceTypeBtn.dataset.value === "Service d'hôtesses") {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Updates the visibility of the "Revenus du bar" section in the Facturation tab
+export function updateBarRevenueSectionVisibility(act?: any): void {
+  const section = document.getElementById("billing-bar-revenue-section");
+  if (!section) return;
+  const visible = hasHostessBarService(act);
+  section.style.display = visible ? "block" : "none";
+}
+
