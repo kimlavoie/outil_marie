@@ -180,15 +180,14 @@ export function RateVersionsEditor({
 export interface TarifRow {
   key: string;
   label: string;
-  gl_account_code: string;
+  gl_account_code?: string;
   rateRows: RateVersionRow[];
 }
 
 // One block per named tarif a service (or salary) can be billed under (e.g. "Interne" / "Externe"),
-// each carrying its own budget account and its own dated rate history (via the nested
-// RateVersionsEditor). The reservation form's service/staff line then picks one of these tarifs
-// instead of an account and a rate independently. `withOvertime` adds the overtime rate column
-// used by salary tarifs (services have no overtime rate).
+// each carrying its own dated rate history (via the nested RateVersionsEditor).
+// The reservation form's service/staff line then picks one of these tarifs.
+// `withOvertime` adds the overtime rate column used by salary tarifs (services have no overtime rate).
 export function TarifsEditor({
   rows,
   onChange,
@@ -211,7 +210,7 @@ export function TarifsEditor({
           className="tarif-editor-block"
           style={{ border: "1px solid var(--border)", borderRadius: 6, padding: 8, marginBottom: 8 }}
         >
-          <div className="distribution-row" style={{ gridTemplateColumns: "1fr 1.4fr auto", marginBottom: 8 }}>
+          <div className="distribution-row" style={{ gridTemplateColumns: "1fr auto", marginBottom: 8 }}>
             <input
               type="text"
               className="form-input"
@@ -221,15 +220,6 @@ export function TarifsEditor({
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               onChange={e => update(i, { label: e.target.value })}
             />
-            <select
-              className="select-input"
-              value={row.gl_account_code}
-              aria-label="Compte du grand livre associé au tarif"
-              style={{ padding: "8px 12px", fontSize: "0.85rem" }}
-              onChange={e => update(i, { gl_account_code: e.target.value })}
-            >
-              <GlAccountOptions />
-            </select>
             <button type="button" className="btn-icon" style={{ width: 14, height: 14 }} onClick={() => remove(i)}>
               <DeleteIcon />
             </button>

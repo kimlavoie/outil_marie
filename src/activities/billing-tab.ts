@@ -50,8 +50,8 @@ export async function generateBillingLines(act: any) {
   const isInternal = clientTypeEl ? clientTypeEl.value === "interne" : act.client_type === "interne";
 
   reservations.forEach((r: any) => {
-    if (r.tariff_gl_account_code && r.tariff_amount > 0 && !isInternal) {
-      const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+    const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+    if (r.tariff_amount > 0 && !isInternal) {
       const isHourly = room && room.rate_type === "hourly";
       if (isHourly) {
         const hours = (r.slots || []).reduce((sum: number, s: any) => {
@@ -59,12 +59,16 @@ export async function generateBillingLines(act: any) {
         }, 0);
         const amount = r.tariff_amount * hours;
         const details = `Location salle ${r.room_name} - ${hours} heure${hours > 1 ? "s" : ""} à ${formatCurrency(r.tariff_amount)}/h`;
-        addDistributionRow(r.tariff_gl_account_code, amount, "", details, true);
+        addDistributionRow("", amount, "", details, true);
       } else {
         const days = r.slots.length;
         const details = `Location salle ${r.room_name} - ${days} jour${days > 1 ? "s" : ""} à ${formatCurrency(r.tariff_amount)}/jour`;
-        addDistributionRow(r.tariff_gl_account_code, r.tariff_amount * days, "", details, true);
+        addDistributionRow("", r.tariff_amount * days, "", details, true);
       }
+    }
+    if (room && typeof room.setup_fee === "number" && room.setup_fee > 0 && !isInternal) {
+      const details = `Frais de montage et démontage - ${r.room_name}`;
+      addDistributionRow("", room.setup_fee, "", details, true);
     }
   });
 
@@ -73,12 +77,6 @@ export async function generateBillingLines(act: any) {
     const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
     const salary = ((appState.settings.salaries as any[]) || []).find((s: any) => s.id === salaryId);
     if (!salary) return;
-
-    const glAccountCode =
-      row.querySelector<HTMLInputElement>(".staff-gl-select-wrapper .searchable-select-value")?.value ||
-      row.querySelector<HTMLSelectElement>(".staff-gl-select")?.value ||
-      "";
-    if (!glAccountCode) return;
 
     const useCustomRate = row.querySelector<HTMLInputElement>(".staff-use-custom-rate")?.checked || false;
     let rate = 0;
@@ -99,7 +97,7 @@ export async function generateBillingLines(act: any) {
       if (overtimeHours > 0) {
         details += ` + ${overtimeHours}h sup. à ${formatCurrency(overtimeRate)}/h`;
       }
-      addDistributionRow(glAccountCode, amount, "", details, true);
+      addDistributionRow("", amount, "", details, true);
     }
   });
 
@@ -109,37 +107,27 @@ export async function generateBillingLines(act: any) {
     const tarifId = row.querySelector<HTMLSelectElement>(".service-tarif-select")!.value;
     if (!service) return;
 
-    let glAccountCode = "";
     let rate = 0;
     if (tarifId === "__custom__") {
       const wrapper = row.closest(".distribution-row-wrapper");
-      glAccountCode = wrapper
-        ? wrapper.querySelector<HTMLInputElement>(".service-custom-gl-select-wrapper .searchable-select-value")?.value ||
-          wrapper.querySelector<HTMLSelectElement>(".service-custom-gl-select")?.value ||
-          ""
-        : "";
       rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!.value) || 0 : 0;
     } else {
-      const tarif = service && ((service.tarifs as any[]) || []).find((t: any) => t.id === tarifId);
-      glAccountCode = tarif ? tarif.gl_account_code : "";
       rate = getActiveServiceRate(service, eventDateStart, tarifId);
     }
-    if (!glAccountCode) return;
 
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
     const isHourly = service.type === "hourly";
     const amount = isHourly ? rate * hours : rate;
     if (amount > 0) {
       const details = isHourly ? `${service.name} de ${hours}h à ${formatCurrency(rate)}/h` : `${service.name} à ${formatCurrency(rate)}`;
-      addDistributionRow(glAccountCode, amount, "", details, true);
+      addDistributionRow("", amount, "", details, true);
     }
   });
 
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-fees-list .distribution-row").forEach(row => {
-    const glCode = row.querySelector<HTMLInputElement>(".fee-gl-select-wrapper .searchable-select-value")!.value;
     const amount = parseFloat(row.querySelector<HTMLInputElement>(".fee-amount-input")!.value) || 0;
     const description = row.querySelector<HTMLInputElement>(".fee-desc-input")?.value.trim() || "";
-    if (glCode && amount > 0) addDistributionRow(glCode, amount, "", description, true);
+    if (amount > 0) addDistributionRow("", amount, "", description, true);
   });
 
   if (document.querySelectorAll("#form-distribution-list .distribution-row").length === 0) {

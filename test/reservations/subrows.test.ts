@@ -105,7 +105,7 @@ test("addStaffRow computes the subtotal from the salary's active rate (regular r
 
 test("addStaffRow displays the selected job's hourly rate read-only, and updates it when the job changes", () => {
   const container = freshContainer();
-  addStaffRow(container, "salary-dt", 1, 5, 0, "GL-DT");
+  addStaffRow(container, "salary-dt", 1, 5, 0);
   const row = container.querySelector(".distribution-row") as HTMLElement;
   const rateDisplay = row.querySelector(".staff-salary-rate-display") as HTMLElement;
   assert.match(rateDisplay.textContent!, /50,00.*\/h/);
@@ -118,7 +118,7 @@ test("addStaffRow displays the selected job's hourly rate read-only, and updates
 
 test("addStaffRow shows the custom rate fields only when useCustomRate is true, and updateStaffRowSubtotal reads them", () => {
   const container = freshContainer();
-  addStaffRow(container, "salary-dt", 1, 4, 0, "GL-DT", false, 100, 0, true);
+  addStaffRow(container, "salary-dt", 1, 4, 0, false, 100, 0, true);
 
   const wrapper = container.querySelector(".distribution-row-wrapper") as HTMLElement;
   const customFields = wrapper.querySelector(".staff-custom-fields") as HTMLElement;
@@ -133,7 +133,7 @@ test("addStaffRow shows the custom rate fields only when useCustomRate is true, 
 
 test("addStaffRow hides the custom rate fields for a normal (non-custom) rate", () => {
   const container = freshContainer();
-  addStaffRow(container, "salary-dt", 1, 1, 0, "GL-DT", false, 0, 0, false);
+  addStaffRow(container, "salary-dt", 1, 1, 0, false, 0, 0, false);
   const wrapper = container.querySelector(".distribution-row-wrapper") as HTMLElement;
   const customFields = wrapper.querySelector(".staff-custom-fields") as HTMLElement;
   assert.equal(customFields.style.display, "none");
@@ -163,16 +163,16 @@ test("addServiceRow rates a fixed service at its flat rate and hides the hours i
   assert.equal(hoursInput.style.visibility, "hidden");
 });
 
-test("collectStaffFromForm reads back count/hours/overtime/gl_account_code for every staff row on the card", () => {
+test("collectStaffFromForm reads back count/hours/overtime for every staff row on the card", () => {
   const card = freshContainer();
   card.innerHTML = `<div class="room-staff-list"></div>`;
   const staffList = card.querySelector(".room-staff-list") as HTMLElement;
   
   // Add a regular staff row
-  addStaffRow(staffList, "salary-dt", 2, 5, 0, "GL-DT");
+  addStaffRow(staffList, "salary-dt", 2, 5, 0);
   
   // Add an overtime staff row
-  addStaffRow(staffList, "salary-dt", 1, 0, 3, "GL-DT");
+  addStaffRow(staffList, "salary-dt", 1, 0, 3);
 
   const staff = collectStaffFromForm(card);
   assert.equal(staff.length, 2);
@@ -181,13 +181,11 @@ test("collectStaffFromForm reads back count/hours/overtime/gl_account_code for e
   assert.equal(staff[0].count, 2);
   assert.equal(staff[0].hours, 5);
   assert.equal(staff[0].overtime_hours, 0);
-  assert.equal(staff[0].gl_account_code, "GL-DT");
   
   assert.equal(staff[1].salary_id, "salary-dt");
   assert.equal(staff[1].count, 1);
   assert.equal(staff[1].hours, 0);
   assert.equal(staff[1].overtime_hours, 3);
-  assert.equal(staff[1].gl_account_code, "GL-DT");
 });
 
 test("collectStaffFromForm drops rows with no salary selected but warns instead of silently discarding entered data", () => {
@@ -195,7 +193,7 @@ test("collectStaffFromForm drops rows with no salary selected but warns instead 
   card.innerHTML = `<div class="room-staff-list"></div>`;
   const staffList = card.querySelector(".room-staff-list") as HTMLElement;
   // No salary selected, but hours were entered - should be dropped with a warning
-  addStaffRow(staffList, "", 1, 3, 0, "");
+  addStaffRow(staffList, "", 1, 3, 0);
 
   const staff = collectStaffFromForm(card);
   assert.equal(staff.length, 0);
@@ -206,7 +204,7 @@ test("collectStaffFromForm silently drops a fully-empty row (no salary, no data 
   const card = freshContainer();
   card.innerHTML = `<div class="room-staff-list"></div>`;
   const staffList = card.querySelector(".room-staff-list") as HTMLElement;
-  addStaffRow(staffList, "", 0, 0, 0, "");
+  addStaffRow(staffList, "", 0, 0, 0);
   // addStaffRow defaults count to 1 when falsy, so force it back to 0 to simulate a truly blank row
   (staffList.querySelector(".staff-count-input") as HTMLInputElement).value = "0";
 
@@ -228,24 +226,23 @@ test("collectServicesFromForm reads back service rows and warns on incomplete on
   assert.equal(getIncompleteRowWarnings().length, 1);
 });
 
-test("collectFeesFromForm reads description/amount/gl_account_code and trims the description", () => {
+test("collectFeesFromForm reads description/amount and trims the description", () => {
   const card = freshContainer();
   card.innerHTML = `<div class="room-fees-list"></div>`;
   const feesList = card.querySelector(".room-fees-list") as HTMLElement;
-  addFeeRow(feesList, "  Montage  ", 45, "GL-1");
+  addFeeRow(feesList, "  Montage  ", 45);
 
   const fees = collectFeesFromForm(card);
   assert.equal(fees.length, 1);
   assert.equal(fees[0].description, "Montage");
   assert.equal(fees[0].amount, 45);
-  assert.equal(fees[0].gl_account_code, "GL-1");
 });
 
 test("collectFeesFromForm drops a fee row with no description but warns since an amount was entered", () => {
   const card = freshContainer();
   card.innerHTML = `<div class="room-fees-list"></div>`;
   const feesList = card.querySelector(".room-fees-list") as HTMLElement;
-  addFeeRow(feesList, "", 25, "");
+  addFeeRow(feesList, "", 25);
 
   const fees = collectFeesFromForm(card);
   assert.equal(fees.length, 0);

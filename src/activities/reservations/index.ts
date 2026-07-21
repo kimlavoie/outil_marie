@@ -56,17 +56,12 @@ function collectReservationsFromForm() {
     const clientTypeVal = ctSelect ? ctSelect.value : "";
     let tariffId = "",
       tariffDescription = "",
-      tariffAmount = 0,
-      tariffGlAccountCode = "";
+      tariffAmount = 0;
 
     if (paramVal === "__custom__") {
       tariffDescription = card.querySelector<HTMLInputElement>(".room-tariff-custom-desc")!.value.trim();
       const rawAmount = card.querySelector<HTMLInputElement>(".room-tariff-custom-amount")!.value.trim();
       tariffAmount = parseFloat(rawAmount) || 0;
-      tariffGlAccountCode =
-        card.querySelector<HTMLInputElement>(".room-tariff-custom-gl-wrapper .searchable-select-value")?.value ||
-        card.querySelector<HTMLSelectElement>(".room-tariff-custom-gl")?.value ||
-        "";
       // A filled-in description with a missing/invalid amount silently defaulted to a free ($0)
       // tariff — warn instead so the user notices before the activity gets saved that way.
       if (tariffDescription && (!rawAmount || isNaN(parseFloat(rawAmount)))) {
@@ -85,19 +80,8 @@ function collectReservationsFromForm() {
           tariffId = `${paramVal}::${clientTypeVal}`;
           tariffDescription = grid.parameters.length > 1 ? `${param.name} - ${ct.name}` : ct.name;
           tariffAmount = cell ? cell.amount : 0;
-          tariffGlAccountCode = ct.gl_account_code || "";
         }
       }
-    }
-
-    // A tariff can carry a GL account code from a custom entry or from a pricing grid's client
-    // type that was configured before the account got deleted from Paramètres > Comptes GL. That
-    // stale code still gets saved on the reservation, but distributions generated from it (and the
-    // Grand Livre report reading them back) silently can't tie it to a real account — warn here.
-    if (tariffGlAccountCode && !appState.settings.accounts.some(a => a.code === tariffGlAccountCode)) {
-      pushIncompleteRowWarning(
-        `Le tarif "${tariffDescription || roomName}" est lié au compte GL "${tariffGlAccountCode}", qui n'existe plus.`
-      );
     }
 
     const installEnabled = card.querySelector<HTMLInputElement>(".reservation-install-toggle")!.classList.contains("active");
@@ -120,7 +104,6 @@ function collectReservationsFromForm() {
       tariff_id: tariffId,
       tariff_description: tariffDescription,
       tariff_amount: tariffAmount,
-      tariff_gl_account_code: tariffGlAccountCode,
       install: {
         enabled: installEnabled,
         date: installEnabled ? card.querySelector<HTMLInputElement>(`#${uid}-install-date`)!.value : "",

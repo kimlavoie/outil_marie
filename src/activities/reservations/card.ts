@@ -153,10 +153,6 @@ function addReservationCard(reservationData: any = null) {
           <label for="${uid}-room-tariff-custom-amount" class="room-tariff-custom-amount-label">Montant ($ par jour)</label>
           <input type="number" id="${uid}-room-tariff-custom-amount" class="form-input room-tariff-custom-amount" min="0" step="0.01" value="${isCustomTariff ? reservationData.tariff_amount : ""}">
         </div>
-        <div class="form-group" style="flex: 1.5; margin-bottom: 0;">
-          <label for="${uid}-room-tariff-custom-gl">Code budgétaire</label>
-          ${buildSearchableSelectHtml("room-tariff-custom-gl-wrapper", "room-tariff-custom-gl", "Choisir un compte...", `${uid}-room-tariff-custom-gl`)}
-        </div>
       </div>
 
       <div class="form-group">
@@ -257,8 +253,8 @@ function addReservationCard(reservationData: any = null) {
           <span class="field-label">Personnel requis</span>
           <button type="button" class="btn btn-secondary room-add-staff-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
-        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.2fr 65px 95px 95px 75px 75px 1.2fr 1fr 50px 100px 38px; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px;">
-          <span>Emploi</span><span style="text-align: center;">Qté</span><span style="text-align: center;">Début</span><span style="text-align: center;">Fin</span><span style="text-align: center;">Heures</span><span style="text-align: center;" title="Taux horaire configuré pour cet emploi">Salaire</span><span title="Le tarif à facturer pour ce poste — détermine le compte budgétaire utilisé sur la ligne de facturation générée">Code budgétaire</span><span>Sous-total</span><span></span><span style="text-align: right; padding-right: 8px;">Options</span><span></span>
+        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.2fr 65px 95px 95px 75px 75px 1fr 50px 100px 38px; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px;">
+          <span>Emploi</span><span style="text-align: center;">Qté</span><span style="text-align: center;">Début</span><span style="text-align: center;">Fin</span><span style="text-align: center;">Heures</span><span style="text-align: center;" title="Taux horaire configuré pour cet emploi">Salaire</span><span>Sous-total</span><span></span><span style="text-align: right; padding-right: 8px;">Options</span><span></span>
         </div>
         <div class="distribution-list room-staff-list"></div>
       </div>
@@ -269,7 +265,7 @@ function addReservationCard(reservationData: any = null) {
           <button type="button" class="btn btn-secondary room-add-service-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
         <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.3fr 0.6fr 1fr 1fr 50px 38px; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px;">
-          <span>Équipement</span><span title="Utilisé seulement pour les équipements facturés à l'heure">Heures</span><span title="Le tarif à facturer pour cet équipement — détermine le compte budgétaire utilisé sur la ligne de facturation générée">Compte à facturer</span><span>Sous-total</span><span></span><span></span>
+          <span>Équipement</span><span title="Utilisé seulement pour les équipements facturés à l'heure">Heures</span><span>Tarif</span><span>Sous-total</span><span></span><span></span>
         </div>
         <div class="distribution-list room-services-list"></div>
       </div>
@@ -379,21 +375,6 @@ function addReservationCard(reservationData: any = null) {
     });
   });
   rejectNegativeAmountOnBlur(card.querySelector<HTMLInputElement>(".room-tariff-custom-amount")!);
-
-  const glItems = appState.settings.accounts.map(acc => ({
-    value: acc.code,
-    label: `${acc.code} (${acc.description})`
-  }));
-
-  initSearchableSelectEl(
-    card.querySelector<HTMLElement>(".room-tariff-custom-gl-wrapper")!,
-    glItems,
-    value => {
-      updateSubmissionFinancialSummary();
-      autoSaveActivityForm();
-    },
-    isCustomTariff ? reservationData.tariff_gl_account_code : ""
-  );
 
   const installToggle = card.querySelector<HTMLInputElement>(".reservation-install-toggle")!;
   const installFields = card.querySelector<HTMLInputElement>(".reservation-install-fields")!;
@@ -534,7 +515,6 @@ function addReservationCard(reservationData: any = null) {
         s.count,
         s.hours,
         s.overtime_hours,
-        s.gl_account_code || "",
         s.auto_generated,
         s.custom_rate || 0,
         s.custom_overtime_rate || 0,
@@ -550,11 +530,10 @@ function addReservationCard(reservationData: any = null) {
         s.hours,
         s.tarif_id,
         s.auto_generated,
-        s.custom_rate || 0,
-        s.custom_gl_account_code || ""
+        s.custom_rate || 0
       )
     );
-    (reservationData.fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, f.gl_account_code, f.auto_generated));
+    (reservationData.fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, f.auto_generated));
 
     if ((reservationData.technical_services || []).length > 0) {
       autoAddTechnicalDirectorIfNeeded(staffList);

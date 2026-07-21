@@ -342,7 +342,6 @@ const DEFAULT_CONFIG = {
         {
           id: "tarif-location-projecteur",
           label: "",
-          gl_account_code: "",
           rate_versions: [{ id: "rv-location-projecteur", effective_date: "", rate: 20 }]
         }
       ]
@@ -355,7 +354,6 @@ const DEFAULT_CONFIG = {
         {
           id: "tarif-piano-queue",
           label: "",
-          gl_account_code: "",
           rate_versions: [{ id: "rv-piano-queue", effective_date: "", rate: 350 }]
         }
       ]
@@ -368,7 +366,6 @@ const DEFAULT_CONFIG = {
         {
           id: "tarif-projecteur-equipement",
           label: "",
-          gl_account_code: "",
           rate_versions: [{ id: "rv-projecteur-equipement", effective_date: "", rate: 32 }]
         }
       ]

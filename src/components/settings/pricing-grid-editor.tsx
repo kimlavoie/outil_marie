@@ -202,8 +202,7 @@ export function PricingGridEditor({
               </li>
               <li>
                 <strong>2. Types de client (Colonnes) :</strong> Catégories de locataires (ex: <em>Interne</em>, <em>Privé</em>,{" "}
-                <em>OBNL</em>, <em>Partenaire</em>). Liez-y un compte GL de facturation pour comptabiliser automatiquement les revenus de la
-                salle.
+                <em>OBNL</em>, <em>Partenaire</em>).
               </li>
               <li>
                 <strong>3. Saisie des tarifs :</strong> Remplissez les tarifs ({rateType === "hourly" ? "horaires" : "journaliers"}) en
@@ -517,8 +516,7 @@ export function PricingGridEditor({
                 <strong style={{ color: "var(--primary)" }}>💡 Aide : Types de client</strong>
               </div>
               <p style={{ margin: 0 }}>
-                Catégories de locataires (ex: <em>Interne</em>, <em>Privé</em>, <em>OBNL</em>, <em>Partenaire</em>). Liez-y un compte GL de
-                facturation pour comptabiliser automatiquement les revenus de la salle.
+                Catégories de locataires (ex: <em>Interne</em>, <em>Privé</em>, <em>OBNL</em>, <em>Partenaire</em>).
               </p>
             </div>
           )}
@@ -542,7 +540,7 @@ export function PricingGridEditor({
                 <div
                   key={ct.id}
                   className="distribution-row room-tarif-row"
-                  style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr auto", gap: 8, alignItems: "center" }}
+                  style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}
                 >
                   <input
                     type="text"
@@ -553,16 +551,6 @@ export function PricingGridEditor({
                     style={{ padding: "8px 12px", fontSize: "0.85rem", width: "100%" }}
                     onChange={e => updateClientType(i, { name: e.target.value })}
                   />
-                  <select
-                    name={`${ct.id}-gl-account`}
-                    className="select-input"
-                    style={{ padding: "8px 12px", fontSize: "0.85rem", width: "100%" }}
-                    title="Compte GL pour la facturation (optionnel)"
-                    value={ct.gl_account_code || ""}
-                    onChange={e => updateClientType(i, { gl_account_code: e.target.value })}
-                  >
-                    <GlAccountOptions />
-                  </select>
                   <button type="button" className="btn-icon" title="Supprimer" onClick={() => deleteClientType(i)}>
                     <DeleteIcon />
                   </button>
@@ -674,13 +662,6 @@ export function PricingGridEditor({
                         }}
                       >
                         {ct.name || "(Sans nom)"}
-                        {ct.gl_account_code && (
-                          <span
-                            style={{ display: "block", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: "normal", marginTop: 2 }}
-                          >
-                            GL: {ct.gl_account_code}
-                          </span>
-                        )}
                       </th>
                     ))}
                   </tr>

@@ -77,14 +77,13 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
         (svc.tarifs || []).map((t: any) => ({
           key: generateUid("tarif-row"),
           label: t.label || "",
-          gl_account_code: t.gl_account_code || "",
           rateRows: (t.rate_versions || []).map((v: any) => newRateVersionRow(v.effective_date, String(v.rate)))
         }))
       );
     } else {
       setName("");
       setType("fixed");
-      setTarifs([{ key: generateUid("tarif-row"), label: "", gl_account_code: "", rateRows: [newRateVersionRow()] }]);
+      setTarifs([{ key: generateUid("tarif-row"), label: "", rateRows: [newRateVersionRow()] }]);
     }
   }, [isOpen, originalId]);
 
@@ -112,7 +111,7 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
           rateVersions.push({ id: generateUid("rv"), effective_date: dateStr, rate });
         }
       });
-      return { id: generateUid("tarif"), label: tarif.label.trim(), gl_account_code: tarif.gl_account_code, rate_versions: rateVersions };
+      return { id: generateUid("tarif"), label: tarif.label.trim(), rate_versions: rateVersions };
     });
 
     if (rateErrorMsg) {
@@ -192,13 +191,13 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
       </div>
       <div className="distribution-section">
         <div className="distribution-header">
-          <span className="field-label">Tarifs (compte budgétaire et historique de montants)</span>
+          <span className="field-label">Tarifs (historique de montants)</span>
           <button
             type="button"
             className="btn btn-secondary"
             style={{ padding: "6px 12px", fontSize: "0.8rem" }}
             onClick={() =>
-              setTarifs([...tarifs, { key: generateUid("tarif-row"), label: "", gl_account_code: "", rateRows: [newRateVersionRow()] }])
+              setTarifs([...tarifs, { key: generateUid("tarif-row"), label: "", rateRows: [newRateVersionRow()] }])
             }
           >
             + Ajouter un tarif

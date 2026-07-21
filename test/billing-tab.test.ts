@@ -183,7 +183,6 @@ test("generateBillingLines generates room tariff distribution row for external c
         <input class="room-tariff-client-type" value="">
         <input class="room-tariff-custom-desc" value="Location Salle">
         <input class="room-tariff-custom-amount" value="150">
-        <input class="room-tariff-custom-gl" value="GL-ROOM">
         <div class="reservation-slots-list">
           <div class="reservation-slot-row">
             <input class="slot-date-input" value="2025-08-01">
@@ -213,7 +212,7 @@ test("generateBillingLines generates room tariff distribution row for external c
   generateBillingLines({ distributions: [] });
 
   let rows = distributionRows();
-  let roomRow = rows.find(r => r.account === "GL-ROOM");
+  let roomRow = rows.find(r => r.details && r.details.includes("Location salle"));
   assert.ok(roomRow, "expected a room distribution row for external client");
   assert.equal(roomRow!.amount, "150");
 
@@ -224,6 +223,49 @@ test("generateBillingLines generates room tariff distribution row for external c
   generateBillingLines({ distributions: [] });
 
   rows = distributionRows();
-  roomRow = rows.find(r => r.account === "GL-ROOM");
+  roomRow = rows.find(r => r.details && r.details.includes("Location salle"));
   assert.equal(roomRow, undefined, "expected no room distribution row for internal client");
+});
+
+test("generateBillingLines includes room setup_fee when configured on room", () => {
+  document.body.innerHTML = `
+    <input id="form-activity-client-type" value="externe">
+    <div id="form-activity-reservations">
+      <div class="reservation-card" id="res-1">
+        <input class="searchable-select-value" value="Salle Configured">
+        <input class="room-tariff-parameter" value="__custom__">
+        <input class="room-tariff-client-type" value="">
+        <input class="room-tariff-custom-desc" value="Location Salle">
+        <input class="room-tariff-custom-amount" value="200">
+        <div class="reservation-slots-list">
+          <div class="reservation-slot-row">
+            <input class="slot-date-input" value="2025-08-01">
+            <input class="slot-start-time-input" value="">
+            <input class="slot-end-time-input" value="">
+          </div>
+        </div>
+        <div class="reservation-install-toggle"></div>
+        <div class="reservation-dismantle-toggle"></div>
+        <div class="room-bar-toggle-group"><button class="pill-toggle"></button></div>
+        <div class="room-bar-drink-group"></div>
+        <div class="room-bar-service-type-group"></div>
+        <input class="room-bar-hostess-count" value="0">
+        <input class="room-bar-special-order" value="">
+        <input class="room-host-duties-count" value="0">
+        <div class="room-staff-list"></div>
+        <div class="room-services-list"></div>
+        <div class="room-fees-list"></div>
+      </div>
+    </div>
+    <div id="form-distribution-list"></div>
+  `;
+
+  appState.settings.rooms = [{ name: "Salle Configured", rate_type: "daily", setup_fee: 50 } as any];
+
+  generateBillingLines({ distributions: [] });
+
+  const rows = distributionRows();
+  const setupRow = rows.find(r => r.details && r.details.includes("Frais de montage et démontage"));
+  assert.ok(setupRow, "expected a setup fee distribution row");
+  assert.equal(setupRow!.amount, "50");
 });

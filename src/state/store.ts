@@ -17,7 +17,7 @@ export interface RateVersion {
 export interface Tarif {
   id: string;
   label: string;
-  gl_account_code: string;
+  gl_account_code?: string;
   rate_versions: RateVersion[];
 }
 

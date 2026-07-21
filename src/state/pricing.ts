@@ -84,8 +84,7 @@ export function getFlattenedRoomTarifs(room: any, dateStr: string): any[] {
       tarifs.push({
         id: `${param.id}::${ct.id}`,
         description: desc,
-        amount: cell ? cell.amount : 0,
-        gl_account_code: ct.gl_account_code || ""
+        amount: cell ? cell.amount : 0
       });
     });
   });
