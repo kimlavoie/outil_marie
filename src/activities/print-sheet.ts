@@ -136,7 +136,7 @@ function buildPrintActivitySheetHtml(act: any) {
     <div class="print-sheet-header">
       <div>
         <h1>${act.mode === "estimation" ? "Estimation" : "Soumission / Contrat"}</h1>
-        <div class="print-sheet-subtitle">Activité ${act.id} — ${escapeHtml(act.name) || "(Sans nom)"}</div>
+        <div class="print-sheet-subtitle">Activité ${escapeHtml(act.id)} — ${escapeHtml(act.name) || "(Sans nom)"}</div>
       </div>
       <div class="print-sheet-subtitle">Généré le ${generatedDate}</div>
     </div>
@@ -258,8 +258,8 @@ function buildActivityDetailsHtml(act: any) {
   return `
     <div class="print-sheet-header">
       <div>
-        <h1>${escapeHtml(act.name) || `Activité ${act.id}`}</h1>
-        <div class="print-sheet-subtitle">Activité ${act.id}</div>
+        <h1>${escapeHtml(act.name) || `Activité ${escapeHtml(act.id)}`}</h1>
+        <div class="print-sheet-subtitle">Activité ${escapeHtml(act.id)}</div>
       </div>
     </div>
 

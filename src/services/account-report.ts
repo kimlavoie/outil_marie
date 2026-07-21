@@ -180,7 +180,7 @@ function renderAccountReport() {
 
         tableRowsHtml += `
           <tr>
-            <td class="font-mono bold">${act.id}</td>
+            <td class="font-mono bold">${escapeHtml(act.id)}</td>
             <td>${escapeHtml(act.name)}</td>
             <td>${datesText}</td>
             <td>${escapeHtml(act.department)}</td>

@@ -5,6 +5,7 @@
  * select-helpers modules).
  */
 import { debounce } from "./dom-helpers.ts";
+import { escapeHtml } from "./format.ts";
 
 // Builds the markup for one searchable-select instance: a text input (mirrors .search-input)
 // plus a filtered results popover (mirrors .calendar-popover / .quick-access-item). The
@@ -56,9 +57,9 @@ function initSearchableSelectEl(
     resultsPanel.innerHTML = filtered
       .map(
         (item, idx) => `
-      <div class="quick-access-item searchable-select-option" data-value="${item.value}" data-idx="${idx}"
+      <div class="quick-access-item searchable-select-option" data-value="${escapeHtml(item.value)}" data-idx="${idx}"
            style="padding: 8px 12px; border-radius: var(--radius-sm); cursor: pointer; ${idx === 0 ? "background-color: var(--bg-main);" : ""}">
-        ${item.label}
+        ${escapeHtml(item.label)}
       </div>
     `
       )

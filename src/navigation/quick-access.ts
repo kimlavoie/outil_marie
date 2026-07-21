@@ -63,10 +63,10 @@ function getUpcomingActivityIds(): string[] {
 function buildQuickAccessItemHtml(act: any, category: string): string {
   const actionBtnHtml =
     category === "favorite"
-      ? `<button class="btn-icon remove-quick-access-btn" data-id="${act.id}" title="Retirer des accès rapides" style="flex: 0 0 auto;">
+      ? `<button class="btn-icon remove-quick-access-btn" data-id="${escapeHtml(act.id)}" title="Retirer des accès rapides" style="flex: 0 0 auto;">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>`
-      : `<button class="btn-icon pin-quick-access-btn" data-id="${act.id}" title="Épingler dans l'accès rapide" style="flex: 0 0 auto;">
+      : `<button class="btn-icon pin-quick-access-btn" data-id="${escapeHtml(act.id)}" title="Épingler dans l'accès rapide" style="flex: 0 0 auto;">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M12 15.39l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.09l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.39zM12 2L9.19 8.62 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24l-7.19-.62L12 2z"/></svg>
       </button>`;
 
@@ -76,10 +76,10 @@ function buildQuickAccessItemHtml(act: any, category: string): string {
       : "";
 
   return `
-    <div class="quick-access-item" data-id="${act.id}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-main); cursor: pointer;">
+    <div class="quick-access-item" data-id="${escapeHtml(act.id)}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-main); cursor: pointer;">
       <span style="display: flex; flex-direction: column; overflow: hidden;">
         <span class="bold" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(act.name) || "Vierge"}</span>
-        <span class="font-mono" style="font-size: 0.72rem; color: var(--text-muted);">${act.id}${act.responsable ? ` · ${escapeHtml(act.responsable)}` : ""}${dateSuffix}</span>
+        <span class="font-mono" style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(act.id)}${act.responsable ? ` · ${escapeHtml(act.responsable)}` : ""}${dateSuffix}</span>
       </span>
       ${actionBtnHtml}
     </div>

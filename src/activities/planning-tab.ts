@@ -30,7 +30,7 @@ export function addPlanningTaskRow(task: any) {
   container.insertAdjacentHTML(
     "beforeend",
     `
-    <div id="${rowId}" class="distribution-row" data-task-id="${task.id}" data-auto-generated="${task.auto_generated ? "1" : ""}" data-auto-generated-reason="${escapeHtml(task.auto_generated_reason || "")}" style="grid-template-columns: auto 1fr auto auto; align-items: center;">
+    <div id="${rowId}" class="distribution-row" data-task-id="${escapeHtml(task.id)}" data-auto-generated="${task.auto_generated ? "1" : ""}" data-auto-generated-reason="${escapeHtml(task.auto_generated_reason || "")}" style="grid-template-columns: auto 1fr auto auto; align-items: center;">
       <input type="checkbox" id="${rowId}-done" class="task-done-checkbox" ${task.done ? "checked" : ""}>
       <input type="text" id="${rowId}-desc" class="form-input task-desc-input" value="${escapeHtml(task.description)}" placeholder="Description de la tâche" style="padding: 8px 12px; font-size: 0.85rem; ${doneStyle}">
       <div style="display: flex; align-items: center; justify-content: center; min-width: 50px;">

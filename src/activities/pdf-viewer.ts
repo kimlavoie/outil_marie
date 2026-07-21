@@ -1,5 +1,6 @@
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorkerURL from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { escapeHtml } from "../utils/utils.ts";
 
 // Initialize the PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerURL;
@@ -194,7 +195,7 @@ export class PdfViewer {
       this.viewportContainer.innerHTML = `
         <div class="pdf-preview-error" style="margin: 40px auto; max-width: 80%;">
           <span class="error-badge">⚠️</span>
-          <p>${message}</p>
+          <p>${escapeHtml(message)}</p>
         </div>
       `;
     }

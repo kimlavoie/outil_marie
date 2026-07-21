@@ -386,11 +386,11 @@ function renderActivities() {
       : "-";
 
     tbody.innerHTML += `
-      <tr class="activity-row ${isFilled ? "" : "row-empty"} ${activitiesState.selectedIds.has(act.id) ? "selected" : ""}" data-id="${act.id}" style="cursor: pointer; ${isFilled ? "" : "opacity: 0.5; font-style: italic;"}">
+      <tr class="activity-row ${isFilled ? "" : "row-empty"} ${activitiesState.selectedIds.has(act.id) ? "selected" : ""}" data-id="${escapeHtml(act.id)}" style="cursor: pointer; ${isFilled ? "" : "opacity: 0.5; font-style: italic;"}">
         <td onclick="event.stopPropagation();" style="text-align: center; vertical-align: middle; width: 22px; padding-left: 8px; padding-right: 2px;">
           <label style="cursor: pointer;">
-            <span class="sr-only">Sélectionner l'activité ${act.id}</span>
-            <input type="checkbox" id="activity-select-${act.id}" class="activity-select-checkbox" data-id="${act.id}" ${activitiesState.selectedIds.has(act.id) ? "checked" : ""} style="cursor: pointer;" />
+            <span class="sr-only">Sélectionner l'activité ${escapeHtml(act.id)}</span>
+            <input type="checkbox" id="activity-select-${escapeHtml(act.id)}" class="activity-select-checkbox" data-id="${escapeHtml(act.id)}" ${activitiesState.selectedIds.has(act.id) ? "checked" : ""} style="cursor: pointer;" />
           </label>
         </td>
         <td>${datesText}</td>

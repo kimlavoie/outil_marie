@@ -4,7 +4,7 @@
  * (activity drawer form wiring).
  */
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate, saveSafetyBackupToDb } from "../state/state.ts";
-import { formatCurrency, calculateHoursFromTimes } from "../utils/utils.ts";
+import { formatCurrency, calculateHoursFromTimes, escapeHtml } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
 import { addDistributionRow, updateDistributionTotal } from "./financials.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
@@ -142,8 +142,8 @@ export function renderBillingStateStatus(act: any) {
   if (!container) return;
 
   container.innerHTML = `
-    ${act.billed_at ? `<span style="color: var(--text-muted);">Facturée le ${act.billed_at}</span>` : ""}
-    ${act.completed_at ? `<span style="color: var(--text-muted);">Terminée le ${act.completed_at}</span>` : ""}
+    ${act.billed_at ? `<span style="color: var(--text-muted);">Facturée le ${escapeHtml(act.billed_at)}</span>` : ""}
+    ${act.completed_at ? `<span style="color: var(--text-muted);">Terminée le ${escapeHtml(act.completed_at)}</span>` : ""}
     <button type="button" id="mark-billed-btn" class="btn ${act.billed_at ? "btn-secondary" : "btn-primary"}">${act.billed_at ? "Annuler Facturée" : "Marquer comme Facturée"}</button>
     <button type="button" id="mark-completed-btn" class="btn ${act.completed_at ? "btn-secondary" : "btn-primary"}">${act.completed_at ? "Annuler Terminée" : "Marquer comme Terminée"}</button>
   `;
