@@ -52,7 +52,7 @@ function buildRoomDateTimeFieldHtml(dateId: string, timeId: string, label: strin
           </button>
           <div class="calendar-popover" id="cal-popover-${dateId}"></div>
         </div>
-        <input type="time" id="${timeId}" class="form-input">
+        <input type="time" id="${timeId}" class="form-input datetime-row-time-input">
         <button type="button" class="view-calendar-btn" data-target="${dateId}" title="Consulter le calendrier à cette date">
           <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
         </button>
@@ -64,7 +64,7 @@ function buildRoomDateTimeFieldHtml(dateId: string, timeId: string, label: strin
 
 function buildDatePeriodFieldHtml(dateId: string, startTimeId: string, endTimeId: string, label: string) {
   return `
-    <div class="form-group">
+    <div class="form-group" style="flex: 1; margin-bottom: 0;">
       <label for="${dateId}">${label}</label>
       <div class="datetime-input-row">
         <div class="datepicker-wrapper">
@@ -74,9 +74,9 @@ function buildDatePeriodFieldHtml(dateId: string, startTimeId: string, endTimeId
           </button>
           <div class="calendar-popover" id="cal-popover-${dateId}"></div>
         </div>
-        <input type="time" id="${startTimeId}" class="form-input" title="Heure de début">
+        <input type="time" id="${startTimeId}" class="form-input datetime-row-time-input" title="Heure de début">
         <span style="align-self: center; color: var(--text-muted);">à</span>
-        <input type="time" id="${endTimeId}" class="form-input" title="Heure de fin">
+        <input type="time" id="${endTimeId}" class="form-input datetime-row-time-input" title="Heure de fin">
         <button type="button" class="view-calendar-btn" data-target="${dateId}" title="Consulter le calendrier à cette date">
           <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
         </button>
