@@ -267,16 +267,30 @@ function initFormHandlers() {
     externalGroup.style.display = (e.target as HTMLInputElement).value === "externe" ? "block" : "none";
   });
 
-  // "Même personne que le responsable de l'activité" checkbox: mirrors the manager's name into
-  // the billing responsable fields and locks them, instead of the user re-typing it a second time.
-  el("form-activity-responsable-same-as-manager").addEventListener("change", e => {
-    applyResponsableSameAsManager((e.target as HTMLInputElement).checked);
-  });
-  el("form-activity-manager-firstname").addEventListener("input", () => {
-    if (el("form-activity-responsable-same-as-manager").checked) applyResponsableSameAsManager(true);
-  });
-  el("form-activity-manager-lastname").addEventListener("input", () => {
-    if (el("form-activity-responsable-same-as-manager").checked) applyResponsableSameAsManager(true);
+  // Client type change toggles Département vs Adresse fields
+  const clientTypeEl = document.getElementById("form-activity-client-type");
+  if (clientTypeEl) {
+    clientTypeEl.addEventListener("change", () => {
+      updateResponsableClientTypeDisplay();
+      const sameCb = document.getElementById("form-activity-responsable-same-as-manager") as HTMLInputElement | null;
+      if (sameCb?.checked) applyResponsableSameAsManager(true);
+    });
+  }
+
+  const responsableSameCb = document.getElementById("form-activity-responsable-same-as-manager") as HTMLInputElement | null;
+  if (responsableSameCb) {
+    responsableSameCb.addEventListener("change", e => {
+      applyResponsableSameAsManager((e.target as HTMLInputElement).checked);
+    });
+  }
+  ["form-activity-manager-firstname", "form-activity-manager-lastname", "form-activity-manager-address", "form-activity-manager-city", "form-activity-manager-province", "form-activity-manager-postal-code"].forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+      input.addEventListener("input", () => {
+        const sameCb = document.getElementById("form-activity-responsable-same-as-manager") as HTMLInputElement | null;
+        if (sameCb?.checked) applyResponsableSameAsManager(true);
+      });
+    }
   });
 
   // Estimation / Soumission mode toggle
@@ -339,7 +353,17 @@ function initFormHandlers() {
   });
 }
 
-// Mirrors the activity manager's name into the billing responsable fields and locks them (readonly)
+// Toggles display of Département vs Address fields in section Responsable de la facturation
+function updateResponsableClientTypeDisplay() {
+  const clientTypeSelect = document.getElementById("form-activity-client-type") as HTMLSelectElement | null;
+  const clientType = clientTypeSelect ? clientTypeSelect.value : "";
+  const deptGroup = document.getElementById("form-activity-dept-group");
+  const extGroup = document.getElementById("form-activity-responsable-external-group");
+  if (deptGroup) deptGroup.style.display = clientType === "externe" ? "none" : "block";
+  if (extGroup) extGroup.style.display = clientType === "externe" ? "block" : "none";
+}
+
+// Mirrors the activity manager's name & address into the billing responsable fields and locks them (readonly)
 // while the "même personne" checkbox is checked, so the two stay in sync without re-typing.
 function applyResponsableSameAsManager(checked: boolean) {
   const firstNameEl = el("form-activity-responsable-firstname");
@@ -351,6 +375,27 @@ function applyResponsableSameAsManager(checked: boolean) {
   if (checked) {
     firstNameEl.value = el("form-activity-manager-firstname").value;
     lastNameEl.value = el("form-activity-manager-lastname").value;
+  }
+
+  const addressEl = document.getElementById("form-activity-responsable-address") as HTMLInputElement | null;
+  const cityEl = document.getElementById("form-activity-responsable-city") as HTMLInputElement | null;
+  const provinceEl = document.getElementById("form-activity-responsable-province") as HTMLInputElement | null;
+  const postalCodeEl = document.getElementById("form-activity-responsable-postal-code") as HTMLInputElement | null;
+  if (addressEl && cityEl && provinceEl && postalCodeEl) {
+    addressEl.readOnly = checked;
+    cityEl.readOnly = checked;
+    provinceEl.readOnly = checked;
+    postalCodeEl.readOnly = checked;
+    addressEl.classList.toggle("form-input-readonly", checked);
+    cityEl.classList.toggle("form-input-readonly", checked);
+    provinceEl.classList.toggle("form-input-readonly", checked);
+    postalCodeEl.classList.toggle("form-input-readonly", checked);
+    if (checked) {
+      addressEl.value = el("form-activity-manager-address").value;
+      cityEl.value = el("form-activity-manager-city").value;
+      provinceEl.value = el("form-activity-manager-province").value;
+      postalCodeEl.value = el("form-activity-manager-postal-code").value;
+    }
   }
 }
 
@@ -364,6 +409,18 @@ function fillActivityFormFields(act: any) {
   el("form-activity-responsable-firstname").value = act.responsable_first_name || "";
   el("form-activity-responsable-lastname").value = act.responsable_last_name || "";
   el("form-activity-client-type").value = act.client_type;
+
+  const respAddrEl = document.getElementById("form-activity-responsable-address") as HTMLInputElement | null;
+  const respCityEl = document.getElementById("form-activity-responsable-city") as HTMLInputElement | null;
+  const respProvEl = document.getElementById("form-activity-responsable-province") as HTMLInputElement | null;
+  const respPcEl = document.getElementById("form-activity-responsable-postal-code") as HTMLInputElement | null;
+  if (respAddrEl) respAddrEl.value = act.responsable_address || "";
+  if (respCityEl) respCityEl.value = act.responsable_city || "";
+  if (respProvEl) respProvEl.value = act.responsable_province || "";
+  if (respPcEl) respPcEl.value = act.responsable_postal_code || "";
+
+  updateResponsableClientTypeDisplay();
+
   el("form-activity-description").value = act.description || "";
   el("form-activity-notes").value = act.notes || "";
   el("form-activity-manager-firstname").value = act.activity_manager?.first_name || "";

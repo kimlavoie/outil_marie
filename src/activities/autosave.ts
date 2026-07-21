@@ -131,6 +131,11 @@ function autoSaveActivityForm() {
     }
   });
 
+  const responsableAddress = elById("form-activity-responsable-address")?.value.trim() || "";
+  const responsableCity = elById("form-activity-responsable-city")?.value.trim() || "";
+  const responsableProvince = elById("form-activity-responsable-province")?.value.trim() || "";
+  const responsablePostalCode = elById("form-activity-responsable-postal-code")?.value.trim() || "";
+
   const payload = {
     id: rawId,
     mode: getActivityFormMode(),
@@ -159,8 +164,12 @@ function autoSaveActivityForm() {
       postal_code: managerType === "externe" ? managerPostalCode : ""
     },
     client_type: clientType,
+    responsable_address: clientType === "externe" ? responsableAddress : "",
+    responsable_city: clientType === "externe" ? responsableCity : "",
+    responsable_province: clientType === "externe" ? responsableProvince : "",
+    responsable_postal_code: clientType === "externe" ? responsablePostalCode : "",
     reservations,
-    department: dept,
+    department: clientType === "externe" ? "" : dept,
     event_type: eventType,
     event_type_other: eventType === "autre" ? eventTypeOther : "",
     distributions

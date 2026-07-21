@@ -232,4 +232,18 @@ test("toggling a linked room updates the linkedRooms selection", () => {
   assert.match(pillButtons[0].className, /active/);
 });
 
+test("editing a room's setup_fee persists the value into appState.settings.rooms", async () => {
+  setAppState(baseState({ settings: { ...appState.settings, rooms: [room()] } }));
+  let closed = false;
+  const { container } = render(<RoomModal name="POLY" onClose={() => (closed = true)} bump={() => {}} />);
+
+  const setupInput = container.querySelector("#form-room-setup-fee") as HTMLInputElement;
+  assert.ok(setupInput);
+  fireEvent.change(setupInput, { target: { value: "125.50" } });
+  fireEvent.click(container.querySelector('.modal-footer button[type="button"].btn-primary')!);
+
+  await waitFor(() => assert.ok(closed));
+  assert.equal(appState.settings.rooms[0].setup_fee, 125.5);
+});
+
 export {};

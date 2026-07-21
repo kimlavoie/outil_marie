@@ -85,6 +85,10 @@ function buildNewActivityRecord(id: string, name: string, mode: string) {
       postal_code: ""
     },
     client_type: "",
+    responsable_address: "",
+    responsable_city: "",
+    responsable_province: "",
+    responsable_postal_code: "",
     reservations: [],
     department: "",
     event_type: "",

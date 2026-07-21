@@ -29,6 +29,7 @@ export type { RateVersionRow } from "./format.ts";
 export {
   getActivityReferences,
   getRoomsTariffTotal,
+  getSetupTeardownTotal,
   OTHER_ROOM_VALUE,
   getReservationRoomLabel,
   getReservationRoomAbbreviation,

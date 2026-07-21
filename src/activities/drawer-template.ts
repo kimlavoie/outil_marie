@@ -236,11 +236,33 @@ const ACTIVITY_DRAWER_HTML = `
               </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" id="form-activity-dept-group">
               <label for="form-activity-dept">Département</label>
               <select id="form-activity-dept" class="select-input" style="padding: 10px 14px">
                 <!-- Populated dynamically -->
               </select>
+            </div>
+
+            <!-- Shown only when Client = Externe -->
+            <div id="form-activity-responsable-external-group" style="display: none">
+              <div class="form-group">
+                <label for="form-activity-responsable-address">Adresse</label>
+                <input type="text" id="form-activity-responsable-address" class="form-input" placeholder="Ex: 123 rue Principale" />
+              </div>
+              <div class="form-group-row">
+                <div class="form-group">
+                  <label for="form-activity-responsable-city">Ville</label>
+                  <input type="text" id="form-activity-responsable-city" class="form-input" placeholder="Ex: Montréal" />
+                </div>
+                <div class="form-group">
+                  <label for="form-activity-responsable-province">Province</label>
+                  <input type="text" id="form-activity-responsable-province" class="form-input" placeholder="Ex: QC" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="form-activity-responsable-postal-code">Code postal</label>
+                <input type="text" id="form-activity-responsable-postal-code" class="form-input" placeholder="Ex: H1A 1A1" />
+              </div>
             </div>
           </div>
         </details>

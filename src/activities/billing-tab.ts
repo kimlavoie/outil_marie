@@ -126,14 +126,11 @@ export async function generateBillingLines(act: any) {
     }
     if (!glAccountCode) return;
 
-    const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
     const isHourly = service.type === "hourly";
-    const amount = isHourly ? rate * hours * count : rate * count;
+    const amount = isHourly ? rate * hours : rate;
     if (amount > 0) {
-      const details = isHourly
-        ? `${count} x ${service.name} de ${hours}h à ${formatCurrency(rate)}/h`
-        : `${count} x ${service.name} à ${formatCurrency(rate)}`;
+      const details = isHourly ? `${service.name} de ${hours}h à ${formatCurrency(rate)}/h` : `${service.name} à ${formatCurrency(rate)}`;
       addDistributionRow(glAccountCode, amount, "", details, true);
     }
   });

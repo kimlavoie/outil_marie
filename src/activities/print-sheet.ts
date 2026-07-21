@@ -67,6 +67,7 @@ function buildFinancialSummaryTableHtml(fin: ReturnType<typeof computeActivityFi
       <h2>Sommaire financier</h2>
       <table class="print-sheet-total-table">
         <tr><td>Location des salles</td><td>${formatCurrency(fin.roomsTotal)}</td></tr>
+        <tr><td>Montage/démontage</td><td>${formatCurrency(fin.setupTotal)}</td></tr>
         <tr><td>Personnel</td><td>${formatCurrency(fin.staffTotal)}</td></tr>
         <tr><td>Équipements</td><td>${formatCurrency(fin.servicesTotal)}</td></tr>
         <tr><td>Autres frais</td><td>${formatCurrency(fin.feesTotal)}</td></tr>

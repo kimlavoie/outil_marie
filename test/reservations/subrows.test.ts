@@ -103,6 +103,19 @@ test("addStaffRow computes the subtotal from the salary's active rate (regular r
   assert.match(subtotal2!, /750,00/);
 });
 
+test("addStaffRow displays the selected job's hourly rate read-only, and updates it when the job changes", () => {
+  const container = freshContainer();
+  addStaffRow(container, "salary-dt", 1, 5, 0, "GL-DT");
+  const row = container.querySelector(".distribution-row") as HTMLElement;
+  const rateDisplay = row.querySelector(".staff-salary-rate-display") as HTMLElement;
+  assert.match(rateDisplay.textContent!, /50,00.*\/h/);
+
+  const salarySelect = row.querySelector(".staff-salary-select") as HTMLSelectElement;
+  salarySelect.value = "";
+  updateStaffRowSubtotal(row);
+  assert.equal(rateDisplay.textContent, "—");
+});
+
 test("addStaffRow shows the custom rate fields only when useCustomRate is true, and updateStaffRowSubtotal reads them", () => {
   const container = freshContainer();
   addStaffRow(container, "salary-dt", 1, 4, 0, "GL-DT", false, 100, 0, true);
@@ -126,26 +139,26 @@ test("addStaffRow hides the custom rate fields for a normal (non-custom) rate", 
   assert.equal(customFields.style.display, "none");
 });
 
-test("addServiceRow rates an hourly service by hours x count and shows the hours input", () => {
+test("addServiceRow rates an hourly service by hours and shows the hours input", () => {
   const container = freshContainer();
-  addServiceRow(container, "service-location-projecteur", 3, 2, "tarif-location-projecteur");
+  addServiceRow(container, "service-location-projecteur", 2, "tarif-location-projecteur");
 
   const row = container.querySelector(".distribution-row") as HTMLElement;
   const subtotal = row.querySelector(".service-subtotal-display")!.textContent;
-  // 20 x 2 hours x 3 count = 120
-  assert.match(subtotal!, /120,00/);
+  // 20 x 2 hours = 40
+  assert.match(subtotal!, /40,00/);
   const hoursInput = row.querySelector(".service-hours-input") as HTMLElement;
   assert.equal(hoursInput.style.visibility, "visible");
 });
 
-test("addServiceRow rates a fixed service by count only and hides the hours input", () => {
+test("addServiceRow rates a fixed service at its flat rate and hides the hours input", () => {
   const container = freshContainer();
-  addServiceRow(container, "service-fixed", 2, 999, "tarif-fixed");
+  addServiceRow(container, "service-fixed", 999, "tarif-fixed");
 
   const row = container.querySelector(".distribution-row") as HTMLElement;
   const subtotal = row.querySelector(".service-subtotal-display")!.textContent;
-  // 350 x 2 count, hours ignored
-  assert.match(subtotal!, /700,00/);
+  // 350 flat, hours ignored
+  assert.match(subtotal!, /350,00/);
   const hoursInput = row.querySelector(".service-hours-input") as HTMLElement;
   assert.equal(hoursInput.style.visibility, "hidden");
 });
@@ -206,8 +219,8 @@ test("collectServicesFromForm reads back service rows and warns on incomplete on
   const card = freshContainer();
   card.innerHTML = `<div class="room-services-list"></div>`;
   const servicesList = card.querySelector(".room-services-list") as HTMLElement;
-  addServiceRow(servicesList, "service-location-projecteur", 1, 3, "tarif-location-projecteur");
-  addServiceRow(servicesList, "", 1, 2, ""); // incomplete: hours entered but no service chosen
+  addServiceRow(servicesList, "service-location-projecteur", 3, "tarif-location-projecteur");
+  addServiceRow(servicesList, "", 2, ""); // incomplete: hours entered but no service chosen
 
   const services = collectServicesFromForm(card);
   assert.equal(services.length, 1);
@@ -291,7 +304,7 @@ test("autoRemoveProjectorIfNeeded removes the projector rental row if it is auto
 
 test("autoRemoveProjectorIfNeeded does not remove the projector rental row if it was not auto-generated", () => {
   const servicesList = freshContainer();
-  addServiceRow(servicesList, PROJECTOR_SERVICE_ID, 1, 0, "", false);
+  addServiceRow(servicesList, PROJECTOR_SERVICE_ID, 0, "", false);
   assert.equal(servicesList.querySelectorAll(".service-select").length, 1);
 
   autoRemoveProjectorIfNeeded(servicesList);

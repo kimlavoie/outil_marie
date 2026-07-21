@@ -4,7 +4,7 @@
  * Split out of activities-financials.ts (see that file for the rest of the module's history).
  */
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
-import { formatCurrency, escapeHtml, rateToPercentString, getRoomsTariffTotal, elById } from "../utils/utils.ts";
+import { formatCurrency, escapeHtml, rateToPercentString, getRoomsTariffTotal, getSetupTeardownTotal, elById } from "../utils/utils.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
 import { updateStaffRowSubtotal, updateServiceRowSubtotal, getStaffRowHours } from "./reservations/subrows.ts";
 
@@ -53,13 +53,14 @@ function overrideMarkerHtml(override: TaxOverride | undefined): string {
   return ` <span title="${title}" style="cursor: help; color: var(--text-muted);">✎</span>`;
 }
 
-// Computes the pre-tax revenue subtotal (rooms + personnel + équipements + autres frais) from
+// Computes the pre-tax revenue subtotal (rooms + montage/démontage + personnel + équipements + autres frais) from
 // the live form. Shared by updateSubmissionFinancialSummary() (which adds TPS/TVQ on top) and
 // updateDistributionTotal() (which uses the subtotal, untaxed, as the reference the entered GL
 // distributions should add up to — the settings.accounts codes are all revenue accounts, no tax
 // account exists among them).
 function computeFormRevenueSubtotal(): {
   roomsTotal: number;
+  setupTotal: number;
   staffTotal: number;
   servicesTotal: number;
   feesTotal: number;
@@ -67,6 +68,7 @@ function computeFormRevenueSubtotal(): {
 } {
   const reservations = collectReservationsFromForm();
   const roomsTotal = getRoomsTariffTotal({ reservations });
+  const setupTotal = getSetupTeardownTotal({ reservations });
   const eventDateStart = getAggregateEventDates(reservations).date_start;
 
   let staffTotal = 0;
@@ -95,7 +97,6 @@ function computeFormRevenueSubtotal(): {
     updateServiceRowSubtotal(row);
     const serviceId = row.querySelector<HTMLInputElement>(".service-select")!.value;
     const tarifId = row.querySelector<HTMLInputElement>(".service-tarif-select")!.value;
-    const count = parseInt(row.querySelector<HTMLInputElement>(".service-count-input")!.value, 10) || 0;
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
     let rate = 0;
     if (tarifId === "__custom__") {
@@ -106,7 +107,7 @@ function computeFormRevenueSubtotal(): {
       rate = service ? getActiveServiceRate(service, eventDateStart, tarifId) : 0;
     }
     const service = (appState.settings.services || []).find(s => s.id === serviceId);
-    servicesTotal += service && service.type === "hourly" ? rate * hours * count : rate * count;
+    servicesTotal += service && service.type === "hourly" ? rate * hours : rate;
   });
 
   let feesTotal = 0;
@@ -121,20 +122,21 @@ function computeFormRevenueSubtotal(): {
 
   return {
     roomsTotal,
+    setupTotal,
     staffTotal,
     servicesTotal,
     feesTotal,
-    subtotal: (isInternal ? 0 : roomsTotal) + staffTotal + servicesTotal + feesTotal
+    subtotal: (isInternal ? 0 : roomsTotal + setupTotal) + staffTotal + servicesTotal + feesTotal
   };
 }
 
-// Recomputes and displays the room/personnel/frais subtotal, TPS, TVQ, and total. TPS/TVQ use
+// Recomputes and displays the room/montage-démontage/personnel/frais subtotal, TPS, TVQ, and total. TPS/TVQ use
 // the default rates from Paramètres > Taxes unless this activity carries an override (see
 // computeTaxes()).
 function updateSubmissionFinancialSummary() {
   const container = elById("submission-financial-summary");
   if (container) {
-    const { roomsTotal, staffTotal, servicesTotal, feesTotal, subtotal } = computeFormRevenueSubtotal();
+    const { roomsTotal, setupTotal, staffTotal, servicesTotal, feesTotal, subtotal } = computeFormRevenueSubtotal();
     const internalId = (document.getElementById("form-activity-internal-id") as HTMLInputElement | null)?.value;
     const act = appState.activities.find((a: any) => a.id === internalId);
     const { tps, tvq } = computeTaxes(subtotal, act);
@@ -142,6 +144,7 @@ function updateSubmissionFinancialSummary() {
 
     container.innerHTML = `
       <div class="financial-summary-row"><span>Location des salles</span><span>${formatCurrency(roomsTotal)}</span></div>
+      <div class="financial-summary-row"><span>Montage/démontage</span><span>${formatCurrency(setupTotal)}</span></div>
       <div class="financial-summary-row"><span>Personnel</span><span>${formatCurrency(staffTotal)}</span></div>
       <div class="financial-summary-row"><span>Équipements</span><span>${formatCurrency(servicesTotal)}</span></div>
       <div class="financial-summary-row"><span>Autres frais</span><span>${formatCurrency(feesTotal)}</span></div>
@@ -180,6 +183,7 @@ function updateSubmissionFinancialSummary() {
 function computeActivityFinancials(act: any) {
   const reservations = act.reservations || [];
   const roomsTotal = getRoomsTariffTotal(act);
+  const setupTotal = getSetupTeardownTotal(act);
   const eventDateStart = getAggregateEventDates(reservations).date_start;
 
   let staffTotal = 0;
@@ -216,10 +220,11 @@ function computeActivityFinancials(act: any) {
   });
 
   const isInternal = act.client_type === "interne";
-  const subtotal = (isInternal ? 0 : roomsTotal) + staffTotal + servicesTotal + feesTotal;
+  const subtotal = (isInternal ? 0 : roomsTotal + setupTotal) + staffTotal + servicesTotal + feesTotal;
   const taxes = computeTaxes(subtotal, act);
   return {
     roomsTotal,
+    setupTotal,
     staffTotal,
     servicesTotal,
     feesTotal,

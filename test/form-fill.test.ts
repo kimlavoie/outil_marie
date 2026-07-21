@@ -81,10 +81,18 @@ function setupFormSkeleton() {
 
     <div id="form-activity-reservations"></div>
 
-    <select id="form-activity-dept">
-      <option value=""></option>
-      <option value="DG">Direction générale</option>
-    </select>
+    <div id="form-activity-dept-group">
+      <select id="form-activity-dept">
+        <option value=""></option>
+        <option value="DG">Direction générale</option>
+      </select>
+    </div>
+    <div id="form-activity-responsable-external-group" style="display: none">
+      <input id="form-activity-responsable-address">
+      <input id="form-activity-responsable-city">
+      <input id="form-activity-responsable-province">
+      <input id="form-activity-responsable-postal-code">
+    </div>
     <select id="form-activity-event-type">
       <option value=""></option>
       <option value="conference">Conférence</option>

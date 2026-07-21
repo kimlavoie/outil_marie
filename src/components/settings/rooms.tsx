@@ -47,14 +47,15 @@ export function RoomsPanel({ active, openModal, bump }: { active: boolean; openM
         </button>
       </div>
       <div className="settings-list">
-        {appState.settings.rooms.map((r: { name: string; abbreviation?: string; pricing_grids?: unknown[]; rate_type?: string }) => {
+        {appState.settings.rooms.map((r: { name: string; abbreviation?: string; pricing_grids?: unknown[]; rate_type?: string; setup_fee?: number }) => {
           const tarifs = getFlattenedRoomTarifs(r, "");
           const unit = r.rate_type === "hourly" ? "h" : "jour";
+          const setupDesc = r.setup_fee ? ` · Montage/démontage: ${formatCurrency(r.setup_fee)}` : "";
           const tarifsDesc = tarifs.length
             ? tarifs
                 .map((t: { description: string; amount: number }) => `${t.description}: ${formatCurrency(t.amount)}/${unit}`)
-                .join(" · ")
-            : "Aucun tarif défini";
+                .join(" · ") + setupDesc
+            : "Aucun tarif défini" + setupDesc;
           const versionCount = (r.pricing_grids || []).length;
           const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
           return (
@@ -91,6 +92,7 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
   const [abbreviation, setAbbreviation] = useState("");
   const [color, setColor] = useState("#4f46e5");
   const [rateType, setRateType] = useState<"daily" | "hourly">("daily");
+  const [setupFee, setSetupFee] = useState<string>("0");
   const [grids, setGrids] = useState<PricingGrid[]>([]);
   const [activeGridIndex, setActiveGridIndex] = useState(0);
   const [linkedRooms, setLinkedRooms] = useState<string[]>([]);
@@ -100,12 +102,13 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
 
   useEffect(() => {
     if (!isOpen) return;
-    const room = originalName ? appState.settings.rooms.find((r: { name: string }) => r.name === originalName) : null;
+    const room = originalName ? appState.settings.rooms.find((r: { name: string; setup_fee?: number }) => r.name === originalName) : null;
 
     setRoomName(room ? room.name : "");
     setAbbreviation((room && room.abbreviation) || "");
     setColor(room ? getRoomColor(room.name) : FALLBACK_ROOM_COLORS[appState.settings.rooms.length % FALLBACK_ROOM_COLORS.length]);
     setRateType(room && room.rate_type === "hourly" ? "hourly" : "daily");
+    setSetupFee(room && room.setup_fee !== undefined ? String(room.setup_fee) : "0");
 
     let initialGrids: PricingGrid[] = room ? JSON.parse(JSON.stringify(room.pricing_grids || [])) : [];
     if (initialGrids.length === 0) {
@@ -209,11 +212,15 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
       .filter(Boolean)
       .map(desc => ({ id: generateUid("linked-task"), description: desc }));
 
+    const parsedSetupFee = parseFloat(setupFee);
+    const validSetupFee = isNaN(parsedSetupFee) || parsedSetupFee < 0 ? 0 : parsedSetupFee;
+
     const payload = {
       name: newName,
       abbreviation: abbreviation.trim(),
       color,
       rate_type: rateType,
+      setup_fee: validSetupFee,
       pricing_grids: grids,
       linked_rooms: linkedRooms,
       linked_staff: linkedStaffPayload,
@@ -343,6 +350,20 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
             <option value="daily">À la journée</option>
             <option value="hourly">À l'heure</option>
           </select>
+        </div>
+        <div className="form-group" style={{ flexGrow: 0 }}>
+          <label htmlFor="form-room-setup-fee">Montage/démontage ($)</label>
+          <input
+            type="number"
+            id="form-room-setup-fee"
+            className="form-input"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            style={{ width: 140 }}
+            value={setupFee}
+            onChange={e => setSetupFee(e.target.value)}
+          />
         </div>
       </div>
 

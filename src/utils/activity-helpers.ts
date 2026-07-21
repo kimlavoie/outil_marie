@@ -73,9 +73,18 @@ function buildGlAccountOptionsHtml(selectedCode = "") {
   return html;
 }
 
+// Sum of setup/teardown fees across all reservations booked for an activity
+function getSetupTeardownTotal(act: any) {
+  return (act.reservations || []).reduce((sum: number, r: any) => {
+    const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+    return sum + (room && typeof room.setup_fee === "number" ? room.setup_fee : 0);
+  }, 0);
+}
+
 export {
   getActivityReferences,
   getRoomsTariffTotal,
+  getSetupTeardownTotal,
   OTHER_ROOM_VALUE,
   getReservationRoomLabel,
   getReservationRoomAbbreviation,
@@ -83,3 +92,4 @@ export {
   FALLBACK_ROOM_COLORS,
   buildGlAccountOptionsHtml
 };
+

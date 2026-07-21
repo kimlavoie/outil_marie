@@ -195,8 +195,20 @@ function updateFormAccordionCompletion(act: any) {
   }
   setAccordionCheckComplete("accordion-check-manager", managerComplete);
 
-  const billingComplete =
-    !!act.responsable_first_name?.trim() && !!act.responsable_last_name?.trim() && !!act.client_type && !!act.department;
+  let billingComplete =
+    !!act.responsable_first_name?.trim() && !!act.responsable_last_name?.trim() && !!act.client_type;
+  if (act.client_type === "externe") {
+    billingComplete =
+      billingComplete &&
+      !!act.responsable_address?.trim() &&
+      !!act.responsable_city?.trim() &&
+      !!act.responsable_province?.trim() &&
+      !!act.responsable_postal_code?.trim();
+  } else if (act.client_type === "interne") {
+    billingComplete = billingComplete && !!act.department;
+  } else {
+    billingComplete = false;
+  }
   setAccordionCheckComplete("accordion-check-billing", billingComplete);
 
   const roomsComplete = (act.reservations || []).length > 0;

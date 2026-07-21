@@ -64,7 +64,6 @@ function setupSkeleton() {
           <div class="distribution-row">
             <select class="service-select"><option value="svc1" selected>Projecteur</option></select>
             <select class="service-tarif-select"><option value="svctarif1" selected>Tarif régulier</option></select>
-            <input class="service-count-input" value="2">
             <input class="service-hours-input" value="3">
           </div>
         </div>
@@ -106,14 +105,14 @@ test("generateBillingLines adds a staff line costing (rate x hours + overtime ra
   assert.equal(staffRow!.amount, "240");
 });
 
-test("generateBillingLines adds an hourly service line costing rate x hours x count", () => {
+test("generateBillingLines adds an hourly service line costing rate x hours", () => {
   generateBillingLines({ distributions: [] });
 
   const rows = distributionRows();
-  // 10 * 3 * 2 = 60
+  // 10 * 3 = 30
   const serviceRow = rows.find(r => r.details && r.details.includes("Projecteur"));
   assert.ok(serviceRow, "expected a service distribution row");
-  assert.equal(serviceRow!.amount, "60");
+  assert.equal(serviceRow!.amount, "30");
 });
 
 test("generateBillingLines carries over an 'autre frais' row as-is (account/amount/description)", () => {

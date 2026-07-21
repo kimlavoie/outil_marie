@@ -222,4 +222,34 @@ test("computeFormRevenueSubtotal excludes room tariff from subtotal for internal
   assert.equal(totals.subtotal, 340); // 440 - 100 room tariff = 340
 });
 
+test("computeFormRevenueSubtotal includes room setup_fee in setupTotal and subtotal", () => {
+  setAppState(baseState({
+    settings: {
+      ...baseState().settings,
+      rooms: [{ ...ROOM_TEST, setup_fee: 150 }]
+    }
+  }));
+
+  addReservationCard({
+    id: "res-1",
+    room_name: "Salle Test",
+    tariff_id: "param-1::ct-1",
+    tariff_amount: 100,
+    slots: [{ id: "slot-1", date: "2025-08-01", start_time: "09:00", end_time: "17:00" }],
+    staff: [],
+    services: [],
+    fees: []
+  });
+
+  const totals = computeFormRevenueSubtotal();
+  assert.equal(totals.roomsTotal, 100);
+  assert.equal(totals.setupTotal, 150);
+  assert.equal(totals.subtotal, 250);
+
+  updateSubmissionFinancialSummary();
+  const html = document.getElementById("submission-financial-summary")!.innerHTML;
+  assert.match(html, /Montage\/démontage/);
+  assert.match(html, /150,00/);
+});
+
 export {};
