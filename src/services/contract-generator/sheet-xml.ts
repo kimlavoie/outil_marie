@@ -34,6 +34,7 @@ const IMAGE_ROW_SPAN = Math.ceil(IMAGE_HEIGHT_EMU / 12700 / 15) + 1;
 function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   const sb = new SheetBuilder();
   const manager = act.activity_manager || {};
+  const isInternal = act.client_type === "interne";
 
   if (variant === "contrat") {
     // The header image (a fixed-size floating drawing, see buildDrawingXml) covers these rows
@@ -130,6 +131,11 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
         sb.itemRow("Location de la salle", r.tariff_amount || 0, slots.length, (r.tariff_amount || 0) * slots.length);
       }
 
+      const setupFee = room && typeof room.setup_fee === "number" ? room.setup_fee : 0;
+      if (setupFee > 0 && !isInternal) {
+        sb.itemRow("Montage/démontage", setupFee, "-", setupFee);
+      }
+
       const staff = r.staff || [];
       if (staff.length > 0) {
         sb.itemTableHeader("Personnel", "Nombre", "Heures", "Sous-total");
@@ -188,9 +194,14 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   sb.titleRow("Facturation");
   const fin = computeActivityFinancials(act);
   const financeRows: [string, number][] = [
+    ["Location des salles", fin.roomsTotal],
+    ["Montage/démontage", fin.setupTotal],
+    ["Personnel", fin.staffTotal],
+    ["Équipements", fin.servicesTotal],
+    ["Autres frais", fin.feesTotal],
     ["Sous-total", fin.subtotal],
-    ["TPS (5%)", fin.tps],
-    ["TVQ (9,975%)", fin.tvq],
+    [fin.tpsLabel, fin.tps],
+    [fin.tvqLabel, fin.tvq],
     ["TOTAL", fin.total]
   ];
   financeRows.forEach(([label, amount]) => {

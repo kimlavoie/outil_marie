@@ -153,4 +153,69 @@ test("buildSheetXml uses top-aligned style IDs in the Annexe section", () => {
   assert.match(xml, new RegExp(`s="${S.annexeClauseBody}"`));
 });
 
+test("buildSheetXml includes setup/teardown fees in detailed room section and billing summary", () => {
+  const originalRooms = appState.settings.rooms;
+  appState.settings.rooms = [
+    { name: "Salle Polyvalente", setup_fee: 150, rate_type: "daily" } as any
+  ];
+
+  const act = makeActivity({
+    client_type: "externe",
+    reservations: [
+      {
+        room_name: "Salle Polyvalente",
+        tariff_amount: 100,
+        slots: [{ date: "2025-08-01" }],
+        staff: [],
+        services: [],
+        fees: []
+      }
+    ]
+  });
+
+  const xml = buildSheetXml(act, "contrat");
+  // The detailed room section should show "Montage/démontage" and the fee (150)
+  assert.match(xml, /Montage\/démontage/);
+  assert.match(xml, /<v>150<\/v>/);
+
+  // The billing section should have a detailed breakdown
+  assert.match(xml, /Location des salles/);
+  assert.match(xml, /Montage\/démontage/);
+
+  const matches = xml.match(/Montage\/démontage/g) || [];
+  assert.equal(matches.length, 2);
+
+  // Clean up
+  appState.settings.rooms = originalRooms;
+});
+
+test("buildSheetXml does not include setup/teardown detailed row if client is internal", () => {
+  const originalRooms = appState.settings.rooms;
+  appState.settings.rooms = [
+    { name: "Salle Polyvalente", setup_fee: 150, rate_type: "daily" } as any
+  ];
+
+  const act = makeActivity({
+    client_type: "interne",
+    reservations: [
+      {
+        room_name: "Salle Polyvalente",
+        tariff_amount: 100,
+        slots: [{ date: "2025-08-01" }],
+        staff: [],
+        services: [],
+        fees: []
+      }
+    ]
+  });
+
+  const xml = buildSheetXml(act, "contrat");
+  // Montage/démontage should only appear once (in the billing breakdown, not in the detailed room section)
+  const matches = xml.match(/Montage\/démontage/g) || [];
+  assert.equal(matches.length, 1);
+
+  // Clean up
+  appState.settings.rooms = originalRooms;
+});
+
 export {};
