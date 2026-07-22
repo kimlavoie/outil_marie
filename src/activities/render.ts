@@ -295,24 +295,6 @@ function renderActivities() {
     const isFilled = act.name.trim() !== "";
     const totalRev = act.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
 
-    // Format distributions for visualization
-    let distHtml = "";
-    if (isFilled && act.distributions && act.distributions.length > 0) {
-      distHtml = `
-        <div class="activity-dist-list" style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.72rem;">
-          ${act.distributions
-            .map((d: any) => {
-              const accDesc = appState.settings.accounts.find((a: any) => a.code === d.account_code)?.description || "";
-              return `
-              <span class="font-mono" style="background-color: var(--bg-main); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: var(--radius-sm); color: var(--text-secondary);" title="${escapeHtml(accDesc)}">
-                <strong>${d.account_code}</strong>: ${formatCurrency(d.amount)}${d.reference ? ` (${escapeHtml(d.reference)})` : ""}
-              </span>
-            `;
-            })
-            .join("")}
-        </div>
-      `;
-    }
 
     // Format dates
     let datesText = "-";
@@ -398,7 +380,6 @@ function renderActivities() {
         <td class="font-mono">${isFilled && act.coba ? escapeHtml(act.coba) : "-"}</td>
         <td>
           <span class="bold">${isFilled ? escapeHtml(act.name) : "Vierge"}</span> ${statusBadge}
-          ${distHtml}
         </td>
         <td>${isFilled ? escapeHtml((act.reservations || []).map(getReservationRoomAbbreviation).join(", ")) : "-"}</td>
         <td>${isFilled ? (hasBarService ? "Oui" : "") : "-"}</td>

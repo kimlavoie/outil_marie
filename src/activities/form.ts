@@ -22,7 +22,6 @@ import {
   cancelActivityDrawer,
   addDistributionRow,
   addBarRevenueRow,
-  updateBarRevenueTotal,
   showAutoSaveStatus,
   updateSubmissionFinancialSummary,
   openTaxOverrideModal
