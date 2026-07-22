@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 // same fixture pattern as activities-financials.test.ts.
 import { appState } from "../src/state/state.ts";
 import { xmlEscapeText, formatDateFr, wrapRowHeight, buildSheetXml } from "../src/services/contract-generator.ts";
+import { S } from "../src/services/contract-generator/styles.ts";
 
 appState.settings = {
   theme: "dark",
@@ -142,4 +143,14 @@ test("buildSheetXml formats a single-day reservation period as one date, a multi
   assert.doesNotMatch(buildSheetXml(singleDay, "contrat"), /2025\/08\/01 - /);
   assert.match(buildSheetXml(multiDay, "contrat"), /2025\/08\/01 - 2025\/08\/05/);
 });
+
+test("buildSheetXml uses top-aligned style IDs in the Annexe section", () => {
+  const act = makeActivity();
+  const xml = buildSheetXml(act, "contrat");
+  assert.match(xml, new RegExp(`s="${S.annexeTitle}"`));
+  assert.match(xml, new RegExp(`s="${S.annexeClauseGroup}"`));
+  assert.match(xml, new RegExp(`s="${S.annexeClauseNum}"`));
+  assert.match(xml, new RegExp(`s="${S.annexeClauseBody}"`));
+});
+
 export {};

@@ -33,7 +33,11 @@ const S = {
   sigLabel: 35,
   sigName1: 154,
   sigName2: 156,
-  billingLabel: 77
+  billingLabel: 77,
+  annexeTitle: 78,
+  annexeClauseGroup: 71,
+  annexeClauseNum: 22,
+  annexeClauseBody: 69
 };
 
 // normalizeGridBorders() mutates S in place (see below) so buildSheetXml/buildDrawingXml always
@@ -156,6 +160,45 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
     S.billingLabel = nextIndex;
     nextIndex++;
   }
+
+  const withTopAlignment = (xf: string) => {
+    let clone = xf;
+    if (/applyAlignment="\d"/.test(clone)) {
+      clone = clone.replace(/applyAlignment="\d"/, 'applyAlignment="1"');
+    } else {
+      clone = clone.replace("<xf ", '<xf applyAlignment="1" ');
+    }
+    if (/<alignment\b/.test(clone)) {
+      if (/vertical="\w+"/.test(clone)) {
+        clone = clone.replace(/vertical="\w+"/, 'vertical="top"');
+      } else {
+        clone = clone.replace("<alignment ", '<alignment vertical="top" ');
+      }
+    } else {
+      if (clone.endsWith("/>")) {
+        clone = clone.slice(0, -2) + '><alignment vertical="top"/></xf>';
+      } else {
+        clone = clone.replace("</xf>", '<alignment vertical="top"/></xf>');
+      }
+    }
+    return clone;
+  };
+
+  const annexeKeys = [
+    "annexeTitle",
+    "annexeClauseGroup",
+    "annexeClauseNum",
+    "annexeClauseBody"
+  ] as const;
+
+  annexeKeys.forEach(key => {
+    const original = xfEntries[ORIGINAL_S[key]];
+    if (!original) return;
+    const clone = withTopAlignment(original);
+    newEntries.push(clone);
+    S[key] = nextIndex;
+    nextIndex++;
+  });
 
   const patchedBody = xfEntries.join("") + newEntries.join("");
   xmlText = xmlText.replace(cellXfsMatch[0], `<cellXfs count="${nextIndex}">${patchedBody}</cellXfs>`);

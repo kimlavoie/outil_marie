@@ -83,8 +83,8 @@ class SheetBuilder {
     }
   }
 
-  titleRow(text: string) {
-    this.addRow(wrapRowHeight(text, 132, 20), [{ col: "A", style: S.sectionTitle, value: text, mergeTo: "F" }]);
+  titleRow(text: string, style = S.sectionTitle) {
+    this.addRow(wrapRowHeight(text, 132, 20), [{ col: "A", style, value: text, mergeTo: "F" }]);
   }
 
   // Long/multi-line values (address, description...) switch to a wrap-enabled style and get a

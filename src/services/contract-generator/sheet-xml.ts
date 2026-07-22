@@ -270,14 +270,14 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     sb.addCustomMerge(`A${startRow}:C${endRow}`);
     sb.blankRows(1);
 
-    sb.titleRow("Annexe – Clauses de location");
+    sb.titleRow("Annexe – Clauses de location", S.annexeTitle);
     LOCATION_CLAUSE_GROUPS.forEach(group => {
-      sb.textBoxRow(group.title, S.clauseGroup, 16);
+      sb.textBoxRow(group.title, S.annexeClauseGroup, 16);
       group.clauses.forEach(clause => {
         sb.addRow(wrapRowHeight(`Clause ${clause.num}`, 132, 18), [
-          { col: "A", style: S.clauseNum, value: `Clause ${clause.num}`, mergeTo: "F" }
+          { col: "A", style: S.annexeClauseNum, value: `Clause ${clause.num}`, mergeTo: "F" }
         ]);
-        sb.textBoxRow(clause.body, S.clauseBody, 16);
+        sb.textBoxRow(clause.body, S.annexeClauseBody, 16);
       });
     });
   }
