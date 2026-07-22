@@ -233,7 +233,9 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     sb.titleRow("Attestations (à remplir par le client)");
     sb.addRow(22, [
       { col: "A", style: S.supplierLabel, value: "Numéro d'Entreprise du Québec (NEQ) :", mergeTo: "C" },
-      { col: "D", style: S.supplierValue, value: "", mergeTo: "F" }
+      { col: "D", style: S.neqValue, value: "", mergeTo: "F" },
+      { col: "E", style: S.neqValue },
+      { col: "F", style: S.neqValue }
     ]);
     sb.blankRows(1);
     ATTESTATIONS.forEach((text, i) => {

@@ -17,6 +17,7 @@ const S = {
   value: 77,
   supplierLabel: 90,
   supplierValue: 70,
+  neqValue: 70, // placeholder — overwritten by normalizeGridBorders() with a bottom border
   resLabel: 63,
   resValue: 96,
   resValueNumeric: 96, // placeholder — overwritten by normalizeGridBorders() with a general-format, bordered variant
@@ -98,15 +99,54 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
     clean = clean.replace(/applyFill="1"/, 'applyFill="0"');
     return clean;
   };
-  if (xfEntries[67]) xfEntries[67] = cleanFill(xfEntries[67]);
-  if (xfEntries[52]) xfEntries[52] = cleanFill(xfEntries[52]);
-  if (xfEntries[42]) xfEntries[42] = cleanFill(xfEntries[42]);
+
+  const withCenterVerticalAlignment = (xf: string) => {
+    let clone = xf;
+    if (/applyAlignment="\d"/.test(clone)) {
+      clone = clone.replace(/applyAlignment="\d"/, 'applyAlignment="1"');
+    } else {
+      clone = clone.replace("<xf ", '<xf applyAlignment="1" ');
+    }
+    if (/<alignment\b/.test(clone)) {
+      if (/vertical="\w+"/.test(clone)) {
+        clone = clone.replace(/vertical="\w+"/, 'vertical="center"');
+      } else {
+        clone = clone.replace("<alignment ", '<alignment vertical="center" ');
+      }
+    } else {
+      if (clone.endsWith("/>")) {
+        clone = clone.slice(0, -2) + '><alignment vertical="center"/></xf>';
+      } else {
+        clone = clone.replace("</xf>", '<alignment vertical="center"/></xf>');
+      }
+    }
+    return clone;
+  };
+
+  if (xfEntries[67]) xfEntries[67] = withCenterVerticalAlignment(cleanFill(xfEntries[67]));
+  if (xfEntries[52]) xfEntries[52] = withCenterVerticalAlignment(cleanFill(xfEntries[52]));
+  if (xfEntries[42]) xfEntries[42] = withCenterVerticalAlignment(cleanFill(xfEntries[42]));
 
   const withNewBorder = (xf: string) => {
     let clone = /applyBorder="\d"/.test(xf)
       ? xf.replace(/applyBorder="\d"/, 'applyBorder="0"')
       : xf.replace("<xf ", '<xf applyBorder="0" ');
     clone = /borderId="\d+"/.test(clone) ? clone.replace(/borderId="\d+"/, `borderId="0"`) : clone.replace("<xf ", `<xf borderId="0" `);
+    return clone;
+  };
+
+  const withBottomBorder = (xf: string) => {
+    let clone = xf;
+    if (/applyBorder="\d"/.test(clone)) {
+      clone = clone.replace(/applyBorder="\d"/, 'applyBorder="1"');
+    } else {
+      clone = clone.replace("<xf ", '<xf applyBorder="1" ');
+    }
+    if (/borderId="\d+"/.test(clone)) {
+      clone = clone.replace(/borderId="\d+"/, 'borderId="1"');
+    } else {
+      clone = clone.replace("<xf ", '<xf borderId="1" ');
+    }
     return clone;
   };
 
@@ -158,6 +198,14 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
     const rightAligned = withRightAlignment(valueWithBorder);
     newEntries.push(rightAligned);
     S.billingLabel = nextIndex;
+    nextIndex++;
+  }
+
+  const originalNeqValueXf = xfEntries[ORIGINAL_S.neqValue];
+  if (originalNeqValueXf) {
+    const valueWithBottomBorder = withBottomBorder(originalNeqValueXf);
+    newEntries.push(valueWithBottomBorder);
+    S.neqValue = nextIndex;
     nextIndex++;
   }
 
