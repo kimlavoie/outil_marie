@@ -264,8 +264,8 @@ function addReservationCard(reservationData: any = null) {
           <span class="field-label">Équipements</span>
           <button type="button" class="btn btn-secondary room-add-service-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
-        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.3fr 0.6fr 1fr 1fr 50px 38px; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px;">
-          <span>Équipement</span><span title="Utilisé seulement pour les équipements facturés à l'heure">Heures</span><span>Tarif</span><span>Sous-total</span><span></span><span></span>
+        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.4fr 1fr 0.8fr 0.6fr 1fr 50px 38px; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px;">
+          <span>Équipement</span><span>Tarif</span><span style="text-align: center;">Montant</span><span style="text-align: center;" title="Utilisé seulement pour les équipements facturés à l'heure">Heures</span><span>Sous-total</span><span></span><span></span>
         </div>
         <div class="distribution-list room-services-list"></div>
       </div>
