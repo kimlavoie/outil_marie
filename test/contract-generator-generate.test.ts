@@ -139,4 +139,12 @@ test("generateContractXlsx shows an error toast when the template is missing req
   assert.ok(toast);
   assert.match(toast!.textContent!, /gabarit de contrat est invalide/);
 });
+
+test("generateSoumissionXlsx uses the activity's date_start when present", async () => {
+  stubFetchOk();
+  const result = await generateSoumissionXlsx(makeActivity({ id: "act-4", name: "Activité avec date", date_start: "2026-08-15" }));
+  assert.ok(result);
+  assert.equal(result!.filename, "soumission_2026_08_15_Activit_avec_date.xlsx");
+});
+
 export {};
