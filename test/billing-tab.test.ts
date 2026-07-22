@@ -12,6 +12,8 @@ test.after(() => dom.window.close());
 // reservation-card UI, since only these three lists (and #form-distribution-list) matter here.
 import { appState, getSafetyBackupsFromDb } from "../src/state/state.ts";
 import { generateBillingLines, hasHostessBarService, updateBarRevenueSectionVisibility } from "../src/activities/billing-tab.ts";
+import { addBarRevenueRow, updateBarRevenueTotal } from "../src/activities/financials.ts";
+import { formatCurrency } from "../src/utils/utils.ts";
 
 function baseSettings(overrides: any = {}) {
   return {
@@ -316,4 +318,37 @@ test("updateBarRevenueSectionVisibility shows or hides the section based on host
   });
   assert.equal(section.style.display, "block");
 });
+
+test("addBarRevenueRow inserts a row and updateBarRevenueTotal sums amounts", () => {
+  document.body.innerHTML = `
+    <div id="form-bar-revenue-list"></div>
+    <span id="form-bar-revenue-total-val">0,00 $</span>
+  `;
+  appState.settings.accounts = [
+    { code: "1000", description: "Ventes bar" }
+  ];
+
+  // Add first row
+  addBarRevenueRow("1000", 50, "REC-001", "VISA");
+  
+  const rows = document.querySelectorAll("#form-bar-revenue-list .bar-revenue-row");
+  assert.equal(rows.length, 1);
+  
+  const amountInput = rows[0].querySelector(".bar-amount-input") as HTMLInputElement;
+  const receiptInput = rows[0].querySelector(".bar-receipt-input") as HTMLInputElement;
+  const paymentSelect = rows[0].querySelector(".bar-payment-method-select") as HTMLSelectElement;
+  
+  assert.equal(amountInput.value, "50");
+  assert.equal(receiptInput.value, "REC-001");
+  assert.equal(paymentSelect.value, "VISA");
+  
+  // Total check
+  const totalVal = document.getElementById("form-bar-revenue-total-val")!;
+  assert.equal(totalVal.textContent, formatCurrency(50));
+
+  // Add second row
+  addBarRevenueRow("1000", 25.50, "REC-002", "comptant");
+  assert.equal(totalVal.textContent, formatCurrency(75.50));
+});
+
 

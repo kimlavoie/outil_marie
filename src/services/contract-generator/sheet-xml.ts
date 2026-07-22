@@ -62,10 +62,10 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     S.supplierLabel,
     S.supplierValue
   );
-  const addr = (act.client_type === "externe" && act.responsable_address) ? act.responsable_address : manager.address;
-  const city = (act.client_type === "externe" && act.responsable_city) ? act.responsable_city : manager.city;
-  const prov = (act.client_type === "externe" && act.responsable_province) ? act.responsable_province : manager.province;
-  const pc = (act.client_type === "externe" && act.responsable_postal_code) ? act.responsable_postal_code : manager.postal_code;
+  const addr = act.client_type === "externe" && act.responsable_address ? act.responsable_address : manager.address;
+  const city = act.client_type === "externe" && act.responsable_city ? act.responsable_city : manager.city;
+  const prov = act.client_type === "externe" && act.responsable_province ? act.responsable_province : manager.province;
+  const pc = act.client_type === "externe" && act.responsable_postal_code ? act.responsable_postal_code : manager.postal_code;
   const addressLines = [addr, [city, prov, pc].filter(Boolean).join(" ")].filter(Boolean).join("\n");
   sb.labelRow("Adresse", addressLines || undefined, S.supplierLabel, S.supplierValue);
   sb.labelRow("Téléphone", manager.phone, S.supplierLabel, S.supplierValue);

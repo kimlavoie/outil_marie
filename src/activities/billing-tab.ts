@@ -196,4 +196,3 @@ export function updateBarRevenueSectionVisibility(act?: any): void {
   const visible = hasHostessBarService(act);
   section.style.display = visible ? "block" : "none";
 }
-

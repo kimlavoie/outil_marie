@@ -410,13 +410,24 @@ const ACTIVITY_DRAWER_HTML = `
               Revenus du bar
               <span class="help-tooltip-trigger" title="Indiquez les revenus générés par le service de bar. Ce montant est conservé à titre indicatif et n'est pas inclus dans la ventilation budgétaire ni les totaux facturés.">?</span>
             </span>
+            <button
+              type="button"
+              id="form-add-bar-revenue-btn"
+              class="btn btn-secondary"
+              style="padding: 6px 12px; font-size: 0.8rem"
+            >
+              + Ajouter une ligne de bar
+            </button>
           </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label for="form-activity-bar-revenue">Montant des revenus du bar ($)</label>
-            <input type="number" id="form-activity-bar-revenue" class="form-input" min="0" step="0.01" placeholder="0,00 $" style="max-width: 250px;" />
-            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
-              Note : Ces revenus sont enregistrés à titre indicatif et ne sont pas comptabilisés dans le total de facturation.
-            </div>
+          <div id="form-bar-revenue-list" class="distribution-list">
+            <!-- Dynamic rows -->
+          </div>
+          <div class="distribution-total">
+            <span>Total des revenus du bar</span>
+            <span id="form-bar-revenue-total-val">0,00 $</span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">
+            Note : Ces revenus sont enregistrés à titre indicatif et ne sont pas comptabilisés dans le total de facturation.
           </div>
         </div>
 

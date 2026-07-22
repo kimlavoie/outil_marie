@@ -325,12 +325,13 @@ function renderActivities() {
           daysCount = calculateDaysCount(act.date_start, act.date_end);
           const start = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { weekday: "short", month: "short", day: "numeric" });
           const end = parseLocalDateStr(act.date_end).toLocaleDateString("fr-CA", { weekday: "short", month: "short", day: "numeric" });
-          datesText = daysCount > 0
-            ? `<div style="display: flex; flex-direction: column; gap: 2px; line-height: 1.2;">
+          datesText =
+            daysCount > 0
+              ? `<div style="display: flex; flex-direction: column; gap: 2px; line-height: 1.2;">
                  <span>${start}</span>
                  <span style="font-size: 0.75rem; color: var(--text-muted);">au ${end}</span>
                </div>`
-            : `<div style="display: flex; flex-direction: column; gap: 2px; line-height: 1.2; color: var(--danger);">
+              : `<div style="display: flex; flex-direction: column; gap: 2px; line-height: 1.2; color: var(--danger);">
                  <span>⚠ ${start}</span>
                  <span style="font-size: 0.75rem;">au ${end}</span>
                </div>`;

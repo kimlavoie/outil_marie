@@ -92,4 +92,3 @@ export {
   FALLBACK_ROOM_COLORS,
   buildGlAccountOptionsHtml
 };
-

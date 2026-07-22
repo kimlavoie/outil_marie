@@ -196,9 +196,7 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
             type="button"
             className="btn btn-secondary"
             style={{ padding: "6px 12px", fontSize: "0.8rem" }}
-            onClick={() =>
-              setTarifs([...tarifs, { key: generateUid("tarif-row"), label: "", rateRows: [newRateVersionRow()] }])
-            }
+            onClick={() => setTarifs([...tarifs, { key: generateUid("tarif-row"), label: "", rateRows: [newRateVersionRow()] }])}
           >
             + Ajouter un tarif
           </button>

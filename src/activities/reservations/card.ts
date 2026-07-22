@@ -524,14 +524,7 @@ function addReservationCard(reservationData: any = null) {
       )
     );
     (reservationData.services || []).forEach((s: any) =>
-      addServiceRow(
-        servicesList,
-        s.service_id,
-        s.hours,
-        s.tarif_id,
-        s.auto_generated,
-        s.custom_rate || 0
-      )
+      addServiceRow(servicesList, s.service_id, s.hours, s.tarif_id, s.auto_generated, s.custom_rate || 0)
     );
     (reservationData.fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, f.auto_generated));
 

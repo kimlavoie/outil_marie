@@ -21,6 +21,8 @@ import {
   autoSaveActivityForm,
   cancelActivityDrawer,
   addDistributionRow,
+  addBarRevenueRow,
+  updateBarRevenueTotal,
   showAutoSaveStatus,
   updateSubmissionFinancialSummary,
   openTaxOverrideModal
@@ -207,6 +209,15 @@ function initFormHandlers() {
     autoSaveActivityForm();
   });
 
+  // Bar revenue buttons
+  const addBarRevenueBtn = document.getElementById("form-add-bar-revenue-btn");
+  if (addBarRevenueBtn) {
+    addBarRevenueBtn.addEventListener("click", () => {
+      addBarRevenueRow("", 0, "", "");
+      autoSaveActivityForm();
+    });
+  }
+
   // Submit Button (only for draft activities/estimations)
   const submitBtn = el("activity-drawer-submit");
   if (submitBtn) {
@@ -288,7 +299,14 @@ function initFormHandlers() {
       applyResponsableSameAsManager((e.target as HTMLInputElement).checked);
     });
   }
-  ["form-activity-manager-firstname", "form-activity-manager-lastname", "form-activity-manager-address", "form-activity-manager-city", "form-activity-manager-province", "form-activity-manager-postal-code"].forEach(id => {
+  [
+    "form-activity-manager-firstname",
+    "form-activity-manager-lastname",
+    "form-activity-manager-address",
+    "form-activity-manager-city",
+    "form-activity-manager-province",
+    "form-activity-manager-postal-code"
+  ].forEach(id => {
     const input = document.getElementById(id);
     if (input) {
       input.addEventListener("input", () => {
@@ -468,9 +486,19 @@ function fillActivityFormFields(act: any) {
   updateSubmissionFinancialSummary();
   renderPlanningTab(act);
   renderBillingStateStatus(act);
-  const barRevenueEl = document.getElementById("form-activity-bar-revenue") as HTMLInputElement | null;
-  if (barRevenueEl) {
-    barRevenueEl.value = typeof act.bar_revenue === "number" && act.bar_revenue > 0 ? String(act.bar_revenue) : (act.bar_revenue || "");
+  const barRevenueListEl = document.getElementById("form-bar-revenue-list");
+  if (barRevenueListEl) {
+    barRevenueListEl.innerHTML = "";
+    const lines = act.bar_revenue_lines || [];
+    if (lines.length > 0) {
+      lines.forEach((line: any) => {
+        addBarRevenueRow(line.account_code, line.amount, line.receipt_number, line.payment_method);
+      });
+    } else if (typeof act.bar_revenue === "number" && act.bar_revenue > 0) {
+      addBarRevenueRow("", act.bar_revenue, "", "");
+    } else {
+      addBarRevenueRow("", 0, "", "");
+    }
   }
   updateBarRevenueSectionVisibility(act);
 }

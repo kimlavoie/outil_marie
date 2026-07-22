@@ -195,8 +195,7 @@ function updateFormAccordionCompletion(act: any) {
   }
   setAccordionCheckComplete("accordion-check-manager", managerComplete);
 
-  let billingComplete =
-    !!act.responsable_first_name?.trim() && !!act.responsable_last_name?.trim() && !!act.client_type;
+  let billingComplete = !!act.responsable_first_name?.trim() && !!act.responsable_last_name?.trim() && !!act.client_type;
   if (act.client_type === "externe") {
     billingComplete =
       billingComplete &&

@@ -46,6 +46,16 @@ function validateDistributionShape(d: any): boolean {
   return isPlainObject(d) && isNonEmptyString(d.account_code) && isFiniteNumber(d.amount);
 }
 
+function validateBarRevenueLineShape(d: any): boolean {
+  return (
+    isPlainObject(d) &&
+    (d.account_code === undefined || typeof d.account_code === "string") &&
+    (d.amount === undefined || isFiniteNumber(d.amount)) &&
+    (d.receipt_number === undefined || typeof d.receipt_number === "string") &&
+    (d.payment_method === undefined || typeof d.payment_method === "string")
+  );
+}
+
 // Inspects one activity's internal fields beyond just its `id`, so a corrupted or hand-edited
 // backup can't slip malformed reservations/distributions/dates past validation and only fail
 // later as a silent rendering or billing crash.
@@ -59,6 +69,8 @@ function validateActivityDeepShape(a: any): boolean {
   if (!arrayItemsMatch(a.reservations, validateReservationShape)) return false;
   if (a.distributions !== undefined && !Array.isArray(a.distributions)) return false;
   if (!arrayItemsMatch(a.distributions, validateDistributionShape)) return false;
+  if (a.bar_revenue_lines !== undefined && !Array.isArray(a.bar_revenue_lines)) return false;
+  if (!arrayItemsMatch(a.bar_revenue_lines, validateBarRevenueLineShape)) return false;
   return true;
 }
 

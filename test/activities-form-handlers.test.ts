@@ -62,6 +62,7 @@ function setupFixture() {
     </div>
     <button id="activity-drawer-back-to-calendar-btn"></button>
     <button id="form-add-distribution-btn"></button>
+    <button id="form-add-bar-revenue-btn"></button>
     <div id="form-activity-reservations"></div>
     <button id="generate-planning-tasks-btn"></button>
     <button id="add-planning-task-btn"></button>

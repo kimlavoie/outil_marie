@@ -135,8 +135,25 @@ function autoSaveActivityForm() {
   const responsableCity = elById("form-activity-responsable-city")?.value.trim() || "";
   const responsableProvince = elById("form-activity-responsable-province")?.value.trim() || "";
   const responsablePostalCode = elById("form-activity-responsable-postal-code")?.value.trim() || "";
-  const barRevenueInput = elById("form-activity-bar-revenue")?.value.trim() || "";
-  const barRevenue = parseFloat(barRevenueInput) || 0;
+  const bar_revenue_lines: any[] = [];
+  let barRevenue = 0;
+  document.querySelectorAll("#form-bar-revenue-list .bar-revenue-row").forEach(row => {
+    const acc = row.querySelector<HTMLInputElement>(".bar-account-select-wrapper .searchable-select-value")?.value || "";
+    const amtStr = row.querySelector<HTMLInputElement>(".bar-amount-input")?.value.trim() || "";
+    const amt = parseFloat(amtStr) || 0;
+    const receipt = row.querySelector<HTMLInputElement>(".bar-receipt-input")?.value.trim() || "";
+    const paymentMethod = row.querySelector<HTMLSelectElement>(".bar-payment-method-select")?.value || "";
+
+    if (acc || amt > 0 || receipt || paymentMethod) {
+      bar_revenue_lines.push({
+        account_code: acc,
+        amount: amt,
+        receipt_number: receipt,
+        payment_method: paymentMethod
+      });
+      barRevenue += amt;
+    }
+  });
 
   const payload = {
     id: rawId,
@@ -153,6 +170,7 @@ function autoSaveActivityForm() {
     description,
     notes,
     bar_revenue: barRevenue,
+    bar_revenue_lines: bar_revenue_lines,
     activity_manager: {
       first_name: managerFirstName,
       last_name: managerLastName,

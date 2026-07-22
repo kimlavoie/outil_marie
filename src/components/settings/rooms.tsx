@@ -47,38 +47,40 @@ export function RoomsPanel({ active, openModal, bump }: { active: boolean; openM
         </button>
       </div>
       <div className="settings-list">
-        {appState.settings.rooms.map((r: { name: string; abbreviation?: string; pricing_grids?: unknown[]; rate_type?: string; setup_fee?: number }) => {
-          const tarifs = getFlattenedRoomTarifs(r, "");
-          const unit = r.rate_type === "hourly" ? "h" : "jour";
-          const setupDesc = r.setup_fee ? ` · Montage/démontage: ${formatCurrency(r.setup_fee)}` : "";
-          const tarifsDesc = tarifs.length
-            ? tarifs
-                .map((t: { description: string; amount: number }) => `${t.description}: ${formatCurrency(t.amount)}/${unit}`)
-                .join(" · ") + setupDesc
-            : "Aucun tarif défini" + setupDesc;
-          const versionCount = (r.pricing_grids || []).length;
-          const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
-          return (
-            <div key={r.name} className="settings-list-item" onClick={() => openModal(r.name)}>
-              <div className="settings-list-item-info">
-                <span className="room-color-swatch" style={{ backgroundColor: getRoomColor(r.name) }} title="Couleur de la salle" />
-                <span className="settings-list-item-code">
-                  {r.name}
-                  {r.abbreviation ? ` (${r.abbreviation})` : ""}
-                </span>
-                <span className="settings-list-item-desc">
-                  {tarifsDesc}
-                  {versionNote}
-                </span>
+        {appState.settings.rooms.map(
+          (r: { name: string; abbreviation?: string; pricing_grids?: unknown[]; rate_type?: string; setup_fee?: number }) => {
+            const tarifs = getFlattenedRoomTarifs(r, "");
+            const unit = r.rate_type === "hourly" ? "h" : "jour";
+            const setupDesc = r.setup_fee ? ` · Montage/démontage: ${formatCurrency(r.setup_fee)}` : "";
+            const tarifsDesc = tarifs.length
+              ? tarifs
+                  .map((t: { description: string; amount: number }) => `${t.description}: ${formatCurrency(t.amount)}/${unit}`)
+                  .join(" · ") + setupDesc
+              : "Aucun tarif défini" + setupDesc;
+            const versionCount = (r.pricing_grids || []).length;
+            const versionNote = versionCount > 1 ? ` (${versionCount} versions)` : "";
+            return (
+              <div key={r.name} className="settings-list-item" onClick={() => openModal(r.name)}>
+                <div className="settings-list-item-info">
+                  <span className="room-color-swatch" style={{ backgroundColor: getRoomColor(r.name) }} title="Couleur de la salle" />
+                  <span className="settings-list-item-code">
+                    {r.name}
+                    {r.abbreviation ? ` (${r.abbreviation})` : ""}
+                  </span>
+                  <span className="settings-list-item-desc">
+                    {tarifsDesc}
+                    {versionNote}
+                  </span>
+                </div>
+                <div className="flex gap-2" onClick={e => e.stopPropagation()}>
+                  <button className="btn-icon" title="Supprimer" style={{ color: "var(--danger)" }} onClick={() => deleteRoom(r.name)}>
+                    <DeleteIcon />
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                <button className="btn-icon" title="Supprimer" style={{ color: "var(--danger)" }} onClick={() => deleteRoom(r.name)}>
-                  <DeleteIcon />
-                </button>
-              </div>
-            </div>
-          );
-        })}
+            );
+          }
+        )}
       </div>
     </div>
   );
