@@ -142,7 +142,7 @@ async function generateXlsx(act: any, variant: "contrat" | "soumission") {
   const blob = await zip.generateAsync({ type: "blob" });
   const prefix = variant === "contrat" ? "contrat" : "soumission";
   let dateStr = "";
-  if (variant === "soumission" && act.date_start && /^\d{4}-\d{2}-\d{2}$/.test(act.date_start)) {
+  if (act.date_start && /^\d{4}-\d{2}-\d{2}$/.test(act.date_start)) {
     dateStr = act.date_start.replace(/-/g, "_");
   } else {
     const now = new Date();
