@@ -251,36 +251,45 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
 
     sb.titleRow("Signatures");
     sb.addRow(22, [
-      { col: "A", style: S.sectionTitle, value: "Client", mergeTo: "C" },
-      { col: "D", style: S.sectionTitle, value: "Fournisseur", mergeTo: "F" }
+      { col: "A", style: S.clauseGroup, value: "Client", mergeTo: "C" },
+      { col: "D", style: S.clauseGroup, value: "Fournisseur", mergeTo: "F" }
     ]);
+    sb.blankRows(1);
     sb.addRow(20, [
       { col: "A", style: S.sigLabel, value: "Date:", mergeTo: "C" },
       { col: "D", style: S.sigLabel, value: "Date:", mergeTo: "F" }
     ]);
+    sb.addRow(20, [{ col: "A", style: S.sigLabel, value: "Prénom :", mergeTo: "C" }]);
+    sb.addRow(20, [{ col: "A", style: S.sigLabel, value: "Nom :", mergeTo: "C" }]);
     sb.blankRows(2, 30);
-    sb.addRow(20, [
-      { col: "A", style: S.sigLabel, value: "Signature:", mergeTo: "C" },
-      { col: "D", style: S.sigLabel, value: "Signature:", mergeTo: "F" }
-    ]);
-    sb.blankRows(1, 30);
 
-    const startRow = sb.getCurrentRow() + 1;
+    // The fournisseur's signature line sits directly above her printed name; the client's line is
+    // one row further down, above the "Signature" caption — each side's line only spans its own
+    // half, so the two blank/plain cells on the opposite side of each row stay unbordered.
+    // A merged range's underlying B/C or E/F cells need the same bordered style as the top-left
+    // cell — Excel draws a merged cell's top edge from the individual cells hidden beneath the
+    // merge, not just the top-left one, so leaving them at the default style would draw the line
+    // under column D only instead of across the whole D:F span.
     sb.addRow(20, [
-      { col: "A", style: S.sigLabel, value: "" },
-      { col: "D", style: S.sigName1, value: "Marie-Ève Bouchard, technicienne en administration", mergeTo: "F" }
+      { col: "A", style: S.sigLabel, value: "", mergeTo: "C" },
+      { col: "D", style: S.sigLineName1, value: "Marie-Ève Bouchard, technicienne en administration", mergeTo: "F" },
+      { col: "E", style: S.sigLineName1 },
+      { col: "F", style: S.sigLineName1 }
     ]);
     sb.addRow(20, [
-      { col: "A", style: S.sigLabel, value: "" },
-      { col: "D", style: S.sigLabel, value: "Signature :", mergeTo: "F" }
+      { col: "A", style: S.sigLineClient, value: "Signature", mergeTo: "C" },
+      { col: "B", style: S.sigLineClient },
+      { col: "C", style: S.sigLineClient },
+      { col: "D", style: S.sigLabel, value: "", mergeTo: "F" }
     ]);
     sb.blankRows(1, 30);
-    sb.addRow(20, [
-      { col: "A", style: S.sigLabel, value: "" },
-      { col: "D", style: S.sigName2, value: "Rébecca Audy, gestionnaire administrative des services communautaires", mergeTo: "F" }
+    const rebeccaName = "Rébecca Audy, gestionnaire administrative des services communautaires";
+    sb.addRow(wrapRowHeight(rebeccaName, 66, 16), [
+      { col: "A", style: S.sigLabel, value: "", mergeTo: "C" },
+      { col: "D", style: S.sigLineName2, value: rebeccaName, mergeTo: "F" },
+      { col: "E", style: S.sigLineName2 },
+      { col: "F", style: S.sigLineName2 }
     ]);
-    const endRow = sb.getCurrentRow();
-    sb.addCustomMerge(`A${startRow}:C${endRow}`);
     sb.blankRows(1);
 
     sb.titleRow("Annexe – Clauses de location", S.annexeTitle);

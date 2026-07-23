@@ -34,6 +34,9 @@ const S = {
   sigLabel: 35,
   sigName1: 154,
   sigName2: 156,
+  sigLineName1: 154, // placeholder — overwritten by normalizeGridBorders() with a dark top border
+  sigLineName2: 156, // placeholder — overwritten by normalizeGridBorders() with a dark top border
+  sigLineClient: 35, // placeholder — overwritten by normalizeGridBorders() with a dark top border + centered text
   billingLabel: 77,
   annexeTitle: 78,
   annexeClauseGroup: 71,
@@ -86,9 +89,14 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
 
   const borderCount = parseInt(bordersMatch[1], 10);
   const newBorder = `<border><left/><right/><top/><bottom/><diagonal/></border>`;
+  // A dedicated dark top border for the signature line — deliberately distinct from the pale
+  // gray automatic gridlines the rest of this sheet uses, since it needs to read as an
+  // intentional "sign here" rule rather than an ordinary cell edge.
+  const sigLineBorder = `<border><left/><right/><top style="medium"><color rgb="FF000000"/></top><bottom/><diagonal/></border>`;
+  const sigLineBorderId = borderCount + 1;
   xmlText = xmlText
-    .replace(`<borders count="${borderCount}">`, `<borders count="${borderCount + 1}">`)
-    .replace("</borders>", `${newBorder}</borders>`);
+    .replace(`<borders count="${borderCount}">`, `<borders count="${borderCount + 2}">`)
+    .replace("</borders>", `${newBorder}${sigLineBorder}</borders>`);
 
   const xfCount = parseInt(cellXfsMatch[1], 10);
   const xfEntries = cellXfsMatch[2].match(/<xf\b[^>]*\/>|<xf\b[^>]*>[\s\S]*?<\/xf>/g) || [];
@@ -206,6 +214,62 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
     const valueWithBottomBorder = withBottomBorder(originalNeqValueXf);
     newEntries.push(valueWithBottomBorder);
     S.neqValue = nextIndex;
+    nextIndex++;
+  }
+
+  // Dark top border for the two signature lines (see sigLineBorder above) — the fournisseur's two
+  // signatories (sigName1/sigName2) each get their own line above their printed name; the client's
+  // line sits one row down, above the "Signature" caption, so it's cloned from sigLabel with
+  // horizontal centering added instead.
+  const withTopBorder = (xf: string) => {
+    let clone = /applyBorder="\d"/.test(xf) ? xf.replace(/applyBorder="\d"/, 'applyBorder="1"') : xf.replace("<xf ", '<xf applyBorder="1" ');
+    clone = /borderId="\d+"/.test(clone)
+      ? clone.replace(/borderId="\d+"/, `borderId="${sigLineBorderId}"`)
+      : clone.replace("<xf ", `<xf borderId="${sigLineBorderId}" `);
+    return clone;
+  };
+
+  const withCenterHorizontal = (xf: string) => {
+    let clone = xf;
+    if (/applyAlignment="\d"/.test(clone)) {
+      clone = clone.replace(/applyAlignment="\d"/, 'applyAlignment="1"');
+    } else {
+      clone = clone.replace("<xf ", '<xf applyAlignment="1" ');
+    }
+    if (/<alignment\b/.test(clone)) {
+      if (/horizontal="\w+"/.test(clone)) {
+        clone = clone.replace(/horizontal="\w+"/, 'horizontal="center"');
+      } else {
+        clone = clone.replace("<alignment ", '<alignment horizontal="center" ');
+      }
+    } else {
+      if (clone.endsWith("/>")) {
+        clone = clone.slice(0, -2) + '><alignment horizontal="center"/></xf>';
+      } else {
+        clone = clone.replace("</xf>", '<alignment horizontal="center"/></xf>');
+      }
+    }
+    return clone;
+  };
+
+  const originalSigName1Xf = xfEntries[ORIGINAL_S.sigName1];
+  if (originalSigName1Xf) {
+    newEntries.push(withTopBorder(originalSigName1Xf));
+    S.sigLineName1 = nextIndex;
+    nextIndex++;
+  }
+
+  const originalSigName2Xf = xfEntries[ORIGINAL_S.sigName2];
+  if (originalSigName2Xf) {
+    newEntries.push(withTopBorder(originalSigName2Xf));
+    S.sigLineName2 = nextIndex;
+    nextIndex++;
+  }
+
+  const originalSigLabelXf = xfEntries[ORIGINAL_S.sigLabel];
+  if (originalSigLabelXf) {
+    newEntries.push(withTopBorder(withCenterHorizontal(originalSigLabelXf)));
+    S.sigLineClient = nextIndex;
     nextIndex++;
   }
 
