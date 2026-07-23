@@ -126,6 +126,14 @@ function buildAccountsVolumeConfig(textColor: string, gridColor: string) {
         accountSums[dist.account_code] = (accountSums[dist.account_code] || 0) + dist.amount;
       }
     });
+
+    // Revenus du bar : exclus de la facturation client mais comptabilisés par code budgétaire,
+    // comme dans le rapport "Grand Livre local" (account-report.ts).
+    (act.bar_revenue_lines || []).forEach((b: { account_code: string; amount: number }) => {
+      if (b.account_code && b.amount > 0) {
+        accountSums[b.account_code] = (accountSums[b.account_code] || 0) + b.amount;
+      }
+    });
   });
 
   const sortedAccounts = Object.entries(accountSums)

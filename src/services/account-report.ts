@@ -71,6 +71,23 @@ function renderAccountReport() {
         ];
       }
     });
+
+    // Revenus du bar : exclus de la facturation client (act.distributions) mais tout de même
+    // comptabilisés dans les codes budgétaires, chacun via son propre account_code.
+    (act.bar_revenue_lines || []).forEach((b: any) => {
+      if (!b.account_code || !(b.amount > 0)) return;
+      const entry = {
+        activity: act,
+        amount: b.amount,
+        reference: b.receipt_number,
+        details: `Revenus du bar${b.payment_method ? ` - ${b.payment_method}` : ""}`
+      };
+      if (accountEntries[b.account_code]) {
+        accountEntries[b.account_code].push(entry);
+      } else {
+        accountEntries[b.account_code] = [entry];
+      }
+    });
   });
 
   // Distributions can reference an account code that isn't (or no longer is) in the configured
