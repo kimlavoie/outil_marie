@@ -265,20 +265,20 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     sb.blankRows(1);
     sb.addRow(20, [
       { col: "A", style: S.sigLabel, value: "Date:" },
-      { col: "B", style: S.sigLabel, value: "" },
+      { col: "B", style: S.sigBlank, value: "" },
       { col: "C", style: S.value, value: "" },
       { col: "D", style: S.sigLabel, value: "Date:" },
-      { col: "E", style: S.sigLabel, value: "" },
+      { col: "E", style: S.sigBlank, value: "" },
       { col: "F", style: S.value, value: "" }
     ]);
     sb.addRow(20, [
       { col: "A", style: S.sigLabel, value: "Prénom :" },
-      { col: "B", style: S.sigLabel, value: "" },
+      { col: "B", style: S.sigBlank, value: "" },
       { col: "C", style: S.value, value: "" }
     ]);
     sb.addRow(20, [
       { col: "A", style: S.sigLabel, value: "Nom :" },
-      { col: "B", style: S.sigLabel, value: "" },
+      { col: "B", style: S.sigBlank, value: "" },
       { col: "C", style: S.value, value: "" }
     ]);
     // The fournisseur's signature line sits directly above her printed name; the client's line is
@@ -294,25 +294,25 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     // fournisseur's blank space (stopping one row short, since that row holds the name itself) —
     // giving each side a single tall cell instead of several thin unstyled ones.
     const sigBlankRow1 = sb.addRow(30, [
-      { col: "A", style: S.sigLabel, value: "" },
-      { col: "B", style: S.sigLabel },
-      { col: "C", style: S.sigLabel },
-      { col: "D", style: S.sigLabel, value: "" },
-      { col: "E", style: S.sigLabel },
-      { col: "F", style: S.sigLabel }
+      { col: "A", style: S.sigBlank, value: "" },
+      { col: "B", style: S.sigBlank },
+      { col: "C", style: S.sigBlank },
+      { col: "D", style: S.sigBlank, value: "" },
+      { col: "E", style: S.sigBlank },
+      { col: "F", style: S.sigBlank }
     ]);
     const sigBlankRow2 = sb.addRow(30, [
-      { col: "A", style: S.sigLabel, value: "" },
-      { col: "B", style: S.sigLabel },
-      { col: "C", style: S.sigLabel },
-      { col: "D", style: S.sigLabel, value: "" },
-      { col: "E", style: S.sigLabel },
-      { col: "F", style: S.sigLabel }
+      { col: "A", style: S.sigBlank, value: "" },
+      { col: "B", style: S.sigBlank },
+      { col: "C", style: S.sigBlank },
+      { col: "D", style: S.sigBlank, value: "" },
+      { col: "E", style: S.sigBlank },
+      { col: "F", style: S.sigBlank }
     ]);
     const marieRow = sb.addRow(20, [
-      { col: "A", style: S.sigLabel, value: "" },
-      { col: "B", style: S.sigLabel },
-      { col: "C", style: S.sigLabel },
+      { col: "A", style: S.sigBlank, value: "" },
+      { col: "B", style: S.sigBlank },
+      { col: "C", style: S.sigBlank },
       { col: "D", style: S.sigLineName1, value: "Marie-Ève Bouchard, technicienne en administration", mergeTo: "F" },
       { col: "E", style: S.sigLineName1 },
       { col: "F", style: S.sigLineName1 }
@@ -324,19 +324,19 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
       { col: "A", style: S.sigLineClient, value: "Signature", mergeTo: "C" },
       { col: "B", style: S.sigLineClient },
       { col: "C", style: S.sigLineClient },
-      { col: "D", style: S.sigLabel, value: "", mergeTo: "F" }
+      { col: "D", style: S.sigBlank, value: "", mergeTo: "F" }
     ]);
 
     // Same blank-spacer treatment above Rébecca's name, but only one row deep (and a taller 42pt
     // height) instead of two.
     sb.addRow(42, [
-      { col: "D", style: S.sigLabel, value: "", mergeTo: "F" },
-      { col: "E", style: S.sigLabel },
-      { col: "F", style: S.sigLabel }
+      { col: "D", style: S.sigBlank, value: "", mergeTo: "F" },
+      { col: "E", style: S.sigBlank },
+      { col: "F", style: S.sigBlank }
     ]);
     const rebeccaName = "Rébecca Audy, gestionnaire administrative des services communautaires";
     sb.addRow(wrapRowHeight(rebeccaName, 66, 16), [
-      { col: "A", style: S.sigLabel, value: "", mergeTo: "C" },
+      { col: "A", style: S.sigBlank, value: "", mergeTo: "C" },
       { col: "D", style: S.sigLineName2, value: rebeccaName, mergeTo: "F" },
       { col: "E", style: S.sigLineName2 },
       { col: "F", style: S.sigLineName2 }

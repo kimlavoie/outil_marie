@@ -32,6 +32,8 @@ const S = {
   clauseNum: 22,
   clauseBody: 69,
   sigLabel: 35,
+  sigBlank: 35, // deliberately left unbolded/unmodified (see normalizeGridBorders) — for blank
+  // filler/spacer cells around the signature block (not label text, not touched by the bold pass)
   sigName1: 154,
   sigName2: 156,
   sigLineName1: 154, // placeholder — overwritten by normalizeGridBorders() with a dark top border
@@ -85,7 +87,33 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
 
   const bordersMatch = xmlText.match(/<borders count="(\d+)">/);
   const cellXfsMatch = xmlText.match(/<cellXfs count="(\d+)">([\s\S]*?)<\/cellXfs>/);
+  const fontsMatch = xmlText.match(/<fonts count="(\d+)"[^>]*>([\s\S]*?)<\/fonts>/);
   if (!bordersMatch || !cellXfsMatch) return stylesXmlBytes;
+
+  // Bold clones of whichever fonts the Signatures section's label/name styles already use — the
+  // "Date:"/"Prénom :"/"Nom :"/"Signature" labels and the two signatories' printed names all need
+  // to render bold. Cloning the font (rather than mutating it in place) keeps every other cell
+  // that happens to share the same font/size untouched.
+  const fontEntries = fontsMatch ? fontsMatch[2].match(/<font\b[^>]*\/>|<font\b[^>]*>[\s\S]*?<\/font>/g) || [] : [];
+  const boldFontIdCache = new Map<number, number>();
+  const newFontEntries: string[] = [];
+  let nextFontIndex = fontsMatch ? parseInt(fontsMatch[1], 10) : 0;
+  const boldFontIdFor = (originalFontId: number) => {
+    if (boldFontIdCache.has(originalFontId)) return boldFontIdCache.get(originalFontId)!;
+    const original = fontEntries[originalFontId];
+    if (!original) return originalFontId;
+    const bold = /<b\/>/.test(original) ? original : original.replace(/^<font(\s*)>/, "<font$1><b/>");
+    newFontEntries.push(bold);
+    const newId = nextFontIndex++;
+    boldFontIdCache.set(originalFontId, newId);
+    return newId;
+  };
+  const withBoldFont = (xf: string) => {
+    const fontIdMatch = xf.match(/fontId="(\d+)"/);
+    const originalFontId = fontIdMatch ? parseInt(fontIdMatch[1], 10) : 0;
+    const boldId = boldFontIdFor(originalFontId);
+    return fontIdMatch ? xf.replace(/fontId="\d+"/, `fontId="${boldId}"`) : xf.replace("<xf ", `<xf fontId="${boldId}" `);
+  };
 
   const borderCount = parseInt(bordersMatch[1], 10);
   const newBorder = `<border><left/><right/><top/><bottom/><diagonal/></border>`;
@@ -254,22 +282,28 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
 
   const originalSigName1Xf = xfEntries[ORIGINAL_S.sigName1];
   if (originalSigName1Xf) {
-    newEntries.push(withTopBorder(originalSigName1Xf));
+    newEntries.push(withBoldFont(withTopBorder(originalSigName1Xf)));
     S.sigLineName1 = nextIndex;
     nextIndex++;
   }
 
   const originalSigName2Xf = xfEntries[ORIGINAL_S.sigName2];
   if (originalSigName2Xf) {
-    newEntries.push(withTopBorder(originalSigName2Xf));
+    newEntries.push(withBoldFont(withTopBorder(originalSigName2Xf)));
     S.sigLineName2 = nextIndex;
     nextIndex++;
   }
 
   const originalSigLabelXf = xfEntries[ORIGINAL_S.sigLabel];
   if (originalSigLabelXf) {
-    newEntries.push(withTopBorder(withCenterHorizontal(originalSigLabelXf)));
+    newEntries.push(withBoldFont(withTopBorder(withCenterHorizontal(originalSigLabelXf))));
     S.sigLineClient = nextIndex;
+    nextIndex++;
+
+    // The plain "Date:"/"Prénom :"/"Nom :" labels (and blank filler cells sharing this style)
+    // also need to render bold — bold has no visible effect on the blank ones.
+    newEntries.push(withBoldFont(originalSigLabelXf));
+    S.sigLabel = nextIndex;
     nextIndex++;
   }
 
@@ -314,6 +348,12 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
 
   const patchedBody = xfEntries.join("") + newEntries.join("");
   xmlText = xmlText.replace(cellXfsMatch[0], `<cellXfs count="${nextIndex}">${patchedBody}</cellXfs>`);
+
+  if (fontsMatch && newFontEntries.length > 0) {
+    const openTag = fontsMatch[0].match(/^<fonts[^>]*>/)![0].replace(/count="\d+"/, `count="${nextFontIndex}"`);
+    xmlText = xmlText.replace(fontsMatch[0], `${openTag}${fontsMatch[2]}${newFontEntries.join("")}</fonts>`);
+  }
+
   return new TextEncoder().encode(xmlText);
 }
 
