@@ -14,7 +14,7 @@ function xmlEscapeText(str: string) {
 function formatDateFr(iso: string) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");
-  return `${y}/${m}/${d}`;
+  return `${y}-${m}-${d}`;
 }
 
 // Estimates a row height (points) that fits `text` wrapped across a cell `widthUnits` wide (in
