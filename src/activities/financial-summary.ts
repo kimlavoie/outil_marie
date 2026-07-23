@@ -77,7 +77,6 @@ function computeFormRevenueSubtotal(): {
     updateStaffRowSubtotal(row);
     const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
     const useCustomRate = row.querySelector<HTMLInputElement>(".staff-use-custom-rate")?.checked || false;
-    const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
     const { hours, overtimeHours } = getStaffRowHours(row);
     let rate = 0;
     let overtimeRate = 0;
@@ -86,10 +85,12 @@ function computeFormRevenueSubtotal(): {
       overtimeRate = parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!.value) || 0;
     } else {
       const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
-      rate = salary ? getActiveSalaryRate(salary, eventDateStart) : 0;
-      overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart) : 0;
+      const staffDateInput = row.querySelector<HTMLInputElement>(".staff-date-input");
+      const dateStr = (staffDateInput ? staffDateInput.value : "") || eventDateStart;
+      rate = salary ? getActiveSalaryRate(salary, dateStr) : 0;
+      overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, dateStr) : 0;
     }
-    staffTotal += rate * hours * count + overtimeRate * overtimeHours * count;
+    staffTotal += rate * hours + overtimeRate * overtimeHours;
   });
 
   let servicesTotal = 0;
@@ -195,14 +196,16 @@ function computeActivityFinancials(act: any) {
       const salary = (appState.settings.salaries || []).find(sal => sal.id === s.salary_id);
       let rate = 0;
       let overtimeRate = 0;
+      const targetDate = s.date || eventDateStart;
       if (s.tarif_id === "__custom__") {
         rate = s.custom_rate || 0;
         overtimeRate = s.custom_overtime_rate || 0;
       } else {
-        rate = salary ? getActiveSalaryRate(salary, eventDateStart, s.tarif_id) : 0;
-        overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, s.tarif_id) : 0;
+        rate = salary ? getActiveSalaryRate(salary, targetDate, s.tarif_id) : 0;
+        overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, targetDate, s.tarif_id) : 0;
       }
-      staffTotal += rate * (s.hours || 0) * (s.count || 0) + overtimeRate * (s.overtime_hours || 0) * (s.count || 0);
+      const count = s.count !== undefined ? s.count : 1;
+      staffTotal += rate * (s.hours || 0) * count + overtimeRate * (s.overtime_hours || 0) * count;
     });
     (r.services || []).forEach((s: any) => {
       const service = (appState.settings.services || []).find(sv => sv.id === s.service_id);

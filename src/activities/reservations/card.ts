@@ -253,8 +253,8 @@ function addReservationCard(reservationData: any = null) {
           <span class="field-label">Personnel requis</span>
           <button type="button" class="btn btn-secondary room-add-staff-btn" style="padding: 6px 12px; font-size: 0.8rem;">+ Ajouter</button>
         </div>
-        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.2fr 65px 95px 95px 75px 75px 1fr 50px 100px 38px; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px;">
-          <span>Emploi</span><span style="text-align: center;">Qté</span><span style="text-align: center;">Début</span><span style="text-align: center;">Fin</span><span style="text-align: center;">Heures</span><span style="text-align: center;" title="Taux horaire configuré pour cet emploi">Salaire</span><span>Sous-total</span><span></span><span style="text-align: right; padding-right: 8px;">Options</span><span></span>
+        <div class="distribution-column-labels" style="display: grid; grid-template-columns: 1.2fr 110px 95px 95px 75px 75px 1fr 50px 100px 38px; gap: 12px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px;">
+          <span>Emploi</span><span style="text-align: center;">Date</span><span style="text-align: center;">Début</span><span style="text-align: center;">Fin</span><span style="text-align: center;">Heures</span><span style="text-align: center;" title="Taux horaire configuré pour cet emploi">Salaire</span><span>Sous-total</span><span></span><span style="text-align: right; padding-right: 8px;">Options</span><span></span>
         </div>
         <div class="distribution-list room-staff-list"></div>
       </div>
@@ -512,7 +512,7 @@ function addReservationCard(reservationData: any = null) {
       addStaffRow(
         staffList,
         s.salary_id,
-        s.count,
+        s.date || "",
         s.hours,
         s.overtime_hours,
         s.auto_generated,

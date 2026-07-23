@@ -330,7 +330,7 @@ function renderActivities() {
     // Bar service active indicator & total hostess count
     const hasBarService = (act.reservations || []).some((r: any) => r.bar_service?.active);
     const hasTechnicalDirector = (act.reservations || []).some((r: any) =>
-      (r.staff || []).some((s: any) => s.salary_id === TECHNICAL_DIRECTOR_SALARY_ID && s.count > 0)
+      (r.staff || []).some((s: any) => s.salary_id === TECHNICAL_DIRECTOR_SALARY_ID && (s.count === undefined || s.count > 0 || !!s.date))
     );
     const totalHostesses = (act.reservations || []).reduce(
       (sum: number, r: any) => sum + (r.bar_service?.hostess_count || 0) + (r.host_duties?.hostess_count || 0),

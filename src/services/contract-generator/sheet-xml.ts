@@ -106,7 +106,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
       sb.subHeader(getReservationRoomLabel(r) || "(salle non définie)");
 
       const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
-      if (room?.linked_rooms?.length > 0) {
+      if (room && room.linked_rooms && room.linked_rooms.length > 0) {
         const note = `La réservation de ${room.linked_rooms.join(", ")} est incluse.`;
         sb.addRow(wrapRowHeight(note, 132), [{ col: "A", style: S.wrapValue, value: note, mergeTo: "F" }]);
       }
@@ -144,25 +144,28 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
 
       const staff = r.staff || [];
       if (staff.length > 0) {
-        sb.itemTableHeader("Personnel", "Nombre", "Heures", "Sous-total");
+        sb.itemTableHeader("Personnel", "Date", "Heures", "Sous-total");
         staff.forEach((s: any) => {
           const salary = (appState.settings.salaries || []).find((sal: any) => sal.id === s.salary_id);
           let rate = 0;
           let overtimeRate = 0;
+          const targetDate = s.date || eventDateStart;
           if (s.tarif_id === "__custom__") {
             rate = s.custom_rate || 0;
             overtimeRate = s.custom_overtime_rate || 0;
           } else {
-            rate = salary ? getActiveSalaryRate(salary, eventDateStart, s.tarif_id) : 0;
-            overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, eventDateStart, s.tarif_id) : 0;
+            rate = salary ? getActiveSalaryRate(salary, targetDate, s.tarif_id) : 0;
+            overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, targetDate, s.tarif_id) : 0;
           }
-          const amount = rate * (s.hours || 0) * (s.count || 0) + overtimeRate * (s.overtime_hours || 0) * (s.count || 0);
+          const count = s.count !== undefined ? s.count : 1;
+          const amount = rate * (s.hours || 0) * count + overtimeRate * (s.overtime_hours || 0) * count;
           const heures = s.overtime_hours ? `${s.hours || 0} (+${s.overtime_hours} sup.)` : String(s.hours || 0);
           const jobName = salary?.job || "(rôle non défini)";
           const rateText = s.overtime_hours
             ? `${jobName} (${formatCurrency(rate)}/h, sup. ${formatCurrency(overtimeRate)}/h)`
             : `${jobName} (${formatCurrency(rate)}/h)`;
-          sb.itemRow(rateText, s.count || 0, heures, amount);
+          const col2Value = s.date || (s.count !== undefined ? String(s.count) : "-");
+          sb.itemRow(rateText, col2Value, heures, amount);
         });
       }
 

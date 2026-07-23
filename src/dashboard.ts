@@ -95,8 +95,9 @@ function computeEmployeeStats(
     reservations.forEach((r: any) => {
       (r.staff || []).forEach((s: any) => {
         if (s.salary_id === employeeId) {
-          const normalHrs = (s.hours || 0) * (s.count || 0);
-          const overtimeHrs = (s.overtime_hours || 0) * (s.count || 0);
+          const count = s.count !== undefined ? s.count : 1;
+          const normalHrs = (s.hours || 0) * count;
+          const overtimeHrs = (s.overtime_hours || 0) * count;
 
           let rate = 0;
           let overtimeRate = 0;
@@ -183,8 +184,9 @@ function computeJobsYearlyHours(activities: any[], selectedYear: string, salarie
         const jobId = s.salary_id;
         if (!jobId) return;
 
-        const normalHrs = (s.hours || 0) * (s.count || 0);
-        const overtimeHrs = (s.overtime_hours || 0) * (s.count || 0);
+        const count = s.count !== undefined ? s.count : 1;
+        const normalHrs = (s.hours || 0) * count;
+        const overtimeHrs = (s.overtime_hours || 0) * count;
         const combined = normalHrs + overtimeHrs;
 
         if (jobHoursMap[jobId]) {

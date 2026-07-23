@@ -88,24 +88,24 @@ test.beforeEach(() => {
 test("addStaffRow computes the subtotal from the salary's active rate (regular rate or overtime rate depending on checkbox)", () => {
   const container = freshContainer();
   // Test regular rate
-  addStaffRow(container, "salary-dt", 2, 5, 0, false);
+  addStaffRow(container, "salary-dt", "2026-07-23", 5, 0, false);
   const row1 = container.querySelector(".distribution-row") as HTMLElement;
   const subtotal1 = row1.querySelector(".staff-subtotal-display")!.textContent;
-  // 50 * 5 * 2 = 500
-  assert.match(subtotal1!, /500,00/);
+  // 50 * 5 = 250
+  assert.match(subtotal1!, /250,00/);
 
   // Test overtime rate
   const container2 = freshContainer();
-  addStaffRow(container2, "salary-dt", 2, 0, 5, false);
+  addStaffRow(container2, "salary-dt", "2026-07-23", 0, 5, false);
   const row2 = container2.querySelector(".distribution-row") as HTMLElement;
   const subtotal2 = row2.querySelector(".staff-subtotal-display")!.textContent;
-  // 75 * 5 * 2 = 750
-  assert.match(subtotal2!, /750,00/);
+  // 75 * 5 = 375
+  assert.match(subtotal2!, /375,00/);
 });
 
 test("addStaffRow displays the selected job's hourly rate read-only, and updates it when the job changes", () => {
   const container = freshContainer();
-  addStaffRow(container, "salary-dt", 1, 5, 0);
+  addStaffRow(container, "salary-dt", "2026-07-23", 5, 0);
   const row = container.querySelector(".distribution-row") as HTMLElement;
   const rateDisplay = row.querySelector(".staff-salary-rate-display") as HTMLElement;
   assert.match(rateDisplay.textContent!, /50,00.*\/h/);
@@ -118,7 +118,7 @@ test("addStaffRow displays the selected job's hourly rate read-only, and updates
 
 test("addStaffRow shows the custom rate fields only when useCustomRate is true, and updateStaffRowSubtotal reads them", () => {
   const container = freshContainer();
-  addStaffRow(container, "salary-dt", 1, 4, 0, false, 100, 0, true);
+  addStaffRow(container, "salary-dt", "2026-07-23", 4, 0, false, 100, 0, true);
 
   const wrapper = container.querySelector(".distribution-row-wrapper") as HTMLElement;
   const customFields = wrapper.querySelector(".staff-custom-fields") as HTMLElement;
@@ -127,13 +127,13 @@ test("addStaffRow shows the custom rate fields only when useCustomRate is true, 
   const row = wrapper.querySelector(".distribution-row") as HTMLElement;
   updateStaffRowSubtotal(row);
   const subtotal = row.querySelector(".staff-subtotal-display")!.textContent;
-  // custom rate 100 x 4 hours x 1 count = 400
+  // custom rate 100 x 4 hours = 400
   assert.match(subtotal!, /400,00/);
 });
 
 test("addStaffRow hides the custom rate fields for a normal (non-custom) rate", () => {
   const container = freshContainer();
-  addStaffRow(container, "salary-dt", 1, 1, 0, false, 0, 0, false);
+  addStaffRow(container, "salary-dt", "2026-07-23", 1, 0, false, 0, 0, false);
   const wrapper = container.querySelector(".distribution-row-wrapper") as HTMLElement;
   const customFields = wrapper.querySelector(".staff-custom-fields") as HTMLElement;
   assert.equal(customFields.style.display, "none");
@@ -163,27 +163,27 @@ test("addServiceRow rates a fixed service at its flat rate and hides the hours i
   assert.equal(hoursInput.style.visibility, "hidden");
 });
 
-test("collectStaffFromForm reads back count/hours/overtime for every staff row on the card", () => {
+test("collectStaffFromForm reads back date/hours/overtime for every staff row on the card", () => {
   const card = freshContainer();
   card.innerHTML = `<div class="room-staff-list"></div>`;
   const staffList = card.querySelector(".room-staff-list") as HTMLElement;
   
   // Add a regular staff row
-  addStaffRow(staffList, "salary-dt", 2, 5, 0);
+  addStaffRow(staffList, "salary-dt", "2026-07-23", 5, 0);
   
   // Add an overtime staff row
-  addStaffRow(staffList, "salary-dt", 1, 0, 3);
+  addStaffRow(staffList, "salary-dt", "2026-07-24", 0, 3);
 
   const staff = collectStaffFromForm(card);
   assert.equal(staff.length, 2);
   
   assert.equal(staff[0].salary_id, "salary-dt");
-  assert.equal(staff[0].count, 2);
+  assert.equal(staff[0].date, "2026-07-23");
   assert.equal(staff[0].hours, 5);
   assert.equal(staff[0].overtime_hours, 0);
   
   assert.equal(staff[1].salary_id, "salary-dt");
-  assert.equal(staff[1].count, 1);
+  assert.equal(staff[1].date, "2026-07-24");
   assert.equal(staff[1].hours, 0);
   assert.equal(staff[1].overtime_hours, 3);
 });
@@ -193,7 +193,7 @@ test("collectStaffFromForm drops rows with no salary selected but warns instead 
   card.innerHTML = `<div class="room-staff-list"></div>`;
   const staffList = card.querySelector(".room-staff-list") as HTMLElement;
   // No salary selected, but hours were entered - should be dropped with a warning
-  addStaffRow(staffList, "", 1, 3, 0);
+  addStaffRow(staffList, "", "2026-07-23", 3, 0);
 
   const staff = collectStaffFromForm(card);
   assert.equal(staff.length, 0);
@@ -204,14 +204,16 @@ test("collectStaffFromForm silently drops a fully-empty row (no salary, no data 
   const card = freshContainer();
   card.innerHTML = `<div class="room-staff-list"></div>`;
   const staffList = card.querySelector(".room-staff-list") as HTMLElement;
-  addStaffRow(staffList, "", 0, 0, 0);
-  // addStaffRow defaults count to 1 when falsy, so force it back to 0 to simulate a truly blank row
-  (staffList.querySelector(".staff-count-input") as HTMLInputElement).value = "0";
+  addStaffRow(staffList, "", "", 0, 0);
+  // Force date to be empty to simulate a truly blank row
+  (staffList.querySelector(".staff-date-input") as HTMLInputElement).value = "";
 
   const staff = collectStaffFromForm(card);
   assert.equal(staff.length, 0);
   assert.equal(getIncompleteRowWarnings().length, 0);
 });
+
+
 
 test("collectServicesFromForm reads back service rows and warns on incomplete ones", () => {
   const card = freshContainer();
@@ -324,7 +326,7 @@ test("addStaffRow supports start_time and end_time inputs, automatically calcula
 
   const staffList = card.querySelector(".room-staff-list") as HTMLElement;
 
-  addStaffRow(staffList, "salary-dt", 1, 0, 0, false);
+  addStaffRow(staffList, "salary-dt", "", 0, 0, false);
 
   const row = staffList.querySelector(".distribution-row") as HTMLElement;
   const startInput = row.querySelector(".staff-start-time-input") as HTMLInputElement;
