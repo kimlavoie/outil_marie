@@ -241,7 +241,8 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     ATTESTATIONS.forEach((text, i) => {
       // Column A: Checkbox ☐. Columns B:F: Affirmation text merged.
       // Row height adjusted to actual merge width (110) and respective font sizes (16 for bold, 11 for normal)
-      const h = wrapRowHeight(text, 110, i === 0 ? 16 : 11);
+      // Second attestation (urgency actions) uses a fixed height to fit its longer text/link.
+      const h = i === 1 ? 54 : wrapRowHeight(text, 110, i === 0 ? 16 : 11);
       sb.addRow(h, [
         { col: "A", style: S.initialsLabel, value: "☐" },
         { col: "B", style: i === 0 ? S.attestation : S.urgency, value: text, mergeTo: "F" }
