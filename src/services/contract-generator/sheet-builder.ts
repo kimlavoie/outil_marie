@@ -49,9 +49,16 @@ class SheetBuilder {
   private rowXmls: string[] = [];
   private merges: string[] = [];
   private rowNum = 0;
+  private pageBreaks: number[] = [];
 
   getCurrentRow() {
     return this.rowNum;
+  }
+
+  // Marks a manual page break before whatever row comes next (e.g. a section title) — no-op if
+  // nothing has been written yet, since a break before the first row is meaningless.
+  pageBreakBefore() {
+    if (this.rowNum > 0) this.pageBreaks.push(this.rowNum);
   }
 
   addCustomMerge(range: string) {
@@ -156,7 +163,13 @@ class SheetBuilder {
       this.merges.length > 0
         ? `<mergeCells count="${this.merges.length}">${this.merges.map(m => `<mergeCell ref="${m}"/>`).join("")}</mergeCells>`
         : "";
-    return { sheetDataXml: this.rowXmls.join(""), mergeCellsXml };
+    const rowBreaksXml =
+      this.pageBreaks.length > 0
+        ? `<rowBreaks count="${this.pageBreaks.length}" manualBreakCount="${this.pageBreaks.length}">${this.pageBreaks
+            .map(r => `<brk id="${r}" max="16383" man="1"/>`)
+            .join("")}</rowBreaks>`
+        : "";
+    return { sheetDataXml: this.rowXmls.join(""), mergeCellsXml, rowBreaksXml };
   }
 }
 

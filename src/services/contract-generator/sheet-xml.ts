@@ -100,6 +100,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   // One block per room: its own reserved slots (date/heures), rate, and the staff/equipment/fees
   // tied to that specific room — mirrors how the app itself organizes a reservation's sub-rows.
   if (reservations.length > 0) {
+    sb.pageBreakBefore();
     sb.titleRow("Salle(s) réservée(s)");
     reservations.forEach((r: any) => {
       sb.subHeader(getReservationRoomLabel(r) || "(salle non définie)");
@@ -235,6 +236,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     sb.textBoxRow(CANCELLATION_CLAUSE, S.cancelBody, 14);
     sb.blankRows(1);
 
+    sb.pageBreakBefore();
     sb.titleRow("Attestations (à remplir par le client)");
     sb.addRow(22, [
       { col: "A", style: S.supplierLabel, value: "Numéro d'Entreprise du Québec (NEQ) :", mergeTo: "C" },
@@ -327,6 +329,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
       26: 234
     };
 
+    sb.pageBreakBefore();
     sb.titleRow("Annexe – Clauses de location", S.annexeTitle);
     LOCATION_CLAUSE_GROUPS.forEach(group => {
       sb.textBoxRow(group.title, S.annexeClauseGroup, 16);
@@ -342,17 +345,21 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     });
   }
 
-  const { sheetDataXml, mergeCellsXml } = sb.render();
+  const { sheetDataXml, mergeCellsXml, rowBreaksXml } = sb.render();
   const cols = `<cols>${Array.from({ length: SHEET_COLS }, (_, i) => `<col min="${i + 1}" max="${i + 1}" customWidth="1" width="${COL_WIDTH_UNITS}"/>`).join("")}</cols>`;
   return (
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
     `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+    `<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>` +
     `<dimension ref="A1:F${sb.lastRow}"/>` +
     `<sheetViews><sheetView workbookViewId="0"/></sheetViews>` +
     `<sheetFormatPr defaultRowHeight="15"/>` +
     cols +
     `<sheetData>${sheetDataXml}</sheetData>` +
     mergeCellsXml +
+    `<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>` +
+    `<pageSetup fitToWidth="1" fitToHeight="0" orientation="portrait"/>` +
+    rowBreaksXml +
     (variant === "contrat" ? `<drawing r:id="rId1"/>` : "") +
     `</worksheet>`
   );

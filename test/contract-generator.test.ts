@@ -41,8 +41,8 @@ test("xmlEscapeText escapes &, < and > but leaves quotes untouched", () => {
   assert.equal(xmlEscapeText(`"quoted"`), `"quoted"`);
 });
 
-test("formatDateFr converts an ISO date to YYYY/MM/DD and returns empty string for missing input", () => {
-  assert.equal(formatDateFr("2025-08-01"), "2025/08/01");
+test("formatDateFr converts an ISO date to YYYY-MM-DD and returns empty string for missing input", () => {
+  assert.equal(formatDateFr("2025-08-01"), "2025-08-01");
   assert.equal(formatDateFr(""), "");
   assert.equal(formatDateFr(undefined as any), "");
 });
@@ -139,9 +139,9 @@ test("buildSheetXml formats a single-day reservation period as one date, a multi
   const multiDay = makeActivity({
     reservations: [{ room_name: "Salle A", slots: [{ date: "2025-08-01" }, { date: "2025-08-05" }], staff: [], services: [], fees: [] }]
   });
-  assert.match(buildSheetXml(singleDay, "contrat"), /2025\/08\/01/);
-  assert.doesNotMatch(buildSheetXml(singleDay, "contrat"), /2025\/08\/01 - /);
-  assert.match(buildSheetXml(multiDay, "contrat"), /2025\/08\/01 - 2025\/08\/05/);
+  assert.match(buildSheetXml(singleDay, "contrat"), /2025-08-01/);
+  assert.doesNotMatch(buildSheetXml(singleDay, "contrat"), /2025-08-01 - /);
+  assert.match(buildSheetXml(multiDay, "contrat"), /2025-08-01 - 2025-08-05/);
 });
 
 test("buildSheetXml uses top-aligned style IDs in the Annexe section", () => {
