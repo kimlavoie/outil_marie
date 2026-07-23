@@ -295,7 +295,6 @@ function renderActivities() {
     const isFilled = act.name.trim() !== "";
     const totalRev = act.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
 
-
     // Format dates
     let datesText = "-";
     let daysCount = 0;

@@ -23,10 +23,8 @@ const COL_WIDTH_UNITS = 22;
 const SOURCE_IMAGE_WIDTH_EMU = 16138070;
 const SOURCE_IMAGE_HEIGHT_EMU = 2777553;
 
-// Scales the header image down to exactly the sheet's own column width (it was originally sized
-// for a much wider ~17-column sheet) instead of overflowing past column F. Excel's column width
-// unit is ~7px/unit at the 11pt reference font (see wrapRowHeight's doc comment); 1px = 9525 EMU.
-const IMAGE_WIDTH_EMU = SHEET_COLS * (COL_WIDTH_UNITS * 7 + 5) * 9525;
+// Scales the header image to exactly 26.19 cm wide (1 cm = 360000 EMU).
+const IMAGE_WIDTH_EMU = Math.round(26.19 * 360000);
 const IMAGE_HEIGHT_EMU = Math.round((IMAGE_WIDTH_EMU * SOURCE_IMAGE_HEIGHT_EMU) / SOURCE_IMAGE_WIDTH_EMU);
 // How many default-height (15pt) blank rows the scaled-down image now covers, plus a small margin.
 const IMAGE_ROW_SPAN = Math.ceil(IMAGE_HEIGHT_EMU / 12700 / 15) + 1;
@@ -66,7 +64,9 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   const addr = act.client_type === "externe" && act.responsable_address ? act.responsable_address : manager.address;
   const city = act.client_type === "externe" && act.responsable_city ? act.responsable_city : manager.city;
   const prov = act.client_type === "externe" && act.responsable_province ? act.responsable_province : manager.province;
-  const pc = formatPostalCode(act.client_type === "externe" && act.responsable_postal_code ? act.responsable_postal_code : manager.postal_code);
+  const pc = formatPostalCode(
+    act.client_type === "externe" && act.responsable_postal_code ? act.responsable_postal_code : manager.postal_code
+  );
   const addressLine = [addr, city, prov, pc].filter(Boolean).join(", ");
   sb.labelRow("Adresse", addressLine || undefined, S.supplierLabel, S.supplierValue);
   sb.labelRow("Téléphone", manager.phone, S.supplierLabel, S.supplierValue);
@@ -101,7 +101,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   // tied to that specific room — mirrors how the app itself organizes a reservation's sub-rows.
   if (reservations.length > 0) {
     sb.pageBreakBefore();
-    sb.titleRow("Salle(s) réservée(s)");
+    sb.titleRow("Réservations");
     reservations.forEach((r: any) => {
       sb.subHeader(getReservationRoomLabel(r) || "(salle non définie)");
 
@@ -410,9 +410,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
           { col: "A", style: S.annexeClauseNum, value: `Clause ${clause.num}`, mergeTo: "F" }
         ]);
         const height = CLAUSE_HEIGHTS[clause.num] ?? wrapRowHeight(clause.body, 132, 16);
-        sb.addRow(height, [
-          { col: "A", style: S.annexeClauseBody, value: clause.body, mergeTo: "F" }
-        ]);
+        sb.addRow(height, [{ col: "A", style: S.annexeClauseBody, value: clause.body, mergeTo: "F" }]);
       });
     });
   }

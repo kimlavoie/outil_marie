@@ -314,9 +314,7 @@ export function updateStaffRowSubtotal(row: HTMLElement) {
     overtimeRate = salary ? getActiveSalaryOvertimeRate(salary, dateStr) : 0;
   }
 
-  row.querySelector<HTMLInputElement>(".staff-subtotal-display")!.textContent = formatCurrency(
-    rate * hours + overtimeRate * overtimeHours
-  );
+  row.querySelector<HTMLInputElement>(".staff-subtotal-display")!.textContent = formatCurrency(rate * hours + overtimeRate * overtimeHours);
 
   const rateDisplay = row.querySelector<HTMLElement>(".staff-salary-rate-display")!;
   rateDisplay.textContent = salary ? `${formatCurrency(rate)}/h` : "—";

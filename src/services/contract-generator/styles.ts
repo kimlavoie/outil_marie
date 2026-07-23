@@ -250,7 +250,9 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
   // line sits one row down, above the "Signature" caption, so it's cloned from sigLabel with
   // horizontal centering added instead.
   const withTopBorder = (xf: string) => {
-    let clone = /applyBorder="\d"/.test(xf) ? xf.replace(/applyBorder="\d"/, 'applyBorder="1"') : xf.replace("<xf ", '<xf applyBorder="1" ');
+    let clone = /applyBorder="\d"/.test(xf)
+      ? xf.replace(/applyBorder="\d"/, 'applyBorder="1"')
+      : xf.replace("<xf ", '<xf applyBorder="1" ');
     clone = /borderId="\d+"/.test(clone)
       ? clone.replace(/borderId="\d+"/, `borderId="${sigLineBorderId}"`)
       : clone.replace("<xf ", `<xf borderId="${sigLineBorderId}" `);
@@ -330,12 +332,7 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
     return clone;
   };
 
-  const annexeKeys = [
-    "annexeTitle",
-    "annexeClauseGroup",
-    "annexeClauseNum",
-    "annexeClauseBody"
-  ] as const;
+  const annexeKeys = ["annexeTitle", "annexeClauseGroup", "annexeClauseNum", "annexeClauseBody"] as const;
 
   annexeKeys.forEach(key => {
     const original = xfEntries[ORIGINAL_S[key]];

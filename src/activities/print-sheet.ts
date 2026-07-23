@@ -45,7 +45,7 @@ function getSortedSlotsForReservation(r: any) {
     });
   }
 
-  list.sort((a, b) => {
+  list.sort((a: any, b: any) => {
     if (a.date !== b.date) {
       return a.date.localeCompare(b.date);
     }
@@ -136,7 +136,9 @@ function buildPrintActivitySheetHtml(act: any) {
       const slotsText =
         sortedSlots
           .map((s: any) =>
-            escapeHtml(`${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}${s.details ? " (" + s.details + ")" : ""}`)
+            escapeHtml(
+              `${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}${s.details ? " (" + s.details + ")" : ""}`
+            )
           )
           .join(", ") || "-";
 
@@ -267,7 +269,9 @@ function buildActivityDetailsHtml(act: any) {
       const slotsText =
         sortedSlots
           .map((s: any) =>
-            escapeHtml(`${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}${s.details ? " (" + s.details + ")" : ""}`)
+            escapeHtml(
+              `${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}${s.details ? " (" + s.details + ")" : ""}`
+            )
           )
           .join(", ") || "-";
 
