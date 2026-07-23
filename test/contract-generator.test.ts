@@ -49,7 +49,7 @@ test("formatDateFr converts an ISO date to YYYY/MM/DD and returns empty string f
 
 test("wrapRowHeight grows with text length and never goes below the 20 minimum", () => {
   const shortHeight = wrapRowHeight("Court", 132, 16);
-  const longHeight = wrapRowHeight("Un texte beaucoup plus long qui devrait prendre plusieurs lignes une fois affiché.", 132, 16);
+  const longHeight = wrapRowHeight("Un texte beaucoup plus long qui devrait prendre plusieurs lignes une fois affiché. Et nous rajoutons encore du texte pour s'assurer que ça dépasse largement une seule ligne sous n'importe quelle configuration.", 132, 16);
   assert.ok(shortHeight >= 20);
   assert.ok(longHeight > shortHeight);
   assert.ok(wrapRowHeight("", 132, 16) >= 20);

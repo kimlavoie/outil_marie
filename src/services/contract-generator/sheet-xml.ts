@@ -292,6 +292,35 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     ]);
     sb.blankRows(1);
 
+    const CLAUSE_HEIGHTS: Record<number, number> = {
+      1: 43.5,
+      2: 61.5,
+      3: 43.5,
+      4: 20.25,
+      5: 63.75,
+      6: 42,
+      7: 62.25,
+      8: 43.5,
+      9: 20.25,
+      10: 65.25,
+      11: 43.5,
+      12: 21.75,
+      13: 22.5,
+      14: 43.5,
+      15: 43.5,
+      16: 42,
+      17: 62.25,
+      18: 21.75,
+      19: 63.75,
+      20: 43.5,
+      21: 42,
+      22: 42.75,
+      23: 63.75,
+      24: 42,
+      25: 63.75,
+      26: 234
+    };
+
     sb.titleRow("Annexe – Clauses de location", S.annexeTitle);
     LOCATION_CLAUSE_GROUPS.forEach(group => {
       sb.textBoxRow(group.title, S.annexeClauseGroup, 16);
@@ -299,7 +328,10 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
         sb.addRow(wrapRowHeight(`Clause ${clause.num}`, 132, 18), [
           { col: "A", style: S.annexeClauseNum, value: `Clause ${clause.num}`, mergeTo: "F" }
         ]);
-        sb.textBoxRow(clause.body, S.annexeClauseBody, 16);
+        const height = CLAUSE_HEIGHTS[clause.num] ?? wrapRowHeight(clause.body, 132, 16);
+        sb.addRow(height, [
+          { col: "A", style: S.annexeClauseBody, value: clause.body, mergeTo: "F" }
+        ]);
       });
     });
   }

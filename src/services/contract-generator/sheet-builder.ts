@@ -29,9 +29,12 @@ function formatDateFr(iso: string) {
 // better to overshoot the row height than clip text.
 function wrapRowHeight(text: string, widthUnits: number, fontSize = 16) {
   const charsPerLine = Math.max(6, Math.floor((widthUnits * 11 * 0.85) / fontSize));
-  const lineHeight = fontSize * 1.35;
+  const lineHeight = fontSize * 1.25;
   const lines = text.split("\n").reduce((sum, seg) => sum + Math.max(1, Math.ceil(seg.length / charsPerLine)), 0);
-  return Math.max(20, Math.round(lines * lineHeight + 8));
+  if (lines === 1) {
+    return Math.max(20, Math.round(lineHeight + 3));
+  }
+  return Math.max(20, Math.round(lines * lineHeight + 4));
 }
 
 interface CellSpec {
