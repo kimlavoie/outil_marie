@@ -100,9 +100,15 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   // One block per room: its own reserved slots (date/heures), rate, and the staff/equipment/fees
   // tied to that specific room — mirrors how the app itself organizes a reservation's sub-rows.
   if (reservations.length > 0) {
-    sb.titleRow("Salles réservées");
+    sb.titleRow("Salle(s) réservée(s)");
     reservations.forEach((r: any) => {
       sb.subHeader(getReservationRoomLabel(r) || "(salle non définie)");
+
+      const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+      if (room?.linked_rooms?.length > 0) {
+        const note = `La réservation de ${room.linked_rooms.join(", ")} est incluse.`;
+        sb.addRow(wrapRowHeight(note, 132), [{ col: "A", style: S.wrapValue, value: note, mergeTo: "F" }]);
+      }
 
       const slots = r.slots || [];
       if (slots.length > 0) {
@@ -118,7 +124,6 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
         sb.detailRow("Démontage", r.dismantle.start_time || "?", r.dismantle.end_time || "?", "");
       }
 
-      const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
       const isHourly = room && room.rate_type === "hourly";
       if (isHourly) {
         const hours = slots.reduce((sum: number, s: any) => {
