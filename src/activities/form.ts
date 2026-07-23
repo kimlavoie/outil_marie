@@ -14,7 +14,7 @@
  * re-exports the others' public API so existing imports from "./form.ts" keep working.
  */
 import { appState } from "../state/state.ts";
-import { debounce, generateUid, maskPhoneInput, initMultiSelectDropdown } from "../utils/utils.ts";
+import { debounce, generateUid, maskPhoneInput, initMultiSelectDropdown, maskPostalCodeInput, formatPostalCode } from "../utils/utils.ts";
 import { activitiesState, renderActivities, initBulkActionsHandlers } from "./render.ts";
 import {
   openActivityDrawer,
@@ -276,6 +276,10 @@ function initFormHandlers() {
   // Phone number masks
   maskPhoneInput(el("form-activity-manager-phone"));
 
+  // Postal code masks
+  maskPostalCodeInput(el("form-activity-manager-postal-code"));
+  maskPostalCodeInput(el("form-activity-responsable-postal-code"));
+
   // Manager "Fonction" = Externe reveals company/address fields
   el("form-activity-manager-type").addEventListener("change", e => {
     const externalGroup = el("form-activity-manager-external-group");
@@ -439,7 +443,7 @@ function fillActivityFormFields(act: any) {
   if (respAddrEl) respAddrEl.value = act.responsable_address || "";
   if (respCityEl) respCityEl.value = act.responsable_city || "";
   if (respProvEl) respProvEl.value = act.responsable_province || "";
-  if (respPcEl) respPcEl.value = act.responsable_postal_code || "";
+  if (respPcEl) respPcEl.value = formatPostalCode(act.responsable_postal_code || "");
 
   updateResponsableClientTypeDisplay();
 
@@ -455,7 +459,7 @@ function fillActivityFormFields(act: any) {
   el("form-activity-manager-address").value = act.activity_manager?.address || "";
   el("form-activity-manager-city").value = act.activity_manager?.city || "";
   el("form-activity-manager-province").value = act.activity_manager?.province || "";
-  el("form-activity-manager-postal-code").value = act.activity_manager?.postal_code || "";
+  el("form-activity-manager-postal-code").value = formatPostalCode(act.activity_manager?.postal_code || "");
   el("form-activity-manager-external-group").style.display = act.activity_manager?.type === "externe" ? "block" : "none";
   el("form-activity-responsable-same-as-manager").checked = !!act.responsable_same_as_manager;
   applyResponsableSameAsManager(!!act.responsable_same_as_manager);

@@ -8,7 +8,7 @@
  */
 import { computeActivityFinancials } from "../../activities/financials.ts";
 import { getAggregateEventDates } from "../../activities/reservations/index.ts";
-import { getReservationRoomLabel, formatCurrency, calculateHoursFromTimes } from "../../utils/utils.ts";
+import { getReservationRoomLabel, formatCurrency, calculateHoursFromTimes, formatPostalCode } from "../../utils/utils.ts";
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../../state/state.ts";
 import { S } from "./styles.ts";
 import { SheetBuilder, formatDateFr, wrapRowHeight } from "./sheet-builder.ts";
@@ -66,7 +66,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   const addr = act.client_type === "externe" && act.responsable_address ? act.responsable_address : manager.address;
   const city = act.client_type === "externe" && act.responsable_city ? act.responsable_city : manager.city;
   const prov = act.client_type === "externe" && act.responsable_province ? act.responsable_province : manager.province;
-  const pc = act.client_type === "externe" && act.responsable_postal_code ? act.responsable_postal_code : manager.postal_code;
+  const pc = formatPostalCode(act.client_type === "externe" && act.responsable_postal_code ? act.responsable_postal_code : manager.postal_code);
   const addressLine = [addr, city, prov, pc].filter(Boolean).join(", ");
   sb.labelRow("Adresse", addressLine || undefined, S.supplierLabel, S.supplierValue);
   sb.labelRow("Téléphone", manager.phone, S.supplierLabel, S.supplierValue);

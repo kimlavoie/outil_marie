@@ -12,7 +12,8 @@ import {
   showLoadingOverlay,
   hideLoadingOverlay,
   elById,
-  calculateHoursFromTimes
+  calculateHoursFromTimes,
+  formatPostalCode
 } from "../utils/utils.ts";
 import { isNonEmptyString } from "../utils/validation.ts";
 import { getActivityStateLabel } from "./render.ts";
@@ -157,7 +158,7 @@ function buildPrintActivitySheetHtml(act: any) {
         <div><strong>Adresse :</strong> ${escapeHtml(manager.address) || "-"}</div>
         <div><strong>Ville :</strong> ${escapeHtml(manager.city) || "-"}</div>
         <div><strong>Province :</strong> ${escapeHtml(manager.province) || "-"}</div>
-        <div><strong>Code postal :</strong> ${escapeHtml(manager.postal_code) || "-"}</div>
+        <div><strong>Code postal :</strong> ${escapeHtml(formatPostalCode(manager.postal_code)) || "-"}</div>
         `
             : ""
         }
@@ -216,7 +217,7 @@ function buildActivityDetailsHtml(act: any) {
           ["Adresse", manager.address],
           ["Ville", manager.city],
           ["Province", manager.province],
-          ["Code postal", manager.postal_code]
+          ["Code postal", formatPostalCode(manager.postal_code)]
         ]
       : [])
   ].filter(([, value]) => isNonEmptyString(value));

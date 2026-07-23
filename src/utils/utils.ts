@@ -23,7 +23,9 @@ export {
   maskDateInput,
   formatTimeMask,
   maskTimeInput,
-  maskPhoneInput
+  maskPhoneInput,
+  formatPostalCode,
+  maskPostalCodeInput
 } from "./format.ts";
 export type { RateVersionRow } from "./format.ts";
 export {

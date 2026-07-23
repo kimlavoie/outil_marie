@@ -192,6 +192,39 @@ function maskPhoneInput(input: HTMLInputElement | null) {
   });
 }
 
+function formatPostalCode(rawValue: string | undefined | null): string {
+  if (!rawValue) return "";
+  let value = rawValue.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  if (value.length > 6) {
+    value = value.substring(0, 6);
+  }
+
+  let formatted = "";
+  if (value.length > 0) {
+    formatted += value.substring(0, 3);
+  }
+  if (value.length > 3) {
+    formatted += " " + value.substring(3, 6);
+  }
+
+  return formatted;
+}
+
+function maskPostalCodeInput(input: HTMLInputElement | null) {
+  if (!input) return;
+  const format = () => {
+    input.value = formatPostalCode(input.value);
+  };
+  input.addEventListener("input", (e: Event) => {
+    const inputType = (e as InputEvent).inputType;
+    if (inputType === "deleteContentBackward" || inputType === "deleteContentForward") {
+      return;
+    }
+    format();
+  });
+  input.addEventListener("change", format);
+}
+
 export {
   formatCurrency,
   escapeHtml,
@@ -204,5 +237,7 @@ export {
   maskDateInput,
   formatTimeMask,
   maskTimeInput,
-  maskPhoneInput
+  maskPhoneInput,
+  formatPostalCode,
+  maskPostalCodeInput
 };

@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateDaysCount, getRoomsTariffTotal, getActivityReferences, formatCurrency, escapeHtml, generateUid, getReservationRoomLabel, getRoomColor, buildGlAccountOptionsHtml, buildPaginationBarHtml, debounce, formatDateMask } from "../src/utils/utils.ts";
+import { calculateDaysCount, getRoomsTariffTotal, getActivityReferences, formatCurrency, escapeHtml, generateUid, getReservationRoomLabel, getRoomColor, buildGlAccountOptionsHtml, buildPaginationBarHtml, debounce, formatDateMask, formatPostalCode, maskPostalCodeInput } from "../src/utils/utils.ts";
 import { appState } from "../src/state/state.ts";
+import { dom } from "./dom-mock.ts";
+
+test.after(() => dom.window.close());
+
 
 test("calculateDaysCount counts both endpoints inclusively", () => {
   assert.equal(calculateDaysCount("2025-01-01", "2025-01-05"), 5);
@@ -202,4 +206,43 @@ test("formatDateMask formats digits to YYYY-MM-DD", () => {
   assert.equal(formatDateMask("abc2026def07ghi15"), "2026-07-15");
 });
 
+test("formatPostalCode formats raw postal codes correctly", () => {
+  assert.equal(formatPostalCode("h0h0h0h"), "H0H 0H0");
+  assert.equal(formatPostalCode("H1A 1A1"), "H1A 1A1");
+  assert.equal(formatPostalCode("h1a1a1"), "H1A 1A1");
+  assert.equal(formatPostalCode("h1a-1a1"), "H1A 1A1");
+  assert.equal(formatPostalCode("h1a"), "H1A");
+  assert.equal(formatPostalCode(""), "");
+  assert.equal(formatPostalCode("  "), "");
+});
+
+test("maskPostalCodeInput applies formatting during typing in DOM", () => {
+  const input = document.createElement("input") as HTMLInputElement;
+  input.type = "text";
+  maskPostalCodeInput(input);
+
+  // simulate typing 'h'
+  input.value = "h";
+  input.dispatchEvent(new Event("input"));
+  assert.equal(input.value, "H");
+
+  // simulate typing 'h0h0'
+  input.value = "h0h0";
+  input.dispatchEvent(new Event("input"));
+  assert.equal(input.value, "H0H 0");
+
+  // simulate typing 'h0h0h0h' (too long)
+  input.value = "h0h0h0h";
+  input.dispatchEvent(new Event("input"));
+  assert.equal(input.value, "H0H 0H0");
+
+  // simulate backspace event (deleteContentBackward) - should allow deleting without formatting
+  input.value = "H0H 0H";
+  const backspaceEvent = new Event("input");
+  (backspaceEvent as any).inputType = "deleteContentBackward";
+  input.dispatchEvent(backspaceEvent);
+  assert.equal(input.value, "H0H 0H");
+});
+
 export {};
+
