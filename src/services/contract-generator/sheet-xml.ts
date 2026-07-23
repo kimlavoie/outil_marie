@@ -281,8 +281,6 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
       { col: "B", style: S.sigLabel, value: "" },
       { col: "C", style: S.value, value: "" }
     ]);
-    sb.blankRows(2, 30);
-
     // The fournisseur's signature line sits directly above her printed name; the client's line is
     // one row further down, above the "Signature" caption — each side's line only spans its own
     // half, so the two blank/plain cells on the opposite side of each row stay unbordered.
@@ -290,19 +288,52 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     // cell — Excel draws a merged cell's top edge from the individual cells hidden beneath the
     // merge, not just the top-left one, so leaving them at the default style would draw the line
     // under column D only instead of across the whole D:F span.
-    sb.addRow(20, [
-      { col: "A", style: S.sigLabel, value: "", mergeTo: "C" },
+    //
+    // The two blank spacer rows above the name are merged into the client's blank space (through
+    // the name row, since that row's client-side cell is blank too) and separately into the
+    // fournisseur's blank space (stopping one row short, since that row holds the name itself) —
+    // giving each side a single tall cell instead of several thin unstyled ones.
+    const sigBlankRow1 = sb.addRow(30, [
+      { col: "A", style: S.sigLabel, value: "" },
+      { col: "B", style: S.sigLabel },
+      { col: "C", style: S.sigLabel },
+      { col: "D", style: S.sigLabel, value: "" },
+      { col: "E", style: S.sigLabel },
+      { col: "F", style: S.sigLabel }
+    ]);
+    const sigBlankRow2 = sb.addRow(30, [
+      { col: "A", style: S.sigLabel, value: "" },
+      { col: "B", style: S.sigLabel },
+      { col: "C", style: S.sigLabel },
+      { col: "D", style: S.sigLabel, value: "" },
+      { col: "E", style: S.sigLabel },
+      { col: "F", style: S.sigLabel }
+    ]);
+    const marieRow = sb.addRow(20, [
+      { col: "A", style: S.sigLabel, value: "" },
+      { col: "B", style: S.sigLabel },
+      { col: "C", style: S.sigLabel },
       { col: "D", style: S.sigLineName1, value: "Marie-Ève Bouchard, technicienne en administration", mergeTo: "F" },
       { col: "E", style: S.sigLineName1 },
       { col: "F", style: S.sigLineName1 }
     ]);
+    sb.addCustomMerge(`A${sigBlankRow1}:C${marieRow}`);
+    sb.addCustomMerge(`D${sigBlankRow1}:F${sigBlankRow2}`);
+
     sb.addRow(20, [
       { col: "A", style: S.sigLineClient, value: "Signature", mergeTo: "C" },
       { col: "B", style: S.sigLineClient },
       { col: "C", style: S.sigLineClient },
       { col: "D", style: S.sigLabel, value: "", mergeTo: "F" }
     ]);
-    sb.blankRows(1, 30);
+
+    // Same blank-spacer treatment above Rébecca's name, but only one row deep (and a taller 42pt
+    // height) instead of two.
+    sb.addRow(42, [
+      { col: "D", style: S.sigLabel, value: "", mergeTo: "F" },
+      { col: "E", style: S.sigLabel },
+      { col: "F", style: S.sigLabel }
+    ]);
     const rebeccaName = "Rébecca Audy, gestionnaire administrative des services communautaires";
     sb.addRow(wrapRowHeight(rebeccaName, 66, 16), [
       { col: "A", style: S.sigLabel, value: "", mergeTo: "C" },
