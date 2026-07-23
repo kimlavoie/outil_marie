@@ -11,7 +11,7 @@
 const SUPPLIER = {
   org: "Cégep de Jonquière",
   responsable: "Marie-Ève Bouchard",
-  address: "2505 rue Saint-Hubert, G7X 7W2, Jonquière, QC",
+  address: "2505 rue Saint-Hubert, Jonquière, Québec, G7X 7W2",
   phone: "418-547-2191 poste 6232",
   email: "servicescommunautaires@cegepjonquiere.ca"
 };
