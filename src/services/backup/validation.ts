@@ -24,7 +24,12 @@ function validateReservationShape(r: any): boolean {
   if (
     !arrayItemsMatch(
       r.slots,
-      (s: any) => isPlainObject(s) && typeof s.date === "string" && typeof s.start_time === "string" && typeof s.end_time === "string"
+      (s: any) =>
+        isPlainObject(s) &&
+        typeof s.date === "string" &&
+        typeof s.start_time === "string" &&
+        typeof s.end_time === "string" &&
+        (s.details === undefined || typeof s.details === "string")
     )
   ) {
     return false;

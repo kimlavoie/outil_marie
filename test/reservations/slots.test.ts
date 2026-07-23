@@ -48,14 +48,15 @@ test.beforeEach(() => {
   document.body.innerHTML = "";
 });
 
-test("addSlotRow creates a row pre-filled with the given date/start/end time", () => {
+test("addSlotRow creates a row pre-filled with the given date/start/end time and details", () => {
   const container = freshContainer();
-  addSlotRow(container, "2025-08-01", "09:00", "17:00");
+  addSlotRow(container, "2025-08-01", "09:00", "17:00", "Quelque détail");
 
   const row = container.querySelector(".reservation-slot-row") as HTMLElement;
   assert.equal(row.querySelector<HTMLInputElement>(".slot-date-input")!.value, "2025-08-01");
   assert.equal(row.querySelector<HTMLInputElement>(".slot-start-time-input")!.value, "09:00");
   assert.equal(row.querySelector<HTMLInputElement>(".slot-end-time-input")!.value, "17:00");
+  assert.equal(row.querySelector<HTMLInputElement>(".slot-details-input")!.value, "Quelque détail");
 });
 
 test("addSlotRow validates the fiscal year of a pre-filled date immediately, flagging one that's out of range", () => {
@@ -88,19 +89,21 @@ test("addSlotRow's delete button removes the row from the DOM", () => {
   assert.equal(container.querySelectorAll(".reservation-slot-row").length, 0);
 });
 
-test("collectSlotsFromCard reads date/start/end time from every slot row under .reservation-slots-list", () => {
+test("collectSlotsFromCard reads date/start/end time and details from every slot row under .reservation-slots-list", () => {
   const card = freshContainer();
   card.innerHTML = `<div class="reservation-slots-list"></div>`;
   const slotsList = card.querySelector(".reservation-slots-list") as HTMLElement;
-  addSlotRow(slotsList, "2025-08-01", "09:00", "12:00");
-  addSlotRow(slotsList, "2025-08-02", "13:00", "17:00");
+  addSlotRow(slotsList, "2025-08-01", "09:00", "12:00", "Détail 1");
+  addSlotRow(slotsList, "2025-08-02", "13:00", "17:00", "Détail 2");
 
   const slots = collectSlotsFromCard(card);
   assert.equal(slots.length, 2);
   assert.equal(slots[0].date, "2025-08-01");
   assert.equal(slots[0].start_time, "09:00");
   assert.equal(slots[0].end_time, "12:00");
+  assert.equal(slots[0].details, "Détail 1");
   assert.equal(slots[1].date, "2025-08-02");
+  assert.equal(slots[1].details, "Détail 2");
 });
 
 test("collectSlotsFromCard drops rows with no date entered", () => {

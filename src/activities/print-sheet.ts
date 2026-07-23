@@ -19,6 +19,42 @@ import { isNonEmptyString } from "../utils/validation.ts";
 import { getActivityStateLabel } from "./render.ts";
 import { computeActivityFinancials, overrideMarkerHtml } from "./financial-summary.ts";
 
+function getSortedSlotsForReservation(r: any) {
+  const list = (r.slots || []).map((s: any) => ({
+    date: s.date || "",
+    start_time: s.start_time || "",
+    end_time: s.end_time || "",
+    details: s.details || ""
+  }));
+
+  if (r.install?.enabled && r.install.date) {
+    list.push({
+      date: r.install.date,
+      start_time: r.install.start_time || "",
+      end_time: r.install.end_time || "",
+      details: "Montage"
+    });
+  }
+
+  if (r.dismantle?.enabled && r.dismantle.date) {
+    list.push({
+      date: r.dismantle.date,
+      start_time: r.dismantle.start_time || "",
+      end_time: r.dismantle.end_time || "",
+      details: "Démontage"
+    });
+  }
+
+  list.sort((a, b) => {
+    if (a.date !== b.date) {
+      return a.date.localeCompare(b.date);
+    }
+    return (a.start_time || "").localeCompare(b.start_time || "");
+  });
+
+  return list;
+}
+
 // Shared by buildPrintActivitySheetHtml() and buildActivityDetailsHtml(): renders the "Détails du
 // service de bar" section for every reservation with an active bar_service, or "" if none.
 function buildBarServiceSectionHtml(reservations: any[]) {
@@ -96,10 +132,11 @@ function buildPrintActivitySheetHtml(act: any) {
     .map((r: any) => {
       const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
       const isHourly = room && room.rate_type === "hourly";
+      const sortedSlots = getSortedSlotsForReservation(r);
       const slotsText =
-        (r.slots || [])
+        sortedSlots
           .map((s: any) =>
-            escapeHtml(`${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
+            escapeHtml(`${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}${s.details ? " (" + s.details + ")" : ""}`)
           )
           .join(", ") || "-";
 
@@ -226,10 +263,11 @@ function buildActivityDetailsHtml(act: any) {
     .map((r: any) => {
       const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
       const isHourly = room && room.rate_type === "hourly";
+      const sortedSlots = getSortedSlotsForReservation(r);
       const slotsText =
-        (r.slots || [])
+        sortedSlots
           .map((s: any) =>
-            escapeHtml(`${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}`)
+            escapeHtml(`${s.date.replace(/-/g, "/")}${s.start_time ? " " + s.start_time : ""}${s.end_time ? "–" + s.end_time : ""}${s.details ? " (" + s.details + ")" : ""}`)
           )
           .join(", ") || "-";
 

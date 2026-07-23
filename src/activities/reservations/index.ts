@@ -35,7 +35,7 @@ function initReservationsSection() {
     const newCard = addReservationCard();
     if (newCard && previousSlots.length) {
       const slotsList = newCard.querySelector<HTMLElement>(".reservation-slots-list")!;
-      previousSlots.forEach(s => addSlotRow(slotsList, s.date, s.start_time, s.end_time));
+      previousSlots.forEach(s => addSlotRow(slotsList, s.date, s.start_time, s.end_time, s.details));
     }
     updateFormDatesHelper();
     updateSubmissionFinancialSummary();

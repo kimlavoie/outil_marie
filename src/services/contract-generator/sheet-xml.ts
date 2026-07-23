@@ -112,17 +112,43 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
       }
 
       const slots = r.slots || [];
-      if (slots.length > 0) {
-        sb.itemTableHeader("Date", "Début", "Fin", "");
-        slots.forEach((slot: any) => {
-          sb.detailRow(formatDateFr(slot.date) || "?", slot.start_time || "?", slot.end_time || "?", "");
+      const sortedSlots: any[] = [];
+      slots.forEach((s: any) => {
+        sortedSlots.push({
+          date: s.date,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          details: s.details || ""
+        });
+      });
+      if (r.install?.enabled && r.install.date) {
+        sortedSlots.push({
+          date: r.install.date,
+          start_time: r.install.start_time || "",
+          end_time: r.install.end_time || "",
+          details: "Montage"
         });
       }
-      if (r.install?.start_time || r.install?.end_time) {
-        sb.detailRow("Installation", r.install.start_time || "?", r.install.end_time || "?", "");
+      if (r.dismantle?.enabled && r.dismantle.date) {
+        sortedSlots.push({
+          date: r.dismantle.date,
+          start_time: r.dismantle.start_time || "",
+          end_time: r.dismantle.end_time || "",
+          details: "Démontage"
+        });
       }
-      if (r.dismantle?.start_time || r.dismantle?.end_time) {
-        sb.detailRow("Démontage", r.dismantle.start_time || "?", r.dismantle.end_time || "?", "");
+      sortedSlots.sort((a, b) => {
+        if (a.date !== b.date) {
+          return a.date.localeCompare(b.date);
+        }
+        return (a.start_time || "").localeCompare(b.start_time || "");
+      });
+
+      if (sortedSlots.length > 0) {
+        sb.itemTableHeader("Date", "Début", "Fin", "Détails");
+        sortedSlots.forEach((slot: any) => {
+          sb.detailRow(formatDateFr(slot.date) || "?", slot.start_time || "?", slot.end_time || "?", slot.details || "");
+        });
       }
 
       const isHourly = room && room.rate_type === "hourly";

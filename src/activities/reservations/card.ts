@@ -404,7 +404,7 @@ function addReservationCard(reservationData: any = null) {
   });
   wireSlotRangeGenerator(card);
   if (reservationData) {
-    (reservationData.slots || []).forEach((s: any) => addSlotRow(slotsList, s.date, s.start_time, s.end_time));
+    (reservationData.slots || []).forEach((s: any) => addSlotRow(slotsList, s.date, s.start_time, s.end_time, s.details));
     // Re-run now that the slots are in the DOM: the earlier call (via refreshReservationTariffSelect)
     // ran before any slot existed, so it couldn't resolve the pricing grid for the right date yet.
     updateResolvedPriceDisplay(card);

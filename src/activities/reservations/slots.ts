@@ -5,7 +5,7 @@
 import { validateDateFieldFiscalYear } from "../datepicker.ts";
 import { WEEKDAY_PILL_OPTIONS } from "../form.ts";
 import { formatDateStrLocal, parseLocalDateStr } from "../../state/state.ts";
-import { generateUid, showToast, initPillToggleEl, maskDateInput, maskTimeInput } from "../../utils/utils.ts";
+import { generateUid, showToast, initPillToggleEl, maskDateInput, maskTimeInput, escapeHtml } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
 import { updateFormDatesHelper } from "../history/index.ts";
 import { propagateFirstSlotTimesToStaff } from "./subrows.ts";
@@ -14,18 +14,19 @@ function el<T extends Element = HTMLInputElement>(id: string): T {
   return document.getElementById(id) as unknown as T;
 }
 
-function addSlotRow(container: HTMLElement, date = "", startTime = "", endTime = "") {
+function addSlotRow(container: HTMLElement, date = "", startTime = "", endTime = "", details = "") {
   const rowId = generateUid("slot-row");
   container.insertAdjacentHTML(
     "beforeend",
     `
-    <div id="${rowId}" class="distribution-row reservation-slot-row" style="grid-template-columns: 1fr 0.8fr 0.8fr auto;">
+    <div id="${rowId}" class="distribution-row reservation-slot-row" style="grid-template-columns: 1.2fr 0.8fr 0.8fr 1.5fr auto; gap: 8px;">
       <div>
         <input type="text" id="${rowId}-date" class="form-input slot-date-input" placeholder="AAAA-MM-JJ" pattern="\\d{4}-\\d{2}-\\d{2}" value="${date}">
         <div class="field-error-msg" id="${rowId}-date-fy-error"></div>
       </div>
       <input type="time" id="${rowId}-start-time" class="form-input slot-start-time-input" value="${startTime}">
       <input type="time" id="${rowId}-end-time" class="form-input slot-end-time-input" value="${endTime}">
+      <input type="text" id="${rowId}-details" class="form-input slot-details-input" placeholder="Détails" value="${escapeHtml(details)}">
       <button type="button" class="btn-icon delete-slot-row-btn" data-row-id="${rowId}" title="Retirer ce créneau">
         <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
       </button>
@@ -59,6 +60,9 @@ function addSlotRow(container: HTMLElement, date = "", startTime = "", endTime =
     handleSlotTimeChange();
   }
 
+  const detailsInput = row.querySelector<HTMLInputElement>(".slot-details-input")!;
+  detailsInput.addEventListener("input", autoSaveActivityForm);
+
   row.querySelector<HTMLInputElement>(".delete-slot-row-btn")!.addEventListener("click", () => {
     const hasContent = row.querySelector<HTMLInputElement>(".slot-date-input")!.value.trim() !== "";
     if (hasContent && !confirm("Retirer ce créneau ?")) return;
@@ -75,7 +79,8 @@ function collectSlotsFromCard(card: HTMLElement) {
       id: generateUid("slot"),
       date: row.querySelector<HTMLInputElement>(".slot-date-input")!.value,
       start_time: row.querySelector<HTMLInputElement>(".slot-start-time-input")!.value,
-      end_time: row.querySelector<HTMLInputElement>(".slot-end-time-input")!.value
+      end_time: row.querySelector<HTMLInputElement>(".slot-end-time-input")!.value,
+      details: row.querySelector<HTMLInputElement>(".slot-details-input")?.value || ""
     }))
     .filter(s => s.date);
 }
