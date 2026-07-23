@@ -264,11 +264,23 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     ]);
     sb.blankRows(1);
     sb.addRow(20, [
-      { col: "A", style: S.sigLabel, value: "Date:", mergeTo: "C" },
-      { col: "D", style: S.sigLabel, value: "Date:", mergeTo: "F" }
+      { col: "A", style: S.sigLabel, value: "Date:" },
+      { col: "B", style: S.sigLabel, value: "" },
+      { col: "C", style: S.value, value: "" },
+      { col: "D", style: S.sigLabel, value: "Date:" },
+      { col: "E", style: S.sigLabel, value: "" },
+      { col: "F", style: S.value, value: "" }
     ]);
-    sb.addRow(20, [{ col: "A", style: S.sigLabel, value: "Prénom :", mergeTo: "C" }]);
-    sb.addRow(20, [{ col: "A", style: S.sigLabel, value: "Nom :", mergeTo: "C" }]);
+    sb.addRow(20, [
+      { col: "A", style: S.sigLabel, value: "Prénom :" },
+      { col: "B", style: S.sigLabel, value: "" },
+      { col: "C", style: S.value, value: "" }
+    ]);
+    sb.addRow(20, [
+      { col: "A", style: S.sigLabel, value: "Nom :" },
+      { col: "B", style: S.sigLabel, value: "" },
+      { col: "C", style: S.value, value: "" }
+    ]);
     sb.blankRows(2, 30);
 
     // The fournisseur's signature line sits directly above her printed name; the client's line is
