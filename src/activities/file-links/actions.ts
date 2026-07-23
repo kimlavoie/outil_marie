@@ -8,7 +8,7 @@ import { appState } from "../../state/state.ts";
 import { generateUid, showToast } from "../../utils/utils.ts";
 import { commitActivityPatch } from "../form.ts";
 import { deriveActivityState } from "../render.ts";
-import { generateContractXlsx, generateSoumissionXlsx } from "../../services/contract-generator.ts";
+import { generateContractXlsx, generateSoumissionXlsx, sanitizeFilenamePart } from "../../services/contract-generator.ts";
 import { idbSetFileLink, idbGetFileLink } from "./db.ts";
 import { renderFileLinkStatus, expandedXlsxPreviews } from "./status.ts";
 
@@ -73,7 +73,7 @@ async function generateAndLinkFile(act: any, kind: "contract" | "submission") {
     const dd = String(now.getDate()).padStart(2, "0");
     dateStr = `${yyyy}_${mm}_${dd}`;
   }
-  const filename = `${prefix}_${dateStr}_${(act.name || "activite").replace(/[^\w-]+/g, "_")}.xlsx`;
+  const filename = `${prefix}_${dateStr}_${sanitizeFilenamePart(act.name)}.xlsx`;
 
   if ((window as any).showSaveFilePicker) {
     let handle;

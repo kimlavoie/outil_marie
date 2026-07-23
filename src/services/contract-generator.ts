@@ -151,8 +151,20 @@ async function generateXlsx(act: any, variant: "contrat" | "soumission") {
     const dd = String(now.getDate()).padStart(2, "0");
     dateStr = `${yyyy}_${mm}_${dd}`;
   }
-  const filename = `${prefix}_${dateStr}_${(act.name || "activite").replace(/[^\w-]+/g, "_")}.xlsx`;
+  const filename = `${prefix}_${dateStr}_${sanitizeFilenamePart(act.name)}.xlsx`;
   return { blob, filename };
+}
+
+// Strips accents and collapses anything outside [a-z0-9_] so generated filenames stay safe
+// across filesystems/URLs regardless of the activity name's casing or accented characters.
+function sanitizeFilenamePart(value: string | undefined | null): string {
+  const normalized = (value || "activite")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return normalized || "activite";
 }
 
 async function generateContractXlsx(act: any) {
@@ -163,6 +175,6 @@ async function generateSoumissionXlsx(act: any) {
   return generateXlsx(act, "soumission");
 }
 
-export { generateContractXlsx, generateSoumissionXlsx };
+export { generateContractXlsx, generateSoumissionXlsx, sanitizeFilenamePart };
 export { xmlEscapeText, formatDateFr, wrapRowHeight } from "./contract-generator/sheet-builder.ts";
 export { buildSheetXml } from "./contract-generator/sheet-xml.ts";

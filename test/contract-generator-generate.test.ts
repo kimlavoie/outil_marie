@@ -69,8 +69,8 @@ test("generateContractXlsx produces a valid, non-empty .xlsx with the header dra
 
   assert.ok(result);
   assert.ok(result!.blob.size > 0);
-  // \w in the source's sanitizing regex is ASCII-only, so accented letters get replaced too.
-  assert.equal(result!.filename, `contrat_${dateStr}_Activit_de_test.xlsx`);
+  // Filenames are sanitized to lowercase [a-z0-9_] only: accents are stripped, not replaced.
+  assert.equal(result!.filename, `contrat_${dateStr}_activite_de_test.xlsx`);
 
   const buffer = Buffer.from(await result!.blob.arrayBuffer());
   // A zip/xlsx file always starts with the "PK" local-file-header signature.
@@ -94,7 +94,7 @@ test("generateSoumissionXlsx produces a valid .xlsx without the header drawing",
   const result = await generateSoumissionXlsx(makeActivity({ id: "act-2", name: "Autre Activité" }));
 
   assert.ok(result);
-  assert.equal(result!.filename, `soumission_${dateStr}_Autre_Activit_.xlsx`);
+  assert.equal(result!.filename, `soumission_${dateStr}_autre_activite.xlsx`);
 
   const buffer = Buffer.from(await result!.blob.arrayBuffer());
   const zip = await JSZip.loadAsync(buffer);
@@ -144,7 +144,7 @@ test("generateSoumissionXlsx uses the activity's date_start when present", async
   stubFetchOk();
   const result = await generateSoumissionXlsx(makeActivity({ id: "act-4", name: "Activité avec date", date_start: "2026-08-15" }));
   assert.ok(result);
-  assert.equal(result!.filename, "soumission_2026_08_15_Activit_avec_date.xlsx");
+  assert.equal(result!.filename, "soumission_2026_08_15_activite_avec_date.xlsx");
 });
 
 export {};
