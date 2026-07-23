@@ -144,7 +144,7 @@ export function LinkedFeesSection({
               name={`${row.key}-desc`}
               className="form-input"
               value={row.desc}
-              placeholder="Ex: Montage et démontage"
+              placeholder="Ex: Entretien ménager"
               aria-label="Description du frais lié"
               style={{ padding: "8px 12px", fontSize: "0.85rem" }}
               onChange={e => setLinkedFees(linkedFees.map((r, idx) => (idx === i ? { ...r, desc: e.target.value } : r)))}

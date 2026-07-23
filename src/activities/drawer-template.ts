@@ -426,9 +426,7 @@ const ACTIVITY_DRAWER_HTML = `
             <span>Total des revenus du bar</span>
             <span id="form-bar-revenue-total-val">0,00 $</span>
           </div>
-          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">
-            Note : Ces revenus sont enregistrés à titre indicatif et ne sont pas comptabilisés dans le total de facturation.
-          </div>
+
         </div>
 
         <div class="distribution-section">
