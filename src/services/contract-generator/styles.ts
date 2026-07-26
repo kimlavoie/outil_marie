@@ -186,13 +186,49 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
     return clone;
   };
 
+  const withTopLeftAlignment = (xf: string) => {
+    let clone = xf;
+    if (/applyAlignment="\d"/.test(clone)) {
+      clone = clone.replace(/applyAlignment="\d"/, 'applyAlignment="1"');
+    } else {
+      clone = clone.replace("<xf ", '<xf applyAlignment="1" ');
+    }
+    if (/<alignment\b/.test(clone)) {
+      if (/horizontal="\w+"/.test(clone)) {
+        clone = clone.replace(/horizontal="\w+"/, 'horizontal="left"');
+      } else {
+        clone = clone.replace("<alignment ", '<alignment horizontal="left" ');
+      }
+      if (/vertical="\w+"/.test(clone)) {
+        clone = clone.replace(/vertical="\w+"/, 'vertical="top"');
+      } else {
+        clone = clone.replace("<alignment ", '<alignment vertical="top" ');
+      }
+      if (/wrapText="\d+"/.test(clone)) {
+        clone = clone.replace(/wrapText="\d+"/, 'wrapText="1"');
+      } else {
+        clone = clone.replace("<alignment ", '<alignment wrapText="1" ');
+      }
+    } else {
+      if (clone.endsWith("/>")) {
+        clone = clone.slice(0, -2) + '><alignment horizontal="left" vertical="top" wrapText="1"/></xf>';
+      } else {
+        clone = clone.replace("</xf>", '<alignment horizontal="left" vertical="top" wrapText="1"/></xf>');
+      }
+    }
+    return clone;
+  };
+
   const newEntries: string[] = [];
   let nextIndex = xfCount;
   let borderedResValue = "";
   GRID_ROLE_KEYS.forEach(key => {
     const original = xfEntries[ORIGINAL_S[key]];
     if (!original) return;
-    const clone = withNewBorder(original);
+    let clone = withNewBorder(original);
+    if (key === "resLabel" || key === "resValue") {
+      clone = withTopLeftAlignment(clone);
+    }
     newEntries.push(clone);
     S[key] = nextIndex;
     if (key === "resValue") borderedResValue = clone;

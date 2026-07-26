@@ -140,8 +140,8 @@ test("buildSheetXml formats a single-day reservation period as one date, a multi
     reservations: [{ room_name: "Salle A", slots: [{ date: "2025-08-01" }, { date: "2025-08-05" }], staff: [], services: [], fees: [] }]
   });
   assert.match(buildSheetXml(singleDay, "contrat"), /2025-08-01/);
-  assert.doesNotMatch(buildSheetXml(singleDay, "contrat"), /2025-08-01 - /);
-  assert.match(buildSheetXml(multiDay, "contrat"), /2025-08-01 - 2025-08-05/);
+  assert.doesNotMatch(buildSheetXml(singleDay, "contrat"), /2025-08-01 au /);
+  assert.match(buildSheetXml(multiDay, "contrat"), /2025-08-01 au 2025-08-05/);
 });
 
 test("buildSheetXml uses top-aligned style IDs in the Annexe section", () => {

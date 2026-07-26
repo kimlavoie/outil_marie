@@ -88,11 +88,11 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   const dateStr =
     dates.date_start === dates.date_end
       ? formatDateFr(dates.date_start)
-      : `${formatDateFr(dates.date_start)} - ${formatDateFr(dates.date_end)}`;
-  sb.labelRow("Date de la réservation", dateStr || undefined, S.resLabel, S.resValue);
-  sb.labelRow("Titre de l'activité", act.name, S.resLabel, S.resValue);
-  sb.labelRow("Description", act.description, S.resLabel, S.resValue);
-  sb.labelRow("Nombre de personnes prévu", act.attendees_count || undefined, S.resLabel, S.resValueNumeric);
+      : `${formatDateFr(dates.date_start)} au ${formatDateFr(dates.date_end)}`;
+  sb.labelRow("Date de la réservation", dateStr || undefined, S.resLabel, S.resValue, true);
+  sb.labelRow("Titre de l'activité", act.name, S.resLabel, S.resValue, true);
+  sb.labelRow("Description", act.description, S.resLabel, S.resValue, true);
+  sb.labelRow("Nombre de personnes prévu", act.attendees_count || undefined, S.resLabel, S.resValueNumeric, true);
   sb.blankRows(1);
 
   const eventDateStart = dates.date_start;

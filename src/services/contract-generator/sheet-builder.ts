@@ -100,11 +100,18 @@ class SheetBuilder {
   // Long/multi-line values (address, description...) switch to a wrap-enabled style and get a
   // row height sized to their content — otherwise they'd get visually clipped by neighboring
   // cells at the default single-line row height.
-  labelRow(label: string, value: string | number | undefined, labelStyle = S.label, valueStyle = S.value) {
+  labelRow(
+    label: string,
+    value: string | number | undefined,
+    labelStyle = S.label,
+    valueStyle = S.value,
+    forceValueStyle = false,
+    minRowHeight = 20
+  ) {
     if (value === undefined || value === "") return;
     const isLong = typeof value === "string" && (value.length > 40 || value.includes("\n"));
-    const effectiveStyle = isLong ? S.wrapValue : valueStyle;
-    const height = isLong ? wrapRowHeight(value as string, 88) : null;
+    const effectiveStyle = isLong && !forceValueStyle ? S.wrapValue : valueStyle;
+    const height = isLong ? Math.max(minRowHeight, wrapRowHeight(value as string, 88)) : minRowHeight;
     this.addRow(height, [
       { col: "A", style: labelStyle, value: label, mergeTo: "B" },
       { col: "C", style: effectiveStyle, value, mergeTo: "F" }
