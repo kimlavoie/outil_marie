@@ -361,29 +361,6 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
     return clone;
   };
 
-  const withLeftHorizontal = (xf: string) => {
-    let clone = xf;
-    if (/applyAlignment="\d"/.test(clone)) {
-      clone = clone.replace(/applyAlignment="\d"/, 'applyAlignment="1"');
-    } else {
-      clone = clone.replace("<xf ", '<xf applyAlignment="1" ');
-    }
-    if (/<alignment\b/.test(clone)) {
-      if (/horizontal="\w+"/.test(clone)) {
-        clone = clone.replace(/horizontal="\w+"/, 'horizontal="left"');
-      } else {
-        clone = clone.replace("<alignment ", '<alignment horizontal="left" ');
-      }
-    } else {
-      if (clone.endsWith("/>")) {
-        clone = clone.slice(0, -2) + '><alignment horizontal="left"/></xf>';
-      } else {
-        clone = clone.replace("</xf>", '<alignment horizontal="left"/></xf>');
-      }
-    }
-    return clone;
-  };
-
   const originalSigName1Xf = xfEntries[ORIGINAL_S.sigName1];
   if (originalSigName1Xf) {
     newEntries.push(withBoldFont(withTopBorder(originalSigName1Xf)));
