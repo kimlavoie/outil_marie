@@ -23,6 +23,8 @@ const S = {
   resValueNumeric: 96, // placeholder — overwritten by normalizeGridBorders() with a general-format, bordered variant
   tableHeader: 94,
   currency: 75,
+  currencyBold: 75, // placeholder — overwritten by normalizeGridBorders() with a bold variant
+  currencyLarge: 75, // placeholder — overwritten by normalizeGridBorders() with a 16pt bold variant
   wrapValue: 69, // left-aligned + wrapText — for values that can run long (address, description, item labels)
   attestation: 67,
   urgency: 52,
@@ -40,6 +42,7 @@ const S = {
   sigLineName2: 156, // placeholder — overwritten by normalizeGridBorders() with a dark top border
   sigLineClient: 35, // placeholder — overwritten by normalizeGridBorders() with a dark top border + centered text
   billingLabel: 77,
+  billingLabelLarge: 77, // placeholder — overwritten by normalizeGridBorders() with a 16pt bold variant
   annexeTitle: 78,
   annexeClauseGroup: 71,
   annexeClauseNum: 22,
@@ -113,6 +116,30 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
     const originalFontId = fontIdMatch ? parseInt(fontIdMatch[1], 10) : 0;
     const boldId = boldFontIdFor(originalFontId);
     return fontIdMatch ? xf.replace(/fontId="\d+"/, `fontId="${boldId}"`) : xf.replace("<xf ", `<xf fontId="${boldId}" `);
+  };
+
+  const largeBoldFontIdCache = new Map<string, number>();
+  const largeBoldFontIdFor = (originalFontId: number, targetSize = 16) => {
+    const key = `${originalFontId}_${targetSize}`;
+    if (largeBoldFontIdCache.has(key)) return largeBoldFontIdCache.get(key)!;
+    const original = fontEntries[originalFontId] || `<font><sz val="11"/><rFont val="Calibri"/></font>`;
+    let modified = /<b\/>/.test(original) ? original : original.replace(/^<font(\s*)>/, "<font$1><b/>");
+    if (/<sz\s+val="\d+"\s*\/>/.test(modified)) {
+      modified = modified.replace(/<sz\s+val="\d+"\s*\/>/, `<sz val="${targetSize}"/>`);
+    } else {
+      modified = modified.replace(/^<font(\s*)>/, `<font$1><sz val="${targetSize}"/>`);
+    }
+    newFontEntries.push(modified);
+    const newId = nextFontIndex++;
+    largeBoldFontIdCache.set(key, newId);
+    return newId;
+  };
+
+  const withLargeBoldFont = (xf: string, targetSize = 16) => {
+    const fontIdMatch = xf.match(/fontId="(\d+)"/);
+    const originalFontId = fontIdMatch ? parseInt(fontIdMatch[1], 10) : 0;
+    const largeBoldId = largeBoldFontIdFor(originalFontId, targetSize);
+    return fontIdMatch ? xf.replace(/fontId="\d+"/, `fontId="${largeBoldId}"`) : xf.replace("<xf ", `<xf fontId="${largeBoldId}" `);
   };
 
   const borderCount = parseInt(bordersMatch[1], 10);
@@ -271,6 +298,22 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
     newEntries.push(rightAligned);
     S.billingLabel = nextIndex;
     nextIndex++;
+
+    newEntries.push(withLargeBoldFont(rightAligned, 16));
+    S.billingLabelLarge = nextIndex;
+    nextIndex++;
+  }
+
+  const currencyIndex = GRID_ROLE_KEYS.indexOf("currency");
+  if (currencyIndex !== -1 && newEntries[currencyIndex]) {
+    const currencyXf = newEntries[currencyIndex];
+    newEntries.push(withBoldFont(currencyXf));
+    S.currencyBold = nextIndex;
+    nextIndex++;
+
+    newEntries.push(withLargeBoldFont(currencyXf, 16));
+    S.currencyLarge = nextIndex;
+    nextIndex++;
   }
 
   const originalNeqValueXf = xfEntries[ORIGINAL_S.neqValue];
@@ -313,6 +356,29 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
         clone = clone.slice(0, -2) + '><alignment horizontal="center"/></xf>';
       } else {
         clone = clone.replace("</xf>", '<alignment horizontal="center"/></xf>');
+      }
+    }
+    return clone;
+  };
+
+  const withLeftHorizontal = (xf: string) => {
+    let clone = xf;
+    if (/applyAlignment="\d"/.test(clone)) {
+      clone = clone.replace(/applyAlignment="\d"/, 'applyAlignment="1"');
+    } else {
+      clone = clone.replace("<xf ", '<xf applyAlignment="1" ');
+    }
+    if (/<alignment\b/.test(clone)) {
+      if (/horizontal="\w+"/.test(clone)) {
+        clone = clone.replace(/horizontal="\w+"/, 'horizontal="left"');
+      } else {
+        clone = clone.replace("<alignment ", '<alignment horizontal="left" ');
+      }
+    } else {
+      if (clone.endsWith("/>")) {
+        clone = clone.slice(0, -2) + '><alignment horizontal="left"/></xf>';
+      } else {
+        clone = clone.replace("</xf>", '<alignment horizontal="left"/></xf>');
       }
     }
     return clone;

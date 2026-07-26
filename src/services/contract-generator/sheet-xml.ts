@@ -100,7 +100,6 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   // One block per room: its own reserved slots (date/heures), rate, and the staff/equipment/fees
   // tied to that specific room — mirrors how the app itself organizes a reservation's sub-rows.
   if (reservations.length > 0) {
-    sb.pageBreakBefore();
     sb.titleRow("Réservations");
     reservations.forEach((r: any) => {
       sb.subHeader(getReservationRoomLabel(r) || "(salle non définie)");
@@ -228,30 +227,33 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
 
   sb.titleRow("Facturation");
   const fin = computeActivityFinancials(act);
-  const financeRows: [string, number][] = [
-    ["Location des salles", fin.roomsTotal],
-    ["Montage/démontage", fin.setupTotal],
-    ["Personnel", fin.staffTotal],
-    ["Équipements", fin.servicesTotal],
-    ["Autres frais", fin.feesTotal],
-    ["Sous-total", fin.subtotal],
-    [fin.tpsLabel, fin.tps],
-    [fin.tvqLabel, fin.tvq],
-    ["TOTAL", fin.total]
+  const financeRows: { label: string; amount: number; isLarge?: boolean }[] = [
+    { label: "Location des salles", amount: fin.roomsTotal },
+    { label: "Montage/démontage", amount: fin.setupTotal },
+    { label: "Personnel", amount: fin.staffTotal },
+    { label: "Équipements", amount: fin.servicesTotal },
+    { label: "Autres frais", amount: fin.feesTotal },
+    { label: "Sous-total", amount: fin.subtotal, isLarge: true },
+    { label: fin.tpsLabel, amount: fin.tps },
+    { label: fin.tvqLabel, amount: fin.tvq },
+    { label: "TOTAL", amount: fin.total, isLarge: true }
   ];
-  financeRows.forEach(([label, amount]) => {
-    sb.addRow(null, [
-      { col: "A", style: S.billingLabel, value: label, mergeTo: "D" },
-      { col: "E", style: S.currency, value: amount, mergeTo: "F" }
+  financeRows.forEach(({ label, amount, isLarge }) => {
+    const labelStyle = isLarge ? S.billingLabelLarge : S.billingLabel;
+    const amountStyle = isLarge ? S.currencyLarge : S.currency;
+    const height = isLarge ? 26 : null;
+    sb.addRow(height, [
+      { col: "A", style: labelStyle, value: label, mergeTo: "D" },
+      { col: "E", style: amountStyle, value: amount, mergeTo: "F" }
     ]);
   });
   sb.blankRows(1);
 
   if (variant === "contrat") {
     sb.titleRow("Clause d'annulation et de paiement");
-    sb.addRow(22, [
+    sb.addRow(24, [
       { col: "A", style: S.supplierLabel, value: "Acompte (50% du grand total) :", mergeTo: "D" },
-      { col: "E", style: S.currency, value: fin.total * 0.5, mergeTo: "F" }
+      { col: "E", style: S.currencyBold, value: fin.total * 0.5, mergeTo: "F" }
     ]);
     sb.addRow(20, [
       {
@@ -265,7 +267,6 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     sb.textBoxRow(CANCELLATION_CLAUSE, S.cancelBody, 14);
     sb.blankRows(1);
 
-    sb.pageBreakBefore();
     sb.titleRow("Attestations (à remplir par le client)");
     sb.addRow(22, [
       { col: "A", style: S.supplierLabel, value: "Numéro d'Entreprise du Québec (NEQ) :", mergeTo: "C" },
@@ -294,21 +295,21 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     sb.blankRows(1);
     sb.addRow(20, [
       { col: "A", style: S.sigLabel, value: "Date:" },
-      { col: "B", style: S.sigBlank, value: "" },
-      { col: "C", style: S.value, value: "" },
+      { col: "B", style: S.wrapValue, value: "", mergeTo: "C" },
+      { col: "C", style: S.wrapValue },
       { col: "D", style: S.sigLabel, value: "Date:" },
-      { col: "E", style: S.sigBlank, value: "" },
-      { col: "F", style: S.value, value: "" }
+      { col: "E", style: S.wrapValue, value: "", mergeTo: "F" },
+      { col: "F", style: S.wrapValue }
     ]);
     sb.addRow(20, [
       { col: "A", style: S.sigLabel, value: "Prénom :" },
-      { col: "B", style: S.sigBlank, value: "" },
-      { col: "C", style: S.value, value: "" }
+      { col: "B", style: S.wrapValue, value: "", mergeTo: "C" },
+      { col: "C", style: S.wrapValue }
     ]);
     sb.addRow(20, [
       { col: "A", style: S.sigLabel, value: "Nom :" },
-      { col: "B", style: S.sigBlank, value: "" },
-      { col: "C", style: S.value, value: "" }
+      { col: "B", style: S.wrapValue, value: "", mergeTo: "C" },
+      { col: "C", style: S.wrapValue }
     ]);
     // The fournisseur's signature line sits directly above her printed name; the client's line is
     // one row further down, above the "Signature" caption — each side's line only spans its own
@@ -401,7 +402,6 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
       26: 234
     };
 
-    sb.pageBreakBefore();
     sb.titleRow("Annexe – Clauses de location", S.annexeTitle);
     LOCATION_CLAUSE_GROUPS.forEach(group => {
       sb.textBoxRow(group.title, S.annexeClauseGroup, 16);
