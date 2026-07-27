@@ -218,4 +218,58 @@ test("buildSheetXml does not include setup/teardown detailed row if client is in
   appState.settings.rooms = originalRooms;
 });
 
+test("buildSheetXml uses S.linkedRoomNote with vertically centered style for linked rooms note", () => {
+  const originalRooms = appState.settings.rooms;
+  appState.settings.rooms = [
+    { name: "Grande Salle", linked_rooms: ["Loge 1", "Loge 2"] } as any
+  ];
+
+  const act = makeActivity({
+    reservations: [
+      {
+        room_name: "Grande Salle",
+        tariff_amount: 100,
+        slots: [{ date: "2025-08-01" }],
+        staff: [],
+        services: [],
+        fees: []
+      }
+    ]
+  });
+
+  const xml = buildSheetXml(act, "contrat");
+  assert.match(xml, /Réservation\(s\) incluse\(s\): Loge 1, Loge 2/);
+  assert.match(xml, new RegExp(`s="${S.linkedRoomNote}"`));
+
+  appState.settings.rooms = originalRooms;
+});
+
+test("buildSheetXml sets personnel row height explicitly to 43.5", () => {
+  const act = makeActivity({
+    reservations: [
+      {
+        room_name: "Salle A",
+        tariff_amount: 0,
+        slots: [{ date: "2025-08-01" }],
+        staff: [{ salary_id: "sal1", hours: 4, count: 1 }],
+        services: [],
+        fees: []
+      }
+    ]
+  });
+
+  const xml = buildSheetXml(act, "contrat");
+  assert.match(xml, /ht="43\.5"/);
+});
+
+test("buildSheetXml includes centered 14pt bold footer pagination 'Page &P de &N'", () => {
+  const act = makeActivity();
+  const xmlContrat = buildSheetXml(act, "contrat");
+  const xmlSoumission = buildSheetXml(act, "soumission");
+
+  const expectedFooterPattern = /<headerFooter><oddFooter>&amp;C&amp;B&amp;14Page &amp;P de &amp;N<\/oddFooter><\/headerFooter>/;
+  assert.match(xmlContrat, expectedFooterPattern);
+  assert.match(xmlSoumission, expectedFooterPattern);
+});
+
 export {};

@@ -26,6 +26,7 @@ const S = {
   currencyBold: 75, // placeholder — overwritten by normalizeGridBorders() with a bold variant
   currencyLarge: 75, // placeholder — overwritten by normalizeGridBorders() with a 16pt bold variant
   wrapValue: 69, // left-aligned + wrapText — for values that can run long (address, description, item labels)
+  linkedRoomNote: 69, // placeholder — overwritten by normalizeGridBorders() with a vertically centered variant
   attestation: 67,
   urgency: 52,
   initialsLabel: 42,
@@ -265,6 +266,14 @@ function normalizeGridBorders(stylesXmlBytes: Uint8Array): Uint8Array {
   if (borderedResValue) {
     newEntries.push(borderedResValue.replace(/numFmtId="\d+"/, 'numFmtId="0"'));
     S.resValueNumeric = nextIndex;
+    nextIndex++;
+  }
+
+  const wrapValueIndex = GRID_ROLE_KEYS.indexOf("wrapValue");
+  if (wrapValueIndex !== -1 && newEntries[wrapValueIndex]) {
+    const wrapValueBorderedXf = newEntries[wrapValueIndex];
+    newEntries.push(withCenterVerticalAlignment(wrapValueBorderedXf));
+    S.linkedRoomNote = nextIndex;
     nextIndex++;
   }
 

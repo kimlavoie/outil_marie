@@ -106,8 +106,8 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
 
       const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
       if (room && room.linked_rooms && room.linked_rooms.length > 0) {
-        const note = `La réservation de ${room.linked_rooms.join(", ")} est incluse.`;
-        sb.addRow(wrapRowHeight(note, 132), [{ col: "A", style: S.wrapValue, value: note, mergeTo: "F" }]);
+        const note = `Réservation(s) incluse(s): ${room.linked_rooms.join(", ")}`;
+        sb.addRow(wrapRowHeight(note, 132), [{ col: "A", style: S.linkedRoomNote, value: note, mergeTo: "F" }]);
       }
 
       const slots = r.slots || [];
@@ -190,7 +190,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
             ? `${jobName} (${formatCurrency(rate)}/h, sup. ${formatCurrency(overtimeRate)}/h)`
             : `${jobName} (${formatCurrency(rate)}/h)`;
           const col2Value = s.date || (s.count !== undefined ? String(s.count) : "-");
-          sb.itemRow(rateText, col2Value, heures, amount);
+          sb.itemRow(rateText, col2Value, heures, amount, 43.5);
         });
       }
 
@@ -429,6 +429,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     mergeCellsXml +
     `<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>` +
     `<pageSetup fitToWidth="1" fitToHeight="0" orientation="portrait"/>` +
+    `<headerFooter><oddFooter>&amp;C&amp;B&amp;14Page &amp;P de &amp;N</oddFooter></headerFooter>` +
     rowBreaksXml +
     (variant === "contrat" ? `<drawing r:id="rId1"/>` : "") +
     `</worksheet>`
