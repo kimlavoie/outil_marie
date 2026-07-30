@@ -161,3 +161,81 @@ test("runExportToExcel appends a TOTAUX row summing every account column", () =>
   assert.equal(totalRow[accountColIdx].t, "n");
   assert.match(totalRow[accountColIdx].f, /^SUM\(/);
 });
+
+test("generateExcelWorkbook supports custom filters, column selection, and SOMMAIRE sheet", () => {
+  const xlsx = makeXlsxMock();
+  (globalThis as any).XLSX = xlsx;
+  appState.settings = baseSettings();
+  appState.activities = [
+    makeActivity({ id: "a1", name: "Spectacle Musique", client_type: "externe", department: "Musique", date_start: "2025-09-01", distributions: [{ account_code: "892-0000-00-000", amount: 500 }] }),
+    makeActivity({ id: "a2", name: "Réunion Théâtre", client_type: "interne", department: "Théâtre", date_start: "2025-10-01", distributions: [{ account_code: "892-0000-00-000", amount: 0 }] })
+  ];
+
+  const customOptions = {
+    mode: "custom" as const,
+    filters: {
+      periodMode: "all" as const,
+      fiscalYear: "",
+      quarters: [],
+      startDate: "",
+      endDate: "",
+      states: [],
+      modes: [],
+      clientTypes: ["externe"],
+      departments: [],
+      rooms: [],
+      categories: [],
+      responsable: "",
+      searchText: "",
+      financialFilter: "all" as const
+    },
+    columns: {
+      id: true,
+      responsable: false,
+      name: true,
+      date_start: true,
+      date_end: false,
+      days_count: false,
+      client_type: true,
+      category: false,
+      rooms: false,
+      remi_time: false,
+      department: true,
+      room_sans_frais: false,
+      references: false,
+      state: true,
+      attendees_count: false,
+      manager_name: false,
+      manager_company: false,
+      manager_contact_info: false,
+      description: false,
+      notes: false,
+      accounts: ["892-0000-00-000"],
+      total_revenue: true
+    },
+    sheets: {
+      includeTotalRow: true,
+      useExcelFormulas: true,
+      includeRoomsSheet: false,
+      includeSummarySheet: true
+    }
+  };
+
+  runExportToExcel(getExcelColName, xlsx, customOptions);
+
+  assert.ok(xlsx.sheetOrder.includes("ACTIVITÉS"));
+  assert.ok(xlsx.sheetOrder.includes("SOMMAIRE"));
+  assert.equal(xlsx.sheetOrder.includes("SALLES"), false);
+
+  const actRows: any[][] = xlsx.sheets["ACTIVITÉS"].data;
+  // Headers + 1 body row (a1) + 1 total row = 3 rows
+  assert.equal(actRows.length, 3);
+  assert.equal(actRows[1][1], "Spectacle Musique");
+  assert.equal(actRows[1][2], "2025-09-01");
+  assert.equal(actRows[1][3], "externe");
+
+  const summaryRows: any[][] = xlsx.sheets["SOMMAIRE"].data;
+  assert.ok(summaryRows.some(r => r[0] === "SOMMAIRE SYNTHÉTIQUE DU RAPPORT D'ACTIVITÉS"));
+  assert.ok(summaryRows.some(r => r[0] === "Total activités incluses :" && r[1] === 1));
+});
+
