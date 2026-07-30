@@ -405,7 +405,13 @@ function renderModalBody(): void {
           </div>
 
           <div class="excel-form-section" style="margin-top: 16px;">
-            <h4 class="excel-section-title">💰 Comptes GL à inclure</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <h4 class="excel-section-title" style="margin: 0;">💰 Comptes GL à inclure</h4>
+              <div>
+                <button type="button" class="btn btn-secondary btn-sm" id="excel-accs-select-all">Tout cocher</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="excel-accs-deselect-all">Tout décocher</button>
+              </div>
+            </div>
             <div class="excel-grid-2">
               ${accounts.map(acc => `
                 <label class="excel-chk-item">
@@ -421,6 +427,7 @@ function renderModalBody(): void {
               </label>
             </div>
           </div>
+
 
           <div class="excel-form-section" style="margin-top: 16px;">
             <h4 class="excel-section-title">📁 Configuration du classeur</h4>
@@ -454,9 +461,7 @@ function renderModalBody(): void {
 
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" id="excel-export-reset" title="Réinitialiser la configuration">Réinitialiser</button>
-      <button type="button" class="btn btn-secondary" id="excel-export-save-prefs" title="Conserver cette configuration pour la prochaine fois">Sauvegarder mes préférences</button>
       <div style="flex: 1;"></div>
-      <button type="button" class="btn btn-secondary" id="excel-export-cancel">Annuler</button>
       <button type="button" class="btn btn-primary" id="excel-export-submit">Générer et télécharger (.xlsx)</button>
     </div>
   `;
@@ -468,9 +473,9 @@ function bindModalEvents(): void {
   const container = document.getElementById("excel-export-modal");
   if (!container) return;
 
-  // Close handlers
+  // Close handler
   document.getElementById("excel-export-close")?.addEventListener("click", closeExcelExportModal);
-  document.getElementById("excel-export-cancel")?.addEventListener("click", closeExcelExportModal);
+
 
   // Presets Handlers
   const presetSelect = document.getElementById("excel-preset-select") as HTMLSelectElement | null;
@@ -673,12 +678,28 @@ function bindModalEvents(): void {
     });
   });
 
+  // Accounts Select All / Deselect All
+  document.getElementById("excel-accs-select-all")?.addEventListener("click", () => {
+    container.querySelectorAll<HTMLInputElement>(".excel-acc-chk").forEach(chk => {
+      chk.checked = true;
+    });
+    currentOptions.columns.accounts = (appState.settings.accounts || []).map(a => a.code);
+  });
+
+  document.getElementById("excel-accs-deselect-all")?.addEventListener("click", () => {
+    container.querySelectorAll<HTMLInputElement>(".excel-acc-chk").forEach(chk => {
+      chk.checked = false;
+    });
+    currentOptions.columns.accounts = [];
+  });
+
   // Accounts checkboxes
   container.querySelectorAll<HTMLInputElement>(".excel-acc-chk").forEach(chk => {
     chk.addEventListener("change", () => {
       currentOptions.columns.accounts = Array.from(container.querySelectorAll<HTMLInputElement>(".excel-acc-chk:checked")).map(c => c.value);
     });
   });
+
 
   document.getElementById("excel-col-total-revenue")?.addEventListener("change", e => {
     currentOptions.columns.total_revenue = (e.target as HTMLInputElement).checked;
@@ -705,10 +726,6 @@ function bindModalEvents(): void {
     showToast("Paramètres d'exportation réinitialisés.", "info");
   });
 
-  document.getElementById("excel-export-save-prefs")?.addEventListener("click", () => {
-    saveOptionsToStorage(currentOptions);
-  });
-
   document.getElementById("excel-export-submit")?.addEventListener("click", () => {
     closeExcelExportModal();
     if (currentOptions.mode === "standard") {
@@ -717,6 +734,7 @@ function bindModalEvents(): void {
       exportToExcel(currentOptions);
     }
   });
+
 }
 
 export function initExcelExportModal(): void {
