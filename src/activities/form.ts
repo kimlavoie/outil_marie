@@ -284,6 +284,8 @@ function initFormHandlers() {
   el("form-activity-manager-type").addEventListener("change", e => {
     const externalGroup = el("form-activity-manager-external-group");
     externalGroup.style.display = (e.target as HTMLInputElement).value === "externe" ? "block" : "none";
+    const sameCb = document.getElementById("form-activity-responsable-same-as-manager") as HTMLInputElement | null;
+    applyResponsableSameAsManager(!!sameCb?.checked);
   });
 
   // Client type change toggles Département vs Adresse fields
@@ -401,6 +403,22 @@ function applyResponsableSameAsManager(checked: boolean) {
   if (checked) {
     firstNameEl.value = el("form-activity-manager-firstname").value;
     lastNameEl.value = el("form-activity-manager-lastname").value;
+  }
+
+  const managerTypeEl = document.getElementById("form-activity-manager-type") as HTMLSelectElement | null;
+  const clientTypeEl = document.getElementById("form-activity-client-type") as HTMLSelectElement | null;
+  if (clientTypeEl) {
+    const isManagerExternal = managerTypeEl?.value === "externe";
+    const lockExternalClient = checked && isManagerExternal;
+    if (lockExternalClient) {
+      if (clientTypeEl.value !== "externe") {
+        clientTypeEl.value = "externe";
+        updateResponsableClientTypeDisplay();
+        updateSubmissionFinancialSummary();
+      }
+    }
+    clientTypeEl.disabled = lockExternalClient;
+    clientTypeEl.classList.toggle("form-input-readonly", lockExternalClient);
   }
 
   const addressEl = document.getElementById("form-activity-responsable-address") as HTMLInputElement | null;

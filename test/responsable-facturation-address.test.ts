@@ -173,3 +173,69 @@ test("autoSaveActivityForm persists responsable address when client type is exte
   assert.equal(savedAct?.responsable_postal_code, "H7T 2H6");
   assert.equal(savedAct?.department, "");
 });
+
+test("selecting external manager and checking same_as_manager locks client_type to externe", () => {
+  const managerTypeSelect = document.getElementById("form-activity-manager-type") as HTMLSelectElement;
+  const sameCb = document.getElementById("form-activity-responsable-same-as-manager") as HTMLInputElement;
+  const clientTypeSelect = document.getElementById("form-activity-client-type") as HTMLSelectElement;
+
+  // Initially internal and unlocked
+  clientTypeSelect.value = "interne";
+  clientTypeSelect.disabled = false;
+
+  // Set manager type to externe
+  managerTypeSelect.value = "externe";
+  managerTypeSelect.dispatchEvent(new Event("change"));
+
+  // Client type should still be editable until sameCb is checked
+  assert.equal(clientTypeSelect.disabled, false);
+
+  // Check same_as_manager
+  sameCb.checked = true;
+  sameCb.dispatchEvent(new Event("change"));
+
+  // Now client_type should be set to "externe", disabled, and styled as readonly
+  assert.equal(clientTypeSelect.value, "externe");
+  assert.equal(clientTypeSelect.disabled, true);
+  assert.equal(clientTypeSelect.classList.contains("form-input-readonly"), true);
+
+  // Changing manager type back to employe unlocks client_type
+  managerTypeSelect.value = "employe";
+  managerTypeSelect.dispatchEvent(new Event("change"));
+  assert.equal(clientTypeSelect.disabled, false);
+  assert.equal(clientTypeSelect.classList.contains("form-input-readonly"), false);
+
+  // Changing manager type back to externe locks client_type again
+  managerTypeSelect.value = "externe";
+  managerTypeSelect.dispatchEvent(new Event("change"));
+  assert.equal(clientTypeSelect.value, "externe");
+  assert.equal(clientTypeSelect.disabled, true);
+  assert.equal(clientTypeSelect.classList.contains("form-input-readonly"), true);
+
+  // Unchecking same_as_manager unlocks client_type
+  sameCb.checked = false;
+  sameCb.dispatchEvent(new Event("change"));
+  assert.equal(clientTypeSelect.disabled, false);
+  assert.equal(clientTypeSelect.classList.contains("form-input-readonly"), false);
+});
+
+test("fillActivityFormFields locks client_type when loading activity with external manager and same_as_manager", () => {
+  const activity = {
+    ...appState.activities[0],
+    client_type: "interne",
+    responsable_same_as_manager: true,
+    activity_manager: {
+      first_name: "Paul",
+      last_name: "Durand",
+      type: "externe"
+    }
+  };
+
+  fillActivityFormFields(activity);
+
+  const clientTypeSelect = document.getElementById("form-activity-client-type") as HTMLSelectElement;
+  assert.equal(clientTypeSelect.value, "externe");
+  assert.equal(clientTypeSelect.disabled, true);
+  assert.equal(clientTypeSelect.classList.contains("form-input-readonly"), true);
+});
+
