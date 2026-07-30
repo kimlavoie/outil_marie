@@ -11,8 +11,54 @@ import {
 } from "./excel-export.ts";
 
 const PREFS_KEY = "outil_marie_excel_export_prefs";
+const PRESETS_KEY = "outil_marie_excel_export_presets";
+
+export interface ExcelReportPreset {
+  id: string;
+  name: string;
+  options: ExcelExportOptions;
+  created_at: string;
+}
 
 let currentOptions: ExcelExportOptions = getDefaultExportOptions();
+let selectedPresetId: string = "";
+
+export function loadPresets(): ExcelReportPreset[] {
+  try {
+    const raw = localStorage.getItem(PRESETS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function savePresetsToStorage(presets: ExcelReportPreset[]): void {
+  try {
+    localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
+  } catch (err) {
+    console.error("Error saving presets:", err);
+  }
+}
+
+export function savePreset(name: string, options: ExcelExportOptions): ExcelReportPreset {
+  const presets = loadPresets();
+  const id = "preset_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+  const newPreset: ExcelReportPreset = {
+    id,
+    name: name.trim(),
+    options: JSON.parse(JSON.stringify(options)),
+    created_at: new Date().toISOString()
+  };
+  presets.push(newPreset);
+  savePresetsToStorage(presets);
+  return newPreset;
+}
+
+export function deletePreset(id: string): void {
+  const presets = loadPresets().filter(p => p.id !== id);
+  savePresetsToStorage(presets);
+}
+
 
 function loadSavedOptions(): ExcelExportOptions {
   try {
@@ -49,6 +95,7 @@ export function openExcelExportModal(): void {
   }
 
   currentOptions = loadSavedOptions();
+  selectedPresetId = "";
   renderModalBody();
 
   const backdrop = document.getElementById("modal-backdrop");
@@ -102,12 +149,13 @@ function renderModalBody(): void {
   const depts = appState.settings.departments || [];
   const rooms = (appState.settings.rooms || []).map(r => r.name);
   const accounts = appState.settings.accounts || [];
+  const presets = loadPresets();
 
   container.innerHTML = `
     <div class="modal-header">
       <div>
         <h3 class="modal-title" id="excel-export-modal-title">Exporter les activités au format Excel</h3>
-        <p class="modal-subtitle">Configurez le rapport Excel ou utilisez les paramètres standard.</p>
+        <p class="modal-subtitle">Configurez le rapport Excel, appliquez un préréglage ou utilisez le format standard.</p>
       </div>
       <button type="button" class="btn-icon" id="excel-export-close" title="Fermer (Échap)">✕</button>
     </div>
@@ -127,18 +175,48 @@ function renderModalBody(): void {
           <input type="radio" name="excel_mode" value="custom" ${currentOptions.mode === "custom" ? "checked" : ""} />
           <div class="mode-card-content">
             <span class="mode-card-title">⚙️ Rapport Personnalisé</span>
-            <span class="mode-card-desc">Permet d'appliquer des filtres précis et de sélectionner les colonnes à inclure.</span>
+            <span class="mode-card-desc">Permet d'appliquer des filtres précis, d'utiliser des préréglages enregistrés et de choisir les colonnes.</span>
           </div>
         </label>
       </div>
 
       <!-- Custom Settings Container -->
       <div id="excel-export-custom-section" style="display: ${currentOptions.mode === "custom" ? "block" : "none"}; margin-top: 16px;">
+        <!-- Presets Bar (Single line condensed with icon buttons and auto-load on selection) -->
+        <div class="excel-presets-bar">
+          <label for="excel-preset-select" style="font-weight: 700; font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap;">📌 Préréglage :</label>
+          <select id="excel-preset-select" class="form-control form-control-sm" style="flex: 1; max-width: 260px;">
+            <option value="">-- Configuration actuelle --</option>
+            ${presets.map(p => `<option value="${p.id}" ${selectedPresetId === p.id ? "selected" : ""}>${p.name}</option>`).join("")}
+          </select>
+          <button type="button" class="btn btn-danger-outline btn-compact" id="excel-preset-delete" title="Supprimer ce préréglage" ${!selectedPresetId ? "disabled" : ""} style="padding: 4px 6px;">
+            <svg viewBox="0 0 24 24" style="width: 15px; height: 15px; fill: currentColor; display: block;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+
+          <span class="excel-preset-divider"></span>
+
+          <button type="button" class="btn btn-secondary btn-compact" id="excel-preset-save-toggle" title="Sauvegarder la configuration actuelle comme préréglage" style="padding: 4px 6px;">
+            <svg viewBox="0 0 24 24" style="width: 15px; height: 15px; fill: currentColor; display: block;"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+          </button>
+        </div>
+
+        <!-- Inline Save Preset Form -->
+        <div id="excel-preset-save-box" class="excel-sub-box" style="display: none; margin-bottom: 12px; padding: 8px 12px;">
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="excel-preset-name-input" class="form-control form-control-sm" style="flex: 1;" placeholder="Nom du préréglage (ex: Rapport Mensuel Musique)" />
+            <button type="button" class="btn btn-primary btn-sm" id="excel-preset-save-confirm">Enregistrer</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="excel-preset-save-cancel">Annuler</button>
+          </div>
+        </div>
+
+
+
         <!-- Tabs -->
         <div class="excel-export-tabs">
           <button type="button" class="excel-export-tab-btn active" data-tab="filters">🔍 Filtres d'activités</button>
           <button type="button" class="excel-export-tab-btn" data-tab="columns">📋 Colonnes & Contenu</button>
         </div>
+
 
         <!-- Tab 1: Filters -->
         <div class="excel-export-tab-panel active" id="excel-tab-filters">
@@ -394,6 +472,75 @@ function bindModalEvents(): void {
   document.getElementById("excel-export-close")?.addEventListener("click", closeExcelExportModal);
   document.getElementById("excel-export-cancel")?.addEventListener("click", closeExcelExportModal);
 
+  // Presets Handlers
+  const presetSelect = document.getElementById("excel-preset-select") as HTMLSelectElement | null;
+  const presetDeleteBtn = document.getElementById("excel-preset-delete") as HTMLButtonElement | null;
+
+  if (presetSelect) {
+    presetSelect.addEventListener("change", () => {
+      selectedPresetId = presetSelect.value;
+      if (presetDeleteBtn) presetDeleteBtn.disabled = !selectedPresetId;
+
+      if (selectedPresetId) {
+        const presets = loadPresets();
+        const preset = presets.find(p => p.id === selectedPresetId);
+        if (preset) {
+          currentOptions = JSON.parse(JSON.stringify(preset.options));
+          renderModalBody();
+          showToast(`Préréglage "${preset.name}" appliqué.`, "info");
+        }
+      }
+    });
+  }
+
+
+  presetDeleteBtn?.addEventListener("click", () => {
+    if (!selectedPresetId) return;
+    const presets = loadPresets();
+    const preset = presets.find(p => p.id === selectedPresetId);
+    if (preset && confirm(`Voulez-vous vraiment supprimer le préréglage "${preset.name}" ?`)) {
+      deletePreset(selectedPresetId);
+      selectedPresetId = "";
+      renderModalBody();
+      showToast("Préréglage supprimé.", "info");
+    }
+  });
+
+  // Save preset toggle & confirm
+  const saveBox = document.getElementById("excel-preset-save-box");
+  const saveToggleBtn = document.getElementById("excel-preset-save-toggle");
+  const saveCancelBtn = document.getElementById("excel-preset-save-cancel");
+  const saveConfirmBtn = document.getElementById("excel-preset-save-confirm");
+  const nameInput = document.getElementById("excel-preset-name-input") as HTMLInputElement | null;
+
+  saveToggleBtn?.addEventListener("click", () => {
+    if (saveBox) {
+      const isHidden = saveBox.style.display === "none";
+      saveBox.style.display = isHidden ? "block" : "none";
+      if (isHidden && nameInput) {
+        nameInput.value = "";
+        nameInput.focus();
+      }
+    }
+  });
+
+  saveCancelBtn?.addEventListener("click", () => {
+    if (saveBox) saveBox.style.display = "none";
+  });
+
+  saveConfirmBtn?.addEventListener("click", () => {
+    if (!nameInput || !nameInput.value.trim()) {
+      showToast("Veuillez saisir un nom pour votre préréglage.", "warning");
+      return;
+    }
+    const name = nameInput.value.trim();
+    const newPreset = savePreset(name, currentOptions);
+    selectedPresetId = newPreset.id;
+    renderModalBody();
+    showToast(`Préréglage "${name}" sauvegardé avec succès !`, "success");
+  });
+
+
   // Mode cards toggle
   container.querySelectorAll<HTMLInputElement>("input[name='excel_mode']").forEach(radio => {
     radio.addEventListener("change", e => {
@@ -410,6 +557,7 @@ function bindModalEvents(): void {
       updateLiveCounter();
     });
   });
+
 
   // Tab switching
   container.querySelectorAll<HTMLButtonElement>(".excel-export-tab-btn").forEach(btn => {

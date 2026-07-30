@@ -90,3 +90,33 @@ test("openExcelExportModal creates and opens modal with live count", () => {
   closeExcelExportModal();
   assert.equal(modalEl.classList.contains("active"), false);
 });
+
+test("presets lifecycle: savePreset, loadPresets, and deletePreset", async () => {
+  setupDomMock();
+  const { savePreset, loadPresets, deletePreset } = await import("../src/services/excel-export-modal.ts");
+  const { getDefaultExportOptions } = await import("../src/services/excel-export.ts");
+
+  const opts = getDefaultExportOptions();
+  opts.filters.clientTypes = ["externe"];
+
+  // 1. Save Preset 1
+  const p1 = savePreset("Rapport Clients Externes", opts);
+  assert.ok(p1.id);
+  assert.equal(p1.name, "Rapport Clients Externes");
+
+  // 2. Save Preset 2
+  const p2 = savePreset("Rapport Musique", opts);
+  assert.ok(p2.id);
+
+  let list = loadPresets();
+  assert.equal(list.length, 2);
+  assert.equal(list[0].options.filters.clientTypes[0], "externe");
+
+  // 3. Delete Preset 1
+  deletePreset(p1.id);
+  list = loadPresets();
+  assert.equal(list.length, 1);
+  assert.equal(list[0].id, p2.id);
+});
+
+

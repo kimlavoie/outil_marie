@@ -166,3 +166,46 @@
     color: var(--primary);
   }
 }
+
+/* Presets bar styling (single line condensed) */
+.excel-presets-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  margin-top: 14px;
+  margin-bottom: 12px;
+  white-space: nowrap;
+}
+
+.excel-preset-divider {
+  height: 18px;
+  width: 1px;
+  background-color: var(--border-color);
+  margin: 0 4px;
+}
+
+.btn-danger-outline {
+  color: var(--danger, #ef4444);
+  border: 1px solid var(--danger, #ef4444);
+  background: transparent;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: rgba(239, 68, 68, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+
