@@ -51,9 +51,7 @@ function setupSkeleton() {
         <div class="distribution-row-wrapper">
           <div class="distribution-row">
             <select class="staff-salary-select"><option value="sal1" selected>Directeur technique</option></select>
-            <select class="staff-gl-select"><option value="GL-STAFF" selected>GL-STAFF</option></select>
             <input type="checkbox" class="staff-use-custom-rate">
-            <input class="staff-count-input" value="2">
             <input class="staff-hours-input" value="4">
             <div class="staff-overtime-container">
               <input type="checkbox" class="staff-overtime-checkbox" checked>
@@ -97,24 +95,25 @@ test.beforeEach(() => {
   (globalThis as any).confirm = () => true;
 });
 
-test("generateBillingLines adds a staff line costing (rate x hours + overtime rate x overtime hours) x count", () => {
+test("generateBillingLines adds a staff line costing rate x hours + overtime rate x overtime hours", () => {
   generateBillingLines({ distributions: [] });
 
   const rows = distributionRows();
-  // 30 * 4 * 2 = 240
+  // DT with overtime checked: 30 * 4 = 120
   const staffRow = rows.find(r => r.details && r.details.includes("Directeur technique"));
   assert.ok(staffRow, "expected a staff distribution row");
-  assert.equal(staffRow!.amount, "240");
+  assert.equal(staffRow!.amount, "120");
 });
 
-test("generateBillingLines adds an hourly service line costing rate x hours", () => {
+test("generateBillingLines adds an hourly service line with pre-populated GL account code", () => {
   generateBillingLines({ distributions: [] });
 
   const rows = distributionRows();
-  // 10 * 3 = 30
+  // 10 * 3 = 30, pre-populated with GL-SERVICE
   const serviceRow = rows.find(r => r.details && r.details.includes("Projecteur"));
   assert.ok(serviceRow, "expected a service distribution row");
   assert.equal(serviceRow!.amount, "30");
+  assert.equal(serviceRow!.account, "GL-SERVICE");
 });
 
 test("generateBillingLines carries over an 'autre frais' row as-is (account/amount/description)", () => {

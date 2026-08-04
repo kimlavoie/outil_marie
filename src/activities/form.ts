@@ -269,8 +269,8 @@ function initFormHandlers() {
   // Facturation tab button
   el("generate-billing-lines-btn").addEventListener("click", () => {
     const id = el("form-activity-internal-id").value;
-    const act = appState.activities.find(a => a.id === id);
-    if (act) generateBillingLines(act);
+    const act = appState.activities.find(a => a.id === id) || { id, distributions: [] };
+    generateBillingLines(act);
   });
 
   // Phone number masks

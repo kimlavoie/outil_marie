@@ -3,7 +3,7 @@
  * services/fees, and the Facturée/Terminée state toggle buttons. Split out of activities-form.ts
  * (activity drawer form wiring).
  */
-import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate, saveSafetyBackupToDb } from "../state/state.ts";
+import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate, getActivePricingGrid, saveSafetyBackupToDb } from "../state/state.ts";
 import { formatCurrency, calculateHoursFromTimes, escapeHtml } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
 import { addDistributionRow, updateDistributionTotal } from "./financials.ts";
@@ -51,6 +51,21 @@ export async function generateBillingLines(act: any) {
 
   reservations.forEach((r: any) => {
     const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+    let roomGlAccountCode = "";
+    if (room && r.tariff_id) {
+      const grid = getActivePricingGrid(room, eventDateStart);
+      if (grid) {
+        const parts = r.tariff_id.split("::");
+        if (parts.length === 2) {
+          const clientTypeVal = parts[1];
+          const ct = grid.client_types.find((c: any) => c.id === clientTypeVal);
+          if (ct?.gl_account_code) {
+            roomGlAccountCode = ct.gl_account_code;
+          }
+        }
+      }
+    }
+
     if (r.tariff_amount > 0 && !isInternal) {
       const isHourly = room && room.rate_type === "hourly";
       if (isHourly) {
@@ -59,16 +74,16 @@ export async function generateBillingLines(act: any) {
         }, 0);
         const amount = r.tariff_amount * hours;
         const details = `Location salle ${r.room_name} - ${hours} heure${hours > 1 ? "s" : ""} à ${formatCurrency(r.tariff_amount)}/h`;
-        addDistributionRow("", amount, "", details, true);
+        addDistributionRow(roomGlAccountCode, amount, "", details, true);
       } else {
         const days = r.slots.length;
         const details = `Location salle ${r.room_name} - ${days} jour${days > 1 ? "s" : ""} à ${formatCurrency(r.tariff_amount)}/jour`;
-        addDistributionRow("", r.tariff_amount * days, "", details, true);
+        addDistributionRow(roomGlAccountCode, r.tariff_amount * days, "", details, true);
       }
     }
     if (room && typeof room.setup_fee === "number" && room.setup_fee > 0 && !isInternal) {
       const details = `Frais de montage et démontage - ${r.room_name}`;
-      addDistributionRow("", room.setup_fee, "", details, true);
+      addDistributionRow(roomGlAccountCode, room.setup_fee, "", details, true);
     }
   });
 
@@ -78,6 +93,9 @@ export async function generateBillingLines(act: any) {
     const salary = ((appState.settings.salaries as any[]) || []).find((s: any) => s.id === salaryId);
     if (!salary) return;
 
+    const staffDateInput = row.querySelector<HTMLInputElement>(".staff-date-input");
+    const staffDate = staffDateInput?.value || eventDateStart;
+
     const useCustomRate = row.querySelector<HTMLInputElement>(".staff-use-custom-rate")?.checked || false;
     let rate = 0;
     let overtimeRate = 0;
@@ -85,17 +103,20 @@ export async function generateBillingLines(act: any) {
       rate = parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!.value) || 0;
       overtimeRate = parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!.value) || 0;
     } else {
-      rate = getActiveSalaryRate(salary, eventDateStart);
-      overtimeRate = getActiveSalaryOvertimeRate(salary, eventDateStart);
+      rate = getActiveSalaryRate(salary, staffDate);
+      overtimeRate = getActiveSalaryOvertimeRate(salary, staffDate);
     }
 
-    const count = parseInt(row.querySelector<HTMLInputElement>(".staff-count-input")!.value, 10) || 0;
     const { hours, overtimeHours } = getStaffRowHours(row);
-    const amount = rate * hours * count + overtimeRate * overtimeHours * count;
+    const amount = rate * hours + overtimeRate * overtimeHours;
     if (amount > 0) {
-      let details = `${count} ${salary.job}${count > 1 ? "s" : ""} de ${hours}h à ${formatCurrency(rate)}/h`;
-      if (overtimeHours > 0) {
-        details += ` + ${overtimeHours}h sup. à ${formatCurrency(overtimeRate)}/h`;
+      let details = salary.job;
+      if (hours > 0 && overtimeHours > 0) {
+        details += ` de ${hours}h à ${formatCurrency(rate)}/h + ${overtimeHours}h sup. à ${formatCurrency(overtimeRate)}/h`;
+      } else if (overtimeHours > 0) {
+        details += ` - ${overtimeHours}h sup. à ${formatCurrency(overtimeRate)}/h`;
+      } else {
+        details += ` de ${hours}h à ${formatCurrency(rate)}/h`;
       }
       addDistributionRow("", amount, "", details, true);
     }
@@ -108,11 +129,16 @@ export async function generateBillingLines(act: any) {
     if (!service) return;
 
     let rate = 0;
+    let serviceGlAccountCode = "";
     if (tarifId === "__custom__") {
       const wrapper = row.closest(".distribution-row-wrapper");
       rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!.value) || 0 : 0;
     } else {
       rate = getActiveServiceRate(service, eventDateStart, tarifId);
+      const selectedTarif = (service.tarifs || []).find((t: any) => t.id === tarifId);
+      if (selectedTarif?.gl_account_code) {
+        serviceGlAccountCode = selectedTarif.gl_account_code;
+      }
     }
 
     const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
@@ -120,7 +146,7 @@ export async function generateBillingLines(act: any) {
     const amount = isHourly ? rate * hours : rate;
     if (amount > 0) {
       const details = isHourly ? `${service.name} de ${hours}h à ${formatCurrency(rate)}/h` : `${service.name} à ${formatCurrency(rate)}`;
-      addDistributionRow("", amount, "", details, true);
+      addDistributionRow(serviceGlAccountCode, amount, "", details, true);
     }
   });
 
