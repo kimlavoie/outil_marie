@@ -5,7 +5,7 @@ import { DEFAULT_CONFIG } from "./config-defaults.ts";
 import { checkBackupReminder } from "../services/backup/reminder.ts";
 import { scheduleAutoBackupWrite } from "../services/backup/auto-backup.ts";
 
-import { type AppState, appState, setAppState } from "./store.ts";
+import { type AppState, appState, setAppState, notifyAppStateChange, subscribeAppState, useAppState } from "./store.ts";
 import { getDefaultFiscalYear } from "./date-helpers.ts";
 import {
   sanitizeActivitiesList,
@@ -256,6 +256,7 @@ async function saveDatabase(): Promise<boolean> {
   }
   checkBackupReminder();
   scheduleAutoBackupWrite();
+  notifyAppStateChange();
   return success;
 }
 
@@ -294,7 +295,10 @@ export {
   loadDatabase,
   seedDatabase,
   saveDatabase,
-  saveDatabaseOrRollback
+  saveDatabaseOrRollback,
+  subscribeAppState,
+  notifyAppStateChange,
+  useAppState
 };
 
 export { activityMatchesTask } from "./tasks.ts";

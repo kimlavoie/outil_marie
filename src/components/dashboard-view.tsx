@@ -10,7 +10,7 @@
  * reactive state layer.
  */
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { appState, getFiscalYear, getQuarterNumber, getQuarter } from "../state/state.ts";
+import { appState, getFiscalYear, getQuarterNumber, getQuarter, useAppState } from "../state/state.ts";
 import { getReservationRoomLabel, formatCurrency } from "../utils/utils.ts";
 import { computeDashboardStats, computeEmployeeStats, computeJobsYearlyHours } from "../dashboard.ts";
 import { reconciliationState } from "../services/reconciliation.ts";
@@ -183,10 +183,11 @@ function useChart(canvasRef: RefObject<HTMLCanvasElement | null>, buildConfig: (
 }
 
 export function DashboardView() {
-  const stats = computeDashboardStats(appState.activities, appState.selected_year, appState.selected_quarters, reconciliationState.results);
-  const salaries = appState.settings.salaries || [];
-  const jobYearlyStats = computeJobsYearlyHours(appState.activities, appState.selected_year, salaries);
-  const isDark = appState.settings.theme === "dark";
+  const state = useAppState();
+  const stats = computeDashboardStats(state.activities, state.selected_year, state.selected_quarters, reconciliationState.results);
+  const salaries = state.settings.salaries || [];
+  const jobYearlyStats = computeJobsYearlyHours(state.activities, state.selected_year, salaries);
+  const isDark = state.settings.theme === "dark";
   const gridColor = isDark ? "#1f2937" : "#e2e8f0";
   const textColor = isDark ? "#9ca3af" : "#475569";
 

@@ -166,10 +166,52 @@ export let appState: AppState = {
   selected_quarters: [1, 2, 3, 4]
 };
 
+import { useSyncExternalStore } from "react";
+
+type StateChangeListener = () => void;
+const listeners = new Set<StateChangeListener>();
+
+/**
+ * Subscribes a callback to appState change notifications.
+ * Returns an unsubscribe function.
+ */
+export function subscribeAppState(listener: StateChangeListener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+/**
+ * Notifies all registered subscribers that appState has been mutated or replaced.
+ */
+export function notifyAppStateChange(): void {
+  listeners.forEach(listener => {
+    try {
+      listener();
+    } catch (e) {
+      console.error("Error in appState listener:", e);
+    }
+  });
+}
+
+/**
+ * React 19 hook to subscribe to appState or a selected slice of appState.
+ */
+export function useAppState(): AppState;
+export function useAppState<T>(selector: (state: AppState) => T): T;
+export function useAppState<T>(selector?: (state: AppState) => T): T | AppState {
+  return useSyncExternalStore(
+    subscribeAppState,
+    () => (selector ? selector(appState) : appState)
+  );
+}
+
 // ES modules only give importers a read-only live view of an exported `let` — backup.js's JSON
 // restore needs to actually replace the whole object (not just mutate fields), so it goes
 // through this setter instead of assigning the imported binding directly (same pattern as
 // activities-financials.ts's setActivityUndoSnapshotTimer).
 export function setAppState(newState: AppState) {
   appState = newState;
+  notifyAppStateChange();
 }
