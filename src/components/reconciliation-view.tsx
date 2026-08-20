@@ -586,6 +586,13 @@ export function ReconciliationView() {
   const [, setVersion] = useState(0);
   const bump = () => setVersion(v => v + 1);
 
+  useEffect(() => {
+    if (reconciliationState.ledgerTransactions.length > 0) {
+      reconcileLedger();
+      bump();
+    }
+  }, []);
+
   const [mappingHeaders, setMappingHeaders] = useState<string[] | null>(null);
   const [pendingLedgerRows, setPendingLedgerRows] = useState<any[]>([]);
   const [detailRecord, setDetailRecord] = useState<any>(null);

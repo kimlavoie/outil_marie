@@ -238,7 +238,11 @@ export function commitActivityPatch(id: string, patchFn: (act: any) => void) {
     }
 
     renderActivityStateBar(appState.activities[idx]);
-    renderActivities();
+    const drawer = document.getElementById("activity-drawer");
+    const isDrawerOpen = drawer ? drawer.classList.contains("active") : false;
+    if (!isDrawerOpen) {
+      renderActivities();
+    }
 
     // Save version on lifecycle patch and update the open snapshot to match
     const updatedAct = appState.activities[idx];

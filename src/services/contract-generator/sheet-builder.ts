@@ -134,7 +134,7 @@ class SheetBuilder {
   }
 
   itemRow(label: string, col2: string | number, col3: string | number, amount: number, customHeight?: number | null) {
-    const height = customHeight !== undefined ? customHeight : (label.length > 20 ? wrapRowHeight(label, 44) : null);
+    const height = customHeight !== undefined ? customHeight : label.length > 20 ? wrapRowHeight(label, 44) : null;
     this.addRow(height, [
       { col: "A", style: S.wrapValue, value: label, mergeTo: "B" },
       { col: "C", style: S.value, value: col2 },

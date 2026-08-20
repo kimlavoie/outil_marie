@@ -5,7 +5,7 @@
 import { validateDateFieldFiscalYear } from "../datepicker.ts";
 import { WEEKDAY_PILL_OPTIONS } from "../form.ts";
 import { formatDateStrLocal, parseLocalDateStr } from "../../state/state.ts";
-import { generateUid, showToast, initPillToggleEl, maskDateInput, maskTimeInput, escapeHtml } from "../../utils/utils.ts";
+import { generateUid, showToast, initPillToggleEl, maskDateInput, maskTimeInput, escapeHtml, debounce } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
 import { updateFormDatesHelper } from "../history/index.ts";
 import { propagateFirstSlotTimesToStaff } from "./subrows.ts";
@@ -61,7 +61,8 @@ function addSlotRow(container: HTMLElement, date = "", startTime = "", endTime =
   }
 
   const detailsInput = row.querySelector<HTMLInputElement>(".slot-details-input")!;
-  detailsInput.addEventListener("input", autoSaveActivityForm);
+  detailsInput.addEventListener("input", debounce(autoSaveActivityForm, 500));
+  detailsInput.addEventListener("change", autoSaveActivityForm);
 
   row.querySelector<HTMLInputElement>(".delete-slot-row-btn")!.addEventListener("click", () => {
     const hasContent = row.querySelector<HTMLInputElement>(".slot-date-input")!.value.trim() !== "";

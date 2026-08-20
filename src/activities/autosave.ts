@@ -15,7 +15,6 @@ import { isNonEmptyString } from "../utils/validation.ts";
 import { activitiesState, renderActivities } from "./render.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
 import { getIncompleteRowWarnings } from "./reservations/subrows.ts";
-import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { getActivityFormMode, updateFormTabIndicators } from "./form.ts";
 import { scheduleActivityUndoSnapshot } from "./history/index.ts";
 
@@ -212,11 +211,12 @@ function autoSaveActivityForm() {
   }, "Les modifications n'ont pas été enregistrées. Réessayez.").then(saved => {
     if (!saved) return;
 
-    if (reconciliationState.ledgerTransactions.length > 0) {
-      reconcileLedger();
+    const drawer = document.getElementById("activity-drawer");
+    const isDrawerOpen = drawer ? drawer.classList.contains("active") : false;
+    if (!isDrawerOpen) {
+      renderActivities();
     }
 
-    renderActivities();
     showAutoSaveStatus("saved");
     updateFormTabIndicators(appState.activities[idx]);
   });

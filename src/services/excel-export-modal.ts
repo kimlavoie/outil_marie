@@ -3,12 +3,7 @@
  */
 import { appState } from "../state/state.ts";
 import { showToast } from "../utils/utils.ts";
-import {
-  exportToExcel,
-  getDefaultExportOptions,
-  filterActivitiesForExport,
-  type ExcelExportOptions
-} from "./excel-export.ts";
+import { exportToExcel, getDefaultExportOptions, filterActivitiesForExport, type ExcelExportOptions } from "./excel-export.ts";
 
 const PREFS_KEY = "outil_marie_excel_export_prefs";
 const PRESETS_KEY = "outil_marie_excel_export_presets";
@@ -59,7 +54,6 @@ export function deletePreset(id: string): void {
   savePresetsToStorage(presets);
 }
 
-
 function loadSavedOptions(): ExcelExportOptions {
   try {
     const raw = localStorage.getItem(PREFS_KEY);
@@ -78,7 +72,7 @@ function loadSavedOptions(): ExcelExportOptions {
   }
 }
 
-function saveOptionsToStorage(options: ExcelExportOptions): void {
+function _saveOptionsToStorage(options: ExcelExportOptions): void {
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify(options));
     showToast("Préférences d'exportation Excel sauvegardées.", "success");
@@ -139,12 +133,10 @@ function renderModalBody(): void {
   if (!container) return;
 
   const allFiscalYears = Array.from(
-    new Set(
-      appState.activities
-        .filter(a => !a.deleted && a.date_start)
-        .map(a => a.date_start.substring(0, 4))
-    )
-  ).sort().reverse();
+    new Set(appState.activities.filter(a => !a.deleted && a.date_start).map(a => a.date_start.substring(0, 4)))
+  )
+    .sort()
+    .reverse();
 
   const depts = appState.settings.departments || [];
   const rooms = (appState.settings.rooms || []).map(r => r.name);
@@ -253,12 +245,16 @@ function renderModalBody(): void {
               <div>
                 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Trimestres :</span>
                 <div style="display: flex; gap: 12px; margin-top: 4px;">
-                  ${[1, 2, 3, 4].map(q => `
+                  ${[1, 2, 3, 4]
+                    .map(
+                      q => `
                     <label style="font-size: 0.85rem; cursor: pointer;">
                       <input type="checkbox" class="excel-q-chk" value="${q}" ${currentOptions.filters.quarters.includes(q) ? "checked" : ""} />
                       T${q}
                     </label>
-                  `).join("")}
+                  `
+                    )
+                    .join("")}
                 </div>
               </div>
             </div>
@@ -289,12 +285,16 @@ function renderModalBody(): void {
                     { val: "facturee", lbl: "Facturée" },
                     { val: "completee", lbl: "Complétée" },
                     { val: "annulee", lbl: "Annulée" }
-                  ].map(st => `
+                  ]
+                    .map(
+                      st => `
                     <label class="excel-chk-item">
                       <input type="checkbox" class="excel-state-chk" value="${st.val}" ${currentOptions.filters.states.includes(st.val) ? "checked" : ""} />
                       ${st.lbl}
                     </label>
-                  `).join("")}
+                  `
+                    )
+                    .join("")}
                 </div>
               </div>
 
@@ -320,24 +320,40 @@ function renderModalBody(): void {
               <div class="form-group">
                 <label>Départements :</label>
                 <div class="excel-chk-group excel-scrollable-box">
-                  ${depts.length === 0 ? `<span style="font-size: 0.8rem; color: var(--text-muted)">Aucun département configuré</span>` : depts.map(d => `
+                  ${
+                    depts.length === 0
+                      ? `<span style="font-size: 0.8rem; color: var(--text-muted)">Aucun département configuré</span>`
+                      : depts
+                          .map(
+                            d => `
                     <label class="excel-chk-item">
                       <input type="checkbox" class="excel-dept-chk" value="${d}" ${currentOptions.filters.departments.includes(d) ? "checked" : ""} />
                       ${d}
                     </label>
-                  `).join("")}
+                  `
+                          )
+                          .join("")
+                  }
                 </div>
               </div>
 
               <div class="form-group">
                 <label>Salles utilisées :</label>
                 <div class="excel-chk-group excel-scrollable-box">
-                  ${rooms.length === 0 ? `<span style="font-size: 0.8rem; color: var(--text-muted)">Aucune salle configurée</span>` : rooms.map(r => `
+                  ${
+                    rooms.length === 0
+                      ? `<span style="font-size: 0.8rem; color: var(--text-muted)">Aucune salle configurée</span>`
+                      : rooms
+                          .map(
+                            r => `
                     <label class="excel-chk-item">
                       <input type="checkbox" class="excel-room-chk" value="${r}" ${currentOptions.filters.rooms.includes(r) ? "checked" : ""} />
                       ${r}
                     </label>
-                  `).join("")}
+                  `
+                          )
+                          .join("")
+                  }
                 </div>
               </div>
             </div>
@@ -396,12 +412,16 @@ function renderModalBody(): void {
               { key: "manager_contact_info", label: "Courriel & Tél. du client" },
               { key: "description", label: "Description complète" },
               { key: "notes", label: "Notes internes" }
-            ].map(col => `
+            ]
+              .map(
+                col => `
               <label class="excel-chk-item">
                 <input type="checkbox" class="excel-col-toggle" data-col="${col.key}" ${(currentOptions.columns as any)[col.key] ? "checked" : ""} />
                 ${col.label}
               </label>
-            `).join("")}
+            `
+              )
+              .join("")}
           </div>
 
           <div class="excel-form-section" style="margin-top: 16px;">
@@ -413,12 +433,16 @@ function renderModalBody(): void {
               </div>
             </div>
             <div class="excel-grid-2">
-              ${accounts.map(acc => `
+              ${accounts
+                .map(
+                  acc => `
                 <label class="excel-chk-item">
                   <input type="checkbox" class="excel-acc-chk" value="${acc.code}" ${currentOptions.columns.accounts.includes(acc.code) ? "checked" : ""} />
                   <strong>${acc.code}</strong> - ${acc.description}
                 </label>
-              `).join("")}
+              `
+                )
+                .join("")}
             </div>
             <div style="margin-top: 8px;">
               <label class="excel-chk-item">
@@ -476,7 +500,6 @@ function bindModalEvents(): void {
   // Close handler
   document.getElementById("excel-export-close")?.addEventListener("click", closeExcelExportModal);
 
-
   // Presets Handlers
   const presetSelect = document.getElementById("excel-preset-select") as HTMLSelectElement | null;
   const presetDeleteBtn = document.getElementById("excel-preset-delete") as HTMLButtonElement | null;
@@ -497,7 +520,6 @@ function bindModalEvents(): void {
       }
     });
   }
-
 
   presetDeleteBtn?.addEventListener("click", () => {
     if (!selectedPresetId) return;
@@ -545,7 +567,6 @@ function bindModalEvents(): void {
     showToast(`Préréglage "${name}" sauvegardé avec succès !`, "success");
   });
 
-
   // Mode cards toggle
   container.querySelectorAll<HTMLInputElement>("input[name='excel_mode']").forEach(radio => {
     radio.addEventListener("change", e => {
@@ -562,7 +583,6 @@ function bindModalEvents(): void {
       updateLiveCounter();
     });
   });
-
 
   // Tab switching
   container.querySelectorAll<HTMLButtonElement>(".excel-export-tab-btn").forEach(btn => {
@@ -599,7 +619,9 @@ function bindModalEvents(): void {
 
   container.querySelectorAll<HTMLInputElement>(".excel-q-chk").forEach(chk => {
     chk.addEventListener("change", () => {
-      currentOptions.filters.quarters = Array.from(container.querySelectorAll<HTMLInputElement>(".excel-q-chk:checked")).map(c => Number(c.value));
+      currentOptions.filters.quarters = Array.from(container.querySelectorAll<HTMLInputElement>(".excel-q-chk:checked")).map(c =>
+        Number(c.value)
+      );
       updateLiveCounter();
     });
   });
@@ -617,21 +639,27 @@ function bindModalEvents(): void {
   // Checkboxes (States, ClientTypes, Depts, Rooms)
   container.querySelectorAll<HTMLInputElement>(".excel-state-chk").forEach(chk => {
     chk.addEventListener("change", () => {
-      currentOptions.filters.states = Array.from(container.querySelectorAll<HTMLInputElement>(".excel-state-chk:checked")).map(c => c.value);
+      currentOptions.filters.states = Array.from(container.querySelectorAll<HTMLInputElement>(".excel-state-chk:checked")).map(
+        c => c.value
+      );
       updateLiveCounter();
     });
   });
 
   container.querySelectorAll<HTMLInputElement>(".excel-clienttype-chk").forEach(chk => {
     chk.addEventListener("change", () => {
-      currentOptions.filters.clientTypes = Array.from(container.querySelectorAll<HTMLInputElement>(".excel-clienttype-chk:checked")).map(c => c.value);
+      currentOptions.filters.clientTypes = Array.from(container.querySelectorAll<HTMLInputElement>(".excel-clienttype-chk:checked")).map(
+        c => c.value
+      );
       updateLiveCounter();
     });
   });
 
   container.querySelectorAll<HTMLInputElement>(".excel-dept-chk").forEach(chk => {
     chk.addEventListener("change", () => {
-      currentOptions.filters.departments = Array.from(container.querySelectorAll<HTMLInputElement>(".excel-dept-chk:checked")).map(c => c.value);
+      currentOptions.filters.departments = Array.from(container.querySelectorAll<HTMLInputElement>(".excel-dept-chk:checked")).map(
+        c => c.value
+      );
       updateLiveCounter();
     });
   });
@@ -696,10 +724,11 @@ function bindModalEvents(): void {
   // Accounts checkboxes
   container.querySelectorAll<HTMLInputElement>(".excel-acc-chk").forEach(chk => {
     chk.addEventListener("change", () => {
-      currentOptions.columns.accounts = Array.from(container.querySelectorAll<HTMLInputElement>(".excel-acc-chk:checked")).map(c => c.value);
+      currentOptions.columns.accounts = Array.from(container.querySelectorAll<HTMLInputElement>(".excel-acc-chk:checked")).map(
+        c => c.value
+      );
     });
   });
-
 
   document.getElementById("excel-col-total-revenue")?.addEventListener("change", e => {
     currentOptions.columns.total_revenue = (e.target as HTMLInputElement).checked;
@@ -734,7 +763,6 @@ function bindModalEvents(): void {
       exportToExcel(currentOptions);
     }
   });
-
 }
 
 export function initExcelExportModal(): void {

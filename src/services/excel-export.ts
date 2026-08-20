@@ -261,9 +261,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
   const wb = lib.utils.book_new();
 
   // Selected accounts list
-  const selectedAccounts = (options.columns.accounts || []).filter(code =>
-    appState.settings.accounts.some(a => a.code === code)
-  );
+  const selectedAccounts = (options.columns.accounts || []).filter(code => appState.settings.accounts.some(a => a.code === code));
 
   // Define dynamic headers based on column selections
   interface ColumnDef {
@@ -277,9 +275,11 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
   const activeCols: ColumnDef[] = [];
 
   if (options.columns.id) activeCols.push({ key: "id", header: "NUMERO ACTIVITE", width: 15, getValue: act => act.id });
-  if (options.columns.responsable) activeCols.push({ key: "responsable", header: "RESPONSABLE FACTURATION", width: 20, getValue: act => act.responsable || "" });
+  if (options.columns.responsable)
+    activeCols.push({ key: "responsable", header: "RESPONSABLE FACTURATION", width: 20, getValue: act => act.responsable || "" });
   if (options.columns.name) activeCols.push({ key: "name", header: "NOM DE L'ACTIVITÉ", width: 25, getValue: act => act.name || "" });
-  if (options.columns.date_start) activeCols.push({ key: "date_start", header: "DATE DÉBUT", width: 12, getValue: act => act.date_start || "" });
+  if (options.columns.date_start)
+    activeCols.push({ key: "date_start", header: "DATE DÉBUT", width: 12, getValue: act => act.date_start || "" });
   if (options.columns.date_end) activeCols.push({ key: "date_end", header: "DATE FIN", width: 12, getValue: act => act.date_end || "" });
 
   if (options.columns.days_count) {
@@ -306,19 +306,66 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
     });
   }
 
-  if (options.columns.client_type) activeCols.push({ key: "client_type", header: "Client interne ou externe", width: 12, getValue: act => act.client_type || "" });
-  if (options.columns.category) activeCols.push({ key: "category", header: "CATÉGORIE (Rébecca)", width: 15, getValue: act => act.category || act.event_type || "" });
-  if (options.columns.rooms) activeCols.push({ key: "rooms", header: "SALLE (menu déroulant)", width: 20, getValue: act => (act.reservations || []).map(getReservationRoomLabel).join(", ") });
+  if (options.columns.client_type)
+    activeCols.push({ key: "client_type", header: "Client interne ou externe", width: 12, getValue: act => act.client_type || "" });
+  if (options.columns.category)
+    activeCols.push({ key: "category", header: "CATÉGORIE (Rébecca)", width: 15, getValue: act => act.category || act.event_type || "" });
+  if (options.columns.rooms)
+    activeCols.push({
+      key: "rooms",
+      header: "SALLE (menu déroulant)",
+      width: 20,
+      getValue: act => (act.reservations || []).map(getReservationRoomLabel).join(", ")
+    });
   if (options.columns.remi_time) activeCols.push({ key: "remi_time", header: "TEMPS RÉMI (en heure)", width: 10, getValue: () => 0 });
-  if (options.columns.department) activeCols.push({ key: "department", header: "DÉPARTEMENT (menu déroulant À VENIR)", width: 22, getValue: act => act.department || "" });
-  if (options.columns.room_sans_frais) activeCols.push({ key: "room_sans_frais", header: "PRIX SALLE SANS FRAIS (formule) interne seulement", width: 15, getValue: act => (act.client_type === "interne" ? getRoomsTariffTotal(act) : 0) });
-  if (options.columns.references) activeCols.push({ key: "references", header: "NUMÉRO DE FACTURE, RÉQUISITION INTERNE OU ENCAISSEMENT", width: 20, getValue: act => getActivityReferences(act) });
+  if (options.columns.department)
+    activeCols.push({
+      key: "department",
+      header: "DÉPARTEMENT (menu déroulant À VENIR)",
+      width: 22,
+      getValue: act => act.department || ""
+    });
+  if (options.columns.room_sans_frais)
+    activeCols.push({
+      key: "room_sans_frais",
+      header: "PRIX SALLE SANS FRAIS (formule) interne seulement",
+      width: 15,
+      getValue: act => (act.client_type === "interne" ? getRoomsTariffTotal(act) : 0)
+    });
+  if (options.columns.references)
+    activeCols.push({
+      key: "references",
+      header: "NUMÉRO DE FACTURE, RÉQUISITION INTERNE OU ENCAISSEMENT",
+      width: 20,
+      getValue: act => getActivityReferences(act)
+    });
   if (options.columns.state) activeCols.push({ key: "state", header: "STATUT", width: 12, getValue: act => act.state || "brouillon" });
-  if (options.columns.attendees_count) activeCols.push({ key: "attendees_count", header: "NOMBRE DE PARTICIPANTS", width: 12, getValue: act => act.attendees_count || 0 });
-  if (options.columns.manager_name) activeCols.push({ key: "manager_name", header: "GESTIONNAIRE", width: 20, getValue: act => act.activity_manager ? `${act.activity_manager.first_name || ""} ${act.activity_manager.last_name || ""}`.trim() : "" });
-  if (options.columns.manager_company) activeCols.push({ key: "manager_company", header: "ENTREPRISE / ORGANISME", width: 22, getValue: act => act.activity_manager?.company_name || "" });
-  if (options.columns.manager_contact_info) activeCols.push({ key: "manager_contact_info", header: "COURRIEL / TÉLÉPHONE", width: 25, getValue: act => act.activity_manager ? [act.activity_manager.email, act.activity_manager.phone].filter(Boolean).join(" / ") : "" });
-  if (options.columns.description) activeCols.push({ key: "description", header: "DESCRIPTION", width: 30, getValue: act => act.description || "" });
+  if (options.columns.attendees_count)
+    activeCols.push({ key: "attendees_count", header: "NOMBRE DE PARTICIPANTS", width: 12, getValue: act => act.attendees_count || 0 });
+  if (options.columns.manager_name)
+    activeCols.push({
+      key: "manager_name",
+      header: "GESTIONNAIRE",
+      width: 20,
+      getValue: act =>
+        act.activity_manager ? `${act.activity_manager.first_name || ""} ${act.activity_manager.last_name || ""}`.trim() : ""
+    });
+  if (options.columns.manager_company)
+    activeCols.push({
+      key: "manager_company",
+      header: "ENTREPRISE / ORGANISME",
+      width: 22,
+      getValue: act => act.activity_manager?.company_name || ""
+    });
+  if (options.columns.manager_contact_info)
+    activeCols.push({
+      key: "manager_contact_info",
+      header: "COURRIEL / TÉLÉPHONE",
+      width: 25,
+      getValue: act => (act.activity_manager ? [act.activity_manager.email, act.activity_manager.phone].filter(Boolean).join(" / ") : "")
+    });
+  if (options.columns.description)
+    activeCols.push({ key: "description", header: "DESCRIPTION", width: 30, getValue: act => act.description || "" });
   if (options.columns.notes) activeCols.push({ key: "notes", header: "NOTES", width: 30, getValue: act => act.notes || "" });
 
   // Account columns
@@ -482,7 +529,12 @@ function runExportToExcel(_getExcelColName: (colIdx: number) => string, xlsxInst
     const wb = generateExcelWorkbook(lib, customOptions);
 
     const options = customOptions || getDefaultExportOptions();
-    let filenameSuffix = `${appState.selected_year}_${(appState.selected_quarters || []).sort().map(q => `T${q}`).join("-") || "tous"}`;
+    let filenameSuffix = `${appState.selected_year}_${
+      (appState.selected_quarters || [])
+        .sort()
+        .map(q => `T${q}`)
+        .join("-") || "tous"
+    }`;
     if (options.mode === "custom") {
       filenameSuffix += "_personnalise";
     }
@@ -499,4 +551,3 @@ function runExportToExcel(_getExcelColName: (colIdx: number) => string, xlsxInst
 }
 
 export { exportToExcel, getExcelColName, runExportToExcel, generateExcelWorkbook };
-

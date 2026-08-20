@@ -3,7 +3,14 @@
  * services/fees, and the Facturée/Terminée state toggle buttons. Split out of activities-form.ts
  * (activity drawer form wiring).
  */
-import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate, getActivePricingGrid, saveSafetyBackupToDb } from "../state/state.ts";
+import {
+  appState,
+  getActiveSalaryRate,
+  getActiveSalaryOvertimeRate,
+  getActiveServiceRate,
+  getActivePricingGrid,
+  saveSafetyBackupToDb
+} from "../state/state.ts";
 import { formatCurrency, calculateHoursFromTimes, escapeHtml } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
 import { addDistributionRow, updateDistributionTotal } from "./financials.ts";

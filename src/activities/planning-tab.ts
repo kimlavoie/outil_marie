@@ -4,7 +4,7 @@
  * activities-form.ts (activity drawer form wiring).
  */
 import { appState, activityMatchesTask } from "../state/state.ts";
-import { generateUid, escapeHtml, getReservationRoomLabel, OTHER_ROOM_VALUE } from "../utils/utils.ts";
+import { generateUid, escapeHtml, getReservationRoomLabel, OTHER_ROOM_VALUE, debounce } from "../utils/utils.ts";
 import { getPlanningProgress, buildProgressBarHtml } from "./render.ts";
 import { commitActivityPatch } from "./form-state-bar.ts";
 import { deriveActivityState } from "./render.ts";
@@ -56,7 +56,8 @@ export function addPlanningTaskRow(task: any) {
     descInput.style.color = checkbox.checked ? "var(--text-muted)" : "";
     persistPlanningTasks();
   });
-  descInput.addEventListener("input", persistPlanningTasks);
+  descInput.addEventListener("input", debounce(persistPlanningTasks, 500));
+  descInput.addEventListener("change", persistPlanningTasks);
 }
 
 function collectPlanningTasksFromForm() {
