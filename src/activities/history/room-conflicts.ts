@@ -77,21 +77,33 @@ function checkRoomReservationConflicts(reservations: any[]) {
   const currentId = (document.getElementById("form-activity-internal-id") as HTMLInputElement).value;
   const conflicts: { roomName: string; otherActivityName: string }[] = [];
 
-  reservations.forEach((res: any) => {
-    if (!res.room_name || res.room_name === OTHER_ROOM_VALUE) return;
-    const myRanges = getReservationOccupiedRanges(res);
-    if (myRanges.length === 0) return;
+  // Filter valid room reservations with occupied ranges
+  const validReservations = reservations
+    .filter((res: any) => res.room_name && res.room_name !== OTHER_ROOM_VALUE)
+    .map((res: any) => ({ roomName: res.room_name, myRanges: getReservationOccupiedRanges(res) }))
+    .filter(item => item.myRanges.length > 0);
 
+  if (validReservations.length === 0) {
+    bannerEl.style.display = "none";
+    bannerEl.innerHTML = "";
+    if (checkEl) {
+      checkEl.classList.remove("conflict");
+      checkEl.removeAttribute("title");
+    }
+    return;
+  }
+
+  validReservations.forEach(({ roomName, myRanges }) => {
     appState.activities.forEach((other: any) => {
       if (other.deleted || other.id === currentId) return;
       (other.reservations || []).forEach((otherRes: any) => {
-        if (otherRes.room_name !== res.room_name) return;
+        if (otherRes.room_name !== roomName) return;
         const otherRanges = getReservationOccupiedRanges(otherRes);
         const overlaps = myRanges.some((mr: any) =>
           otherRanges.some((or: any) => mr.date === or.date && timeRangesOverlap(mr.start_time, mr.end_time, or.start_time, or.end_time))
         );
-        if (overlaps && !conflicts.some(c => c.roomName === res.room_name && c.otherActivityName === other.name)) {
-          conflicts.push({ roomName: res.room_name, otherActivityName: other.name || "(sans nom)" });
+        if (overlaps && !conflicts.some(c => c.roomName === roomName && c.otherActivityName === other.name)) {
+          conflicts.push({ roomName, otherActivityName: other.name || "(sans nom)" });
         }
       });
     });

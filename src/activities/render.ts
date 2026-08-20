@@ -166,11 +166,12 @@ function renderActivities() {
 
     // Search filter: ID, Name, Responsable, Reference, or any ventilated Account Code
     const matchesSearch =
+      !searchQuery ||
       act.id.toLowerCase().includes(searchQuery) ||
       act.name.toLowerCase().includes(searchQuery) ||
       act.responsable.toLowerCase().includes(searchQuery) ||
-      act.distributions.some(
-        (d: any) => d.account_code.toLowerCase().includes(searchQuery) || (d.reference || "").toLowerCase().includes(searchQuery)
+      (act.distributions || []).some(
+        (d: any) => (d.account_code || "").toLowerCase().includes(searchQuery) || (d.reference || "").toLowerCase().includes(searchQuery)
       );
 
     // Salle filter
@@ -273,6 +274,7 @@ function renderActivities() {
     activitiesState.page * activitiesState.pageSize
   );
 
+  let rowsHtml = "";
   pageItems.forEach((act: any) => {
     const isFilled = act.name.trim() !== "";
     const totalRev = act.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
@@ -349,7 +351,7 @@ function renderActivities() {
     `
       : "-";
 
-    tbody.innerHTML += `
+    rowsHtml += `
       <tr class="activity-row ${isFilled ? "" : "row-empty"} ${activitiesState.selectedIds.has(act.id) ? "selected" : ""}" data-id="${escapeHtml(act.id)}" style="cursor: pointer; ${isFilled ? "" : "opacity: 0.5; font-style: italic;"}">
         <td onclick="event.stopPropagation();" style="text-align: center; vertical-align: middle; width: 22px; padding-left: 8px; padding-right: 2px;">
           <label style="cursor: pointer;">
@@ -372,6 +374,7 @@ function renderActivities() {
       </tr>
     `;
   });
+  tbody.innerHTML = rowsHtml;
 
   // Attach checkbox change event listeners
   document.querySelectorAll<HTMLInputElement>(".activity-select-checkbox").forEach(cb => {

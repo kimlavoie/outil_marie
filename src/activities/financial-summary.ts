@@ -135,9 +135,9 @@ function computeFormRevenueSubtotal(): {
 // the default rates from Paramètres > Taxes unless this activity carries an override (see
 // computeTaxes()).
 function updateSubmissionFinancialSummary() {
+  const { roomsTotal, setupTotal, staffTotal, servicesTotal, feesTotal, subtotal } = computeFormRevenueSubtotal();
   const container = elById("submission-financial-summary");
   if (container) {
-    const { roomsTotal, setupTotal, staffTotal, servicesTotal, feesTotal, subtotal } = computeFormRevenueSubtotal();
     const internalId = (document.getElementById("form-activity-internal-id") as HTMLInputElement | null)?.value;
     const act = appState.activities.find((a: any) => a.id === internalId);
     const { tps, tvq } = computeTaxes(subtotal, act);
@@ -175,7 +175,7 @@ function updateSubmissionFinancialSummary() {
   // Keep the "Total saisi" distribution warning in sync too: reservations/staff/services/fees
   // changes call this function, not updateDistributionTotal(), but the subtotal they'd be
   // compared against just changed.
-  updateDistributionTotal();
+  updateDistributionTotal(subtotal);
 }
 
 // Same subtotal/TPS/TVQ/total breakdown as updateSubmissionFinancialSummary(), but computed from
@@ -242,7 +242,7 @@ function computeActivityFinancials(act: any) {
   };
 }
 
-function updateDistributionTotal() {
+function updateDistributionTotal(cachedSubtotal?: number) {
   const distributionListEl = elById("form-distribution-total-val");
   if (!distributionListEl) return;
 
@@ -258,7 +258,7 @@ function updateDistributionTotal() {
   // a forgotten line doesn't silently understate/overstate what gets reported to the GL.
   const warningEl = elById("form-distribution-total-warning");
   if (warningEl) {
-    const { subtotal } = computeFormRevenueSubtotal();
+    const subtotal = cachedSubtotal !== undefined ? cachedSubtotal : computeFormRevenueSubtotal().subtotal;
     const diff = total - subtotal;
     if (Math.abs(diff) > 0.01) {
       warningEl.textContent = `Écart de ${formatCurrency(Math.abs(diff))} ${diff > 0 ? "au-dessus" : "en dessous"} du total calculé (${formatCurrency(subtotal)})`;

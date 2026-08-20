@@ -6,7 +6,8 @@ import {
   rejectNegativeAmountOnBlur,
   maskTimeInput,
   calculateHoursFromTimes,
-  maskDateInput
+  maskDateInput,
+  debounce
 } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
 
@@ -284,7 +285,7 @@ export function addStaffRow(
   endTimeInput.addEventListener("change", handleTimeChange);
 
   wrapper.querySelectorAll<HTMLInputElement>("select, input")!.forEach(el => {
-    el.addEventListener("input", updateSubmissionFinancialSummary);
+    el.addEventListener("input", debounce(updateSubmissionFinancialSummary, 250));
     el.addEventListener("change", updateSubmissionFinancialSummary);
   });
   rejectNegativeAmountOnBlur(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!);
@@ -389,7 +390,7 @@ export function addServiceRow(container: HTMLElement, serviceId = "", hours = 0,
   });
 
   wrapper.querySelectorAll<HTMLInputElement>("select, input")!.forEach(el => {
-    el.addEventListener("input", updateSubmissionFinancialSummary);
+    el.addEventListener("input", debounce(updateSubmissionFinancialSummary, 250));
     el.addEventListener("change", updateSubmissionFinancialSummary);
   });
   rejectNegativeAmountOnBlur(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!);
@@ -455,7 +456,8 @@ export function addFeeRow(container: HTMLElement, description = "", amount: stri
   });
 
   row.querySelectorAll<HTMLInputElement>(".fee-desc-input, .fee-amount-input")!.forEach(el => {
-    el.addEventListener("input", updateSubmissionFinancialSummary);
+    el.addEventListener("input", debounce(updateSubmissionFinancialSummary, 250));
+    el.addEventListener("change", updateSubmissionFinancialSummary);
   });
   rejectNegativeAmountOnBlur(row.querySelector<HTMLInputElement>(".fee-amount-input")!);
 }

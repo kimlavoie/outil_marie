@@ -3,7 +3,14 @@
  * Split out of activities-financials.ts (see that file for the rest of the module's history).
  */
 import { appState } from "../state/state.ts";
-import { escapeHtml, buildSearchableSelectHtml, initSearchableSelectEl, rejectNegativeAmountOnBlur, elById } from "../utils/utils.ts";
+import {
+  escapeHtml,
+  buildSearchableSelectHtml,
+  initSearchableSelectEl,
+  rejectNegativeAmountOnBlur,
+  elById,
+  debounce
+} from "../utils/utils.ts";
 import { updateDistributionTotal } from "./financial-summary.ts";
 import { autoSaveActivityForm } from "./autosave.ts";
 
@@ -54,7 +61,8 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "", detail
     accountCode
   );
 
-  newRow.querySelector(".dist-amount-input")!.addEventListener("input", updateDistributionTotal);
+  newRow.querySelector(".dist-amount-input")!.addEventListener("input", debounce(updateDistributionTotal, 250));
+  newRow.querySelector(".dist-amount-input")!.addEventListener("change", () => updateDistributionTotal());
   rejectNegativeAmountOnBlur(newRow.querySelector<HTMLInputElement>(".dist-amount-input")!);
 
   updateDistributionTotal();
