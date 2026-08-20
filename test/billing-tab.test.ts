@@ -294,9 +294,9 @@ test("hasHostessBarService returns true when an activity has a reservation with 
     ]
   };
 
-  assert.equal(hasHostessBarService(actWithHostess), true);
-  assert.equal(hasHostessBarService(actOther), false);
-  assert.equal(hasHostessBarService(actInactive), false);
+  assert.equal(hasHostessBarService(actWithHostess as any), true);
+  assert.equal(hasHostessBarService(actOther as any), false);
+  assert.equal(hasHostessBarService(actInactive as any), false);
 });
 
 test("updateBarRevenueSectionVisibility shows or hides the section based on hostess bar service", () => {
@@ -314,7 +314,7 @@ test("updateBarRevenueSectionVisibility shows or hides the section based on host
   // 2. Visible for activity with hostess bar service
   updateBarRevenueSectionVisibility({
     reservations: [{ bar_service: { active: true, service_type: "Service d'hôtesses" } }]
-  });
+  } as any);
   assert.equal(section.style.display, "block");
 });
 

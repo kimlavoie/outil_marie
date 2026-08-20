@@ -41,8 +41,8 @@ export function openTaxOverrideModal(activityId: string) {
 
   currentActivityId = activityId;
   const overrides = act.tax_overrides || {};
-  fillTaxSection("tps", overrides.tps);
-  fillTaxSection("tvq", overrides.tvq);
+  fillTaxSection("tps", overrides.tps as TaxOverride | undefined);
+  fillTaxSection("tvq", overrides.tvq as TaxOverride | undefined);
   elById("tax-override-non-taxable-warning").style.display = act.non_taxable ? "block" : "none";
 
   elById("tax-override-modal").classList.add("active");

@@ -220,7 +220,7 @@ test("editing an existing room's name propagates the rename to reservations refe
 
   await waitFor(() => assert.ok(closed));
   assert.equal(appState.settings.rooms[0].name, "POLYVALENTE");
-  assert.equal(appState.activities[0].reservations[0].room_name, "POLYVALENTE");
+  assert.equal(appState.activities[0].reservations[0]!.room_name, "POLYVALENTE");
 });
 
 test("toggling a linked room updates the linkedRooms selection", () => {

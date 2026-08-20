@@ -93,8 +93,10 @@ function persistPlanningTasks() {
   });
 
   const updated = appState.activities.find((a: any) => a.id === id);
-  updatePlanningProgressDisplay(updated);
-  el("generate-planning-tasks-btn").disabled = (updated.planning_tasks || []).length > 0;
+  if (updated) {
+    updatePlanningProgressDisplay(updated);
+    el("generate-planning-tasks-btn").disabled = (updated.planning_tasks || []).length > 0;
+  }
 }
 
 // Derives the planning checklist from the Soumission tab's data: one room-reservation task per

@@ -159,7 +159,7 @@ function initFormHandlers() {
     // to stay importable by plain `node --test` (see js/dashboard-view.tsx's/js/settings-view.tsx's
     // same constraint) — Node can't load .tsx. A dynamic import is only ever resolved when this
     // handler actually runs, so it doesn't affect the test suite's static import graph.
-    if (calendarReturn) import("../components/calendar-view.tsx").then(m => m.reopenCalendarModal(calendarReturn));
+    if (calendarReturn) import("../components/calendar-view.tsx").then(m => m.reopenCalendarModal(calendarReturn as any));
   });
 
   // Inputs search

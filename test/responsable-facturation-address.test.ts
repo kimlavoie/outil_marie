@@ -85,6 +85,8 @@ function baseState() {
         reservations: [],
         department: "",
         distributions: [],
+        date_start: "",
+        date_end: "",
         submission: { file_link_id: "", generated_at: "", sent_at: "" },
         contract: { file_link_id: "", approved_at: "" },
         form: { file_link_id: "", linked_at: "" },

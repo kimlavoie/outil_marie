@@ -12,7 +12,9 @@ import { appState, saveDatabase } from "../state/state.ts";
 import { showToast } from "../utils/utils.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { closeActivityContextMenu } from "./context-menu.ts";
-import { activitiesState, renderActivities } from "./render.ts";
+import { activitiesState } from "./activities-table-state.ts";
+import { renderActivities } from "./render.ts";
+import type { Activity } from "../types/activity.ts";
 
 // Typed shorthand for document.getElementById in this file's DOM-manipulation code — see
 // activities-financials.ts's `el` helper doc comment for why this cast is needed/safe.
@@ -70,6 +72,7 @@ function initBulkActionsHandlers() {
       const isChecked = (e.target as HTMLInputElement).checked;
       checkboxes.forEach(cb => {
         const id = cb.getAttribute("data-id");
+        if (!id) return;
         cb.checked = isChecked;
         if (isChecked) {
           activitiesState.selectedIds.add(id);
@@ -101,7 +104,7 @@ function initBulkActionsHandlers() {
       if (!confirm(`Voulez-vous vraiment supprimer les ${count} activités sélectionnées ?`)) return;
 
       const ids = new Set(activitiesState.selectedIds);
-      const touched: { act: any; prevDeleted: boolean }[] = [];
+      const touched: { act: Activity; prevDeleted?: boolean }[] = [];
       const prevFavorites = appState.favorites ? [...appState.favorites] : [];
 
       ids.forEach(id => {
@@ -146,11 +149,11 @@ function initBulkActionsHandlers() {
   // State menu items
   document.querySelectorAll(".bulk-state-item").forEach(item => {
     item.addEventListener("click", async e => {
-      const newState = item.getAttribute("data-state");
+      const newState = item.getAttribute("data-state") || "";
       const count = activitiesState.selectedIds.size;
       if (count === 0) return;
 
-      const touched: { act: any; prevState: any }[] = [];
+      const touched: { act: Activity; prevState: string }[] = [];
       activitiesState.selectedIds.forEach(id => {
         const act = appState.activities.find(a => a.id === id);
         if (act) {

@@ -13,6 +13,7 @@ import { reconciliationState, reconcileLedger } from "../services/reconciliation
 import { openActivityDetailsModal } from "./financials.ts";
 import { duplicateActivityAndOpen } from "./form.ts";
 import { renderActivities } from "./render.ts";
+import type { Activity } from "../types/activity.ts";
 
 function closeActivityContextMenu() {
   const existing = document.getElementById("activity-context-menu");
@@ -22,7 +23,7 @@ function closeActivityContextMenu() {
 function showActivityContextMenu(e: MouseEvent, id: string) {
   closeActivityContextMenu();
 
-  const act = appState.activities.find((a: any) => a.id === id);
+  const act = appState.activities.find((a: Activity) => a.id === id);
   if (!act) return;
   const isFilled = act.name.trim() !== "";
 
@@ -62,13 +63,13 @@ function showActivityContextMenu(e: MouseEvent, id: string) {
     danger: true,
     onClick: () => {
       if (confirm(`Voulez-vous vraiment supprimer l'activité ${id} ?`)) {
-        const target = appState.activities.find((a: any) => a.id === id);
+        const target = appState.activities.find((a: Activity) => a.id === id);
         const prevDeleted = target?.deleted;
         const prevFavorites = appState.favorites ? [...appState.favorites] : [];
         if (target) {
           target.deleted = true;
         }
-        appState.favorites = (appState.favorites || []).filter((f: any) => f !== id);
+        appState.favorites = (appState.favorites || []).filter((f: string) => f !== id);
         saveDatabaseOrRollback(() => {
           if (target) target.deleted = prevDeleted;
           appState.favorites = prevFavorites;

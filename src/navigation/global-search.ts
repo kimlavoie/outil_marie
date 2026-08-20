@@ -99,7 +99,7 @@ function renderGlobalSearchResults(query: string) {
   const matchingActivities = appState.activities
     .filter(act => !act.deleted && act.name.trim() !== "")
     .filter(
-      act => globalSearchMatches(act.id, query) || globalSearchMatches(act.name, query) || globalSearchMatches(act.responsable, query)
+      act => globalSearchMatches(act.id, query) || globalSearchMatches(act.name, query) || globalSearchMatches(act.responsable || "", query)
     )
     .slice(0, GLOBAL_SEARCH_MAX_PER_CATEGORY);
 

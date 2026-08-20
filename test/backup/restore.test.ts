@@ -147,7 +147,7 @@ test("handleJsonBackupFile rolls back AND re-persists the pre-restore state when
 test("handleJsonBackupFile restores configurations only", async () => {
   setAppState({
     settings: baseSettings({ theme: "light" }),
-    activities: [{ id: "act-current", name: "Keep me" }],
+    activities: [{ id: "act-current", name: "Keep me" }] as any,
     favorites: [],
     selected_year: "PRE",
     selected_quarters: [1, 2, 3, 4]
@@ -179,7 +179,7 @@ test("handleJsonBackupFile restores configurations only", async () => {
 test("handleJsonBackupFile restores activities only", async () => {
   setAppState({
     settings: baseSettings({ theme: "light" }),
-    activities: [{ id: "act-current", name: "Keep me" }],
+    activities: [{ id: "act-current", name: "Keep me" }] as any,
     favorites: [],
     selected_year: "PRE",
     selected_quarters: [1, 2, 3, 4]
@@ -214,7 +214,7 @@ test("handleJsonBackupFile merges specific activities custom restore", async () 
     activities: [
       { id: "act-current", name: "Keep me" },
       { id: "act-overlap", name: "Old version" }
-    ],
+    ] as any,
     favorites: [],
     selected_year: "PRE",
     selected_quarters: [1, 2, 3, 4]

@@ -42,30 +42,8 @@ function el<T extends Element = HTMLInputElement>(id: string): T {
   return document.getElementById(id) as unknown as T;
 }
 
-// Activities view UI state, grouped so the module's moving parts live in one place
-const activitiesState = {
-  sortKey: "id",
-  sortOrder: "asc",
-  page: 1,
-  pageSize: 10,
-  // Id of an activity currently open in the drawer that hasn't been saved yet (created via the
-  // "Estimation" quick button). Discarded (removed from appState.activities, not just closed) if
-  // the drawer is closed/cancelled without clicking "Enregistrer".
-  draftActivityId: null as any,
-  openedActivitySnapshot: null as any,
-  selectedIds: new Set<any>(),
-  // Undo/Redo history for the currently-open activity drawer (Ctrl+Z / Ctrl+Y): each entry is a
-  // deep snapshot of the activity record taken right after a successful auto-save. Reset whenever
-  // the drawer opens/closes so history never leaks between activities.
-  undoStack: [] as any[],
-  redoStack: [] as any[],
-  // {refDate, viewMode} snapshot of the calendar the drawer was opened from (see
-  // activities-financials.ts's openActivityDrawer), so the "back to calendar" button can restore
-  // it. Not in the initial shape at declaration time in the original .js — TS needs it upfront.
-  calendarReturn: null as any
-};
-
-const ACTIVITY_UNDO_HISTORY_LIMIT = 50;
+import { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT } from "./activities-table-state.ts";
+export { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT };
 
 // Which flow the "Nom de l'activité" modal is currently serving: "soumission" creates and saves
 // the activity immediately in soumission mode; "estimation" only builds it in memory (estimation
@@ -169,7 +147,7 @@ function renderActivities() {
       !searchQuery ||
       act.id.toLowerCase().includes(searchQuery) ||
       act.name.toLowerCase().includes(searchQuery) ||
-      act.responsable.toLowerCase().includes(searchQuery) ||
+      (act.responsable || "").toLowerCase().includes(searchQuery) ||
       (act.distributions || []).some(
         (d: any) => (d.account_code || "").toLowerCase().includes(searchQuery) || (d.reference || "").toLowerCase().includes(searchQuery)
       );
@@ -378,8 +356,9 @@ function renderActivities() {
 
   // Attach checkbox change event listeners
   document.querySelectorAll<HTMLInputElement>(".activity-select-checkbox").forEach(cb => {
-    cb.addEventListener("change", e => {
+    cb.addEventListener("change", () => {
       const id = cb.getAttribute("data-id");
+      if (!id) return;
       if (cb.checked) {
         activitiesState.selectedIds.add(id);
         cb.closest("tr")!.classList.add("selected");
@@ -408,9 +387,7 @@ function renderActivities() {
 }
 
 export {
-  activitiesState,
   ACTIVITY_STATES,
-  ACTIVITY_UNDO_HISTORY_LIMIT,
   newActivityModalIntent,
   getActivityStateLabel,
   getActivityStateBadgeClass,

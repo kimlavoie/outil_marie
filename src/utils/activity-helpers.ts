@@ -7,21 +7,23 @@
  */
 import { appState } from "../state/state.ts";
 import { escapeHtml, calculateHoursFromTimes } from "./format.ts";
+import type { Activity, Reservation, DistributionRow } from "../types/activity.ts";
+import type { Room, Account } from "../state/store.ts";
 
 // Joined list of distinct RI/Facture references across an activity's per-account distributions
-function getActivityReferences(act: any) {
-  const refs = (act.distributions || []).map((d: any) => (d.reference || "").trim()).filter(Boolean);
+function getActivityReferences(act: Partial<Activity>) {
+  const refs = (act.distributions || []).map((d: DistributionRow) => (d.reference || "").trim()).filter(Boolean);
   return [...new Set(refs)].join(", ");
 }
 
 // Sum of tarif_amount × duration (days or hours depending on room settings) across all reservations
 // booked for an activity
-function getRoomsTariffTotal(act: any) {
-  return (act.reservations || []).reduce((sum: number, r: any) => {
-    const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+function getRoomsTariffTotal(act: Partial<Activity>) {
+  return (act.reservations || []).reduce((sum: number, r: Reservation) => {
+    const room = appState.settings.rooms.find((rm: Room) => rm.name === r.room_name);
     const isHourly = room && room.rate_type === "hourly";
     if (isHourly) {
-      const hours = (r.slots || []).reduce((slotSum: number, s: any) => {
+      const hours = (r.slots || []).reduce((slotSum: number, s) => {
         return slotSum + calculateHoursFromTimes(s.start_time, s.end_time);
       }, 0);
       return sum + (r.tariff_amount || 0) * hours;
@@ -36,7 +38,7 @@ function getRoomsTariffTotal(act: any) {
 const OTHER_ROOM_VALUE = "__other__";
 
 // Display label for a reservation's room: the free-text detail for "Autre", otherwise its name
-function getReservationRoomLabel(reservation: any) {
+function getReservationRoomLabel(reservation?: Partial<Reservation> | null) {
   if (!reservation) return "";
   if (reservation.room_name === OTHER_ROOM_VALUE) return reservation.room_other_details || "Autre";
   return reservation.room_name || "";
@@ -44,17 +46,17 @@ function getReservationRoomLabel(reservation: any) {
 
 // Short label for a reservation's room, for compact displays (activities list table): the
 // room's configured "Diminutif" if set, otherwise falls back to the full name/label
-function getReservationRoomAbbreviation(reservation: any) {
+function getReservationRoomAbbreviation(reservation?: Partial<Reservation> | null) {
   if (!reservation) return "";
   if (reservation.room_name === OTHER_ROOM_VALUE) return reservation.room_other_details || "Autre";
-  const room = appState.settings.rooms.find((r: any) => r.name === reservation.room_name);
+  const room = appState.settings.rooms.find((r: Room) => r.name === reservation.room_name);
   return (room && room.abbreviation) || reservation.room_name || "";
 }
 
 // Room color, with a stable fallback for rooms saved before the color picker existed
 const FALLBACK_ROOM_COLORS = ["#4f46e5", "#059669", "#d97706", "#db2777", "#0891b2", "#7c3aed", "#dc2626", "#65a30d"];
 function getRoomColor(name: string) {
-  const room = appState.settings.rooms.find((r: any) => r.name === name);
+  const room = appState.settings.rooms.find((r: Room) => r.name === name);
   if (room && room.color) return room.color;
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -67,16 +69,16 @@ function getRoomColor(name: string) {
 // <GlAccountOptions> equivalent for its own forms, since it doesn't need an HTML string.
 function buildGlAccountOptionsHtml(selectedCode = "") {
   let html = '<option value="">Aucun</option>';
-  appState.settings.accounts.forEach((acc: any) => {
+  appState.settings.accounts.forEach((acc: Account) => {
     html += `<option value="${acc.code}" ${acc.code === selectedCode ? "selected" : ""}>${acc.code} (${escapeHtml(acc.description)})</option>`;
   });
   return html;
 }
 
 // Sum of setup/teardown fees across all reservations booked for an activity
-function getSetupTeardownTotal(act: any) {
-  return (act.reservations || []).reduce((sum: number, r: any) => {
-    const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+function getSetupTeardownTotal(act: Partial<Activity>) {
+  return (act.reservations || []).reduce((sum: number, r: Reservation) => {
+    const room = appState.settings.rooms.find((rm: Room) => rm.name === r.room_name);
     return sum + (room && typeof room.setup_fee === "number" ? room.setup_fee : 0);
   }, 0);
 }

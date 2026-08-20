@@ -69,9 +69,10 @@ function restoreActivitySnapshot(snapshot: any) {
 // Ctrl+Z: reverts to the previous auto-saved state of the activity currently open in the drawer.
 function undoActivityFormChange() {
   if (activitiesState.undoStack.length <= 1) return;
-  activitiesState.redoStack.push(activitiesState.undoStack.pop());
+  const popped = activitiesState.undoStack.pop();
+  if (popped) activitiesState.redoStack.push(popped);
   const previous = activitiesState.undoStack[activitiesState.undoStack.length - 1];
-  restoreActivitySnapshot(previous);
+  if (previous) restoreActivitySnapshot(previous);
   showToast("Modification annulée.", "info", 2000);
 }
 
@@ -79,6 +80,7 @@ function undoActivityFormChange() {
 function redoActivityFormChange() {
   if (activitiesState.redoStack.length === 0) return;
   const next = activitiesState.redoStack.pop();
+  if (!next) return;
   activitiesState.undoStack.push(next);
   restoreActivitySnapshot(next);
   showToast("Modification rétablie.", "info", 2000);

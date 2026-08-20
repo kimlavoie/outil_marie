@@ -347,7 +347,7 @@ test("checkBackupReminder shows banner if activities exist but no backup date", 
       schedulable_tasks: [],
       tax_rates: { tps: 0.05, tvq: 0.09975 }
     },
-    activities: [{ id: "act-1" }],
+    activities: [{ id: "act-1" }] as any,
     favorites: [],
     selected_year: "",
     selected_quarters: [1, 2, 3, 4]

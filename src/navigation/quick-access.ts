@@ -8,6 +8,7 @@
  * global-search.ts) — safe since nothing runs during either module's top-level evaluation.
  */
 import { appState, toggleFavoriteActivity, getRecentlyViewedActivityIds, parseLocalDateStr } from "../state/state.ts";
+import type { Activity } from "../types/activity.ts";
 import { escapeHtml } from "../utils/utils.ts";
 import { renderActivities } from "../activities/render.ts";
 import { openActivityDrawer } from "../activities/financials.ts";
@@ -137,7 +138,7 @@ function renderQuickAccessAll() {
   let totalCount = 0;
   const sectionsHtml = categories
     .map(cat => {
-      const items = cat.ids.map(id => appState.activities.find(a => a.id === id)).filter(act => act && !act.deleted && !seen.has(act.id));
+      const items = cat.ids.map(id => appState.activities.find(a => a.id === id)).filter((act): act is Activity => Boolean(act && !act.deleted && !seen.has(act.id)));
       items.forEach(act => seen.add(act.id));
       totalCount += items.length;
       return buildQuickAccessSectionHtml(cat.label, items, cat.key);

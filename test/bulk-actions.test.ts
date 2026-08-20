@@ -85,7 +85,7 @@ test("select-all checkbox selects/deselects every visible row and syncs activiti
 
 test("bulk-clear-btn clears the selection without touching appState", () => {
   setupFixture();
-  setAppState({ settings: baseSettings(), activities: [{ id: "act-1", deleted: false }], favorites: [], selected_year: "", selected_quarters: [1, 2, 3, 4] });
+  setAppState({ settings: baseSettings(), activities: [{ id: "act-1", deleted: false }] as any, favorites: [], selected_year: "", selected_quarters: [1, 2, 3, 4] });
   initBulkActionsHandlers();
   activitiesState.selectedIds = new Set(["act-1"]);
 
@@ -103,7 +103,7 @@ test("bulk delete: marks only the selected activities deleted, drops them from f
       { id: "act-1", deleted: false },
       { id: "act-2", deleted: false },
       { id: "act-3", deleted: false }
-    ],
+    ] as any,
     favorites: ["act-1", "act-3"],
     selected_year: "",
     selected_quarters: [1, 2, 3, 4]
@@ -126,7 +126,7 @@ test("bulk delete: a cancelled confirmation leaves every activity and the select
   setupFixture();
   setAppState({
     settings: baseSettings(),
-    activities: [{ id: "act-1", deleted: false }],
+    activities: [{ id: "act-1", deleted: false }] as any,
     favorites: [],
     selected_year: "",
     selected_quarters: [1, 2, 3, 4]
@@ -144,7 +144,7 @@ test("bulk delete: a cancelled confirmation leaves every activity and the select
 
 test("bulk delete: an empty selection is a no-op that doesn't even prompt for confirmation", async () => {
   setupFixture();
-  setAppState({ settings: baseSettings(), activities: [{ id: "act-1", deleted: false }], favorites: [], selected_year: "", selected_quarters: [1, 2, 3, 4] });
+  setAppState({ settings: baseSettings(), activities: [{ id: "act-1", deleted: false }] as any, favorites: [], selected_year: "", selected_quarters: [1, 2, 3, 4] });
   activitiesState.selectedIds = new Set();
   let confirmCalled = false;
   (globalThis as any).confirm = () => {
@@ -164,7 +164,7 @@ test("bulk delete rolls back the in-memory deletion (and favorites change) when 
   setupFixture();
   setAppState({
     settings: baseSettings(),
-    activities: [{ id: "act-1", deleted: false }],
+    activities: [{ id: "act-1", deleted: false }] as any,
     favorites: ["act-1"],
     selected_year: "",
     selected_quarters: [1, 2, 3, 4]
@@ -206,7 +206,7 @@ test("bulk state change: sets the new state on every selected activity, clears t
       { id: "act-1", state: "brouillon" },
       { id: "act-2", state: "brouillon" },
       { id: "act-3", state: "brouillon" }
-    ],
+    ] as any,
     favorites: [],
     selected_year: "",
     selected_quarters: [1, 2, 3, 4]

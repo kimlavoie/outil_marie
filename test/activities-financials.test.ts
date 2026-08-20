@@ -137,7 +137,7 @@ test("generateNextActivityId generates next chronological ID for fiscal year", (
     { id: "2526-001", name: "Activité 1" },
     { id: "2526-002", name: "Activité 2" },
     { id: "2425-005", name: "Activité ancienne" }
-  ];
+  ] as any;
   
   const nextId = generateNextActivityId();
   assert.equal(nextId, "2526-003");

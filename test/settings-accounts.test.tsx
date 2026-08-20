@@ -202,7 +202,7 @@ test("editing an existing account updates it in place and propagates the code ch
 
   await waitFor(() => assert.equal(closed, true));
   assert.equal(appState.settings.accounts[0].code, "892-9020-00-900");
-  assert.equal(appState.activities[0].distributions[0].account_code, "892-9020-00-900");
+  assert.equal(appState.activities[0].distributions[0]!.account_code, "892-9020-00-900");
 });
 
 export {};

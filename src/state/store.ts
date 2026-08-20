@@ -1,4 +1,5 @@
 import { DEFAULT_CONFIG } from "./config-defaults.ts";
+import type { Activity } from "../types/activity.ts";
 
 // Domain types for src/state/config-defaults.ts's seed data and everything stored under
 // appState.settings — shared here (rather than left as `any[]` on AppState) so a typo on a field
@@ -138,8 +139,8 @@ export interface AppState {
     schedulable_tasks: SchedulableTask[];
     tax_rates: { tps: number; tvq: number };
   };
-  activities: any[];
-  favorites: any[];
+  activities: Activity[];
+  favorites: string[];
   selected_year: string;
   selected_quarters: number[];
 }

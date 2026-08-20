@@ -107,7 +107,7 @@ test("checkRoomReservationConflicts detects conflicts and sets banner innerHTML"
         }
       ]
     }
-  ];
+  ] as any;
 
   // Conflict: Room A is booked at overlapping time
   const currentReservations = [

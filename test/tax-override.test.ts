@@ -139,7 +139,7 @@ test("saving tax overrides updates activity in appState", () => {
   
   const updatedAct = appState.activities.find(a => a.id === "act-2")!;
   assert.ok(updatedAct.tax_overrides);
-  assert.equal(updatedAct.tax_overrides.tps.mode, "amount");
-  assert.equal(updatedAct.tax_overrides.tps.value, 10);
-  assert.equal(updatedAct.tax_overrides.tps.note, "Forfait");
+  assert.equal(updatedAct.tax_overrides?.tps?.mode, "amount");
+  assert.equal(updatedAct.tax_overrides?.tps?.value, 10);
+  assert.equal(updatedAct.tax_overrides?.tps?.note, "Forfait");
 });

@@ -74,7 +74,7 @@ test("openExcelExportModal creates and opens modal with live count", () => {
   appState.activities = [
     { id: "act-1", name: "Activité 1", date_start: "2025-08-01", deleted: false },
     { id: "act-2", name: "Activité 2", date_start: "2025-08-02", deleted: false }
-  ];
+  ] as any;
   appState.selected_year = "2025-2026";
   appState.selected_quarters = [1];
 

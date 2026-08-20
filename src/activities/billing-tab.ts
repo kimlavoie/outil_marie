@@ -19,6 +19,8 @@ import { getStaffRowHours } from "./reservations/subrows.ts";
 import { commitActivityPatch } from "./form-state-bar.ts";
 import { deriveActivityState } from "./render.ts";
 import { renderSafetyBackupsList } from "../services/backup/reminder.ts";
+import type { Activity, Reservation } from "../types/activity.ts";
+import type { Room, Salary, Service, Tarif, GridClientType } from "../state/store.ts";
 
 // Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
 // comment for why this cast is needed/safe.
@@ -30,7 +32,7 @@ function el<T extends Element = HTMLInputElement>(id: string): T {
 // personnel jobs, and autres frais already carry a configured GL account — items without one
 // are left out so the user adds/maps them manually, consistent with the existing distribution
 // row validation (an amount without a selected account blocks saving).
-export async function generateBillingLines(act: any) {
+export async function generateBillingLines(act: Partial<Activity>) {
   const replacingExisting = (act.distributions || []).length > 0;
   if (replacingExisting && !confirm("Des lignes de facturation existent déjà. Les remplacer par les lignes générées automatiquement ?")) {
     return;
@@ -56,8 +58,8 @@ export async function generateBillingLines(act: any) {
   const clientTypeEl = document.getElementById("form-activity-client-type") as HTMLSelectElement | null;
   const isInternal = clientTypeEl ? clientTypeEl.value === "interne" : act.client_type === "interne";
 
-  reservations.forEach((r: any) => {
-    const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+  reservations.forEach((r: Reservation) => {
+    const room = appState.settings.rooms.find((rm: Room) => rm.name === r.room_name);
     let roomGlAccountCode = "";
     if (room && r.tariff_id) {
       const grid = getActivePricingGrid(room, eventDateStart);
@@ -65,7 +67,7 @@ export async function generateBillingLines(act: any) {
         const parts = r.tariff_id.split("::");
         if (parts.length === 2) {
           const clientTypeVal = parts[1];
-          const ct = grid.client_types.find((c: any) => c.id === clientTypeVal);
+          const ct = grid.client_types.find((c: GridClientType) => c.id === clientTypeVal);
           if (ct?.gl_account_code) {
             roomGlAccountCode = ct.gl_account_code;
           }
@@ -73,10 +75,10 @@ export async function generateBillingLines(act: any) {
       }
     }
 
-    if (r.tariff_amount > 0 && !isInternal) {
+    if (r.tariff_amount && r.tariff_amount > 0 && !isInternal) {
       const isHourly = room && room.rate_type === "hourly";
       if (isHourly) {
-        const hours = (r.slots || []).reduce((sum: number, s: any) => {
+        const hours = (r.slots || []).reduce((sum: number, s) => {
           return sum + calculateHoursFromTimes(s.start_time, s.end_time);
         }, 0);
         const amount = r.tariff_amount * hours;
@@ -97,7 +99,7 @@ export async function generateBillingLines(act: any) {
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row-wrapper").forEach(wrapper => {
     const row = wrapper.querySelector<HTMLElement>(".distribution-row")!;
     const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
-    const salary = ((appState.settings.salaries as any[]) || []).find((s: any) => s.id === salaryId);
+    const salary = (appState.settings.salaries || []).find((s: Salary) => s.id === salaryId);
     if (!salary) return;
 
     const staffDateInput = row.querySelector<HTMLInputElement>(".staff-date-input");
@@ -131,7 +133,7 @@ export async function generateBillingLines(act: any) {
 
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
     const serviceId = row.querySelector<HTMLInputElement>(".service-select")!.value;
-    const service = ((appState.settings.services as any[]) || []).find((s: any) => s.id === serviceId);
+    const service = (appState.settings.services || []).find((s: Service) => s.id === serviceId);
     const tarifId = row.querySelector<HTMLSelectElement>(".service-tarif-select")!.value;
     if (!service) return;
 
@@ -142,7 +144,7 @@ export async function generateBillingLines(act: any) {
       rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!.value) || 0 : 0;
     } else {
       rate = getActiveServiceRate(service, eventDateStart, tarifId);
-      const selectedTarif = (service.tarifs || []).find((t: any) => t.id === tarifId);
+      const selectedTarif = (service.tarifs || []).find((t: Tarif) => t.id === tarifId);
       if (selectedTarif?.gl_account_code) {
         serviceGlAccountCode = selectedTarif.gl_account_code;
       }
@@ -170,7 +172,7 @@ export async function generateBillingLines(act: any) {
 }
 
 // Renders the Facturée/Terminée billing dates and gated transition buttons
-export function renderBillingStateStatus(act: any) {
+export function renderBillingStateStatus(act: Activity) {
   const container = el("billing-state-status");
   if (!container) return;
 
@@ -183,27 +185,29 @@ export function renderBillingStateStatus(act: any) {
 
   const billBtn = container.querySelector<HTMLButtonElement>("#mark-billed-btn")!;
   billBtn.addEventListener("click", () => {
-    commitActivityPatch(act.id, (a: any) => {
+    commitActivityPatch(act.id, (a: Activity) => {
       a.billed_at = a.billed_at ? "" : new Date().toISOString().split("T")[0];
       a.state = deriveActivityState(a);
     });
-    renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
+    const updated = appState.activities.find((a: Activity) => a.id === act.id);
+    if (updated) renderBillingStateStatus(updated);
   });
 
   const completeBtn = container.querySelector<HTMLButtonElement>("#mark-completed-btn")!;
   completeBtn.addEventListener("click", () => {
-    commitActivityPatch(act.id, (a: any) => {
+    commitActivityPatch(act.id, (a: Activity) => {
       a.completed_at = a.completed_at ? "" : new Date().toISOString().split("T")[0];
       a.state = deriveActivityState(a);
     });
-    renderBillingStateStatus(appState.activities.find((a: any) => a.id === act.id));
+    const updated = appState.activities.find((a: Activity) => a.id === act.id);
+    if (updated) renderBillingStateStatus(updated);
   });
 }
 
 // Checks whether an activity or the current form state has a bar service of type "Service d'hôtesses"
-export function hasHostessBarService(act?: any): boolean {
+export function hasHostessBarService(act?: Partial<Activity>): boolean {
   if (act && Array.isArray(act.reservations)) {
-    if (act.reservations.some((r: any) => r.bar_service?.active && r.bar_service?.service_type === "Service d'hôtesses")) {
+    if (act.reservations.some((r: Reservation) => r.bar_service?.active && r.bar_service?.service_type === "Service d'hôtesses")) {
       return true;
     }
   }
@@ -223,7 +227,7 @@ export function hasHostessBarService(act?: any): boolean {
 }
 
 // Updates the visibility of the "Revenus du bar" section in the Facturation tab
-export function updateBarRevenueSectionVisibility(act?: any): void {
+export function updateBarRevenueSectionVisibility(act?: Partial<Activity>): void {
   const section = document.getElementById("billing-bar-revenue-section");
   if (!section) return;
   const visible = hasHostessBarService(act);
