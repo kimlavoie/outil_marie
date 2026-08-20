@@ -23,6 +23,7 @@ const GLOBAL_SEARCH_FUZZY_MIN_SCORE = 0.5;
 function globalSearchMatches(text: string, query: string): boolean {
   const value = (text || "").toLowerCase();
   if (value.includes(query)) return true;
+  if (query.length < 3) return false;
   return textSimilarity(value, query) >= GLOBAL_SEARCH_FUZZY_MIN_SCORE;
 }
 

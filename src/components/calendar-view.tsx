@@ -53,16 +53,31 @@ function toDateStr(date: Date) {
   return `${y}-${m}-${d}`;
 }
 
-function getActivitiesForDay(dateStr: string) {
-  const day = parseLocalDateStr(dateStr);
-  const matches: any[] = [];
+interface ParsedActivity {
+  act: any;
+  start: Date;
+  end: Date;
+}
+
+function getParsedActivities(): ParsedActivity[] {
+  const list: ParsedActivity[] = [];
   appState.activities.forEach(act => {
     if (act.deleted) return;
     if (!act.name || act.name.trim() === "" || !act.date_start) return;
     const start = parseLocalDateStr(act.date_start);
     const end = act.date_end ? parseLocalDateStr(act.date_end) : start;
     if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
-    if (day >= start && day <= end) matches.push(act);
+    list.push({ act, start, end });
+  });
+  return list;
+}
+
+function getActivitiesForDay(dateStr: string, parsedList?: ParsedActivity[]) {
+  const day = parseLocalDateStr(dateStr);
+  const list = parsedList || getParsedActivities();
+  const matches: any[] = [];
+  list.forEach(item => {
+    if (day >= item.start && day <= item.end) matches.push(item.act);
   });
   return matches;
 }
@@ -128,7 +143,8 @@ function DayCell({
   onQuickAdd,
   onEventClick,
   onHover,
-  onUnhover
+  onUnhover,
+  parsedList
 }: {
   dateStr: string;
   dayNum: number | null;
@@ -139,8 +155,9 @@ function DayCell({
   onEventClick: (id: string) => void;
   onHover: (act: any, e: React.MouseEvent) => void;
   onUnhover: () => void;
+  parsedList?: ParsedActivity[];
 }) {
-  const dayActivities = getActivitiesForDay(dateStr);
+  const dayActivities = getActivitiesForDay(dateStr, parsedList);
   const displayNum = dayNum !== null ? dayNum : parseLocalDateStr(dateStr).getDate();
   const maxVisible = tall ? MAX_EVENTS_PER_DAY + 2 : MAX_EVENTS_PER_DAY;
   const visible = dayActivities.slice(0, maxVisible);
@@ -285,6 +302,7 @@ function CalendarModal({ command }: { command: Command | null }) {
   };
 
   const rooms = appState.settings.rooms;
+  const parsedList = getParsedActivities();
 
   let monthLabel = "";
   let gridClass = "event-calendar-grid-month";
@@ -322,6 +340,7 @@ function CalendarModal({ command }: { command: Command | null }) {
           onEventClick={openEvent}
           onHover={onHover}
           onUnhover={onUnhover}
+          parsedList={parsedList}
         />
       );
     }
@@ -375,6 +394,7 @@ function CalendarModal({ command }: { command: Command | null }) {
           onEventClick={openEvent}
           onHover={onHover}
           onUnhover={onUnhover}
+          parsedList={parsedList}
         />
       );
     }
@@ -388,7 +408,7 @@ function CalendarModal({ command }: { command: Command | null }) {
     const dateStr = toDateStr(refDate);
     monthLabel = `${DAY_NAMES_FR[refDate.getDay()]} ${refDate.getDate()} ${MONTH_NAMES_FR[refDate.getMonth()]} ${refDate.getFullYear()}`;
     gridClass = "event-calendar-grid-day";
-    const dayActivities = getActivitiesForDay(dateStr);
+    const dayActivities = getActivitiesForDay(dateStr, parsedList);
 
     body =
       dayActivities.length === 0 ? (

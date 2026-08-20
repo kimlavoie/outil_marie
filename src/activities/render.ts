@@ -195,71 +195,50 @@ function renderActivities() {
     return matchesSearch && matchesSalle && matchesClientType && matchesStatus && matchesPeriod;
   });
 
-  // Sort filtered activities
-  filtered.sort((a, b) => {
-    let valA: string | number = "";
-    let valB: string | number = "";
-
+  // Extract sort keys once per activity (O(N)) before sorting
+  function extractSortKey(act: any): string | number {
     switch (activitiesState.sortKey) {
       case "id":
-        valA = a.id;
-        valB = b.id;
-        break;
+        return act.id;
       case "name":
-        valA = a.name.toLowerCase();
-        valB = b.name.toLowerCase();
-        break;
+        return act.name.toLowerCase();
       case "responsable":
-        valA = (a.responsable || "").toLowerCase();
-        valB = (b.responsable || "").toLowerCase();
-        break;
+        return (act.responsable || "").toLowerCase();
       case "date_start":
-        valA = a.date_start || "";
-        valB = b.date_start || "";
-        break;
+        return act.date_start || "";
       case "room_name":
-        valA = (a.reservations || []).map(getReservationRoomAbbreviation).join(", ").toLowerCase();
-        valB = (b.reservations || []).map(getReservationRoomAbbreviation).join(", ").toLowerCase();
-        break;
+        return (act.reservations || []).map(getReservationRoomAbbreviation).join(", ").toLowerCase();
       case "reference":
-        valA = getActivityReferences(a).toLowerCase();
-        valB = getActivityReferences(b).toLowerCase();
-        break;
+        return getActivityReferences(act).toLowerCase();
       case "coba":
-        valA = (a.coba || "").toLowerCase();
-        valB = (b.coba || "").toLowerCase();
-        break;
+        return (act.coba || "").toLowerCase();
       case "bar":
-        valA = (a.reservations || []).some((r: any) => r.bar_service?.active) ? 1 : 0;
-        valB = (b.reservations || []).some((r: any) => r.bar_service?.active) ? 1 : 0;
-        break;
+        return (act.reservations || []).some((r: any) => r.bar_service?.active) ? 1 : 0;
       case "hostess":
-        valA = (a.reservations || []).reduce(
+        return (act.reservations || []).reduce(
           (sum: number, r: any) => sum + (r.bar_service?.hostess_count || 0) + (r.host_duties?.hostess_count || 0),
           0
         );
-        valB = (b.reservations || []).reduce(
-          (sum: number, r: any) => sum + (r.bar_service?.hostess_count || 0) + (r.host_duties?.hostess_count || 0),
-          0
-        );
-        break;
       case "totalRev":
-        valA = a.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
-        valB = b.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
-        break;
+        return act.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
       case "sansFrais":
-        valA = a.client_type === "interne" ? getRoomsTariffTotal(a) : 0;
-        valB = b.client_type === "interne" ? getRoomsTariffTotal(b) : 0;
-        break;
+        return act.client_type === "interne" ? getRoomsTariffTotal(act) : 0;
+      default:
+        return "";
     }
+  }
 
-    // Use localeCompare for strings (accents robust) and subtraction for numbers
+  const mapped = filtered.map(act => ({ act, key: extractSortKey(act) }));
+  mapped.sort((a, b) => {
+    const valA = a.key;
+    const valB = b.key;
     if (typeof valA === "string" && typeof valB === "string") {
       return activitiesState.sortOrder === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
     } else {
       return activitiesState.sortOrder === "asc" ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
     }
   });
+  const sortedFiltered = mapped.map(item => item.act);
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="11" class="text-center" style="color: var(--text-muted); padding: 32px;">Aucune activité trouvée. Cliquez sur "+ Nouvelle Activité" pour en créer une.</td></tr>`;
@@ -289,7 +268,10 @@ function renderActivities() {
       renderActivities();
     }
   });
-  const pageItems = filtered.slice((activitiesState.page - 1) * activitiesState.pageSize, activitiesState.page * activitiesState.pageSize);
+  const pageItems = sortedFiltered.slice(
+    (activitiesState.page - 1) * activitiesState.pageSize,
+    activitiesState.page * activitiesState.pageSize
+  );
 
   pageItems.forEach((act: any) => {
     const isFilled = act.name.trim() !== "";
