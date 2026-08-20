@@ -15,6 +15,9 @@ import { activitiesState, renderActivities } from "./render.ts";
 import { fillActivityFormFields, renderActivityStateBar, switchActivityTab } from "./form.ts";
 import { updateFormDatesHelper, saveActivityVersion } from "./history/index.ts";
 import { activityUndoSnapshotTimer, showAutoSaveStatus, autoSaveActivityForm } from "./autosave.ts";
+import { trapFocus, type FocusTrapController } from "../utils/focus-trap.ts";
+
+let drawerFocusTrap: FocusTrapController | null = null;
 
 // Persists which activity record (and which of its tabs) is currently open in the drawer, so
 // reloading/reopening the app can drop the user back exactly where they left off. Kept in its own
@@ -109,6 +112,8 @@ function openActivityDrawer(id: string, calendarReturn: any = null) {
 
   drawer.classList.add("active");
   backdrop.classList.add("active");
+  if (drawerFocusTrap) drawerFocusTrap.deactivate();
+  drawerFocusTrap = trapFocus(drawer);
 
   switchActivityTab("submission");
   updateFormDatesHelper();
@@ -124,6 +129,10 @@ function openActivityDetailModal(id: string, calendarReturn: any) {
 }
 
 function closeActivityDrawer() {
+  if (drawerFocusTrap) {
+    drawerFocusTrap.deactivate();
+    drawerFocusTrap = null;
+  }
   const currentId = elById("form-activity-internal-id").value;
   if (currentId) {
     const currentAct = appState.activities.find((a: any) => a.id === currentId);

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { appState } from "../../state/state.ts";
 import { formatDateMask, RateVersionRow, newRateVersionRow } from "../../utils/utils.ts";
+import { trapFocus } from "../../utils/focus-trap.ts";
 
 export function EditIcon() {
   return (
@@ -67,6 +68,14 @@ export function Modal({
   width?: string;
   children: React.ReactNode;
 }) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const modalEl = document.getElementById(id);
+    if (!modalEl) return;
+    const trap = trapFocus(modalEl);
+    return () => trap.deactivate();
+  }, [isOpen, id]);
+
   return (
     <div
       id={id}

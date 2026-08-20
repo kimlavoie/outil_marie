@@ -15,7 +15,10 @@ function el<T extends Element = HTMLInputElement>(id: string): T {
   return document.getElementById(id) as unknown as T;
 }
 
+import { trapFocus, type FocusTrapController } from "../utils/focus-trap.ts";
+
 let newActivityModalIntent = "soumission";
+let newActivityFocusTrap: FocusTrapController | null = null;
 
 export function initNewActivityModal() {
   el("new-activity-modal-close").addEventListener("click", closeNewActivityModal);
@@ -31,12 +34,19 @@ export function openNewActivityModal(intent = "soumission") {
   const form = el<HTMLFormElement>("new-activity-form");
   form.reset();
   el("new-activity-modal-title").textContent = intent === "estimation" ? "Nouvelle estimation" : "Nouvelle activité";
-  el("new-activity-modal").classList.add("active");
+  const modal = el("new-activity-modal");
+  modal.classList.add("active");
   el("modal-backdrop").classList.add("active");
-  setTimeout(() => el("form-new-activity-name").focus(), 150);
+
+  if (newActivityFocusTrap) newActivityFocusTrap.deactivate();
+  newActivityFocusTrap = trapFocus(modal, { initialFocusEl: el("form-new-activity-name") });
 }
 
 export function closeNewActivityModal() {
+  if (newActivityFocusTrap) {
+    newActivityFocusTrap.deactivate();
+    newActivityFocusTrap = null;
+  }
   el("new-activity-modal").classList.remove("active");
   el("modal-backdrop").classList.remove("active");
 }

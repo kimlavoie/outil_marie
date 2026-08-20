@@ -11,7 +11,10 @@ import { commitActivityPatch } from "./form-state-bar.ts";
 import { updateSubmissionFinancialSummary } from "./financial-summary.ts";
 import type { TaxOverride } from "./financial-summary.ts";
 
+import { trapFocus, type FocusTrapController } from "../utils/focus-trap.ts";
+
 let currentActivityId: string | null = null;
+let taxOverrideFocusTrap: FocusTrapController | null = null;
 
 function fillTaxSection(tax: "tps" | "tvq", override: TaxOverride | undefined) {
   const modeEl = elById<HTMLSelectElement>(`tax-override-${tax}-mode`);
@@ -45,11 +48,19 @@ export function openTaxOverrideModal(activityId: string) {
   fillTaxSection("tvq", overrides.tvq as TaxOverride | undefined);
   elById("tax-override-non-taxable-warning").style.display = act.non_taxable ? "block" : "none";
 
-  elById("tax-override-modal").classList.add("active");
+  const modal = elById("tax-override-modal");
+  modal.classList.add("active");
   elById("modal-backdrop").classList.add("active");
+
+  if (taxOverrideFocusTrap) taxOverrideFocusTrap.deactivate();
+  taxOverrideFocusTrap = trapFocus(modal);
 }
 
 export function closeTaxOverrideModal() {
+  if (taxOverrideFocusTrap) {
+    taxOverrideFocusTrap.deactivate();
+    taxOverrideFocusTrap = null;
+  }
   currentActivityId = null;
   elById("tax-override-modal").classList.remove("active");
   elById("modal-backdrop").classList.remove("active");
