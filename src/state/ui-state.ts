@@ -8,6 +8,8 @@ import { accountReportState } from "../services/account-report.ts";
 // page or coming back later drops the user exactly where they left off.
 const UI_STATE_KEY = "outil_marie_ui_state";
 
+let lastSavedUiStateStr = "";
+
 export function saveUiState() {
   const uiState = {
     activities: {
@@ -33,7 +35,11 @@ export function saveUiState() {
       pages: accountReportState.pages
     }
   };
-  localStorage.setItem(UI_STATE_KEY, JSON.stringify(uiState));
+  const str = JSON.stringify(uiState);
+  if (str !== lastSavedUiStateStr) {
+    lastSavedUiStateStr = str;
+    localStorage.setItem(UI_STATE_KEY, str);
+  }
 }
 
 // Restores the UI state saved above. Must run after the DOM is ready and

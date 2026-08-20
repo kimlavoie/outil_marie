@@ -10,7 +10,8 @@ import {
   hideLoadingOverlay,
   getRoomsTariffTotal,
   getActivityReferences,
-  getReservationRoomLabel
+  getReservationRoomLabel,
+  calculateDaysCount
 } from "../utils/utils.ts";
 
 export interface ExcelExportOptions {
@@ -296,9 +297,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
           return { t: "n", f: `${endDateColLetter}${excelRow}-${startDateColLetter}${excelRow}+1` };
         }
         if (act.date_start && act.date_end) {
-          const start = new Date(act.date_start);
-          const end = new Date(act.date_end);
-          const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
+          const diffDays = calculateDaysCount(act.date_start, act.date_end);
           return diffDays > 0 ? diffDays : 1;
         }
         return 1;

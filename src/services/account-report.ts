@@ -2,7 +2,7 @@
  * account-report.ts - "Grand Livre local" view: per-account ledger cards
  * built from activity distributions
  */
-import { appState, getFiscalYear, getQuarterNumber, saveUiState } from "../state/state.ts";
+import { appState, getFiscalYear, getQuarterNumber, saveUiState, parseLocalDateStr } from "../state/state.ts";
 import { escapeHtml, formatCurrency, buildPaginationBarHtml } from "../utils/utils.ts";
 
 export interface AccountReportState {
@@ -187,10 +187,10 @@ function renderAccountReport() {
         let datesText = "-";
         if (act.date_start && act.date_end) {
           if (act.date_start === act.date_end) {
-            datesText = new Date(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
+            datesText = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
           } else {
-            const start = new Date(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
-            const end = new Date(act.date_end).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
+            const start = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
+            const end = parseLocalDateStr(act.date_end).toLocaleDateString("fr-CA", { month: "short", day: "numeric" });
             datesText = `${start} au ${end}`;
           }
         }
