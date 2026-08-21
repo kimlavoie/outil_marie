@@ -30,7 +30,7 @@ function persistSettingsUi(tab: string, modal: { panel: SettingsModalPanel; key:
   localStorage.setItem(SETTINGS_UI_KEY, JSON.stringify({ tab, modal }));
 }
 
-export function SettingsView({ command }: { command: Command }) {
+export function SettingsView({ command = null }: { command?: Command }) {
   const [, setVersion] = useState(0);
   const bump = () => setVersion(v => v + 1);
 

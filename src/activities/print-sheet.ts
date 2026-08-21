@@ -11,7 +11,6 @@ import {
   getReservationRoomLabel,
   showLoadingOverlay,
   hideLoadingOverlay,
-  elById,
   calculateHoursFromTimes,
   formatPostalCode
 } from "../utils/utils.ts";
@@ -381,32 +380,31 @@ function buildActivityDetailsHtml(act: any) {
 function openActivityDetailsModal(id: string) {
   const act = appState.activities.find((a: any) => a.id === id);
   if (!act) return;
-  elById("activity-details-content").innerHTML = buildActivityDetailsHtml(act);
-  elById("activity-details-modal").classList.add("active");
-  elById("modal-backdrop").classList.add("active");
+  const contentEl = document.getElementById("activity-details-content");
+  if (contentEl) contentEl.innerHTML = buildActivityDetailsHtml(act);
+  document.getElementById("activity-details-modal")?.classList.add("active");
+  document.getElementById("modal-backdrop")?.classList.add("active");
 }
 
 function closeActivityDetailsModal() {
-  elById("activity-details-modal").classList.remove("active");
-  elById("modal-backdrop").classList.remove("active");
+  document.getElementById("activity-details-modal")?.classList.remove("active");
+  document.getElementById("modal-backdrop")?.classList.remove("active");
 }
 
 function initActivityDetailsModal() {
-  elById("activity-details-modal-close").addEventListener("click", closeActivityDetailsModal);
-  elById("activity-details-modal-close-btn").addEventListener("click", closeActivityDetailsModal);
+  document.getElementById("activity-details-modal-close")?.addEventListener("click", closeActivityDetailsModal);
+  document.getElementById("activity-details-modal-close-btn")?.addEventListener("click", closeActivityDetailsModal);
 }
 
-// Populates the hidden print sheet with the currently-open activity and triggers the browser's
-// print dialog (the user can then "Enregistrer au format PDF" to export it).
 function printActivitySheet() {
-  const id = elById("form-activity-internal-id").value;
+  const inputEl = document.getElementById("form-activity-internal-id") as HTMLInputElement | null;
+  const id = inputEl ? inputEl.value : "";
   const act = appState.activities.find(a => a.id === id);
   if (!act) return;
   showLoadingOverlay("Préparation du document...");
-  // Deferred so the overlay actually paints before building the sheet and opening the (blocking)
-  // browser print dialog.
   setTimeout(() => {
-    elById("print-activity-sheet").innerHTML = buildPrintActivitySheetHtml(act);
+    const sheetEl = document.getElementById("print-activity-sheet");
+    if (sheetEl) sheetEl.innerHTML = buildPrintActivitySheetHtml(act);
     hideLoadingOverlay();
     window.print();
   }, 20);

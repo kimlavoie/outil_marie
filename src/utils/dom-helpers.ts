@@ -95,11 +95,14 @@ function renderPaginationBar(
   const { clampedPage, html } = buildPaginationBarHtml({ page, pageSize, totalItems });
   container.innerHTML = html;
 
-  container.querySelector(".pagination-prev")!.addEventListener("click", () => onPageChange(clampedPage - 1));
-  container.querySelector(".pagination-next")!.addEventListener("click", () => onPageChange(clampedPage + 1));
-  container
-    .querySelector(".pagination-size-select")!
-    .addEventListener("change", e => onPageSizeChange(parseInt((e.target as HTMLSelectElement).value, 10)));
+  const prevBtn = container.querySelector(".pagination-prev");
+  if (prevBtn) prevBtn.addEventListener("click", () => onPageChange(clampedPage - 1));
+  const nextBtn = container.querySelector(".pagination-next");
+  if (nextBtn) nextBtn.addEventListener("click", () => onPageChange(clampedPage + 1));
+  const sizeSelect = container.querySelector(".pagination-size-select");
+  if (sizeSelect) {
+    sizeSelect.addEventListener("change", e => onPageSizeChange(parseInt((e.target as HTMLSelectElement).value, 10)));
+  }
 
   return clampedPage;
 }
@@ -189,7 +192,8 @@ function setExclusivePillValue(containerId: string, value: string) {
 function showLoadingOverlay(message = "Veuillez patienter...") {
   const overlay = document.getElementById("loading-overlay");
   if (!overlay) return;
-  overlay.querySelector(".loading-overlay-text")!.textContent = message;
+  const textEl = overlay.querySelector(".loading-overlay-text");
+  if (textEl) textEl.textContent = message;
   overlay.classList.add("active");
 }
 

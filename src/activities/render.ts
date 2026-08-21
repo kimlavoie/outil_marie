@@ -19,7 +19,7 @@
  * import, safe since nothing runs during either module's top-level evaluation, same as the other
  * circular imports already in this codebase (e.g. utils.ts <-> state.ts).
  */
-import { appState, getFiscalYear, getQuarterNumber, parseLocalDateStr, saveUiState } from "../state/state.ts";
+import { appState, subscribeAppState, getFiscalYear, getQuarterNumber, parseLocalDateStr, saveUiState } from "../state/state.ts";
 import {
   getReservationRoomAbbreviation,
   getActivityReferences,
@@ -122,8 +122,11 @@ function buildProgressBarHtml(percent: number) {
 
 function renderActivities() {
   saveUiState();
-  const tbody = el("activities-table-body");
-  const searchQuery = el("activity-search").value.toLowerCase();
+  const tbody = document.getElementById("activities-table-body");
+  const searchInput = document.getElementById("activity-search") as HTMLInputElement | null;
+  if (!tbody || !searchInput) return;
+
+  const searchQuery = searchInput.value.toLowerCase();
   const filterSalles = getMultiSelectValues("filter-salle-panel");
   const filterClientTypes = getMultiSelectValues("filter-client-type-panel");
   const filterStatuses = getMultiSelectValues("filter-status-panel");
@@ -385,6 +388,14 @@ function renderActivities() {
   // Update floating bulk actions bar status
   updateBulkActionsBar();
 }
+
+subscribeAppState(() => {
+  const container = document.getElementById("activities-table-body");
+  if (container) {
+    import("../navigation.ts").then(nav => nav.populateDropdowns());
+    renderActivities();
+  }
+});
 
 export {
   ACTIVITY_STATES,

@@ -57,12 +57,13 @@ export function deletePreset(id: string): void {
 function loadSavedOptions(): ExcelExportOptions {
   try {
     const raw = localStorage.getItem(PREFS_KEY);
-    if (!raw) return getDefaultExportOptions();
-    const parsed = JSON.parse(raw);
     const defaults = getDefaultExportOptions();
+    if (!raw) return defaults;
+    const parsed = JSON.parse(raw);
     return {
       ...defaults,
       ...parsed,
+      mode: "standard",
       filters: { ...defaults.filters, ...(parsed.filters || {}) },
       columns: { ...defaults.columns, ...(parsed.columns || {}) },
       sheets: { ...defaults.sheets, ...(parsed.sheets || {}) }

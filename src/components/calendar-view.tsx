@@ -250,13 +250,27 @@ function CalendarModal({ command }: { command: Command | null }) {
   useEffect(() => {
     if (!isOpen) return;
     const backdrop = document.getElementById("modal-backdrop");
-    if (!backdrop) return;
     const handler = () => setIsOpen(false);
-    backdrop.addEventListener("click", handler);
-    backdrop.classList.add("active");
+    if (backdrop) {
+      backdrop.addEventListener("click", handler);
+      backdrop.classList.add("active");
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(false);
+        setHover(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown, true);
+
     return () => {
-      backdrop.removeEventListener("click", handler);
-      backdrop.classList.remove("active");
+      if (backdrop) {
+        backdrop.removeEventListener("click", handler);
+        backdrop.classList.remove("active");
+      }
+      window.removeEventListener("keydown", handleKeyDown, true);
     };
   }, [isOpen]);
 

@@ -192,7 +192,8 @@ function populateDropdowns() {
   // Multi-select: rebuild the checkbox list, preserving whatever was checked
   if (filterSallePanel) {
     const previousSalleValues = getMultiSelectValues("filter-salle-panel");
-    filterSallePanel.innerHTML = appState.settings.rooms
+    const rooms = appState.settings?.rooms || [];
+    filterSallePanel.innerHTML = rooms
       .map(r => `<label class="multi-select-option"><input type="checkbox" value="${escapeHtml(r.name)}" /> ${escapeHtml(r.name)}</label>`)
       .join("");
     setMultiSelectValues("filter-salle-panel", previousSalleValues);

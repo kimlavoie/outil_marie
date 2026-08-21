@@ -20,285 +20,16 @@
       </svg>
       <div class="loading-overlay-text"></div>
     </div>
-    <div class="app-container">
-      <!-- Sidebar Navigation -->
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <div class="sidebar-logo">
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.25z"
-              />
-            </svg>
-          </div>
-          <span class="sidebar-title">Gestion des services communautaires</span>
-        </div>
 
-        <nav class="nav-menu">
-          <li class="nav-item active" data-view="dashboard">
-            <button title="Raccourci : Alt + 1">
-              <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" /></svg>
-              Tableau de bord
-            </button>
-          </li>
-          <li class="nav-item" data-view="activities">
-            <button title="Raccourci : Alt + 2">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"
-                />
-              </svg>
-              Activités
-            </button>
-          </li>
-          <li class="nav-item" data-view="validation">
-            <button title="Raccourci : Alt + 3">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
-                />
-              </svg>
-              Rapprochement GL
-            </button>
-          </li>
-          <li class="nav-item" data-view="account-report">
-            <button title="Raccourci : Alt + 4">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
-                />
-              </svg>
-              Grand Livre local
-            </button>
-          </li>
-          <li class="nav-item" data-view="settings">
-            <button title="Raccourci : Alt + 5">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
-                />
-              </svg>
-              Configuration
-            </button>
-          </li>
-          <li class="nav-item" data-view="backup">
-            <button title="Raccourci : Alt + 6">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"
-                />
-              </svg>
-              Sauvegarde & Export
-            </button>
-          </li>
-        </nav>
+    <!-- React App Root Container -->
+    <div id="root"></div>
 
-        <div class="sidebar-footer">
-          <button
-            id="help-center-btn"
-            class="theme-toggle-btn"
-            style="
-              margin-bottom: 8px;
-              background-color: var(--primary-light);
-              color: var(--primary);
-              border: 1px solid rgba(59, 130, 246, 0.2);
-            "
-          >
-            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 8px">
-              <path
-                d="M12 2C6.48 2 2 6.48 2 12s6.48 10 10 10 10-6.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"
-              />
-            </svg>
-            <span>Guide d'utilisation</span>
-          </button>
-          <button id="theme-toggle" class="theme-toggle-btn">
-            <svg id="theme-sun-icon" viewBox="0 0 24 24" style="display: none">
-              <path
-                d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zm-12.37 12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41z"
-              />
-            </svg>
-            <svg id="theme-moon-icon" viewBox="0 0 24 24">
-              <path d="M12.3 2a10 10 0 0 0-1.9 14 10 10 0 0 0 14.1.2 10.3 10.3 0 0 1-12.2-14.2z" />
-            </svg>
-            <span id="theme-btn-text">Mode Clair</span>
-          </button>
-          <span style="font-size: 0.75rem; color: #64748b; text-align: center">V1.0 - Hors ligne</span>
-        </div>
-      </aside>
+    <!-- Legacy Activity Drawer Shell Container -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <aside id="activity-drawer" class="drawer activity-drawer" aria-hidden="true"></aside>
 
-      <!-- Main Content Panel -->
-      <main class="main-content">
-        <!-- Top Header Bar -->
-        <header class="top-bar">
-          <div class="top-bar-row top-bar-row-main">
-            <h1 id="view-title" class="top-bar-title">Tableau de bord</h1>
-
-            <div class="top-bar-actions">
-              <div class="global-search-wrapper" style="position: relative">
-                <div class="search-wrapper" style="width: 260px">
-                  <svg class="search-icon" viewBox="0 0 24 24">
-                    <path
-                      d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
-                    />
-                  </svg>
-                  <input
-                    type="text"
-                    id="global-search-input"
-                    class="search-input"
-                    aria-label="Recherche globale"
-                    placeholder="Recherche globale..."
-                  />
-                </div>
-                <div id="global-search-results" class="calendar-popover" style="left: 0; right: auto; width: 340px">
-                  <!-- Populated dynamically -->
-                </div>
-              </div>
-              <div class="quick-access-dropdown" style="position: relative">
-                <button id="quick-access-toggle-btn" class="btn btn-secondary" title="Accès rapide">
-                  <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor; margin-right: 6px">
-                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                  </svg>
-                  Accès rapide
-                  <span id="quick-access-count-badge" class="badge badge-info" style="display: none; margin-left: 6px">0</span>
-                </button>
-                <div id="quick-access-dropdown-panel" class="calendar-popover" style="width: 320px; left: auto; right: 0">
-                  <div
-                    id="quick-access-list-global"
-                    style="display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto"
-                  >
-                    <!-- Populated dynamically -->
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="top-bar-row top-bar-row-secondary">
-            <!-- Period Selector Widget -->
-            <div class="period-selector-widget">
-              <div style="display: flex; align-items: center; gap: 8px">
-                <label for="top-fiscal-year" style="font-size: 0.8rem; font-weight: 700; white-space: nowrap; color: var(--text-secondary)"
-                  >Année financière :</label
-                >
-                <select
-                  id="top-fiscal-year"
-                  class="select-input"
-                  style="padding: 4px 10px; font-size: 0.8rem; font-weight: 600; border-radius: var(--radius-sm)"
-                >
-                  <!-- Populated dynamically -->
-                </select>
-              </div>
-
-              <div style="display: flex; align-items: center; gap: 6px">
-                <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-right: 4px">Trimestres :</span>
-                <button class="quarter-toggle active" data-q="1" title="Trimestre 1 (Juillet - Septembre)">T1 (Juil - Sept)</button>
-                <button class="quarter-toggle active" data-q="2" title="Trimestre 2 (Octobre - Décembre)">T2 (Oct - Déc)</button>
-                <button class="quarter-toggle active" data-q="3" title="Trimestre 3 (Janvier - Mars)">T3 (Jan - Mars)</button>
-                <button class="quarter-toggle active" data-q="4" title="Trimestre 4 (Avril - Juin)">T4 (Avr - Juin)</button>
-              </div>
-              <span id="active-period-description" class="active-period-description"></span>
-            </div>
-
-            <div class="top-bar-actions">
-              <button id="quick-export-excel" class="btn btn-secondary btn-compact" title="Exporter au format Excel">
-                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor">
-                  <path
-                    d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"
-                  />
-                </svg>
-              </button>
-              <button
-                id="add-estimation-btn-quick"
-                class="btn btn-secondary btn-compact"
-                title="Créer une estimation, non enregistrée tant qu'elle n'est pas sauvegardée"
-              >
-                Estimation
-              </button>
-              <button id="add-activity-btn-quick" class="btn btn-primary btn-compact" title="Raccourci : Alt + N (ou Alt + A)">
-                + Nouvelle Activité
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <!-- Global Backup Reminder Alert Banner -->
-        <div id="backup-reminder-banner" class="backup-alert-banner" style="display: none">
-          <span id="backup-alert-text" class="backup-alert-message">
-            <!-- Dynamically populated via JS -->
-          </span>
-          <button id="backup-banner-action-btn" class="btn-warning-outline">Sauvegarder maintenant</button>
-        </div>
-
-        <!-- Global Auto-Backup Alert Banner (not connected, or permission expired) -->
-        <div id="auto-backup-reminder-banner" class="backup-alert-banner" style="display: none">
-          <span class="backup-alert-message">
-            <svg viewBox="0 0 24 24" class="alert-icon" style="fill: var(--warning-text); margin-right: 8px">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-            </svg>
-            <span id="auto-backup-reminder-text"></span>
-          </span>
-          <button id="auto-backup-reminder-btn" class="btn-warning-outline" title="Protéger votre travail avec la sauvegarde automatique">
-            Réactiver
-          </button>
-        </div>
-
-        <!-- View Containers -->
-        <div class="view-container">
-          <!-- 1. DASHBOARD VIEW (rendered by React — see src/components/dashboard-view.tsx, mounted by src/dashboard.js) -->
-          <section id="view-dashboard" class="view-section active">
-            <div id="dashboard-root"></div>
-          </section>
-
-          <!-- 2. ACTIVITIES VIEW -->
-          <!-- Populated dynamically via JS — see src/activities/activities-view-template.ts -->
-          <section id="view-activities" class="view-section"></section>
-
-          <!-- 3. RECONCILIATION VIEW (rendered by React — see src/components/reconciliation-view.tsx) -->
-          <section id="view-validation" class="view-section">
-            <div id="validation-root"></div>
-          </section>
-
-          <!-- 3.5 GRAND LIVRE LOCAL VIEW -->
-          <section id="view-account-report" class="view-section">
-            <div class="table-card">
-              <div class="table-toolbar">
-                <div style="font-weight: 700; font-size: 1.05rem">Fiches d'écriture par compte GL</div>
-                <div class="filter-actions" style="display: flex; align-items: center; gap: 8px">
-                  <label for="filter-report-account">Compte :</label>
-                  <select id="filter-report-account" class="select-input">
-                    <option value="">Tous les comptes</option>
-                    <!-- Populated dynamically -->
-                  </select>
-                </div>
-              </div>
-
-              <div id="account-report-container" style="padding: 24px; display: flex; flex-direction: column; gap: 32px">
-                <!-- Populated dynamically via JS -->
-              </div>
-            </div>
-          </section>
-
-          <!-- 4. CONFIGURATION VIEW (rendered by React — see src/components/settings/view.tsx) -->
-          <section id="view-settings" class="view-section">
-            <div id="settings-root"></div>
-          </section>
-
-          <!-- 5. BACKUP VIEW -->
-          <!-- Populated dynamically via JS — see src/services/backup-view-template.ts -->
-          <section id="view-backup" class="view-section"></section>
-        </div>
-      </main>
-    </div>
-
-    <!-- DRAWERS & MODALS -->
-
-    <!-- Drawer Container Backdrop -->
-    <div id="drawer-backdrop" class="drawer-backdrop" role="presentation"></div>
-
-    <!-- 1. Activity Record Drawer (3-tab lifecycle view: Soumission et contrat / Planification / Facturation) -->
-    <!-- Populated dynamically via JS — see src/activities/drawer-template.ts -->
-    <div id="activity-drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="activity-drawer-title"></div>
-
+    <!-- Legacy Modals Shell Containers -->
     <!-- New Activity (name-only) Modal -->
     <div id="new-activity-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="new-activity-modal-title">
       <div class="modal-header">
@@ -318,8 +49,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button id="new-activity-modal-cancel" class="btn btn-secondary">Annuler</button>
-        <button id="new-activity-modal-submit" class="btn btn-primary">Créer</button>
+        <button type="button" id="new-activity-modal-cancel" class="btn btn-secondary">Annuler</button>
+        <button type="submit" id="new-activity-modal-submit" class="btn btn-primary">Créer</button>
       </div>
     </div>
 
@@ -330,7 +61,7 @@
       role="dialog"
       aria-modal="true"
       aria-labelledby="activity-details-modal-title"
-      style="width: 700px"
+      style="width: 700px; max-width: 90vw"
     >
       <div class="modal-header">
         <h3 class="modal-title" id="activity-details-modal-title">Détails de l'activité</h3>
@@ -340,50 +71,13 @@
           </svg>
         </button>
       </div>
-      <div class="modal-content">
-        <div id="activity-details-content"></div>
-      </div>
+      <div class="modal-content" id="activity-details-content"></div>
       <div class="modal-footer">
         <button id="activity-details-modal-close-btn" class="btn btn-secondary">Fermer</button>
       </div>
     </div>
 
-    <!-- Deleted Activities Modal: browse/search soft-deleted activities and restore or preview them
-         (see src/services/backup/reminder.ts) -->
-    <div
-      id="deleted-activities-modal"
-      class="modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="deleted-activities-modal-title"
-      style="width: 650px"
-    >
-      <div class="modal-header">
-        <h3 class="modal-title" id="deleted-activities-modal-title">Activités supprimées</h3>
-        <button id="deleted-activities-modal-close" class="btn-icon" aria-label="Fermer">
-          <svg viewBox="0 0 24 24">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg>
-        </button>
-      </div>
-      <div class="modal-content">
-        <input
-          type="text"
-          id="deleted-activities-search"
-          class="form-input"
-          placeholder="Rechercher une activité supprimée..."
-          style="margin-bottom: 12px"
-        />
-        <div id="deleted-activities-modal-list" style="display: flex; flex-direction: column; gap: 8px">
-          <!-- Populated dynamically via JS -->
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="deleted-activities-modal-close-btn" class="btn btn-secondary">Fermer</button>
-      </div>
-    </div>
-
-    <!-- Tax Override Modal: per-activity TPS/TVQ exception (rate or flat amount), with a note -->
+    <!-- Tax Override Modal -->
     <div
       id="tax-override-modal"
       class="modal"
@@ -402,12 +96,10 @@
       </div>
       <div class="modal-content">
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0">
-          Par défaut, les taux configurés dans Paramètres &gt; Taxes s'appliquent. Utilisez ceci uniquement pour un cas particulier propre à
-          cette activité (organisme exonéré, entente particulière).
+          Par défaut, les taux configurés dans Paramètres &gt; Taxes s'appliquent. Utilisez ceci uniquement pour un cas particulier propre à cette activité (organisme exonéré, entente particulière).
         </p>
         <p id="tax-override-non-taxable-warning" style="font-size: 0.85rem; color: var(--warning, #b45309); display: none">
-          La case "Non taxable" est cochée pour cette activité : elle exempte déjà TPS et TVQ, et primera sur les réglages ci-dessous tant
-          qu'elle reste cochée.
+          La case "Non taxable" est cochée pour cette activité : elle exempte déjà TPS et TVQ, et primera sur les réglages ci-dessous tant qu'elle reste cochée.
         </p>
 
         <div class="form-group">
@@ -420,7 +112,7 @@
             </select>
             <input type="number" id="tax-override-tps-value" class="form-input" min="0" step="0.01" placeholder="Taux (%)" disabled />
           </div>
-          <textarea id="tax-override-tps-note" class="form-input" rows="2" placeholder="Note (raison de la modification)"></textarea>
+          <textarea id="tax-override-tps-note" class="form-input" rows="2" placeholder="Motif du remplacement (optionnel)..." style="margin-top: 6px"></textarea>
         </div>
 
         <div class="form-group">
@@ -433,7 +125,7 @@
             </select>
             <input type="number" id="tax-override-tvq-value" class="form-input" min="0" step="0.01" placeholder="Taux (%)" disabled />
           </div>
-          <textarea id="tax-override-tvq-note" class="form-input" rows="2" placeholder="Note (raison de la modification)"></textarea>
+          <textarea id="tax-override-tvq-note" class="form-input" rows="2" placeholder="Motif du remplacement (optionnel)..." style="margin-top: 6px"></textarea>
         </div>
       </div>
       <div class="modal-footer">
@@ -442,8 +134,7 @@
       </div>
     </div>
 
-    <!-- Generic File Preview Modal: PDF/Excel/Word/texte/image viewer for any linked file (see
-         src/activities/file-preview/dispatch.ts). Title and content are populated on demand. -->
+    <!-- Generic File Preview Modal -->
     <div
       id="file-preview-modal"
       class="modal"
@@ -466,290 +157,12 @@
       <div class="modal-content" id="file-preview-mount"></div>
     </div>
 
-    <!-- Restore Options Modal -->
-    <div
-      id="restore-options-modal"
-      class="modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="restore-options-modal-title"
-      style="width: 750px"
-    >
-      <div class="modal-header">
-        <h3 class="modal-title" id="restore-options-modal-title">Options de restauration</h3>
-        <button id="restore-options-modal-close" class="btn-icon" aria-label="Fermer">
-          <svg viewBox="0 0 24 24">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg>
-        </button>
-      </div>
-      <div class="modal-content">
-        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0">
-          Choisissez ce que vous souhaitez restaurer à partir du fichier de sauvegarde. La base de données actuelle sera écrasée ou
-          fusionnée selon vos choix.
-        </p>
-
-        <!-- Main Options Grid -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px">
-          <label class="restore-option-card active" for="restore-mode-all">
-            <input type="radio" id="restore-mode-all" name="restore-mode" value="all" checked />
-            <div>
-              <strong style="display: block; font-size: 0.95rem; margin-bottom: 4px">Tout restaurer</strong>
-              <span style="font-size: 0.8rem; color: var(--text-muted)"
-                >Importe l'intégralité du fichier (configurations et activités). Écrase les données existantes.</span
-              >
-            </div>
-          </label>
-
-          <label class="restore-option-card" for="restore-mode-config">
-            <input type="radio" id="restore-mode-config" name="restore-mode" value="config" />
-            <div>
-              <strong style="display: block; font-size: 0.95rem; margin-bottom: 4px">Configurations seulement</strong>
-              <span style="font-size: 0.8rem; color: var(--text-muted)"
-                >Restaure uniquement les paramètres (tarifs, comptes, salaires...). Les activités courantes restent inchangées.</span
-              >
-            </div>
-          </label>
-
-          <label class="restore-option-card" for="restore-mode-activities">
-            <input type="radio" id="restore-mode-activities" name="restore-mode" value="activities" />
-            <div>
-              <strong style="display: block; font-size: 0.95rem; margin-bottom: 4px">Activités seulement</strong>
-              <span style="font-size: 0.8rem; color: var(--text-muted)"
-                >Restaure uniquement les activités et les favoris. Les configurations et paramètres actuels restent inchangées.</span
-              >
-            </div>
-          </label>
-
-          <label class="restore-option-card" for="restore-mode-custom">
-            <input type="radio" id="restore-mode-custom" name="restore-mode" value="custom" />
-            <div>
-              <strong style="display: block; font-size: 0.95rem; margin-bottom: 4px">Sélection personnalisée</strong>
-              <span style="font-size: 0.8rem; color: var(--text-muted)"
-                >Choisissez précisément quels types de données ou quelles activités individuelles vous souhaitez restaurer.</span
-              >
-            </div>
-          </label>
-        </div>
-
-        <!-- Custom Selection Sub-panel (hidden by default) -->
-        <div id="restore-custom-panel" style="display: none; border-top: 1px solid var(--border-color); padding-top: 20px">
-          <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px">
-            <!-- Left column: Config selection -->
-            <div style="border-right: 1px solid var(--border-color); padding-right: 16px">
-              <h4 style="font-size: 0.95rem; font-weight: 700; margin-top: 0; margin-bottom: 12px; color: var(--text-primary)">
-                Configurations
-              </h4>
-              <div style="display: flex; flex-direction: column; gap: 10px">
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer">
-                  <input type="checkbox" id="restore-cb-rooms" checked />
-                  Salles et Tarifs
-                </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer">
-                  <input type="checkbox" id="restore-cb-salaries" checked />
-                  Salaires et main d'œuvre
-                </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer">
-                  <input type="checkbox" id="restore-cb-services" checked />
-                  Équipements et Services
-                </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer">
-                  <input type="checkbox" id="restore-cb-accounts" checked />
-                  Comptes de Grand Livre
-                </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer">
-                  <input type="checkbox" id="restore-cb-departments" checked />
-                  Départements
-                </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer">
-                  <input type="checkbox" id="restore-cb-tasks" checked />
-                  Tâches de planification
-                </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer">
-                  <input type="checkbox" id="restore-cb-taxes" checked />
-                  Taxes
-                </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer">
-                  <input type="checkbox" id="restore-cb-preferences" checked />
-                  Préférences (Thème, rappels...)
-                </label>
-              </div>
-            </div>
-
-            <!-- Right column: Activities selection -->
-            <div>
-              <h4 style="font-size: 0.95rem; font-weight: 700; margin-top: 0; margin-bottom: 12px; color: var(--text-primary)">
-                Activités et données
-              </h4>
-
-              <div style="display: flex; flex-direction: column; gap: 12px">
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer">
-                  <input type="radio" id="restore-act-all" name="restore-act-choice" value="all" checked />
-                  Toutes les activités et favoris
-                </label>
-
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer">
-                  <input type="radio" id="restore-act-select" name="restore-act-choice" value="select" />
-                  Sélectionner des activités spécifiques
-                </label>
-
-                <!-- Activities specific selection container (hidden by default) -->
-                <div
-                  id="restore-specific-activities-container"
-                  style="
-                    display: none;
-                    flex-direction: column;
-                    gap: 8px;
-                    margin-left: 20px;
-                    border: 1px solid var(--border-color);
-                    padding: 12px;
-                    border-radius: var(--radius-sm);
-                    background-color: var(--bg-main);
-                  "
-                >
-                  <!-- Search input -->
-                  <input
-                    type="text"
-                    id="restore-activity-search"
-                    class="form-input"
-                    placeholder="Rechercher une activité..."
-                    style="font-size: 0.8rem; padding: 6px 10px; margin-bottom: 8px"
-                  />
-
-                  <!-- Select all / none links -->
-                  <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 8px">
-                    <a href="#" id="restore-act-btn-select-all" style="color: var(--primary); text-decoration: none; font-weight: 600"
-                      >Tout sélectionner</a
-                    >
-                    <a href="#" id="restore-act-btn-deselect-all" style="color: var(--text-muted); text-decoration: none; font-weight: 600"
-                      >Tout désélectionner</a
-                    >
-                  </div>
-
-                  <!-- Scrollable checklist of activities -->
-                  <div
-                    id="restore-activities-checklist"
-                    class="restore-activities-list"
-                    style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 4px"
-                  >
-                    <!-- Populated dynamically via JS -->
-                  </div>
-
-                  <!-- Import Mode selection -->
-                  <div style="border-top: 1px solid var(--border-color); margin-top: 8px; padding-top: 8px">
-                    <span style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 6px">Mode d'importation :</span>
-                    <div style="display: flex; gap: 16px">
-                      <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; cursor: pointer">
-                        <input type="radio" id="restore-import-merge" name="restore-import-mode" value="merge" checked />
-                        Fusionner avec l'existant
-                      </label>
-                      <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; cursor: pointer">
-                        <input type="radio" id="restore-import-replace" name="restore-import-mode" value="replace" />
-                        Écraser les activités existantes
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="restore-options-modal-cancel" class="btn btn-secondary">Annuler</button>
-        <button id="restore-options-modal-submit" class="btn btn-primary">Restaurer</button>
-      </div>
-    </div>
-
-    <!-- Modal Container Backdrop -->
-    <div id="modal-backdrop" class="modal-backdrop" role="presentation"></div>
-
-    <!-- 7. Activities Calendar Modal (rendered by React — see src/components/calendar-view.tsx) -->
+    <!-- Calendar Modal Mount Root -->
     <div id="calendar-modal-root"></div>
-
-    <!-- Printable / PDF export sheet for a single activity (populated on demand, hidden on
-         screen, only shown by the @media print rule when window.print() is triggered) -->
-    <!-- Help Center Modal -->
-    <div
-      id="help-center-modal"
-      class="modal-backdrop"
-      style="
-        display: none;
-        position: fixed;
-        z-index: 2000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        align-items: center;
-        justify-content: center;
-      "
-    >
-      <div
-        class="modal-content"
-        style="
-          width: 90%;
-          max-width: 700px;
-          max-height: 85vh;
-          display: flex;
-          flex-direction: column;
-          padding: 0;
-          overflow: hidden;
-          border-radius: var(--radius-lg);
-          border: 1px solid var(--border-color);
-          box-shadow: var(--shadow-lg);
-          background-color: var(--bg-card);
-        "
-      >
-        <!-- Header -->
-        <div
-          style="
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border-color);
-            background-color: var(--bg-main);
-          "
-        >
-          <div style="display: flex; align-items: center; gap: 8px">
-            <span style="font-size: 1.3rem">📖</span>
-            <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-primary)">Guide d'aide pour Marie</h2>
-          </div>
-          <button
-            id="help-center-close-btn"
-            class="btn-icon"
-            style="font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--text-muted); background: none; border: none"
-          >
-            &times;
-          </button>
-        </div>
-
-        <!-- Scrollable content -->
-        <div style="padding: 24px; overflow-y: auto; flex-grow: 1">
-          <!-- Populated dynamically via JS — see src/help-center.ts -->
-          <div id="help-center-content"></div>
-        </div>
-
-        <!-- Footer -->
-        <div
-          style="
-            display: flex;
-            justify-content: flex-end;
-            padding: 12px 24px;
-            border-top: 1px solid var(--border-color);
-            background-color: var(--bg-main);
-          "
-        >
-          <button id="help-center-close-footer-btn" class="btn btn-primary">J'ai compris</button>
-        </div>
-      </div>
-    </div>
 
     <div id="print-activity-sheet"></div>
 
-    <!-- Application Logic -->
-    <script type="module" src="src/main.ts"></script>
+    <!-- Application Entry Point -->
+    <script type="module" src="src/main.tsx"></script>
   </body>
 </html>

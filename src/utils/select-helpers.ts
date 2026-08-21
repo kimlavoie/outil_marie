@@ -62,29 +62,37 @@ function initMultiSelectDropdown(btnId: string, panelId: string, onChange: () =>
   const panel = document.getElementById(panelId);
   if (!btn || !panel) return;
 
-  btn.addEventListener("click", e => {
+  btn.onclick = e => {
     e.stopPropagation();
     const wasHidden = panel.hidden;
     document.querySelectorAll<HTMLElement>(".multi-select-panel").forEach(p => {
       p.hidden = true;
-      document.getElementById(p.id.replace(/-panel$/, "-btn"))?.setAttribute("aria-expanded", "false");
+      const b = document.getElementById(p.id.replace(/-panel$/, "-btn"));
+      if (b) b.setAttribute("aria-expanded", "false");
     });
     panel.hidden = !wasHidden;
-    btn.setAttribute("aria-expanded", String(wasHidden));
-  });
+    btn.setAttribute("aria-expanded", String(!wasHidden));
+  };
 
-  panel.addEventListener("change", e => {
+  panel.onchange = e => {
     if (!(e.target as HTMLElement).matches("input[type=checkbox]")) return;
     updateMultiSelectLabel(panelId);
     onChange();
-  });
+  };
 
-  document.addEventListener("click", e => {
-    if (panel.hidden) return;
-    if (panel.contains(e.target as Node) || btn.contains(e.target as Node)) return;
-    panel.hidden = true;
-    btn.setAttribute("aria-expanded", "false");
-  });
+  if (!(window as any)._multiSelectGlobalClickListenerSet) {
+    (window as any)._multiSelectGlobalClickListenerSet = true;
+    document.addEventListener("click", e => {
+      const target = e.target as Node;
+      document.querySelectorAll<HTMLElement>(".multi-select-panel").forEach(p => {
+        if (p.hidden) return;
+        const b = document.getElementById(p.id.replace(/-panel$/, "-btn"));
+        if (p.contains(target) || (b && b.contains(target))) return;
+        p.hidden = true;
+        if (b) b.setAttribute("aria-expanded", "false");
+      });
+    });
+  }
 }
 
 export { getMultiSelectValues, setMultiSelectValues, updateMultiSelectLabel, initMultiSelectDropdown };

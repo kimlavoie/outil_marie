@@ -8,38 +8,43 @@ import { showToast } from "../utils/utils.ts";
 import { requireNonEmpty } from "../utils/validation.ts";
 import { activitiesState, renderActivities } from "./render.ts";
 import { generateNextActivityId, openActivityDrawer } from "./financials.ts";
-
-// Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
-// comment for why this cast is needed/safe.
-function el<T extends Element = HTMLInputElement>(id: string): T {
-  return document.getElementById(id) as unknown as T;
-}
-
 import { trapFocus, type FocusTrapController } from "../utils/focus-trap.ts";
+
+function el<T extends Element = HTMLInputElement>(id: string): T | null {
+  return (document.getElementById(id) as unknown as T) || null;
+}
 
 let newActivityModalIntent = "soumission";
 let newActivityFocusTrap: FocusTrapController | null = null;
 
 export function initNewActivityModal() {
-  el("new-activity-modal-close").addEventListener("click", closeNewActivityModal);
-  el("new-activity-modal-cancel").addEventListener("click", closeNewActivityModal);
-  el("new-activity-modal-submit").addEventListener("click", submitNewActivityForm);
-  // The submit button lives outside the <form> (in the modal footer), so pressing Enter in the
-  // name field triggers the form's native submit instead of the button's click — catch it here.
-  el<HTMLFormElement>("new-activity-form").addEventListener("submit", submitNewActivityForm);
+  el("new-activity-modal-close")?.addEventListener("click", closeNewActivityModal);
+  el("new-activity-modal-cancel")?.addEventListener("click", closeNewActivityModal);
+  el("new-activity-modal-submit")?.addEventListener("click", submitNewActivityForm);
+  el<HTMLFormElement>("new-activity-form")?.addEventListener("submit", submitNewActivityForm);
+  window.addEventListener("keydown", e => {
+    if (e.key === "Escape" && el("new-activity-modal")?.classList.contains("active")) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeNewActivityModal();
+    }
+  });
 }
 
 export function openNewActivityModal(intent = "soumission") {
   newActivityModalIntent = intent;
   const form = el<HTMLFormElement>("new-activity-form");
-  form.reset();
-  el("new-activity-modal-title").textContent = intent === "estimation" ? "Nouvelle estimation" : "Nouvelle activité";
+  if (form) form.reset();
+  const titleEl = el("new-activity-modal-title");
+  if (titleEl) titleEl.textContent = intent === "estimation" ? "Nouvelle estimation" : "Nouvelle activité";
   const modal = el("new-activity-modal");
-  modal.classList.add("active");
-  el("modal-backdrop").classList.add("active");
-
-  if (newActivityFocusTrap) newActivityFocusTrap.deactivate();
-  newActivityFocusTrap = trapFocus(modal, { initialFocusEl: el("form-new-activity-name") });
+  if (modal) {
+    modal.classList.add("active");
+    const nameInput = el("form-new-activity-name");
+    if (newActivityFocusTrap) newActivityFocusTrap.deactivate();
+    newActivityFocusTrap = trapFocus(modal, { initialFocusEl: nameInput || undefined });
+  }
+  el("modal-backdrop")?.classList.add("active");
 }
 
 export function closeNewActivityModal() {
@@ -47,13 +52,14 @@ export function closeNewActivityModal() {
     newActivityFocusTrap.deactivate();
     newActivityFocusTrap = null;
   }
-  el("new-activity-modal").classList.remove("active");
-  el("modal-backdrop").classList.remove("active");
+  el("new-activity-modal")?.classList.remove("active");
+  el("modal-backdrop")?.classList.remove("active");
 }
 
 function submitNewActivityForm(e: Event) {
   e.preventDefault();
-  const name = el("form-new-activity-name").value.trim();
+  const nameInput = el("form-new-activity-name");
+  const name = nameInput ? nameInput.value.trim() : "";
   const nameError = requireNonEmpty(name, "Veuillez saisir le nom de l'activité.");
   if (nameError) {
     showToast(nameError, "warning");
@@ -65,9 +71,7 @@ function submitNewActivityForm(e: Event) {
   openActivityDrawer(id);
 }
 
-// Shared field defaults for a brand-new activity record (all lifecycle/submission/planning/
-// billing fields at their defaults). Mirrors the defaults migrateActivities() backfills onto
-// legacy records, so both paths keep producing the same shape.
+// Shared field defaults for a brand-new activity record
 function buildNewActivityRecord(id: string, name: string, mode: string) {
   return {
     id,
@@ -114,19 +118,14 @@ function buildNewActivityRecord(id: string, name: string, mode: string) {
     billed_at: "",
     completed_at: "",
     notes: "",
-    // Per-activity TPS/TVQ overrides (organismes exonérés, ententes particulières) — null means
-    // "use the default rates from Paramètres > Taxes". See tax-override.ts.
     tax_overrides: null as {
       tps?: { mode: "rate" | "amount"; value: number; note: string };
       tvq?: { mode: "rate" | "amount"; value: number; note: string };
     } | null,
-    // "Non taxable" checkbox: full TPS/TVQ exemption shortcut, takes priority over tax_overrides.
     non_taxable: false
   };
 }
 
-// Builds a brand-new activity record, saves it immediately, and returns its id. Used by the
-// "Nouvelle Activité" quick button (mode "soumission").
 export function createActivity(name: string, mode = "soumission") {
   const id = generateNextActivityId();
   appState.activities.push(buildNewActivityRecord(id, name, mode));
@@ -134,11 +133,6 @@ export function createActivity(name: string, mode = "soumission") {
   return id;
 }
 
-// Builds a brand-new activity record in "estimation" mode but only holds it in memory (not
-// persisted to the database) so the "Estimation" quick button can open it in the drawer without
-// registering it in the system until the user clicks "Enregistrer". See cancelActivityDrawer(),
-// which discards it if the drawer is closed without saving, and submitActivityForm(), which
-// clears the draft flag once it's actually saved.
 export function createDraftActivity(name: string) {
   const id = generateNextActivityId();
   appState.activities.push(buildNewActivityRecord(id, name, "estimation"));
@@ -146,9 +140,6 @@ export function createDraftActivity(name: string) {
   return id;
 }
 
-// Duplicates an existing activity's submission data (rooms, client, services, etc.) under a
-// fresh id, resetting the lifecycle fields (state, planning, submission/contract links, billing
-// dates) since a duplicate always restarts its own cycle from Brouillon.
 export function duplicateActivityAndOpen(sourceId: string) {
   const source = appState.activities.find((a: any) => a.id === sourceId);
   if (!source) return;
