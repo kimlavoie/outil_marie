@@ -40,6 +40,9 @@ function flush(ms = 250): Promise<void> {
 
 test.beforeEach(() => {
   document.body.innerHTML = `<div id="toast-container"></div>`;
+  const mockConfirm = () => true;
+  (globalThis as any).confirm = mockConfirm;
+  (globalThis as any).window.confirm = mockConfirm;
 });
 
 test("handleJsonBackupFile rejects a malformed backup and leaves appState untouched", async () => {
@@ -101,7 +104,7 @@ test("handleJsonBackupFile sanitizes restored activities missing a name", async 
   const submitBtn = document.getElementById("restore-options-modal-submit");
   assert.ok(submitBtn);
   submitBtn.click();
-  await flush();
+  await flush(1000);
 
   assert.equal(appState.activities.length, 1);
   assert.equal(appState.activities[0].id, "act-1");
@@ -131,7 +134,7 @@ test("handleJsonBackupFile rolls back AND re-persists the pre-restore state when
   const submitBtn = document.getElementById("restore-options-modal-submit");
   assert.ok(submitBtn);
   submitBtn.click();
-  await flush(800);
+  await flush(1000);
 
   assert.equal(appState.selected_year, "PRE-MARKER");
   assert.equal(appState.activities.length, 1);
@@ -163,13 +166,13 @@ test("handleJsonBackupFile restores configurations only", async () => {
 
   const configRadio = document.getElementById("restore-mode-config") as HTMLInputElement;
   assert.ok(configRadio);
-  configRadio.checked = true;
+  configRadio.click();
   configRadio.dispatchEvent(new Event("change", { bubbles: true }));
 
   const submitBtn = document.getElementById("restore-options-modal-submit");
   assert.ok(submitBtn);
   submitBtn.click();
-  await flush();
+  await flush(1000);
 
   assert.equal(appState.settings.theme, "dark");
   assert.equal(appState.activities.length, 1);
@@ -195,13 +198,13 @@ test("handleJsonBackupFile restores activities only", async () => {
 
   const actRadio = document.getElementById("restore-mode-activities") as HTMLInputElement;
   assert.ok(actRadio);
-  actRadio.checked = true;
+  actRadio.click();
   actRadio.dispatchEvent(new Event("change", { bubbles: true }));
 
   const submitBtn = document.getElementById("restore-options-modal-submit");
   assert.ok(submitBtn);
   submitBtn.click();
-  await flush();
+  await flush(1000);
 
   assert.equal(appState.settings.theme, "light");
   assert.equal(appState.activities.length, 1);
@@ -234,12 +237,12 @@ test("handleJsonBackupFile merges specific activities custom restore", async () 
 
   const customRadio = document.getElementById("restore-mode-custom") as HTMLInputElement;
   assert.ok(customRadio);
-  customRadio.checked = true;
+  customRadio.click();
   customRadio.dispatchEvent(new Event("change", { bubbles: true }));
 
   const specRadio = document.getElementById("restore-act-select") as HTMLInputElement;
   assert.ok(specRadio);
-  specRadio.checked = true;
+  specRadio.click();
   specRadio.dispatchEvent(new Event("change", { bubbles: true }));
 
   const configCbs = [
@@ -271,7 +274,7 @@ test("handleJsonBackupFile merges specific activities custom restore", async () 
   const submitBtn = document.getElementById("restore-options-modal-submit");
   assert.ok(submitBtn);
   submitBtn.click();
-  await flush();
+  await flush(1000);
 
   assert.equal(appState.settings.theme, "light");
   assert.equal(appState.activities.length, 3);
@@ -288,5 +291,112 @@ test("handleJsonBackupFile merges specific activities custom restore", async () 
   assert.ok(!ignored);
 });
 
+test("handleJsonBackupFile renders diff preview summary and comparative badges", async () => {
+  setAppState({
+      settings: baseSettings({ theme: "dark", rooms: [{ id: "r1", name: "Salle Origine" }] }),
+      activities: [
+        { id: "act-same", name: "Identique" },
+        { id: "act-modified", name: "Ancien Nom" },
+        { id: "act-app-only", name: "Seulement App" }
+      ] as any,
+      favorites: [],
+      selected_year: "PRE",
+      selected_quarters: [1, 2, 3, 4]
+    });
+
+    handleJsonBackupFile(
+      makeFile({
+        activities: [
+          { id: "act-same", name: "Identique" },
+          { id: "act-modified", name: "Nouveau Nom" },
+          { id: "act-new", name: "Nouvelle Activité" }
+        ],
+        settings: baseSettings({ theme: "dark", rooms: [{ id: "r1", name: "Salle Origine" }, { id: "r2", name: "Salle Ajoutée" }] })
+      })
+    );
+    await flush(800);
+
+    const summaryCard = document.getElementById("restore-diff-summary-card");
+    assert.ok(summaryCard);
+    assert.match(summaryCard!.textContent!, /Aperçu des différences/);
+    assert.match(summaryCard!.textContent!, /1 nouvelle\(s\)/);
+    assert.match(summaryCard!.textContent!, /1 modifiée\(s\)/);
+    assert.match(summaryCard!.textContent!, /1 identique\(s\)/);
+    assert.match(summaryCard!.textContent!, /1 non présente\(s\)/);
+
+    const addedSummaryBadge = document.getElementById("restore-summary-badge-added");
+    const addedDetails = document.getElementById("restore-added-details");
+    assert.ok(addedSummaryBadge);
+    assert.ok(addedDetails);
+    assert.equal(addedDetails!.style.display, "none");
+
+    addedSummaryBadge!.click();
+    assert.equal(addedDetails!.style.display, "flex");
+    assert.match(addedDetails!.innerHTML, /Nouvelles activités dans le fichier/);
+    assert.match(addedDetails!.innerHTML, /act-new/);
+
+    const modifiedSummaryBadge = document.getElementById("restore-summary-badge-modified");
+    const modifiedDetails = document.getElementById("restore-modified-details");
+    assert.ok(modifiedSummaryBadge);
+    assert.ok(modifiedDetails);
+    assert.equal(modifiedDetails!.style.display, "none");
+
+    modifiedSummaryBadge!.click();
+    assert.equal(modifiedDetails!.style.display, "flex");
+    assert.equal(addedDetails!.style.display, "none");
+    assert.match(modifiedDetails!.innerHTML, /Détail des activités modifiées/);
+    assert.match(modifiedDetails!.innerHTML, /act-modified/);
+    assert.match(modifiedDetails!.innerHTML, /Nouveau Nom/);
+    assert.match(modifiedDetails!.innerHTML, /Ancien Nom/);
+
+    const roomBadge = document.getElementById("restore-badge-rooms");
+    assert.ok(roomBadge);
+    assert.match(roomBadge!.textContent!, /Modifié/);
+
+    const roomDetails = document.getElementById("restore-details-rooms");
+    assert.ok(roomDetails);
+    assert.equal(roomDetails!.style.display, "none");
+
+    // Click badge to toggle details
+    roomBadge!.click();
+    assert.equal(roomDetails!.style.display, "flex");
+    assert.match(roomDetails!.innerHTML, /Nouveau dans le fichier/);
+    assert.match(roomDetails!.innerHTML, /Salle Ajoutée/);
+
+    const customRadio = document.getElementById("restore-mode-custom") as HTMLInputElement;
+    customRadio.click();
+    customRadio.dispatchEvent(new Event("change", { bubbles: true }));
+
+    const specRadio = document.getElementById("restore-act-select") as HTMLInputElement;
+    specRadio.click();
+    specRadio.dispatchEvent(new Event("change", { bubbles: true }));
+
+    const btnAll = document.getElementById("restore-filter-all") as HTMLButtonElement;
+    if (btnAll) btnAll.click();
+
+    const checklist = document.getElementById("restore-activities-checklist")!;
+    assert.ok(checklist);
+    assert.match(checklist.innerHTML, /Nouveau/);
+    assert.match(checklist.innerHTML, /Modifié \(Nom\)/);
+    assert.match(checklist.innerHTML, /Identique/);
+
+    // Click on a modified activity's diff badge to toggle field diff details
+    const modifiedBadge = checklist.querySelector("span[title*='Changements: Nom']") as HTMLElement;
+    assert.ok(modifiedBadge);
+
+    const detailsContainer = modifiedBadge.closest("div")?.querySelector("div") as HTMLElement;
+    assert.ok(detailsContainer);
+
+    const initialDisplay = detailsContainer.style.display;
+    modifiedBadge.click();
+    assert.equal(detailsContainer.style.display, initialDisplay === "flex" ? "none" : "flex");
+    assert.match(detailsContainer.innerHTML, /Changements comparés/);
+    assert.match(detailsContainer.innerHTML, /Nouveau Nom/);
+    assert.match(detailsContainer.innerHTML, /Ancien Nom/);
+});
+
 export {};
+
+
+
 
