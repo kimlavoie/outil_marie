@@ -11,6 +11,7 @@ import { AccountReportView } from "./components/account-report/AccountReportView
 import { BackupView } from "./components/backup/BackupView.tsx";
 import { GlobalModals } from "./components/modals/GlobalModals.tsx";
 import { checkBackupReminder } from "./services/backup/reminder.ts";
+import { initAutoBackup } from "./services/backup/auto-backup.ts";
 import { openActivityDrawer } from "./activities/financials.ts";
 import { getSavedDrawerUiState } from "./activities/financials.ts";
 import { switchActivityTab } from "./activities/form.ts";
@@ -32,6 +33,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     checkBackupReminder();
+    initAutoBackup();
   }, [currentView]);
 
   useEffect(() => {

@@ -375,11 +375,49 @@ function buildActivityDetailsHtml(act: any) {
   `;
 }
 
+function ensureActivityDetailsModalExists() {
+  let modal = document.getElementById("activity-details-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "activity-details-modal";
+    modal.className = "modal modal--wide";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "activity-details-modal-title");
+    modal.innerHTML = `
+      <div class="modal-header">
+        <h3 class="modal-title" id="activity-details-modal-title">Détails de l'activité</h3>
+        <button id="activity-details-modal-close" type="button" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content" id="activity-details-content" style="max-height: 70vh; overflow-y: auto;"></div>
+      <div class="modal-footer">
+        <button id="activity-details-modal-close-btn" type="button" class="btn btn-secondary">Fermer</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById("activity-details-modal-close")?.addEventListener("click", closeActivityDetailsModal);
+    document.getElementById("activity-details-modal-close-btn")?.addEventListener("click", closeActivityDetailsModal);
+  }
+
+  if (!document.getElementById("modal-backdrop")) {
+    const backdrop = document.createElement("div");
+    backdrop.id = "modal-backdrop";
+    backdrop.className = "modal-backdrop";
+    document.body.appendChild(backdrop);
+  }
+}
+
 // Opens the read-only activity details modal for the given activity id (used by the "Voir les
 // détails" row action — unlike the drawer, this never mutates the activity).
 function openActivityDetailsModal(id: string) {
   const act = appState.activities.find((a: any) => a.id === id);
   if (!act) return;
+  ensureActivityDetailsModalExists();
   const contentEl = document.getElementById("activity-details-content");
   if (contentEl) contentEl.innerHTML = buildActivityDetailsHtml(act);
   document.getElementById("activity-details-modal")?.classList.add("active");
@@ -392,8 +430,7 @@ function closeActivityDetailsModal() {
 }
 
 function initActivityDetailsModal() {
-  document.getElementById("activity-details-modal-close")?.addEventListener("click", closeActivityDetailsModal);
-  document.getElementById("activity-details-modal-close-btn")?.addEventListener("click", closeActivityDetailsModal);
+  ensureActivityDetailsModalExists();
 }
 
 function printActivitySheet() {

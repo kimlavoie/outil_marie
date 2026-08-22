@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAppState, saveDatabase, saveDatabaseOrRollback, seedDatabase } from "../../state/state.ts";
 import { showToast } from "../../utils/utils.ts";
 import { exportToExcel } from "../../services/excel-export.ts";
@@ -7,13 +7,14 @@ import {
   checkBackupReminder,
   renderBackupView,
   renderSafetyBackupsList,
-  initDeletedActivitiesModal,
+  openDeletedActivitiesModal,
   exportDiagnosticLogs
 } from "../../services/backup/reminder.ts";
 import { initAutoBackup } from "../../services/backup/auto-backup.ts";
 
 export const BackupView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const lastBackup = useAppState(s => s.settings.last_backup_date);
   const reminderDays = useAppState(s => s.settings.backup_reminder_days || 7);
@@ -135,22 +136,44 @@ export const BackupView: React.FC = () => {
 
           <div
             id="json-drop-zone"
+            className={isDragOver ? "dragover" : ""}
             onClick={() => fileInputRef.current?.click()}
-            onDragOver={e => e.preventDefault()}
-            onDrop={handleDrop}
+            onDragOver={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragOver(true);
+            }}
+            onDragEnter={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragOver(true);
+            }}
+            onDragLeave={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragOver(false);
+            }}
+            onDrop={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragOver(false);
+              handleDrop(e);
+            }}
             style={{
-              border: "2px dashed var(--border-color)",
+              border: isDragOver ? "2px dashed var(--primary)" : "2px dashed var(--border-color)",
+              backgroundColor: isDragOver ? "var(--primary-light)" : "transparent",
               padding: "24px",
               borderRadius: "var(--radius-md)",
               textAlign: "center",
-              cursor: "pointer"
+              cursor: "pointer",
+              transition: "var(--transition-smooth)"
             }}
           >
-            <svg viewBox="0 0 24 24" style={{ width: "32px", height: "32px", fill: "var(--text-secondary)", marginBottom: "8px" }}>
+            <svg viewBox="0 0 24 24" style={{ width: "32px", height: "32px", fill: isDragOver ? "var(--primary)" : "var(--text-secondary)", marginBottom: "8px", transition: "fill var(--transition-smooth)" }}>
               <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" />
             </svg>
-            <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-              Sélectionnez ou déposez votre sauvegarde (.json)
+            <div style={{ fontSize: "0.85rem", fontWeight: 600, color: isDragOver ? "var(--primary)" : "var(--text-secondary)" }}>
+              {isDragOver ? "Déposez votre fichier JSON ici" : "Sélectionnez ou déposez votre sauvegarde (.json)"}
             </div>
             <input ref={fileInputRef} type="file" id="json-file-input" style={{ display: "none" }} accept=".json" onChange={handleFileChange} />
           </div>
@@ -250,7 +273,7 @@ export const BackupView: React.FC = () => {
           Les activités supprimées ne sont pas effacées immédiatement : vous pouvez les retrouver et les récupérer.
         </p>
         <div>
-          <button id="backup-open-deleted-activities" type="button" className="btn btn-secondary" onClick={() => initDeletedActivitiesModal()}>
+          <button id="backup-open-deleted-activities" type="button" className="btn btn-secondary" onClick={() => openDeletedActivitiesModal()}>
             Voir les activités supprimées {deletedCount > 0 && <span className="badge badge-info" style={{ marginLeft: "8px" }}>{deletedCount}</span>}
           </button>
         </div>

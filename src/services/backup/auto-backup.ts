@@ -194,6 +194,7 @@ function renderAutoBackupStatus(status: string, filename?: string) {
     btn.id = "auto-backup-connect-btn";
     btn.className = "btn btn-primary btn-secondary";
     btn.textContent = "Choisir un dossier de sauvegarde automatique";
+    btn.addEventListener("click", () => connectAutoBackupFile());
     container.appendChild(btn);
     return;
   }
@@ -226,6 +227,7 @@ function renderAutoBackupStatus(status: string, filename?: string) {
     reconnectBtn.id = "auto-backup-reconnect-btn";
     reconnectBtn.className = "btn btn-secondary";
     reconnectBtn.textContent = "Réactiver";
+    reconnectBtn.addEventListener("click", () => reconnectAutoBackupPermission());
     statusRow.appendChild(reconnectBtn);
   }
 
@@ -233,6 +235,7 @@ function renderAutoBackupStatus(status: string, filename?: string) {
   disconnectBtn.id = "auto-backup-disconnect-btn";
   disconnectBtn.className = "btn btn-secondary btn-danger";
   disconnectBtn.textContent = "Désactiver";
+  disconnectBtn.addEventListener("click", () => disconnectAutoBackup());
   statusRow.appendChild(disconnectBtn);
 
   container.appendChild(statusRow);
@@ -298,6 +301,14 @@ function updateAutoBackupBanner(status: string, filename?: string) {
   const textEl = document.getElementById("auto-backup-reminder-text");
   const btn = document.getElementById("auto-backup-reminder-btn");
   if (!banner || !textEl || !btn) return;
+
+  btn.onclick = () => {
+    if (banner.dataset.action === "connect") {
+      connectAutoBackupFile();
+    } else {
+      reconnectAutoBackupPermission();
+    }
+  };
 
   if (status === "needs-permission") {
     textEl.innerHTML = `La sauvegarde automatique vers le dossier <strong>${escapeHtml(filename || "")}</strong> a expiré. Cliquez sur <strong>Réactiver</strong> pour autoriser à nouveau l'écriture et sécuriser votre travail.`;

@@ -181,7 +181,53 @@ function renderDeletedActivitiesModalList(searchTerm = "") {
   });
 }
 
+function ensureDeletedActivitiesModalExists() {
+  let modal = document.getElementById("deleted-activities-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "deleted-activities-modal";
+    modal.className = "modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "deleted-activities-modal-title");
+    modal.innerHTML = `
+      <div class="modal-header">
+        <h3 class="modal-title" id="deleted-activities-modal-title">Activités supprimées</h3>
+        <button id="deleted-activities-modal-close" type="button" class="btn-icon" aria-label="Fermer">
+          <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-content" style="display: flex; flex-direction: column; gap: 16px; max-height: 60vh; overflow-y: auto;">
+        <div>
+          <input type="text" id="deleted-activities-search" class="form-input" placeholder="Rechercher une activité supprimée..." style="width: 100%;" />
+        </div>
+        <div id="deleted-activities-modal-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="deleted-activities-modal-close-btn" type="button" class="btn btn-secondary">Fermer</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById("deleted-activities-modal-close")?.addEventListener("click", closeDeletedActivitiesModal);
+    document.getElementById("deleted-activities-modal-close-btn")?.addEventListener("click", closeDeletedActivitiesModal);
+
+    const searchInput = document.getElementById("deleted-activities-search") as HTMLInputElement | null;
+    searchInput?.addEventListener("input", () => renderDeletedActivitiesModalList(searchInput.value));
+  }
+
+  if (!document.getElementById("modal-backdrop")) {
+    const backdrop = document.createElement("div");
+    backdrop.id = "modal-backdrop";
+    backdrop.className = "modal-backdrop";
+    document.body.appendChild(backdrop);
+  }
+}
+
 function openDeletedActivitiesModal(preserveSearch?: string) {
+  ensureDeletedActivitiesModalExists();
   const modal = document.getElementById("deleted-activities-modal");
   const backdrop = document.getElementById("modal-backdrop");
   const searchInput = document.getElementById("deleted-activities-search") as HTMLInputElement | null;
@@ -249,12 +295,8 @@ async function restoreDeletedActivity(id: string) {
 }
 
 function initDeletedActivitiesModal() {
+  ensureDeletedActivitiesModalExists();
   document.getElementById("backup-open-deleted-activities")?.addEventListener("click", () => openDeletedActivitiesModal());
-  document.getElementById("deleted-activities-modal-close")?.addEventListener("click", closeDeletedActivitiesModal);
-  document.getElementById("deleted-activities-modal-close-btn")?.addEventListener("click", closeDeletedActivitiesModal);
-
-  const searchInput = document.getElementById("deleted-activities-search") as HTMLInputElement | null;
-  searchInput?.addEventListener("input", () => renderDeletedActivitiesModalList(searchInput.value));
 
   // Reopens the deleted-activities modal after the activity details preview is closed, but only
   // when it was opened from there (see returnToDeletedModalAfterPreview above) — these two

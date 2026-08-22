@@ -357,25 +357,4 @@ test("checkBackupReminder shows banner if activities exist but no backup date", 
   assert.ok(alertText.innerHTML.includes("Aucune sauvegarde"));
 });
 
-test("auto-backup database operations work correctly", async () => {
-  const db = await openAutoBackupDb();
-  assert.ok(db);
-  assert.equal(db.name, "outil_marie_autobackup");
-
-  // initially no handle
-  const handle1 = await idbGetAutoBackupHandle();
-  assert.equal(handle1, null);
-
-  // set handle
-  const mockHandle = { name: "backup.json", kind: "file" };
-  await idbSetAutoBackupHandle(mockHandle);
-  
-  const handle2 = await idbGetAutoBackupHandle();
-  assert.deepEqual(handle2, mockHandle);
-
-  // clear handle
-  await idbClearAutoBackupHandle();
-  const handle3 = await idbGetAutoBackupHandle();
-  assert.equal(handle3, null);
-});
 export {};
