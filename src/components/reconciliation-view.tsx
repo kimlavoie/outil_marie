@@ -23,6 +23,7 @@ import {
 import { createActivity, switchActivityTab } from "../activities/form.ts";
 import { renderActivities } from "../activities/render.ts";
 import { openActivityDrawer, addDistributionRow } from "../activities/financials.ts";
+import { useReconciliationRefreshToken } from "./reconciliation-mount.ts";
 
 const RECON_STATUS_LABELS: Record<string, string> = {
   valid: "Conforme",
@@ -585,6 +586,10 @@ function ReconciliationRow({
 export function ReconciliationView() {
   const [, setVersion] = useState(0);
   const bump = () => setVersion(v => v + 1);
+
+  // Re-render whenever an external module (period selector, bulk actions, backup restore, undo,
+  // ...) mutates reconciliationState directly via renderReconciliation() — see reconciliation-mount.ts.
+  useReconciliationRefreshToken();
 
   useEffect(() => {
     if (reconciliationState.ledgerTransactions.length > 0) {

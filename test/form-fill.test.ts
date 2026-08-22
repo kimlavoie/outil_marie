@@ -162,9 +162,9 @@ test("fillActivityFormFields binds the top-level and manager fields onto the for
   assert.equal(val("form-activity-coba"), "COBA-123");
   assert.equal(val("form-activity-name"), "Conférence Test");
   assert.equal(val("form-activity-attendees"), "42");
-  assert.equal(val("form-activity-responsable-firstname"), "Jean");
-  assert.equal(val("form-activity-responsable-lastname"), "Tremblay");
-  assert.equal(val("form-activity-client-type"), "externe");
+  // form-activity-responsable-firstname/lastname/client-type are no longer bound here — that's
+  // React-controlled state in components/activities/ActivityDrawer.tsx now (see
+  // test/responsable-facturation-address.test.tsx).
   assert.equal(val("form-activity-description"), "Une description détaillée");
   assert.equal(val("form-activity-notes"), "Prévoir du café");
 

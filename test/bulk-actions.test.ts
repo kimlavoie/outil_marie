@@ -64,7 +64,7 @@ test("smoke: modules import and bar updates", () => {
   assert.ok(document.getElementById("bulk-actions-bar")!.classList.contains("visible"));
 });
 
-test("select-all checkbox selects/deselects every visible row and syncs activitiesState.selectedIds", () => {
+test("select-all checkbox has no listener wired here: ActivitiesView.tsx (React) owns it now, and a raw change listener here would fight React for #activities-select-all/.activity-select-checkbox", () => {
   setupFixture();
   initBulkActionsHandlers();
 
@@ -72,14 +72,8 @@ test("select-all checkbox selects/deselects every visible row and syncs activiti
   selectAll.checked = true;
   selectAll.dispatchEvent(new Event("change"));
 
-  assert.deepEqual([...activitiesState.selectedIds].sort(), ["act-1", "act-2", "act-3"]);
-  document.querySelectorAll(".activity-select-checkbox").forEach(cb => assert.ok((cb as HTMLInputElement).checked));
-  document.querySelectorAll("tr").forEach(tr => assert.ok(tr.classList.contains("selected")));
-
-  selectAll.checked = false;
-  selectAll.dispatchEvent(new Event("change"));
-
   assert.equal(activitiesState.selectedIds.size, 0);
+  document.querySelectorAll(".activity-select-checkbox").forEach(cb => assert.equal((cb as HTMLInputElement).checked, false));
   document.querySelectorAll("tr").forEach(tr => assert.equal(tr.classList.contains("selected"), false));
 });
 

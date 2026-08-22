@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Sidebar } from "./components/layout/Sidebar.tsx";
 import { Header } from "./components/layout/Header.tsx";
 import { HelpCenterModal } from "./components/layout/HelpCenterModal.tsx";
@@ -7,6 +7,7 @@ import { ActivitiesView } from "./components/activities/ActivitiesView.tsx";
 import { ActivityDrawer } from "./components/activities/ActivityDrawer.tsx";
 import { ReconciliationView } from "./components/reconciliation-view.tsx";
 import { SettingsView } from "./components/settings/view.tsx";
+import { useSettingsCommand } from "./components/settings/mount.ts";
 import { AccountReportView } from "./components/account-report/AccountReportView.tsx";
 import { BackupView } from "./components/backup/BackupView.tsx";
 import { GlobalModals } from "./components/modals/GlobalModals.tsx";
@@ -16,19 +17,15 @@ import { openActivityDrawer } from "./activities/financials.ts";
 import { getSavedDrawerUiState } from "./activities/financials.ts";
 import { switchActivityTab } from "./activities/form.ts";
 import { appState } from "./state/state.ts";
+import { useCurrentView, setCurrentView } from "./state/view-state.ts";
 
 export const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<string>(() => {
-    const saved = localStorage.getItem("outil_marie_last_view");
-    const validViews = ["dashboard", "activities", "validation", "account-report", "settings", "backup"];
-    return saved && validViews.includes(saved) ? saved : "dashboard";
-  });
-
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const currentView = useCurrentView();
+  const settingsCommand = useSettingsCommand();
+  const [isHelpOpen, setIsHelpOpen] = React.useState(false);
 
   const handleSelectView = (view: string) => {
     setCurrentView(view);
-    localStorage.setItem("outil_marie_last_view", view);
   };
 
   useEffect(() => {
@@ -92,7 +89,7 @@ export const App: React.FC = () => {
           {currentView === "activities" && <ActivitiesView />}
           {currentView === "validation" && <ReconciliationView />}
           {currentView === "account-report" && <AccountReportView onSelectView={handleSelectView} />}
-          {currentView === "settings" && <SettingsView />}
+          {currentView === "settings" && <SettingsView command={settingsCommand} />}
           {currentView === "backup" && <BackupView />}
         </div>
       </main>

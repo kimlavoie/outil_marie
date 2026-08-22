@@ -1,6 +1,20 @@
-import { createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { SettingsView } from "./view.tsx";
+/**
+ * mount.ts - Shared command channel into the Settings view.
+ *
+ * Used to create a second, detached React root at #settings-root so imperative callers
+ * (GlobalSearch.tsx, activities/form.ts, navigation.ts's renderView) could open a specific
+ * settings tab/modal without going through App.tsx's props. But #settings-root was never
+ * actually rendered anywhere in the DOM (App.tsx mounts <SettingsView /> directly inside its own
+ * tree instead), so every call to openSettingsPanel/openAccountModal/openDeptModal/
+ * closeAllSettingsModals/renderSettings silently did nothing — e.g. clicking a GL account or
+ * department result in the global search box switched to the Settings view but never opened the
+ * right tab or modal.
+ *
+ * Fixed the same way as switchToView (see state/view-state.ts): this is now a plain command
+ * store (useSyncExternalStore, same pattern as appState/useAppState) that the live <SettingsView>
+ * instance in App.tsx reads via useSettingsCommand(), instead of a second root nobody mounts.
+ */
+import { useSyncExternalStore } from "react";
 
 export type Command =
   | { type: "openPanel"; panel: string; seq: number }
@@ -9,37 +23,36 @@ export type Command =
   | { type: "closeAll"; seq: number }
   | null;
 
-let root: Root | null = null;
 let pendingCommand: Command = null;
 let seqCounter = 0;
+const listeners = new Set<() => void>();
 
-function mount() {
-  const container = document.getElementById("settings-root");
-  if (!container) return;
-  if (!root) root = createRoot(container);
-  root.render(createElement(SettingsView, { command: pendingCommand }));
+function setCommand(command: Command) {
+  pendingCommand = command;
+  listeners.forEach(listener => listener());
 }
 
-export function renderSettings() {
-  mount();
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function useSettingsCommand(): Command {
+  return useSyncExternalStore(subscribe, () => pendingCommand);
 }
 
 export function openSettingsPanel(panel: string) {
-  pendingCommand = { type: "openPanel", panel, seq: ++seqCounter };
-  mount();
+  setCommand({ type: "openPanel", panel, seq: ++seqCounter });
 }
 
 export function openAccountModal(code: string) {
-  pendingCommand = { type: "openAccountModal", code, seq: ++seqCounter };
-  mount();
+  setCommand({ type: "openAccountModal", code, seq: ++seqCounter });
 }
 
 export function openDeptModal(name: string) {
-  pendingCommand = { type: "openDeptModal", name, seq: ++seqCounter };
-  mount();
+  setCommand({ type: "openDeptModal", name, seq: ++seqCounter });
 }
 
 export function closeAllSettingsModals() {
-  pendingCommand = { type: "closeAll", seq: ++seqCounter };
-  mount();
+  setCommand({ type: "closeAll", seq: ++seqCounter });
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState, appState, recordActivityView, saveDatabaseOrRollback } from "../../state/state.ts";
-import { showToast, elById, debounce } from "../../utils/utils.ts";
+import { showToast, elById, debounce, formatPostalCode } from "../../utils/utils.ts";
 import { activitiesState, renderActivities } from "../../activities/render.ts";
 import {
   fillActivityFormFields,
@@ -45,6 +45,23 @@ export const ActivityDrawer: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("submission");
   const [calendarReturn, setCalendarReturn] = useState<any>(null);
 
+  // React-controlled "Responsable de la facturation" fields (first Phase-1-style slice of
+  // activities/form.ts's conversion — see that file's applyResponsableSameAsManager/
+  // updateResponsableClientTypeDisplay, now deleted, for the imperative logic this replaces).
+  // autoSaveActivityForm() still reads these via document.getElementById(...).value, which works
+  // transparently against a controlled input's live DOM value — no change needed there.
+  const [responsableFirstName, setResponsableFirstName] = useState("");
+  const [responsableLastName, setResponsableLastName] = useState("");
+  const [clientType, setClientType] = useState("");
+  const [responsableSameAsManager, setResponsableSameAsManager] = useState(false);
+  const [responsableAddress, setResponsableAddress] = useState("");
+  const [responsableCity, setResponsableCity] = useState("");
+  const [responsableProvince, setResponsableProvince] = useState("");
+  const [responsablePostalCode, setResponsablePostalCode] = useState("");
+  // Mirrors #form-activity-manager-type's live value (that field stays legacy/uncontrolled) so we
+  // can derive the "manager is external + same-as-manager checked" client-type lock reactively.
+  const [managerTypeForLock, setManagerTypeForLock] = useState("");
+
   const drawerRef = useRef<HTMLDivElement>(null);
   const debouncedAutoSaveRef = useRef(debounce(autoSaveActivityForm, 500));
 
@@ -83,6 +100,93 @@ export const ActivityDrawer: React.FC = () => {
     };
   }, []);
 
+  // Seed the React-controlled Responsable fields whenever the drawer opens or activityId changes
+  // — fillActivityFormFields() (below) no longer touches these specific fields.
+  useEffect(() => {
+    if (!isOpen || !activityId) return;
+    const act = appState.activities.find((a: any) => a.id === activityId);
+    if (!act) return;
+
+    setResponsableFirstName(act.responsable_first_name || "");
+    setResponsableLastName(act.responsable_last_name || "");
+    setClientType(act.client_type || "");
+    setResponsableSameAsManager(!!act.responsable_same_as_manager);
+    setResponsableAddress(act.responsable_address || "");
+    setResponsableCity(act.responsable_city || "");
+    setResponsableProvince(act.responsable_province || "");
+    setResponsablePostalCode(formatPostalCode(act.responsable_postal_code || ""));
+    setManagerTypeForLock(act.activity_manager?.type || "employe");
+  }, [isOpen, activityId]);
+
+  // #form-activity-manager-type stays a legacy/uncontrolled <select> (outside this slice); mirror
+  // its live value into React state so the client-type lock below can react to it.
+  useEffect(() => {
+    if (!isOpen) return;
+    const managerTypeEl = document.getElementById("form-activity-manager-type") as HTMLSelectElement | null;
+    if (!managerTypeEl) return;
+    const handler = () => setManagerTypeForLock(managerTypeEl.value);
+    managerTypeEl.addEventListener("change", handler);
+    return () => managerTypeEl.removeEventListener("change", handler);
+  }, [isOpen, activityId]);
+
+  // While "même personne que le responsable de l'activité" is checked, keep the Responsable
+  // fields mirroring the (legacy/uncontrolled) manager fields as the user edits them.
+  useEffect(() => {
+    if (!isOpen || !responsableSameAsManager) return;
+    const ids = [
+      "form-activity-manager-firstname",
+      "form-activity-manager-lastname",
+      "form-activity-manager-address",
+      "form-activity-manager-city",
+      "form-activity-manager-province",
+      "form-activity-manager-postal-code"
+    ];
+    const inputs = ids.map(id => document.getElementById(id)).filter((el): el is HTMLInputElement => el !== null);
+    const handler = () => {
+      setResponsableFirstName(elById("form-activity-manager-firstname")?.value || "");
+      setResponsableLastName(elById("form-activity-manager-lastname")?.value || "");
+      setResponsableAddress(elById("form-activity-manager-address")?.value || "");
+      setResponsableCity(elById("form-activity-manager-city")?.value || "");
+      setResponsableProvince(elById("form-activity-manager-province")?.value || "");
+      setResponsablePostalCode(elById("form-activity-manager-postal-code")?.value || "");
+    };
+    inputs.forEach(input => input.addEventListener("input", handler));
+    return () => inputs.forEach(input => input.removeEventListener("input", handler));
+  }, [isOpen, responsableSameAsManager]);
+
+  // Client type gets force-locked to "externe" and disabled while the manager is external and
+  // "même personne..." is checked — mirrors applyResponsableSameAsManager()'s old lock branch,
+  // including the one-time updateSubmissionFinancialSummary() refresh when the lock first engages.
+  const lockExternalClient = responsableSameAsManager && managerTypeForLock === "externe";
+  useEffect(() => {
+    if (lockExternalClient && clientType !== "externe") {
+      setClientType("externe");
+      updateSubmissionFinancialSummary();
+    }
+  }, [lockExternalClient, clientType]);
+
+  const handleSameAsManagerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setResponsableSameAsManager(checked);
+    if (checked) {
+      setResponsableFirstName(elById("form-activity-manager-firstname")?.value || "");
+      setResponsableLastName(elById("form-activity-manager-lastname")?.value || "");
+      setResponsableAddress(elById("form-activity-manager-address")?.value || "");
+      setResponsableCity(elById("form-activity-manager-city")?.value || "");
+      setResponsableProvince(elById("form-activity-manager-province")?.value || "");
+      setResponsablePostalCode(elById("form-activity-manager-postal-code")?.value || "");
+    }
+  };
+
+  const handleResponsablePostalCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputType = (e.nativeEvent as InputEvent).inputType;
+    if (inputType === "deleteContentBackward" || inputType === "deleteContentForward") {
+      setResponsablePostalCode(e.target.value);
+      return;
+    }
+    setResponsablePostalCode(formatPostalCode(e.target.value));
+  };
+
   // Populate form fields only when drawer opens or activityId changes
   useEffect(() => {
     if (!isOpen || !activityId) return;
@@ -90,13 +194,17 @@ export const ActivityDrawer: React.FC = () => {
     const act = appState.activities.find((a: any) => a.id === activityId);
     if (!act) return;
 
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       fillActivityFormFields(act);
       renderActivityStateBar(act);
       initFormHandlers();
       showAutoSaveStatus("saved");
       updateFormDatesHelper();
     }, 50);
+    // Without this, closing the drawer (or activityId changing again) within the 50ms window
+    // left the timer armed: it would still fire afterward and reach into DOM nodes the drawer no
+    // longer renders, throwing (e.g. applyActivityFormMode's #accordion-section-general lookup).
+    return () => clearTimeout(timer);
   }, [isOpen, activityId]);
 
   // Update tab sub-views when activeTab changes
@@ -106,7 +214,7 @@ export const ActivityDrawer: React.FC = () => {
     const act = appState.activities.find((a: any) => a.id === activityId);
     if (!act) return;
 
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       switchActivityTab(activeTab);
       if (activeTab === "form") {
         renderFileLinkStatus("form", act);
@@ -124,6 +232,7 @@ export const ActivityDrawer: React.FC = () => {
         loadAndRenderActivityHistory(act.id);
       }
     }, 50);
+    return () => clearTimeout(timer);
   }, [isOpen, activityId, activeTab]);
 
   if (!isOpen || !activityId) return null;
@@ -416,53 +525,116 @@ export const ActivityDrawer: React.FC = () => {
                 <div className="form-accordion-content">
                   <div className="form-group form-checkbox-group">
                     <label className="form-checkbox-label">
-                      <input type="checkbox" id="form-activity-responsable-same-as-manager" />
+                      <input
+                        type="checkbox"
+                        id="form-activity-responsable-same-as-manager"
+                        checked={responsableSameAsManager}
+                        onChange={handleSameAsManagerChange}
+                      />
                       <span>Même personne que le responsable de l'activité</span>
                     </label>
                   </div>
                   <div className="form-group-row">
                     <div className="form-group">
                       <label htmlFor="form-activity-responsable-firstname">Prénom du responsable</label>
-                      <input type="text" id="form-activity-responsable-firstname" className="form-input" placeholder="Prénom" />
+                      <input
+                        type="text"
+                        id="form-activity-responsable-firstname"
+                        className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
+                        placeholder="Prénom"
+                        readOnly={responsableSameAsManager}
+                        value={responsableFirstName}
+                        onChange={e => setResponsableFirstName(e.target.value)}
+                      />
                     </div>
                     <div className="form-group">
                       <label htmlFor="form-activity-responsable-lastname">Nom du responsable</label>
-                      <input type="text" id="form-activity-responsable-lastname" className="form-input" placeholder="Nom" />
+                      <input
+                        type="text"
+                        id="form-activity-responsable-lastname"
+                        className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
+                        placeholder="Nom"
+                        readOnly={responsableSameAsManager}
+                        value={responsableLastName}
+                        onChange={e => setResponsableLastName(e.target.value)}
+                      />
                     </div>
                   </div>
 
                   <div className="form-group">
                     <label htmlFor="form-activity-client-type">Client interne ou externe</label>
-                    <select id="form-activity-client-type" className="select-input" style={{ padding: "10px 14px" }}>
+                    <select
+                      id="form-activity-client-type"
+                      className={`select-input${lockExternalClient ? " form-input-readonly" : ""}`}
+                      style={{ padding: "10px 14px" }}
+                      disabled={lockExternalClient}
+                      value={clientType}
+                      onChange={e => setClientType(e.target.value)}
+                    >
                       <option value="">Sélectionner...</option>
                       <option value="interne">Interne</option>
                       <option value="externe">Externe</option>
                     </select>
                   </div>
 
-                  <div className="form-group" id="form-activity-dept-group">
+                  <div className="form-group" id="form-activity-dept-group" style={{ display: clientType === "externe" ? "none" : "block" }}>
                     <label htmlFor="form-activity-dept">Département</label>
                     <select id="form-activity-dept" className="select-input" style={{ padding: "10px 14px" }} />
                   </div>
 
-                  <div id="form-activity-responsable-external-group" style={{ display: "none" }}>
+                  <div
+                    id="form-activity-responsable-external-group"
+                    style={{ display: clientType === "externe" ? "block" : "none" }}
+                  >
                     <div className="form-group">
                       <label htmlFor="form-activity-responsable-address">Adresse</label>
-                      <input type="text" id="form-activity-responsable-address" className="form-input" placeholder="Ex: 123 rue Principale" />
+                      <input
+                        type="text"
+                        id="form-activity-responsable-address"
+                        className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
+                        placeholder="Ex: 123 rue Principale"
+                        readOnly={responsableSameAsManager}
+                        value={responsableAddress}
+                        onChange={e => setResponsableAddress(e.target.value)}
+                      />
                     </div>
                     <div className="form-group-row">
                       <div className="form-group">
                         <label htmlFor="form-activity-responsable-city">Ville</label>
-                        <input type="text" id="form-activity-responsable-city" className="form-input" placeholder="Ex: Montréal" />
+                        <input
+                          type="text"
+                          id="form-activity-responsable-city"
+                          className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
+                          placeholder="Ex: Montréal"
+                          readOnly={responsableSameAsManager}
+                          value={responsableCity}
+                          onChange={e => setResponsableCity(e.target.value)}
+                        />
                       </div>
                       <div className="form-group">
                         <label htmlFor="form-activity-responsable-province">Province</label>
-                        <input type="text" id="form-activity-responsable-province" className="form-input" placeholder="Ex: QC" />
+                        <input
+                          type="text"
+                          id="form-activity-responsable-province"
+                          className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
+                          placeholder="Ex: QC"
+                          readOnly={responsableSameAsManager}
+                          value={responsableProvince}
+                          onChange={e => setResponsableProvince(e.target.value)}
+                        />
                       </div>
                     </div>
                     <div className="form-group">
                       <label htmlFor="form-activity-responsable-postal-code">Code postal</label>
-                      <input type="text" id="form-activity-responsable-postal-code" className="form-input" placeholder="Ex: H1A 1A1" />
+                      <input
+                        type="text"
+                        id="form-activity-responsable-postal-code"
+                        className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
+                        placeholder="Ex: H1A 1A1"
+                        readOnly={responsableSameAsManager}
+                        value={responsablePostalCode}
+                        onChange={handleResponsablePostalCodeChange}
+                      />
                     </div>
                   </div>
                 </div>

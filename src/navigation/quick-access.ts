@@ -6,6 +6,13 @@
  *
  * Imports switchToView back from navigation.ts (a real circular import, same as
  * global-search.ts) — safe since nothing runs during either module's top-level evaluation.
+ *
+ * Note: initQuickAccessDropdown() has no live caller any more — the top-bar dropdown is now
+ * QuickAccess.tsx (components/layout/Header.tsx), a full React reimplementation reusing the same
+ * #quick-access-list-global id. renderQuickAccessAll() is still called from navigation.ts's
+ * renderAll() (reachable from several live legacy modules), so it's kept for now, but it writes
+ * into that id too — if it ever runs while QuickAccess.tsx's dropdown is open, the two would
+ * fight over the same DOM node. Retiring this module is Phase 1 of the React migration.
  */
 import { appState, toggleFavoriteActivity, getRecentlyViewedActivityIds, parseLocalDateStr } from "../state/state.ts";
 import type { Activity } from "../types/activity.ts";

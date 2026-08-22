@@ -3,11 +3,13 @@
  * Uses Chart.js configs rendered in React via JSX + refs (one Chart.js instance
  * created/destroyed per render via useEffect).
  *
- * appState isn't reactive: renderDashboardReact() is called imperatively by navigation.ts
- * whenever the dashboard becomes the active view or something it displays changes,
- * and each call fully re-renders from the current appState snapshot — mirroring
- * the app's existing render-on-demand model rather than introducing a separate
- * reactive state layer.
+ * Fully reactive via useAppState() below: any appState change anywhere in the app re-renders
+ * this component and, since useChart()'s effect has no dependency array, redraws every chart too.
+ * There used to be a separate dashboard-mount.ts with its own detached React root and imperative
+ * renderDashboard()/renderDashboardCharts() functions for navigation.ts to call on view switch or
+ * theme toggle, from before useAppState() was wired in here — but its root (#dashboard-root) was
+ * never actually rendered anywhere in the DOM, so those calls were dead no-ops. Removed as part of
+ * the React migration (see reconciliation-mount.ts and settings/mount.ts for the same pattern).
  */
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { appState, getFiscalYear, getQuarterNumber, getQuarter, useAppState } from "../state/state.ts";
@@ -168,9 +170,8 @@ function buildAccountsVolumeConfig(textColor: string, gridColor: string) {
 }
 
 // Creates a Chart.js instance on `canvasRef` from `buildConfig()` and destroys it on the next
-// render/unmount. No dependency array on purpose: DashboardView only re-renders when
-// renderDashboardReact() is called imperatively (view switch, theme toggle, data change), and
-// each of those calls should fully recompute + redraw, exactly like the old renderDashboardCharts().
+// render/unmount. No dependency array on purpose: DashboardView re-renders on every appState
+// change (see the file header), and each of those should fully recompute + redraw the chart.
 function useChart(canvasRef: RefObject<HTMLCanvasElement | null>, buildConfig: () => unknown) {
   useEffect(() => {
     const canvas = canvasRef.current;

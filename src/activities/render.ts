@@ -4,20 +4,38 @@
  * maintainability); see activities-form.js, activities-reservations.js,
  * activities-financials.js, activities-history.js for the rest.
  *
- * Looks like a self-contained view at first glance, but its search/filter inputs are actually
- * wired from the not-yet-converted js/activities-form.js (resetActivitiesPageAndRender), and their
- * values are read directly by js/state.js's saveUiState()/restoreUiState() for persistence. A real
- * React conversion here would need to touch both of those before their own turn in Phase 4, so —
- * like js/datepicker.ts, js/activities-file-links.ts, js/activities-history.ts and
- * js/activities-financials.ts — this stays a plain TS module for now.
+ * PRODUCTION STATUS (React migration audit): renderActivities()'s table-rendering body below is
+ * unreachable in the running app. components/activities/ActivitiesView.tsx is a full, independent
+ * React reimplementation of this entire view (search/filter/sort/pagination/selection, all in
+ * React state) that was added later without this module being retired — it renders none of the
+ * ids renderActivities() looks for (#activities-table-body, #activities-pagination,
+ * #filter-salle-panel, etc.), so `if (!tbody || !searchInput) return;` always exits immediately,
+ * and the subscribeAppState() listener below always no-ops too. The exported helpers
+ * (ACTIVITY_STATES, getActivityStateLabel, getPlanningProgress, deriveActivityState,
+ * buildProgressBarHtml, activitiesState) ARE still live — used by form.ts, financials.ts,
+ * history/, planning-tab.ts, billing-tab.ts and others — so this file stays. Its own dead
+ * rendering logic is left intact rather than gutted: it's covered by real tests
+ * (test/activities-render-extra.test.ts) that build a matching legacy DOM fixture and verify
+ * genuinely correct behavior, just behavior nothing in production triggers today.
  *
- * Also a barrel re-exporting context-menu.ts (the row right-click menu) and bulk-actions.ts (the
- * floating multi-select actions bar) under this original shared import path (the same pattern
- * used by src/services/backup/index.ts and src/activities/reservations/index.ts) — split out
- * because the original file mixed the table itself with those two largely independent UI pieces.
- * Both submodules import activitiesState/renderActivities back from here — a real circular
- * import, safe since nothing runs during either module's top-level evaluation, same as the other
- * circular imports already in this codebase (e.g. utils.ts <-> state.ts).
+ * bulk-actions.ts (re-exported below) is a different, less benign case: unlike this file, its
+ * initBulkActionsHandlers() IS called live (from activities/form.ts's initFormHandlers(), wired
+ * up at startup by main.tsx), and its select-all-checkbox listener targets #activities-select-all
+ * and .activity-select-checkbox — ids/classes ActivitiesView.tsx's React-controlled checkboxes
+ * actually use too. That's a real (if likely low-impact in practice) DOM-ownership conflict, not
+ * inert dead code — flagged here rather than fixed, since removing it would mean either deleting
+ * a legacy module with its own passing tests (test/bulk-actions.test.ts) or a deeper rework, both
+ * beyond a safe drive-by cleanup.
+ *
+ * Also a barrel re-exporting context-menu.ts (the row right-click menu — genuinely still used by
+ * ActivitiesView.tsx via its onContextMenu handler, no conflict there since it appends its own
+ * detached popup to document.body) and bulk-actions.ts (the floating multi-select actions bar)
+ * under this original shared import path (the same pattern used by src/services/backup/index.ts
+ * and src/activities/reservations/index.ts) — split out because the original file mixed the table
+ * itself with those two largely independent UI pieces. Both submodules import
+ * activitiesState/renderActivities back from here — a real circular import, safe since nothing
+ * runs during either module's top-level evaluation, same as the other circular imports already in
+ * this codebase (e.g. utils.ts <-> state.ts).
  */
 import { appState, subscribeAppState, getFiscalYear, getQuarterNumber, parseLocalDateStr, saveUiState } from "../state/state.ts";
 import {

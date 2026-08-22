@@ -11,45 +11,33 @@
  * safe since nothing runs during either module's top-level evaluation, same as the other
  * circular imports already in this codebase (e.g. utils.ts <-> state.ts).
  */
-import { appState, saveDatabaseOrRollback, EVENT_TYPES } from "./state/state.ts";
+import { appState, EVENT_TYPES } from "./state/state.ts";
 import { escapeHtml, getMultiSelectValues, setMultiSelectValues } from "./utils/utils.ts";
 import { activitiesState, renderActivities } from "./activities/render.ts";
-import { renderSettings } from "./components/settings/mount.ts";
 import { renderReconciliation } from "./components/reconciliation-mount.ts";
 import { renderAccountReport } from "./services/account-report.ts";
 import { checkBackupReminder } from "./services/backup/reminder.ts";
-import { initGlobalSearch } from "./navigation/global-search.ts";
-import { initQuickAccessDropdown, renderQuickAccessAll } from "./navigation/quick-access.ts";
+import { renderQuickAccessAll } from "./navigation/quick-access.ts";
 import { updateActivePeriodDescription } from "./navigation/period-selector.ts";
+import { getCurrentView, setCurrentView } from "./state/view-state.ts";
 
+// Only the two lines below still do anything: theme UI itself is owned by Sidebar.tsx
+// (components/layout/Sidebar.tsx), which re-renders its icon/label from appState.settings.theme
+// via useAppState. This function stays for the two non-React call sites that still need it:
+// main.tsx (pre-mount, to avoid a flash of the wrong theme before React ever renders) and
+// services/backup/restore.ts (to re-sync the <html data-theme> attribute after a JSON restore).
 function applyTheme(theme: string) {
   document.documentElement.setAttribute("data-theme", theme);
   appState.settings.theme = theme;
-
-  const sunIcon = document.getElementById("theme-sun-icon");
-  const moonIcon = document.getElementById("theme-moon-icon");
-  const btnText = document.getElementById("theme-btn-text");
-
-  if (!sunIcon || !moonIcon || !btnText) return;
-
-  if (theme === "light") {
-    sunIcon.style.display = "none";
-    moonIcon.style.display = "inline";
-    btnText.textContent = "Mode Sombre";
-  } else {
-    sunIcon.style.display = "inline";
-    moonIcon.style.display = "none";
-    btnText.textContent = "Mode Clair";
-  }
 }
 
+// Called by legacy modules that still trigger navigation imperatively (global-search.ts,
+// quick-access.ts, bulk-actions.ts, context-menu.ts, backup/index.ts, backup/restore.ts,
+// backup/reminder.ts) instead of going through App.tsx's onSelectView prop. Delegates the actual
+// view switch to state/view-state.ts, the same store App.tsx reads via useCurrentView(), so the
+// two stay in sync instead of switchToView() silently doing nothing (see view-state.ts's header
+// comment for how that used to fail).
 function switchToView(view: string) {
-  const navItems = document.querySelectorAll(".nav-item");
-  const sections = document.querySelectorAll(".view-section");
-  const viewTitle = document.getElementById("view-title");
-  const targetSection = document.getElementById(`view-${view}`);
-  if (!targetSection || !viewTitle) return;
-
   if (view !== "activities" && activitiesState.selectedIds) {
     activitiesState.selectedIds.clear();
     const selectAllCheckbox = document.getElementById("activities-select-all") as HTMLInputElement | null;
@@ -63,110 +51,17 @@ function switchToView(view: string) {
     }
   }
 
-  navItems.forEach(i => i.classList.toggle("active", i.getAttribute("data-view") === view));
-
-  sections.forEach(s => s.classList.remove("active"));
-  targetSection.classList.add("active");
-
-  const labels: Record<string, string> = {
-    dashboard: "Tableau de bord",
-    activities: "Journal des Activités",
-    validation: "Rapprochement Comptable",
-    "account-report": "Grand Livre local",
-    settings: "Configuration",
-    backup: "Sauvegarde & Exportations"
-  };
-  viewTitle.textContent = labels[view] || "Application";
-
-  // Remember the last visited view so it can be restored on reload
-  localStorage.setItem("outil_marie_last_view", view);
-
+  setCurrentView(view);
   renderView(view);
 }
 
-function initNavigation() {
-  const navItems = document.querySelectorAll(".nav-item");
-
-  navItems.forEach(item => {
-    item.addEventListener("click", () => {
-      switchToView(item.getAttribute("data-view") || "");
-    });
-  });
-
-  document.getElementById("theme-toggle")?.addEventListener("click", () => {
-    const previousTheme = appState.settings.theme;
-    const currentTheme = previousTheme === "light" ? "dark" : "light";
-    applyTheme(currentTheme);
-    saveDatabaseOrRollback(() => applyTheme(previousTheme), "Le changement de thème n'a pas été enregistré. Réessayez.").then(() => {
-      // Re-draw charts in case colors need to adjust (Chart.js respects theme context changes if redrawn)
-      if (document.getElementById("view-dashboard")?.classList.contains("active")) {
-        import("./components/dashboard-mount.ts").then(m => m.renderDashboardCharts());
-      }
-    });
-  });
-
-  document.getElementById("quick-export-excel")?.addEventListener("click", () => {
-    import("./services/backup/index.ts").then(m => m.exportToExcel());
-  });
-
-  const filterRepSelect = document.getElementById("filter-report-account");
-  if (filterRepSelect) {
-    filterRepSelect.addEventListener("change", () => {
-      renderAccountReport();
-    });
-  }
-
-  const helpCenterModal = document.getElementById("help-center-modal");
-  const openHelpBtn = document.getElementById("help-center-btn");
-  const closeHelpBtn = document.getElementById("help-center-close-btn");
-  const closeHelpFooterBtn = document.getElementById("help-center-close-footer-btn");
-
-  const showHelp = () => {
-    if (helpCenterModal) {
-      helpCenterModal.style.display = "flex";
-      setTimeout(() => {
-        helpCenterModal.classList.add("active");
-      }, 10);
-    }
-  };
-
-  const hideHelp = () => {
-    if (helpCenterModal) {
-      helpCenterModal.classList.remove("active");
-      setTimeout(() => {
-        if (!helpCenterModal.classList.contains("active")) {
-          helpCenterModal.style.display = "none";
-        }
-      }, 300);
-    }
-  };
-
-  openHelpBtn?.addEventListener("click", showHelp);
-  closeHelpBtn?.addEventListener("click", hideHelp);
-  closeHelpFooterBtn?.addEventListener("click", hideHelp);
-
-  helpCenterModal?.addEventListener("click", e => {
-    if (e.target === helpCenterModal) {
-      hideHelp();
-    }
-  });
-
-  initQuickAccessDropdown();
-  initGlobalSearch();
-}
-
 async function renderView(view: string) {
-  if (view === "dashboard") {
-    const { renderDashboard } = await import("./components/dashboard-mount.ts");
-    renderDashboard();
-  } else if (view === "activities") {
+  if (view === "activities") {
     renderActivities();
   } else if (view === "validation") {
     renderReconciliation();
   } else if (view === "account-report") {
     renderAccountReport();
-  } else if (view === "settings") {
-    renderSettings();
   } else if (view === "backup") {
     const { renderBackupView } = await import("./services/backup/index.ts");
     renderBackupView();
@@ -178,11 +73,7 @@ function renderAll() {
   populateDropdowns();
   renderQuickAccessAll();
   updateActivePeriodDescription();
-
-  const activeNav = document.querySelector(".nav-item.active");
-  if (activeNav) {
-    renderView(activeNav.getAttribute("data-view") || "");
-  }
+  renderView(getCurrentView());
 }
 
 function populateDropdowns() {
@@ -229,5 +120,5 @@ function populateDropdowns() {
   }
 }
 
-export { applyTheme, switchToView, initNavigation, renderView, renderAll, populateDropdowns, renderQuickAccessAll };
+export { applyTheme, switchToView, renderView, renderAll, populateDropdowns, renderQuickAccessAll };
 export { initPeriodSelector } from "./navigation/period-selector.ts";

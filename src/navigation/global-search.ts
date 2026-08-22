@@ -3,10 +3,15 @@
  * départements, substring or fuzzy match). Split out of navigation.ts (see that file for why it
  * stays a barrel importing/re-exporting this alongside quick-access.ts/period-selector.ts).
  *
- * Imports switchToView back from navigation.ts (a real circular import: navigation.ts's
- * initNavigation() calls initGlobalSearch() from here) — safe since nothing runs during either
- * module's top-level evaluation, same as the other circular imports already in this codebase
- * (e.g. utils.ts <-> state.ts).
+ * Imports switchToView back from navigation.ts (a real circular import, same as
+ * quick-access.ts/period-selector.ts) — safe since nothing runs during either module's top-level
+ * evaluation, same as the other circular imports already in this codebase (e.g. utils.ts <->
+ * state.ts).
+ *
+ * Note: initGlobalSearch() itself has no live caller any more — the top-bar search box is now
+ * GlobalSearch.tsx (components/layout/Header.tsx), a full React reimplementation. This module is
+ * kept only until Phase 1 of the React migration retires it (see its test file, global-search.
+ * test.ts).
  */
 import { appState } from "../state/state.ts";
 import { escapeHtml, debounce } from "../utils/utils.ts";

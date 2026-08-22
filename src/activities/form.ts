@@ -232,49 +232,15 @@ function initFormHandlers() {
 
   const managerPostalCode = el("form-activity-manager-postal-code");
   if (managerPostalCode) maskPostalCodeInput(managerPostalCode);
+  // form-activity-responsable-postal-code is NOT masked here: it's a React-controlled input now
+  // (see components/activities/ActivityDrawer.tsx), which formats it inline in its own onChange.
 
-  const respPostalCode = el("form-activity-responsable-postal-code");
-  if (respPostalCode) maskPostalCodeInput(respPostalCode);
-
-  // Manager "Fonction" = Externe reveals company/address fields
+  // Manager "Fonction" = Externe reveals company/address fields. The "same as manager" client-type
+  // lock this used to also trigger here (applyResponsableSameAsManager) is now handled reactively
+  // in ActivityDrawer.tsx, which mirrors this field's value into React state for that purpose.
   el("form-activity-manager-type")?.addEventListener("change", e => {
     const externalGroup = el("form-activity-manager-external-group");
     if (externalGroup) externalGroup.style.display = (e.target as HTMLInputElement).value === "externe" ? "block" : "none";
-    const sameCb = document.getElementById("form-activity-responsable-same-as-manager") as HTMLInputElement | null;
-    applyResponsableSameAsManager(!!sameCb?.checked);
-  });
-
-  // Client type change toggles Département vs Adresse fields
-  const clientTypeEl = document.getElementById("form-activity-client-type");
-  if (clientTypeEl) {
-    clientTypeEl.addEventListener("change", () => {
-      updateResponsableClientTypeDisplay();
-      const sameCb = document.getElementById("form-activity-responsable-same-as-manager") as HTMLInputElement | null;
-      if (sameCb?.checked) applyResponsableSameAsManager(true);
-    });
-  }
-
-  const responsableSameCb = document.getElementById("form-activity-responsable-same-as-manager") as HTMLInputElement | null;
-  if (responsableSameCb) {
-    responsableSameCb.addEventListener("change", e => {
-      applyResponsableSameAsManager((e.target as HTMLInputElement).checked);
-    });
-  }
-  [
-    "form-activity-manager-firstname",
-    "form-activity-manager-lastname",
-    "form-activity-manager-address",
-    "form-activity-manager-city",
-    "form-activity-manager-province",
-    "form-activity-manager-postal-code"
-  ].forEach(id => {
-    const input = document.getElementById(id);
-    if (input) {
-      input.addEventListener("input", () => {
-        const sameCb = document.getElementById("form-activity-responsable-same-as-manager") as HTMLInputElement | null;
-        if (sameCb?.checked) applyResponsableSameAsManager(true);
-      });
-    }
   });
 
   // Estimation / Soumission mode toggle
@@ -322,66 +288,12 @@ function initFormHandlers() {
   });
 }
 
-function updateResponsableClientTypeDisplay() {
-  const clientTypeSelect = document.getElementById("form-activity-client-type") as HTMLSelectElement | null;
-  const clientType = clientTypeSelect ? clientTypeSelect.value : "";
-  const deptGroup = document.getElementById("form-activity-dept-group");
-  const extGroup = document.getElementById("form-activity-responsable-external-group");
-  if (deptGroup) deptGroup.style.display = clientType === "externe" ? "none" : "block";
-  if (extGroup) extGroup.style.display = clientType === "externe" ? "block" : "none";
-}
-
-function applyResponsableSameAsManager(checked: boolean) {
-  const firstNameEl = el("form-activity-responsable-firstname");
-  const lastNameEl = el("form-activity-responsable-lastname");
-  if (firstNameEl) {
-    firstNameEl.readOnly = checked;
-    firstNameEl.classList.toggle("form-input-readonly", checked);
-    if (checked) firstNameEl.value = el("form-activity-manager-firstname")?.value || "";
-  }
-  if (lastNameEl) {
-    lastNameEl.readOnly = checked;
-    lastNameEl.classList.toggle("form-input-readonly", checked);
-    if (checked) lastNameEl.value = el("form-activity-manager-lastname")?.value || "";
-  }
-
-  const managerTypeEl = document.getElementById("form-activity-manager-type") as HTMLSelectElement | null;
-  const clientTypeEl = document.getElementById("form-activity-client-type") as HTMLSelectElement | null;
-  if (clientTypeEl) {
-    const isManagerExternal = managerTypeEl?.value === "externe";
-    const lockExternalClient = checked && isManagerExternal;
-    if (lockExternalClient) {
-      if (clientTypeEl.value !== "externe") {
-        clientTypeEl.value = "externe";
-        updateResponsableClientTypeDisplay();
-        updateSubmissionFinancialSummary();
-      }
-    }
-    clientTypeEl.disabled = lockExternalClient;
-    clientTypeEl.classList.toggle("form-input-readonly", lockExternalClient);
-  }
-
-  const addressEl = document.getElementById("form-activity-responsable-address") as HTMLInputElement | null;
-  const cityEl = document.getElementById("form-activity-responsable-city") as HTMLInputElement | null;
-  const provinceEl = document.getElementById("form-activity-responsable-province") as HTMLInputElement | null;
-  const postalCodeEl = document.getElementById("form-activity-responsable-postal-code") as HTMLInputElement | null;
-  if (addressEl && cityEl && provinceEl && postalCodeEl) {
-    addressEl.readOnly = checked;
-    cityEl.readOnly = checked;
-    provinceEl.readOnly = checked;
-    postalCodeEl.readOnly = checked;
-    addressEl.classList.toggle("form-input-readonly", checked);
-    cityEl.classList.toggle("form-input-readonly", checked);
-    provinceEl.classList.toggle("form-input-readonly", checked);
-    postalCodeEl.classList.toggle("form-input-readonly", checked);
-    if (checked) {
-      addressEl.value = el("form-activity-manager-address")?.value || "";
-      cityEl.value = el("form-activity-manager-city")?.value || "";
-      provinceEl.value = el("form-activity-manager-province")?.value || "";
-      postalCodeEl.value = el("form-activity-manager-postal-code")?.value || "";
-    }
-  }
-}
+// updateResponsableClientTypeDisplay() and applyResponsableSameAsManager() used to live here.
+// Both are gone: the fields they drove (Responsable firstname/lastname/address/city/province/
+// postal-code, client type, and the dept-vs-external-address group visibility) are now
+// React-controlled state in components/activities/ActivityDrawer.tsx, which owns their initial
+// population, their "same as manager" copy-and-lock behavior, and their visibility — see that
+// file's state/effects around responsableSameAsManager/clientType/lockExternalClient.
 
 function fillActivityFormFields(act: any) {
   applyActivityFormMode(act.mode || "estimation", act.state !== "brouillon");
@@ -391,23 +303,9 @@ function fillActivityFormFields(act: any) {
   if (nameEl) nameEl.value = act.name;
   const attendeesEl = el("form-activity-attendees");
   if (attendeesEl) attendeesEl.value = act.attendees_count || "";
-  const respFnEl = el("form-activity-responsable-firstname");
-  if (respFnEl) respFnEl.value = act.responsable_first_name || "";
-  const respLnEl = el("form-activity-responsable-lastname");
-  if (respLnEl) respLnEl.value = act.responsable_last_name || "";
-  const clientTypeEl = el("form-activity-client-type");
-  if (clientTypeEl) clientTypeEl.value = act.client_type;
-
-  const respAddrEl = document.getElementById("form-activity-responsable-address") as HTMLInputElement | null;
-  const respCityEl = document.getElementById("form-activity-responsable-city") as HTMLInputElement | null;
-  const respProvEl = document.getElementById("form-activity-responsable-province") as HTMLInputElement | null;
-  const respPcEl = document.getElementById("form-activity-responsable-postal-code") as HTMLInputElement | null;
-  if (respAddrEl) respAddrEl.value = act.responsable_address || "";
-  if (respCityEl) respCityEl.value = act.responsable_city || "";
-  if (respProvEl) respProvEl.value = act.responsable_province || "";
-  if (respPcEl) respPcEl.value = formatPostalCode(act.responsable_postal_code || "");
-
-  updateResponsableClientTypeDisplay();
+  // Responsable firstname/lastname/client-type/address/city/province/postal-code are no longer
+  // populated here — ActivityDrawer.tsx seeds its own React state for them from `act` directly
+  // (see its "Seed the React-controlled Responsable fields" effect).
 
   const descEl = el("form-activity-description");
   if (descEl) descEl.value = act.description || "";
@@ -437,10 +335,9 @@ function fillActivityFormFields(act: any) {
   if (mgrPcEl) mgrPcEl.value = formatPostalCode(act.activity_manager?.postal_code || "");
   const mgrExtGrp = el("form-activity-manager-external-group");
   if (mgrExtGrp) mgrExtGrp.style.display = act.activity_manager?.type === "externe" ? "block" : "none";
-  const sameCbEl = el("form-activity-responsable-same-as-manager");
-  if (sameCbEl) sameCbEl.checked = !!act.responsable_same_as_manager;
+  // form-activity-responsable-same-as-manager is React-controlled now (ActivityDrawer.tsx seeds
+  // it from act.responsable_same_as_manager directly) — nothing to do here.
 
-  applyResponsableSameAsManager(!!act.responsable_same_as_manager);
   const resContainer = el("form-activity-reservations");
   if (resContainer) {
     resContainer.innerHTML = "";

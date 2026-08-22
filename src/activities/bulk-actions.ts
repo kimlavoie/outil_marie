@@ -71,26 +71,15 @@ function initBulkActionsHandlers() {
   if (lastSelectAllEl && lastSelectAllEl === currentEl) return;
   lastSelectAllEl = currentEl;
 
-  const selectAllCheckbox = el("activities-select-all");
-  if (selectAllCheckbox) {
-    selectAllCheckbox.addEventListener("change", e => {
-      const checkboxes = document.querySelectorAll<HTMLInputElement>(".activity-select-checkbox");
-      const isChecked = (e.target as HTMLInputElement).checked;
-      checkboxes.forEach(cb => {
-        const id = cb.getAttribute("data-id");
-        if (!id) return;
-        cb.checked = isChecked;
-        if (isChecked) {
-          activitiesState.selectedIds.add(id);
-          cb.closest("tr")!.classList.add("selected");
-        } else {
-          activitiesState.selectedIds.delete(id);
-          cb.closest("tr")!.classList.remove("selected");
-        }
-      });
-      updateBulkActionsBar();
-    });
-  }
+  // No select-all-checkbox listener here on purpose: #activities-select-all and
+  // .activity-select-checkbox are also the ids/class ActivitiesView.tsx's React-controlled
+  // checkboxes use for the real, live activities table (this module's own table — the one built
+  // by render.ts's renderActivities() — is unreachable in production; see render.ts's header
+  // comment). A raw addEventListener("change", ...) here would fire on every "select all" click
+  // alongside React's own onChange and write .checked/.indeterminate directly on a node React
+  // owns, fighting it over the same DOM property. ActivitiesView.tsx already implements
+  // select-all/row-select entirely in React state (handleToggleSelectAll/handleToggleSelectRow),
+  // so there is nothing left for this module to wire up for that part.
 
   // Clear selections button
   const clearBtn = el("bulk-clear-btn");

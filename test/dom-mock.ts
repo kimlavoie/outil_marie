@@ -15,8 +15,8 @@ const window = new Window({
 (globalThis as any).Element = window.Element;
 (globalThis as any).Node = window.Node;
 (globalThis as any).Event = window.Event;
-window.confirm = () => true;
-(globalThis as any).confirm = (...args: any[]) => window.confirm(...args);
+(window as any).confirm = () => true;
+(globalThis as any).confirm = (...args: any[]) => (window as any).confirm(...args);
 (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(() => cb(Date.now()), 0) as unknown as number;
 
 function fixSelects(root: any) {

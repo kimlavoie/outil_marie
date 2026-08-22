@@ -2,7 +2,8 @@
  * backup/diff.ts - Computing structural & field-level differences between an uploaded
  * JSON backup file and the active application state (appState).
  */
-import { AppState, Activity } from "../../types/index.ts";
+import type { AppState } from "../../state/store.ts";
+import type { Activity } from "../../types/activity.ts";
 
 export interface FieldDiff {
   field: string;
@@ -102,7 +103,15 @@ export function detectActivityChanges(backupAct: Activity, currentAct: Activity)
   if (normalizeForComparison(backupAct.bar_revenue_lines) !== normalizeForComparison(currentAct.bar_revenue_lines)) {
     changes.push("Recettes de bar");
   }
-  if (normalizeForComparison(backupAct.responsable_facturation) !== normalizeForComparison(currentAct.responsable_facturation)) {
+  if (
+    (backupAct.responsable || "") !== (currentAct.responsable || "") ||
+    (backupAct.responsable_first_name || "") !== (currentAct.responsable_first_name || "") ||
+    (backupAct.responsable_last_name || "") !== (currentAct.responsable_last_name || "") ||
+    (backupAct.responsable_address || "") !== (currentAct.responsable_address || "") ||
+    (backupAct.responsable_city || "") !== (currentAct.responsable_city || "") ||
+    (backupAct.responsable_province || "") !== (currentAct.responsable_province || "") ||
+    (backupAct.responsable_postal_code || "") !== (currentAct.responsable_postal_code || "")
+  ) {
     changes.push("Responsable facturation");
   }
   if ((backupAct.notes || "").trim() !== (currentAct.notes || "").trim()) {
@@ -185,13 +194,16 @@ export function buildActivityFieldDiffs(backupAct: Activity, currentAct: Activit
     });
   }
 
-  if (normalizeForComparison(backupAct.responsable_facturation) !== normalizeForComparison(currentAct.responsable_facturation)) {
-    const bResp = backupAct.responsable_facturation?.name || backupAct.responsable_facturation?.organization || "(aucun)";
-    const cResp = currentAct.responsable_facturation?.name || currentAct.responsable_facturation?.organization || "(aucun)";
+  const bRespName = [backupAct.responsable_first_name, backupAct.responsable_last_name].filter(Boolean).join(" ") || backupAct.responsable;
+  const cRespName =
+    [currentAct.responsable_first_name, currentAct.responsable_last_name].filter(Boolean).join(" ") || currentAct.responsable;
+  const bRespAddress = [backupAct.responsable_address, backupAct.responsable_city].filter(Boolean).join(", ");
+  const cRespAddress = [currentAct.responsable_address, currentAct.responsable_city].filter(Boolean).join(", ");
+  if ((bRespName || "") !== (cRespName || "") || bRespAddress !== cRespAddress) {
     diffs.push({
       field: "Responsable facturation",
-      backupValue: bResp,
-      currentValue: cResp
+      backupValue: bRespName || "(aucun)",
+      currentValue: cRespName || "(aucun)"
     });
   }
 

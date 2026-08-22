@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { computeBackupDiff, detectActivityChanges } from "../../src/services/backup/diff.ts";
-import { AppState } from "../../src/types/index.ts";
+import type { AppState } from "../../src/state/store.ts";
 
 function createDummyState(overrides: Partial<AppState> = {}): AppState {
   return {
