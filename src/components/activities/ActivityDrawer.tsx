@@ -199,6 +199,7 @@ export const ActivityDrawer: React.FC = () => {
           <button
             type="button"
             className={`activity-tab-btn ${activeTab === "form" ? "active" : ""}`}
+            data-activity-tab="form"
             onClick={() => handleSelectTab("form")}
           >
             Formulaire <span className="tab-indicator" id="tab-ind-form" />
@@ -206,6 +207,7 @@ export const ActivityDrawer: React.FC = () => {
           <button
             type="button"
             className={`activity-tab-btn ${activeTab === "submission" ? "active" : ""}`}
+            data-activity-tab="submission"
             onClick={() => handleSelectTab("submission")}
           >
             Soumission <span className="tab-indicator" id="tab-ind-submission" />
@@ -213,6 +215,7 @@ export const ActivityDrawer: React.FC = () => {
           <button
             type="button"
             className={`activity-tab-btn ${activeTab === "planning" ? "active" : ""}`}
+            data-activity-tab="planning"
             onClick={() => handleSelectTab("planning")}
           >
             Planification <span className="tab-indicator" id="tab-ind-planning" />
@@ -220,6 +223,7 @@ export const ActivityDrawer: React.FC = () => {
           <button
             type="button"
             className={`activity-tab-btn ${activeTab === "billing" ? "active" : ""}`}
+            data-activity-tab="billing"
             onClick={() => handleSelectTab("billing")}
           >
             Facturation <span className="tab-indicator" id="tab-ind-billing" />
@@ -227,6 +231,7 @@ export const ActivityDrawer: React.FC = () => {
           <button
             type="button"
             className={`activity-tab-btn ${activeTab === "supporting-docs" ? "active" : ""}`}
+            data-activity-tab="supporting-docs"
             onClick={() => handleSelectTab("supporting-docs")}
           >
             Pièces justificatives
@@ -234,6 +239,7 @@ export const ActivityDrawer: React.FC = () => {
           <button
             type="button"
             className={`activity-tab-btn ${activeTab === "history" ? "active" : ""}`}
+            data-activity-tab="history"
             onClick={() => handleSelectTab("history")}
           >
             Historique
@@ -241,6 +247,7 @@ export const ActivityDrawer: React.FC = () => {
           <button
             type="button"
             className={`activity-tab-btn ${activeTab === "notes" ? "active" : ""}`}
+            data-activity-tab="notes"
             onClick={() => handleSelectTab("notes")}
           >
             Notes <span className="tab-indicator" id="tab-ind-notes" />
