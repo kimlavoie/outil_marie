@@ -44,7 +44,14 @@ function readTaxSection(tax: "tps" | "tvq"): TaxOverride | undefined {
   return { mode: mode as "rate" | "amount", value, note };
 }
 
+import { triggerOpenTaxOverrideModal, isTaxOverrideModalSubscribed } from "../components/modals/TaxOverrideModal.tsx";
+
 export function openTaxOverrideModal(activityId: string) {
+  if (isTaxOverrideModalSubscribed()) {
+    triggerOpenTaxOverrideModal(activityId);
+    return;
+  }
+
   const act = appState.activities.find((a: any) => a.id === activityId);
   if (!act) return;
 

@@ -18,7 +18,8 @@ function scheduleActivityUndoSnapshot(idx: number) {
     setTimeout(() => {
       const act = appState.activities[idx];
       // Skip if the drawer has since closed or moved on to a different activity.
-      if (!act || (document.getElementById("form-activity-internal-id") as HTMLInputElement).value !== act.id) return;
+      const internalIdEl = document.getElementById("form-activity-internal-id") as HTMLInputElement | null;
+      if (!act || !internalIdEl || internalIdEl.value !== act.id) return;
       pushActivityUndoSnapshot(act);
     }, ACTIVITY_UNDO_DEBOUNCE_MS)
   );
@@ -45,12 +46,20 @@ function restoreActivitySnapshot(snapshot: any) {
   const previous = appState.activities[idx];
   appState.activities[idx] = JSON.parse(JSON.stringify(snapshot));
 
-  document.getElementById("activity-drawer-title")!.textContent =
-    appState.activities[idx].name && appState.activities[idx].name.trim() !== ""
-      ? appState.activities[idx].name
-      : `Activité ${appState.activities[idx].id}`;
-  document.getElementById("form-activity-reservations")!.innerHTML = "";
-  document.getElementById("form-distribution-list")!.innerHTML = "";
+  const titleEl = document.getElementById("activity-drawer-title");
+  if (titleEl) {
+    titleEl.textContent =
+      appState.activities[idx].name && appState.activities[idx].name.trim() !== ""
+        ? appState.activities[idx].name
+        : `Activité ${appState.activities[idx].id}`;
+  }
+
+  const resContainer = document.getElementById("form-activity-reservations");
+  if (resContainer) resContainer.innerHTML = "";
+
+  const distContainer = document.getElementById("form-distribution-list");
+  if (distContainer) distContainer.innerHTML = "";
+
   fillActivityFormFields(appState.activities[idx]);
   renderActivityStateBar(appState.activities[idx]);
 

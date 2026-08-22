@@ -27,8 +27,10 @@ function showAutoSaveStatus(status: "saving" | "saved" | "warning", message?: st
   const spinner = statusEl.querySelector<HTMLElement>(".auto-save-spinner");
   const text = statusEl.querySelector<HTMLElement>(".auto-save-text");
 
-  const internalId = elById("form-activity-internal-id").value;
-  if (internalId && activitiesState.draftActivityId === internalId) {
+  const internalId = elById("form-activity-internal-id")?.value;
+  const name = elById("form-activity-name")?.value.trim() || "";
+
+  if (internalId && activitiesState.draftActivityId === internalId && !isNonEmptyString(name)) {
     statusEl.className = "auto-save-status draft";
     if (spinner) spinner.style.display = "none";
     if (text) text.textContent = "Brouillon (pas encore enregistré)";
@@ -44,9 +46,6 @@ function showAutoSaveStatus(status: "saving" | "saved" | "warning", message?: st
     if (spinner) spinner.style.display = "none";
     if (text) text.textContent = "Enregistré";
   } else if (status === "warning") {
-    // Used when autoSaveActivityForm bails out without writing anything (e.g. empty name) so the
-    // badge doesn't keep showing a stale "Enregistré" from before the field was cleared — that
-    // would tell the user their edits are safe when they're actually not persisted anywhere yet.
     statusEl.className = "auto-save-status warning";
     if (spinner) spinner.style.display = "none";
     if (text) text.textContent = message || "Non enregistré";
@@ -54,19 +53,19 @@ function showAutoSaveStatus(status: "saving" | "saved" | "warning", message?: st
 }
 
 function autoSaveActivityForm() {
-  const internalId = elById("form-activity-internal-id").value;
+  const internalId = elById("form-activity-internal-id")?.value;
   if (!internalId) return;
 
-  if (activitiesState.draftActivityId === internalId) {
-    return;
-  }
-
-  const rawId = elById("form-activity-id").value.trim();
-  const name = elById("form-activity-name").value.trim();
+  const rawId = elById("form-activity-id")?.value.trim() || internalId;
+  const name = elById("form-activity-name")?.value.trim() || "";
 
   if (!isNonEmptyString(name)) {
     showAutoSaveStatus("warning", "Nom requis — modifications non enregistrées");
     return;
+  }
+
+  if (activitiesState.draftActivityId === internalId) {
+    activitiesState.draftActivityId = null;
   }
 
   showAutoSaveStatus("saving");

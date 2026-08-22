@@ -31,8 +31,14 @@ export function initNewActivityModal() {
   });
 }
 
+import { triggerOpenNewActivityModal, isNewActivityModalSubscribed } from "../components/modals/NewActivityModal.tsx";
+
 export function openNewActivityModal(intent = "soumission") {
   newActivityModalIntent = intent;
+  if (isNewActivityModalSubscribed()) {
+    triggerOpenNewActivityModal(intent);
+    return;
+  }
   const form = el<HTMLFormElement>("new-activity-form");
   if (form) form.reset();
   const titleEl = el("new-activity-modal-title");

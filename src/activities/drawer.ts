@@ -64,11 +64,22 @@ function generateNextActivityId() {
   return `${prefix}-${nextSeq}`;
 }
 
+import {
+  triggerOpenActivityDrawer,
+  triggerCloseActivityDrawer,
+  isActivityDrawerSubscribed
+} from "../components/activities/ActivityDrawer.tsx";
+
 // Opens the full tabbed activity record for an existing activity (always edit mode — activities
 // are created via the name-only modal/createActivity() before this is ever called).
 // `calendarReturn` is an optional eventCalendarState snapshot ({refDate, viewMode}) to return to
 // when the record was opened by clicking an event in the calendar.
-function openActivityDrawer(id: string, calendarReturn: any = null) {
+function openActivityDrawer(id: string, calendarReturn: any = null, initialTab: string = "submission") {
+  if (isActivityDrawerSubscribed()) {
+    triggerOpenActivityDrawer(id, calendarReturn, initialTab);
+    return;
+  }
+
   const drawer = elById("activity-drawer");
   const backdrop = elById("drawer-backdrop");
   const form = elById<HTMLFormElement>("activity-form");
@@ -129,11 +140,16 @@ function openActivityDetailModal(id: string, calendarReturn: any) {
 }
 
 function closeActivityDrawer() {
+  if (isActivityDrawerSubscribed()) {
+    triggerCloseActivityDrawer();
+    return;
+  }
+
   if (drawerFocusTrap) {
     drawerFocusTrap.deactivate();
     drawerFocusTrap = null;
   }
-  const currentId = elById("form-activity-internal-id").value;
+  const currentId = elById("form-activity-internal-id")?.value;
   if (currentId) {
     const currentAct = appState.activities.find((a: any) => a.id === currentId);
     const snapshot = activitiesState.openedActivitySnapshot;
@@ -149,8 +165,8 @@ function closeActivityDrawer() {
   activitiesState.redoStack = [];
   clearDrawerUiState();
 
-  elById("activity-drawer").classList.remove("active");
-  elById("drawer-backdrop").classList.remove("active");
+  elById("activity-drawer")?.classList.remove("active");
+  elById("drawer-backdrop")?.classList.remove("active");
 }
 
 function cancelActivityDrawer() {

@@ -13,8 +13,6 @@ import { initCalendarModal, initViewCalendarButtons } from "./components/calenda
 import { initActivitiesSort } from "./activities/history/index.ts";
 import { initActivityDetailsModal, initTaxOverrideModal } from "./activities/financials.ts";
 import { initFilePreviewModal } from "./activities/file-preview/dispatch.ts";
-import { renderActivityDrawerShell } from "./activities/drawer-template.ts";
-import { renderActivitiesViewShell } from "./activities/activities-view-template.ts";
 
 window.addEventListener("error", e => {
   logError("main", "erreur non gérée", e.error || e.message);
@@ -53,9 +51,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
   }
 
-  // Pre-render shells & init handlers for activity drawer and legacy sub-modals
-  renderActivityDrawerShell();
-  renderActivitiesViewShell();
   initFormHandlers();
   initNewActivityModal();
   initActivityDetailsModal();

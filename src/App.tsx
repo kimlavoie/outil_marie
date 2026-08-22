@@ -3,12 +3,14 @@ import { Sidebar } from "./components/layout/Sidebar.tsx";
 import { Header } from "./components/layout/Header.tsx";
 import { HelpCenterModal } from "./components/layout/HelpCenterModal.tsx";
 import { DashboardView } from "./components/dashboard-view.tsx";
+import { ActivitiesView } from "./components/activities/ActivitiesView.tsx";
+import { ActivityDrawer } from "./components/activities/ActivityDrawer.tsx";
 import { ReconciliationView } from "./components/reconciliation-view.tsx";
 import { SettingsView } from "./components/settings/view.tsx";
 import { AccountReportView } from "./components/account-report/AccountReportView.tsx";
 import { BackupView } from "./components/backup/BackupView.tsx";
+import { GlobalModals } from "./components/modals/GlobalModals.tsx";
 import { checkBackupReminder } from "./services/backup/reminder.ts";
-import { renderActivities } from "./activities/render.ts";
 import { openActivityDrawer } from "./activities/financials.ts";
 import { getSavedDrawerUiState } from "./activities/financials.ts";
 import { switchActivityTab } from "./activities/form.ts";
@@ -26,26 +28,9 @@ export const App: React.FC = () => {
   const handleSelectView = (view: string) => {
     setCurrentView(view);
     localStorage.setItem("outil_marie_last_view", view);
-
-    // If leaving activities view, clear bulk selection
-    if (view !== "activities") {
-      import("./activities/render.ts").then(m => {
-        if (m.activitiesState.selectedIds) {
-          m.activitiesState.selectedIds.clear();
-        }
-      });
-    }
   };
 
   useEffect(() => {
-    if (currentView === "activities") {
-      import("./activities/activities-view-template.ts").then(m => {
-        m.renderActivitiesViewShell();
-        import("./navigation.ts").then(nav => nav.populateDropdowns());
-        import("./activities/form.ts").then(f => f.initActivitiesViewHandlers());
-        renderActivities();
-      });
-    }
     checkBackupReminder();
   }, [currentView]);
 
@@ -58,8 +43,7 @@ export const App: React.FC = () => {
       const savedDrawer = getSavedDrawerUiState();
       if (savedDrawer && appState.activities.some(a => a.id === savedDrawer.id && !a.deleted)) {
         handleSelectView("activities");
-        openActivityDrawer(savedDrawer.id);
-        switchActivityTab(savedDrawer.tab);
+        openActivityDrawer(savedDrawer.id, null, savedDrawer.tab);
       }
     }
   }, []);
@@ -103,7 +87,7 @@ export const App: React.FC = () => {
 
         <div className="view-container">
           {currentView === "dashboard" && <DashboardView />}
-          {currentView === "activities" && <div id="view-activities" className="view-section active"></div>}
+          {currentView === "activities" && <ActivitiesView />}
           {currentView === "validation" && <ReconciliationView />}
           {currentView === "account-report" && <AccountReportView onSelectView={handleSelectView} />}
           {currentView === "settings" && <SettingsView />}
@@ -113,6 +97,8 @@ export const App: React.FC = () => {
 
       {/* Global Modals & Notifications */}
       <HelpCenterModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+      <GlobalModals />
+      <ActivityDrawer />
     </div>
   );
 };

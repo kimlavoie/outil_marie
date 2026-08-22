@@ -39,52 +39,10 @@ function showUnsupportedFallback(mount: HTMLElement, fileName: string) {
   `;
 }
 
+import { triggerOpenFilePreviewModal } from "../../components/modals/FilePreviewModal.tsx";
+
 async function openFilePreviewModal(file: File): Promise<void> {
-  const titleEl = document.getElementById("file-preview-modal-title");
-  const mount = document.getElementById("file-preview-mount");
-  const downloadBtn = document.getElementById("file-preview-download-btn") as HTMLButtonElement | null;
-  if (!mount) return;
-
-  if (titleEl) titleEl.textContent = file.name;
-  currentDownload = { blob: file, fileName: file.name };
-  if (downloadBtn) downloadBtn.style.display = "inline-flex";
-
-  document.getElementById("file-preview-modal")?.classList.add("active");
-  document.getElementById("modal-backdrop")?.classList.add("active");
-
-  mount.innerHTML = `<div class="pdf-loading-spinner" style="position: static; padding: 60px 0; text-align: center; color: var(--text-muted);">Chargement de l'aperçu...</div>`;
-
-  const ext = extensionOf(file.name);
-  try {
-    if (ext === ".pdf") {
-      const buffer = await file.arrayBuffer();
-      const { PdfViewer } = await import("../pdf-viewer.ts");
-      await new PdfViewer(mount, buffer, file.name).init();
-    } else if (ext === ".xlsx" || ext === ".xls") {
-      const buffer = await file.arrayBuffer();
-      const { XlsxViewer } = await import("../xlsx-viewer.ts");
-      await new XlsxViewer(mount, buffer, file.name).init();
-    } else if (ext === ".docx") {
-      const buffer = await file.arrayBuffer();
-      const { renderDocxPreview } = await import("./docx-viewer.ts");
-      await renderDocxPreview(mount, buffer);
-    } else if (ext === ".eml") {
-      const buffer = await file.arrayBuffer();
-      const { renderEmlPreview } = await import("./eml-viewer.ts");
-      renderEmlPreview(mount, buffer);
-    } else if (TEXT_EXTENSIONS.has(ext)) {
-      const buffer = await file.arrayBuffer();
-      const { renderTextPreview } = await import("./text-viewer.ts");
-      renderTextPreview(mount, buffer);
-    } else if (IMAGE_EXTENSIONS.has(ext)) {
-      const { renderImagePreview } = await import("./image-viewer.ts");
-      currentObjectUrl = renderImagePreview(mount, file, file.name);
-    } else {
-      showUnsupportedFallback(mount, file.name);
-    }
-  } catch (e: any) {
-    showMountError(mount, `Impossible d'afficher l'aperçu : ${e.message || e}`);
-  }
+  triggerOpenFilePreviewModal(file);
 }
 
 function downloadCurrentFile() {

@@ -136,6 +136,7 @@
 /* Modal styling */
 .modal-backdrop {
   @include overlay-backdrop;
+  z-index: 1050;
 }
 
 .modal {
@@ -144,7 +145,7 @@
   left: 50%;
   transform: translate(-50%, -45%) scale(0.95);
   background-color: var(--bg-card);
-  z-index: 100;
+  z-index: 1100;
   border-radius: var(--radius-lg);
   box-shadow:
     0 20px 25px -5px rgba(0, 0, 0, 0.1),

@@ -57,7 +57,13 @@ function el<T extends Element = HTMLInputElement>(id: string): T | null {
   return (document.getElementById(id) as unknown as T) || null;
 }
 
+let lastFormEl: HTMLElement | null = null;
+
 function initFormHandlers() {
+  const currentFormEl = document.getElementById("activity-form");
+  if (lastFormEl && lastFormEl === currentFormEl) return;
+  lastFormEl = currentFormEl;
+
   initBulkActionsHandlers();
   const backdrop = document.getElementById("drawer-backdrop");
   const drawer = document.getElementById("activity-drawer");

@@ -49,7 +49,9 @@ export function getActivityFormMode() {
 }
 
 export function initActivityModeToggle() {
-  el("activity-mode-toggle").addEventListener("click", e => {
+  const toggle = el("activity-mode-toggle");
+  if (!toggle) return;
+  toggle.addEventListener("click", e => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".pill-toggle");
     if (!btn || btn.disabled) return;
     applyActivityFormMode(btn.dataset.mode || "", false);
@@ -64,10 +66,9 @@ export function switchActivityTab(tabName: string) {
     panel.classList.toggle("active", panel.id === `activity-tab-panel-${tabName}`);
   });
 
-  // Remember which tab of which activity is open so a reload/reopen can restore it exactly
-  // (see financials.ts's persistDrawerUiState/getSavedDrawerUiState, read back in main.ts).
-  if (el("activity-drawer").classList.contains("active")) {
-    const id = el("form-activity-internal-id").value;
+  const drawer = el("activity-drawer");
+  if (drawer && drawer.classList.contains("active")) {
+    const id = el("form-activity-internal-id")?.value;
     if (id) persistDrawerUiState(id, tabName);
   }
 }

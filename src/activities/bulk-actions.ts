@@ -64,7 +64,13 @@ function updateBulkActionsBar() {
   }
 }
 
+let lastSelectAllEl: HTMLElement | null = null;
+
 function initBulkActionsHandlers() {
+  const currentEl = document.getElementById("activities-select-all");
+  if (lastSelectAllEl && lastSelectAllEl === currentEl) return;
+  lastSelectAllEl = currentEl;
+
   const selectAllCheckbox = el("activities-select-all");
   if (selectAllCheckbox) {
     selectAllCheckbox.addEventListener("change", e => {
