@@ -55,7 +55,7 @@ function checkBackupReminder() {
 
   if (!lastBackup) {
     alertTextEl.innerHTML = `
-      <svg viewBox="0 0 24 24" class="alert-icon" style="fill: var(--warning-text); margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <svg viewBox="0 0 24 24" class="alert-icon" width="20" height="20" style="fill: var(--warning-text); flex-shrink: 0; margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
       <span>Attention : Aucune sauvegarde de vos données n'a été effectuée.</span>
     `;
     banner.style.display = "flex";
@@ -63,7 +63,7 @@ function checkBackupReminder() {
     const days = getDaysSinceLastBackup();
     if (days !== null && days >= reminderDays) {
       alertTextEl.innerHTML = `
-        <svg viewBox="0 0 24 24" class="alert-icon" style="fill: var(--warning-text); margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        <svg viewBox="0 0 24 24" class="alert-icon" width="20" height="20" style="fill: var(--warning-text); flex-shrink: 0; margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
         <span>Attention : Votre dernière sauvegarde remonte à <strong>${days}</strong> ${days > 1 ? "jours" : "jour"} (limite configurée à ${reminderDays} jours).</span>
       `;
       banner.style.display = "flex";

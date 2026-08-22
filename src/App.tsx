@@ -75,13 +75,30 @@ export const App: React.FC = () => {
       <main className="main-content">
         <Header currentView={currentView} onSelectView={handleSelectView} />
 
-        {/* Global Backup Reminder Banner */}
+        {/* Global Backup Banners */}
         <div
           id="backup-reminder-banner"
-          className="alert alert-warning"
-          style={{ display: "none", margin: "12px 24px 0", borderRadius: "var(--radius-md)" }}
+          className="backup-alert-banner"
+          style={{ display: "none" }}
         >
-          <div id="backup-alert-text" style={{ display: "flex", alignItems: "center" }}></div>
+          <div id="backup-alert-text" className="backup-alert-message"></div>
+          <button id="backup-banner-action-btn" className="btn-warning-outline" style={{ whiteSpace: "nowrap" }}>
+            Sauvegarder maintenant
+          </button>
+        </div>
+
+        <div
+          id="auto-backup-reminder-banner"
+          className="backup-alert-banner"
+          style={{ display: "none" }}
+        >
+          <div className="backup-alert-message">
+            <svg viewBox="0 0 24 24" className="alert-icon" style={{ fill: "var(--warning-text)" }}>
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+            </svg>
+            <span id="auto-backup-reminder-text"></span>
+          </div>
+          <button id="auto-backup-reminder-btn" className="btn-warning-outline" style={{ whiteSpace: "nowrap" }}></button>
         </div>
 
         <div className="view-container">
