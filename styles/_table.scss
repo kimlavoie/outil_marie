@@ -347,6 +347,33 @@ tr:hover td {
   color: var(--text-primary);
 }
 
+.table-responsive th.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition-smooth);
+  position: relative;
+  padding-right: 24px;
+}
+
+.table-responsive th.sortable-th:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.table-responsive th.sortable-th .sort-icon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  opacity: 0.3;
+}
+
+.table-responsive th.sortable-th .sort-icon.active {
+  opacity: 1;
+  color: var(--primary);
+}
+
 .table-responsive th[data-sort]::after {
   content: "↕";
   opacity: 0.3;

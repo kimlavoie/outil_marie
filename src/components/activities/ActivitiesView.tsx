@@ -265,6 +265,15 @@ export const ActivitiesView: React.FC = () => {
     }
   };
 
+  const renderSortIcon = (key: string) => {
+    const isActive = sortKey === key;
+    return (
+      <span className={`sort-icon ${isActive ? "active" : ""}`}>
+        {isActive ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
+      </span>
+    );
+  };
+
   // Multi-select Checkbox Handling
   const handleToggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -529,30 +538,30 @@ export const ActivitiesView: React.FC = () => {
                   onChange={handleToggleSelectAll}
                 />
               </th>
-              <th onClick={() => handleHeaderSort("date_start")} style={{ cursor: "pointer" }}>
-                Date {sortKey === "date_start" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+              <th className="sortable-th" onClick={() => handleHeaderSort("date_start")}>
+                Date {renderSortIcon("date_start")}
               </th>
-              <th onClick={() => handleHeaderSort("coba")} style={{ cursor: "pointer" }}>
-                COBA COLL. {sortKey === "coba" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+              <th className="sortable-th" onClick={() => handleHeaderSort("coba")}>
+                COBA COLL. {renderSortIcon("coba")}
               </th>
-              <th onClick={() => handleHeaderSort("name")} style={{ cursor: "pointer" }}>
-                Activité {sortKey === "name" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+              <th className="sortable-th" onClick={() => handleHeaderSort("name")}>
+                Activité {renderSortIcon("name")}
               </th>
-              <th onClick={() => handleHeaderSort("room_name")} style={{ cursor: "pointer" }}>
-                Salle {sortKey === "room_name" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+              <th className="sortable-th" onClick={() => handleHeaderSort("room_name")}>
+                Salle {renderSortIcon("room_name")}
               </th>
-              <th onClick={() => handleHeaderSort("bar")} style={{ cursor: "pointer" }}>
-                Bar {sortKey === "bar" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+              <th className="sortable-th" onClick={() => handleHeaderSort("bar")}>
+                Bar {renderSortIcon("bar")}
               </th>
-              <th onClick={() => handleHeaderSort("hostess")} style={{ cursor: "pointer" }}>
-                Hôtesse {sortKey === "hostess" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+              <th className="sortable-th" onClick={() => handleHeaderSort("hostess")}>
+                Hôtesse {renderSortIcon("hostess")}
               </th>
               <th style={{ width: "90px" }}>Dir. technique</th>
-              <th onClick={() => handleHeaderSort("reference")} style={{ cursor: "pointer" }}>
-                Facture {sortKey === "reference" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+              <th className="sortable-th" onClick={() => handleHeaderSort("reference")}>
+                Facture {renderSortIcon("reference")}
               </th>
-              <th onClick={() => handleHeaderSort("totalRev")} style={{ cursor: "pointer" }}>
-                Revenu {sortKey === "totalRev" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+              <th className="sortable-th" onClick={() => handleHeaderSort("totalRev")}>
+                Revenu {renderSortIcon("totalRev")}
               </th>
               <th style={{ width: "160px" }}>État</th>
             </tr>
