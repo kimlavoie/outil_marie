@@ -56,9 +56,10 @@ function getPlanningProgress(act: Activity) {
 }
 
 export const ActivitiesView: React.FC = () => {
-  const state = useAppState();
-  const activities = state.activities || [];
-  const rooms = state.settings?.rooms || [];
+  const activities = useAppState(s => s.activities) || [];
+  const rooms = useAppState(s => s.settings?.rooms) || [];
+  const selectedYear = useAppState(s => s.selected_year);
+  const selectedQuarters = useAppState(s => s.selected_quarters);
 
   const savedState = getSavedUiState()?.activities || {};
 
@@ -169,19 +170,32 @@ export const ActivitiesView: React.FC = () => {
       // Period filter
       let matchesPeriod = false;
       if (!act.date_start) {
-        matchesPeriod = true;
+        const firstSlotDate = (act.reservations || [])
+          .flatMap((r: any) => (r.slots || []).map((s: any) => s.date))
+          .filter(Boolean)
+          .sort()[0];
+        if (!firstSlotDate) {
+          matchesPeriod = true;
+        } else {
+          const fy = getFiscalYear(firstSlotDate);
+          const q = getQuarterNumber(firstSlotDate);
+          matchesPeriod =
+            fy === selectedYear &&
+            q !== null &&
+            (selectedQuarters || []).includes(q);
+        }
       } else {
         const fy = getFiscalYear(act.date_start);
         const q = getQuarterNumber(act.date_start);
         matchesPeriod =
-          fy === state.selected_year &&
+          fy === selectedYear &&
           q !== null &&
-          (state.selected_quarters || []).includes(q);
+          (selectedQuarters || []).includes(q);
       }
 
       return matchesSearch && matchesSalle && matchesClientType && matchesStatus && matchesPeriod;
     });
-  }, [activities, searchQuery, selectedSalles, selectedClientTypes, selectedStatuses, state.selected_year, state.selected_quarters]);
+  }, [activities, searchQuery, selectedSalles, selectedClientTypes, selectedStatuses, selectedYear, selectedQuarters]);
 
   // Sort Activities
   const sortedActivities = useMemo(() => {

@@ -7,7 +7,7 @@
  * Imports renderAll back from navigation.ts (a real circular import, same as global-search.ts/
  * quick-access.ts) — safe since nothing runs during either module's top-level evaluation.
  */
-import { appState, saveDatabaseOrRollback, getFiscalYear, getDefaultFiscalYear } from "../state/state.ts";
+import { appState, saveDatabaseOrRollback, getFiscalYear, getDefaultFiscalYear, notifyAppStateChange } from "../state/state.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { renderAll } from "../navigation.ts";
 
@@ -103,10 +103,12 @@ function initPeriodSelector() {
       } else {
         appState.selected_quarters = appState.selected_quarters.filter(x => x !== q);
       }
+      notifyAppStateChange();
 
       saveDatabaseOrRollback(() => {
         appState.selected_quarters = prevQuarters;
         btn.classList.toggle("active");
+        notifyAppStateChange();
       }, "La sélection de trimestre n'a pas été enregistrée. Réessayez.").then(() => {
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();
@@ -122,9 +124,11 @@ function initPeriodSelector() {
     yearSelect.addEventListener("change", e => {
       const prevYear = appState.selected_year;
       appState.selected_year = (e.target as HTMLSelectElement).value;
+      notifyAppStateChange();
       saveDatabaseOrRollback(() => {
         appState.selected_year = prevYear;
         yearSelect.value = prevYear;
+        notifyAppStateChange();
       }, "Le changement d'année n'a pas été enregistré. Réessayez.").then(() => {
         if (reconciliationState.ledgerTransactions.length > 0) {
           reconcileLedger();

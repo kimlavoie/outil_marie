@@ -186,6 +186,7 @@ export function subscribeAppState(listener: StateChangeListener): () => void {
  * Notifies all registered subscribers that appState has been mutated or replaced.
  */
 export function notifyAppStateChange(): void {
+  appState = { ...appState };
   listeners.forEach(listener => {
     try {
       listener();

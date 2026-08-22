@@ -108,6 +108,7 @@ export const PeriodSelector: React.FC = () => {
           import("../../state/state.ts").then(m => {
             const prev = m.appState.selected_year;
             m.appState.selected_year = val;
+            m.notifyAppStateChange();
             saveDatabaseOrRollback(() => {
               m.appState.selected_year = prev;
             }, "Le changement d'année n'a pas été enregistré. Réessayez.").then(() => {
@@ -145,6 +146,7 @@ export const PeriodSelector: React.FC = () => {
                   } else {
                     m.appState.selected_quarters = [...m.appState.selected_quarters, q];
                   }
+                  m.notifyAppStateChange();
                   saveDatabaseOrRollback(() => {
                     m.appState.selected_quarters = prev;
                   }, "La sélection de trimestre n'a pas été enregistrée. Réessayez.").then(() => {
