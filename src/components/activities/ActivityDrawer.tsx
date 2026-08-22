@@ -11,7 +11,7 @@ import {
 } from "../../activities/form.ts";
 import { updateSubmissionFinancialSummary } from "../../activities/financial-summary.ts";
 import { showAutoSaveStatus, autoSaveActivityForm } from "../../activities/autosave.ts";
-import { cancelActivityDrawer, closeActivityDrawer as legacyCloseActivityDrawer } from "../../activities/drawer.ts";
+import { cancelActivityDrawer, closeActivityDrawer as legacyCloseActivityDrawer, clearDrawerUiState } from "../../activities/drawer.ts";
 import { updateFormDatesHelper, loadAndRenderActivityHistory } from "../../activities/history/index.ts";
 import { renderPlanningTab } from "../../activities/planning-tab.ts";
 import { renderBillingStateStatus } from "../../activities/billing-tab.ts";
@@ -74,6 +74,7 @@ export const ActivityDrawer: React.FC = () => {
       activitiesState.openedActivitySnapshot = null;
       activitiesState.undoStack = [];
       activitiesState.redoStack = [];
+      clearDrawerUiState();
     };
 
     return () => {

@@ -87,3 +87,12 @@ export function restoreUiState() {
   if (report.pageSize) accountReportState.pageSize = report.pageSize;
   if (report.pages) accountReportState.pages = report.pages;
 }
+
+export function getSavedUiState() {
+  try {
+    const raw = localStorage.getItem(UI_STATE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}

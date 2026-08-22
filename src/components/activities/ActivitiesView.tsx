@@ -17,6 +17,8 @@ import { showActivityContextMenu, closeActivityContextMenu } from "../../activit
 import { TECHNICAL_DIRECTOR_SALARY_ID } from "../../activities/reservations/subrows.ts";
 import type { Activity } from "../../types/activity.ts";
 
+import { getSavedUiState } from "../../state/ui-state.ts";
+
 const ACTIVITY_STATES = [
   { value: "brouillon", label: "Brouillon" },
   { value: "soumise", label: "Soumise au client" },
@@ -58,20 +60,46 @@ export const ActivitiesView: React.FC = () => {
   const activities = state.activities || [];
   const rooms = state.settings?.rooms || [];
 
+  const savedState = getSavedUiState()?.activities || {};
+
   // Filter & Search States
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSalles, setSelectedSalles] = useState<string[]>([]);
-  const [selectedClientTypes, setSelectedClientTypes] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>(() => savedState.search || "");
+  const [selectedSalles, setSelectedSalles] = useState<string[]>(() => savedState.filterSalles || []);
+  const [selectedClientTypes, setSelectedClientTypes] = useState<string[]>(() => savedState.filterClientTypes || []);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => savedState.filterStatuses || []);
 
   // Dropdown UI Open States
   const [openDropdown, setOpenDropdown] = useState<"salle" | "client" | "status" | "bulkState" | null>(null);
 
   // Sorting & Pagination States
-  const [sortKey, setSortKey] = useState("id");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [sortKey, setSortKey] = useState<string>(() => savedState.sortKey || "id");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(() => savedState.sortOrder || "desc");
+  const [page, setPage] = useState<number>(() => savedState.page || 1);
+  const [pageSize, setPageSize] = useState<number>(() => savedState.pageSize || 10);
+
+  // Save UI state to localStorage on changes
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("outil_marie_ui_state");
+      const existing = raw ? JSON.parse(raw) : {};
+      const updated = {
+        ...existing,
+        activities: {
+          search: searchQuery,
+          filterSalles: selectedSalles,
+          filterClientTypes: selectedClientTypes,
+          filterStatuses: selectedStatuses,
+          sortKey,
+          sortOrder,
+          page,
+          pageSize
+        }
+      };
+      localStorage.setItem("outil_marie_ui_state", JSON.stringify(updated));
+    } catch (e) {
+      // Ignore
+    }
+  }, [searchQuery, selectedSalles, selectedClientTypes, selectedStatuses, sortKey, sortOrder, page, pageSize]);
 
   // Bulk Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

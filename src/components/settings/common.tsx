@@ -76,42 +76,47 @@ export function Modal({
     return () => trap.deactivate();
   }, [isOpen, id]);
 
+  if (!isOpen) return null;
+
   return (
-    <div
-      id={id}
-      className={`modal${isOpen ? " active" : ""}`}
-      style={width ? { width, maxWidth: "95vw" } : undefined}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-    >
-      <div className="modal-header">
-        <h3 id={titleId} className="modal-title">
-          {title}
-        </h3>
-        <button className="btn-icon" aria-label="Fermer" onClick={onClose}>
-          <CloseIcon />
-        </button>
+    <>
+      <div className="modal-backdrop active" onClick={onClose} />
+      <div
+        id={id}
+        className={`modal${isOpen ? " active" : ""}`}
+        style={width ? { width, maxWidth: "95vw" } : undefined}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+      >
+        <div className="modal-header">
+          <h3 id={titleId} className="modal-title">
+            {title}
+          </h3>
+          <button className="btn-icon" aria-label="Fermer" onClick={onClose}>
+            <CloseIcon />
+          </button>
+        </div>
+        <div className="modal-content">
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              onSubmit();
+            }}
+          >
+            {children}
+          </form>
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            Annuler
+          </button>
+          <button type="button" className="btn btn-primary" onClick={onSubmit}>
+            {submitLabel}
+          </button>
+        </div>
       </div>
-      <div className="modal-content">
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            onSubmit();
-          }}
-        >
-          {children}
-        </form>
-      </div>
-      <div className="modal-footer">
-        <button type="button" className="btn btn-secondary" onClick={onClose}>
-          Annuler
-        </button>
-        <button type="button" className="btn btn-primary" onClick={onSubmit}>
-          {submitLabel}
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
 
