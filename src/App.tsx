@@ -66,7 +66,12 @@ export const App: React.FC = () => {
           style={{ display: "none" }}
         >
           <div id="backup-alert-text" className="backup-alert-message"></div>
-          <button id="backup-banner-action-btn" className="btn-warning-outline" style={{ whiteSpace: "nowrap" }}>
+          <button
+            id="backup-banner-action-btn"
+            className="btn-warning-outline"
+            style={{ whiteSpace: "nowrap" }}
+            onClick={() => handleSelectView("backup")}
+          >
             Sauvegarder maintenant
           </button>
         </div>

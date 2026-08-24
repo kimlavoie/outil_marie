@@ -1,27 +1,41 @@
-import { getMultiSelectValues, setMultiSelectValues } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
-import { activitiesState } from "../activities/render.ts";
 import { reconciliationState } from "../services/reconciliation.ts";
 import { accountReportState } from "../services/account-report.ts";
 
 // Persist search/filter/sort/pagination state per view, so reloading the
 // page or coming back later drops the user exactly where they left off.
+//
+// The "activities" slice used to be generated/restored here too, from #activity-search's raw DOM
+// value, #filter-salle-panel/#filter-client-type-panel/#filter-status-panel (multi-select panel
+// ids that no longer exist — ActivitiesView.tsx's real ones are #filter-salle-wrapper etc.), and
+// activitiesState.sortKey/sortOrder/page/pageSize (a legacy global nothing in the live app writes
+// to anymore — ActivitiesView.tsx keeps its own local useState for all of this). That made
+// saveUiState() — called from ~15 places across the app, e.g. every drawer close/autosave/undo —
+// silently overwrite the correct, React-owned "activities" localStorage slice with filterSalles:
+// [], filterStatuses: [], sortKey: "id", page: 1, etc. on every call: harmless within a session
+// (React state, not localStorage, drives what's on screen) but the user's filters/sort/page would
+// revert to defaults on the next reload. ActivitiesView.tsx already saves/restores that slice
+// itself (see its own localStorage effect and getSavedUiState() call) — self-contained, so this
+// module has nothing left to do for "activities".
+//
+// Reads-merges-writes rather than overwriting the whole key outright, for the same reason:
+// ActivitiesView.tsx's own effect writes its "activities" slice under this same key, so blindly
+// replacing the stored value here would silently drop it again, just with an extra step.
 const UI_STATE_KEY = "outil_marie_ui_state";
 
 let lastSavedUiStateStr = "";
 
 export function saveUiState() {
+  let existing: any = {};
+  try {
+    const raw = localStorage.getItem(UI_STATE_KEY);
+    existing = raw ? JSON.parse(raw) : {};
+  } catch {
+    existing = {};
+  }
+
   const uiState = {
-    activities: {
-      search: (document.getElementById("activity-search") as HTMLInputElement)?.value || "",
-      filterSalles: getMultiSelectValues("filter-salle-panel"),
-      filterClientTypes: getMultiSelectValues("filter-client-type-panel"),
-      filterStatuses: getMultiSelectValues("filter-status-panel"),
-      sortKey: activitiesState.sortKey,
-      sortOrder: activitiesState.sortOrder,
-      page: activitiesState.page,
-      pageSize: activitiesState.pageSize
-    },
+    ...existing,
     reconciliation: {
       filter: reconciliationState.filter,
       page: reconciliationState.page,
@@ -44,8 +58,7 @@ export function saveUiState() {
 
 // Restores the UI state saved above. Must run after the DOM is ready and
 // before the views first render, so the restored values are picked up by
-// renderActivities/renderReconciliationTable/renderAccountReport on the
-// initial render pass.
+// renderReconciliationTable/renderAccountReport on the initial render pass.
 export function restoreUiState() {
   const raw = localStorage.getItem(UI_STATE_KEY);
   if (!raw) return;
@@ -57,17 +70,6 @@ export function restoreUiState() {
     logError("state", "lecture de l'état d'interface sauvegardé, ignoré", e);
     return;
   }
-
-  const act = uiState.activities || {};
-  const searchEl = document.getElementById("activity-search") as HTMLInputElement | null;
-  if (searchEl && act.search !== undefined) searchEl.value = act.search;
-  if (act.filterSalles !== undefined) setMultiSelectValues("filter-salle-panel", act.filterSalles);
-  if (act.filterClientTypes !== undefined) setMultiSelectValues("filter-client-type-panel", act.filterClientTypes);
-  if (act.filterStatuses !== undefined) setMultiSelectValues("filter-status-panel", act.filterStatuses);
-  if (act.sortKey) activitiesState.sortKey = act.sortKey;
-  if (act.sortOrder) activitiesState.sortOrder = act.sortOrder;
-  if (act.page) activitiesState.page = act.page;
-  if (act.pageSize) activitiesState.pageSize = act.pageSize;
 
   const recon = uiState.reconciliation || {};
   if (recon.filter) {

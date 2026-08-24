@@ -95,9 +95,6 @@ function openActivityDrawer(id: string, calendarReturn: any = null, initialTab: 
 
   if (act.name.trim() !== "") {
     recordActivityView(act.id);
-    // Dynamic import: navigation.js pulls in the .tsx views, and this module must stay
-    // importable by plain `node --test` (Node can't load .tsx).
-    import("../navigation.ts").then(m => m.renderQuickAccessAll());
   }
 
   form.reset();

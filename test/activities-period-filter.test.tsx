@@ -18,6 +18,7 @@ import { render, cleanup, fireEvent, act } from "@testing-library/react";
 import { setAppState, appState, notifyAppStateChange } from "../src/state/state.ts";
 import { ActivitiesView } from "../src/components/activities/ActivitiesView.tsx";
 import { PeriodSelector } from "../src/components/layout/PeriodSelector.tsx";
+import { saveUiState } from "../src/state/ui-state.ts";
 
 function baseState(overrides: any = {}) {
   return {
@@ -180,4 +181,31 @@ test("ActivitiesView matches activity using first reservation slot date if date_
 
   assert.ok(getByText("Activité sans date_start"));
   assert.equal(queryByText("Activité Q2 sans date_start"), null);
+});
+
+test("changing a filter persists it to localStorage and survives a later saveUiState() call", () => {
+  // Regression test: saveUiState() (state/ui-state.ts) used to rebuild its own "activities"
+  // localStorage slice from dead legacy globals on every call — called from ~15 places across the
+  // app (drawer close, autosave, undo, bulk actions...) — silently resetting whatever
+  // ActivitiesView had just persisted back to defaults. saveUiState() no longer touches
+  // "activities" at all; this view owns that slice end-to-end.
+  setAppState(
+    baseState({
+      activities: [activity("act-1", "Activité test", "2025-08-15")]
+    })
+  );
+
+  const { getByPlaceholderText } = render(<ActivitiesView />);
+  const searchInput = getByPlaceholderText("Rechercher par activité, responsable, facture...") as HTMLInputElement;
+  act(() => fireEvent.change(searchInput, { target: { value: "test" } }));
+
+  const savedAfterFilter = JSON.parse(localStorage.getItem("outil_marie_ui_state")!);
+  assert.equal(savedAfterFilter.activities.search, "test");
+
+  // Simulate an unrelated action elsewhere in the app that flushes UI state (drawer close,
+  // autosave, undo, ...) — must not clobber what ActivitiesView just saved.
+  saveUiState();
+
+  const savedAfterFlush = JSON.parse(localStorage.getItem("outil_marie_ui_state")!);
+  assert.equal(savedAfterFlush.activities.search, "test");
 });

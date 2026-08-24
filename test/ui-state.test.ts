@@ -15,7 +15,6 @@ test.after(() => dom.window.close());
 
 import { setAppState } from "../src/state/state.ts";
 import { saveUiState, restoreUiState } from "../src/state/ui-state.ts";
-import { activitiesState } from "../src/activities/render.ts";
 import { reconciliationState } from "../src/services/reconciliation.ts";
 import { accountReportState } from "../src/services/account-report.ts";
 
@@ -47,10 +46,6 @@ test.beforeEach(() => {
   setAppState(baseState());
   document.body.innerHTML = "";
   (globalThis as any).localStorage.clear();
-  activitiesState.sortKey = "id";
-  activitiesState.sortOrder = "asc";
-  activitiesState.page = 1;
-  activitiesState.pageSize = 10;
   reconciliationState.filter = "all";
   reconciliationState.page = 1;
   reconciliationState.pageSize = 10;
@@ -60,15 +55,18 @@ test.beforeEach(() => {
   accountReportState.pages = {};
 });
 
-test("saveUiState persists the search box, filters and sort/pagination state under one localStorage key", () => {
+// The "activities" slice of outil_marie_ui_state is saved/restored entirely by
+// ActivitiesView.tsx itself (its own localStorage effect + getSavedUiState() read) — this module
+// used to also generate/restore that slice from dead legacy globals (activitiesState.sortKey/
+// page/etc., #filter-salle-panel and friends, none of which the live app reads or writes anymore),
+// which silently clobbered ActivitiesView's correct, persisted values back to defaults on every
+// saveUiState() call (there are ~15 call sites: drawer close, autosave, undo, bulk actions, etc.).
+// So there's deliberately no "activities" coverage left here — see ui-state.ts's header comment.
+
+test("saveUiState persists reconciliation and account-report sort/pagination state under one localStorage key", () => {
   document.body.innerHTML = `
-    <input id="activity-search" value="conférence">
     <select id="filter-report-account"><option value="892-1" selected>892-1</option></select>
   `;
-  activitiesState.sortKey = "name";
-  activitiesState.sortOrder = "desc";
-  activitiesState.page = 3;
-  activitiesState.pageSize = 25;
   reconciliationState.filter = "unmatched";
   reconciliationState.page = 2;
   accountReportState.sortKey = "amount";
@@ -76,40 +74,28 @@ test("saveUiState persists the search box, filters and sort/pagination state und
   saveUiState();
 
   const saved = JSON.parse((globalThis as any).localStorage.getItem(UI_STATE_KEY)!);
-  assert.equal(saved.activities.search, "conférence");
-  assert.equal(saved.activities.sortKey, "name");
-  assert.equal(saved.activities.sortOrder, "desc");
-  assert.equal(saved.activities.page, 3);
-  assert.equal(saved.activities.pageSize, 25);
   assert.equal(saved.reconciliation.filter, "unmatched");
   assert.equal(saved.reconciliation.page, 2);
   assert.equal(saved.accountReport.filterAccount, "892-1");
   assert.equal(saved.accountReport.sortKey, "amount");
+  assert.equal(saved.activities, undefined);
 });
 
-test("saveUiState defaults the search/filter fields to empty strings when the elements aren't present", () => {
+test("saveUiState defaults the account-report account filter to an empty string when the element isn't present", () => {
   saveUiState();
   const saved = JSON.parse((globalThis as any).localStorage.getItem(UI_STATE_KEY)!);
-  assert.equal(saved.activities.search, "");
   assert.equal(saved.accountReport.filterAccount, "");
 });
 
 test("restoreUiState is a no-op when nothing was ever saved", () => {
-  document.body.innerHTML = `<input id="activity-search" value="">`;
   restoreUiState();
-  assert.equal((document.getElementById("activity-search") as HTMLInputElement).value, "");
-  assert.equal(activitiesState.page, 1);
+  assert.equal(reconciliationState.page, 1);
 });
 
 test("restoreUiState round-trips everything saveUiState wrote", () => {
   document.body.innerHTML = `
-    <input id="activity-search" value="conférence">
     <select id="filter-report-account"><option value="892-1" selected>892-1</option></select>
   `;
-  activitiesState.sortKey = "name";
-  activitiesState.sortOrder = "desc";
-  activitiesState.page = 3;
-  activitiesState.pageSize = 25;
   reconciliationState.filter = "unmatched";
   reconciliationState.page = 2;
   reconciliationState.pageSize = 50;
@@ -121,13 +107,8 @@ test("restoreUiState round-trips everything saveUiState wrote", () => {
 
   // Reset everything back to defaults before restoring, to prove restoreUiState is what put it back.
   document.body.innerHTML = `
-    <input id="activity-search" value="">
     <select id="filter-report-account"><option value="892-1">892-1</option></select>
   `;
-  activitiesState.sortKey = "id";
-  activitiesState.sortOrder = "asc";
-  activitiesState.page = 1;
-  activitiesState.pageSize = 10;
   reconciliationState.filter = "all";
   reconciliationState.page = 1;
   reconciliationState.pageSize = 10;
@@ -138,11 +119,6 @@ test("restoreUiState round-trips everything saveUiState wrote", () => {
 
   restoreUiState();
 
-  assert.equal((document.getElementById("activity-search") as HTMLInputElement).value, "conférence");
-  assert.equal(activitiesState.sortKey, "name");
-  assert.equal(activitiesState.sortOrder, "desc");
-  assert.equal(activitiesState.page, 3);
-  assert.equal(activitiesState.pageSize, 25);
   assert.equal(reconciliationState.filter, "unmatched");
   assert.equal(reconciliationState.page, 2);
   assert.equal(reconciliationState.pageSize, 50);

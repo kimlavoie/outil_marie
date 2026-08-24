@@ -107,7 +107,6 @@ export const ActivityDrawer: React.FC = () => {
 
       if (act.name.trim() !== "") {
         recordActivityView(act.id);
-        import("../../navigation.ts").then(m => m.renderQuickAccessAll());
       }
 
       setActivityId(id);

@@ -18,14 +18,20 @@
  * (test/activities-render-extra.test.ts) that build a matching legacy DOM fixture and verify
  * genuinely correct behavior, just behavior nothing in production triggers today.
  *
- * bulk-actions.ts (re-exported below) is a different, less benign case: unlike this file, its
- * initBulkActionsHandlers() IS called live (from activities/form.ts's initFormHandlers(), wired
- * up at startup by main.tsx), and its select-all-checkbox listener targets #activities-select-all
- * and .activity-select-checkbox — ids/classes ActivitiesView.tsx's React-controlled checkboxes
- * actually use too. That's a real (if likely low-impact in practice) DOM-ownership conflict, not
- * inert dead code — flagged here rather than fixed, since removing it would mean either deleting
- * a legacy module with its own passing tests (test/bulk-actions.test.ts) or a deeper rework, both
- * beyond a safe drive-by cleanup.
+ * bulk-actions.ts (re-exported below) initBulkActionsHandlers() IS called live (from
+ * activities/form.ts's initFormHandlers(), wired up at startup by main.tsx) — but it deliberately
+ * does NOT attach a select-all-checkbox listener, precisely to avoid fighting ActivitiesView.tsx's
+ * React-controlled #activities-select-all/.activity-select-checkbox (see its own comment for the
+ * fixed DOM-ownership conflict this used to be).
+ *
+ * Another conflict of the same shape, found later: saveUiState() (state/ui-state.ts), called from
+ * this file's renderActivities() and therefore from every one of the ~15 places across the app
+ * that call it, used to also (re)build an "activities" localStorage slice from this file's own
+ * dead globals (activitiesState.sortKey/page/etc., #filter-salle-panel and friends — none of which
+ * ActivitiesView.tsx uses or updates). That silently overwrote the correct, React-owned slice
+ * ActivitiesView.tsx persists itself on every filter/sort/page change, resetting the user's
+ * filters/sort/page back to defaults on the next reload. Fixed by dropping the "activities" slice
+ * from saveUiState()/restoreUiState() entirely — see ui-state.ts's header comment.
  *
  * Also a barrel re-exporting context-menu.ts (the row right-click menu — genuinely still used by
  * ActivitiesView.tsx via its onContextMenu handler, no conflict there since it appends its own

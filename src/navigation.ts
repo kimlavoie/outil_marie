@@ -1,24 +1,26 @@
 /**
  * navigation.ts - Theme, top-level view switching, and render orchestration (renderAll/renderView/
- * populateDropdowns), plus a barrel re-exporting navigation/global-search.ts,
- * navigation/quick-access.ts and navigation/period-selector.ts under this original shared import
- * path (the same pattern used by src/services/backup/index.ts and
- * src/activities/reservations/index.ts) — split out because the original file mixed the global
- * search box, the quick-access dropdown, and the fiscal year/quarter period selector in one
- * 660+-line module.
+ * populateDropdowns).
  *
- * The three submodules import switchToView/renderAll back from here — a real circular import,
- * safe since nothing runs during either module's top-level evaluation, same as the other
- * circular imports already in this codebase (e.g. utils.ts <-> state.ts).
+ * Used to also barrel-import/re-export navigation/global-search.ts, navigation/quick-access.ts and
+ * navigation/period-selector.ts, each a legacy DOM-manipulation module fully superseded by a React
+ * component sharing the same ids/classes (GlobalSearch.tsx, QuickAccess.tsx, PeriodSelector.tsx —
+ * see components/layout/Header.tsx). global-search.ts and period-selector.ts's init*() functions
+ * had no live caller left at all; quick-access.ts's renderQuickAccessAll() was still called from
+ * three real call sites (activities/context-menu.ts, activities/drawer.ts,
+ * components/activities/ActivityDrawer.tsx) — a real DOM-ownership conflict, since it wrote into
+ * #quick-access-list-global via innerHTML, the very node QuickAccess.tsx renders (conditionally,
+ * only while its dropdown is open) and already keeps in sync reactively via useAppState. All three
+ * submodules are deleted; their pure/still-relevant logic (fiscal-year window, search matching,
+ * period description, quick-access list building) now lives only in the React components, and the
+ * three call sites above no longer call anything here — React already re-renders on its own.
  */
 import { appState, EVENT_TYPES } from "./state/state.ts";
-import { escapeHtml, getMultiSelectValues, setMultiSelectValues } from "./utils/utils.ts";
+import { escapeHtml } from "./utils/utils.ts";
 import { activitiesState, renderActivities } from "./activities/render.ts";
 import { renderReconciliation } from "./components/reconciliation-mount.ts";
 import { renderAccountReport } from "./services/account-report.ts";
 import { checkBackupReminder } from "./services/backup/reminder.ts";
-import { renderQuickAccessAll } from "./navigation/quick-access.ts";
-import { updateActivePeriodDescription } from "./navigation/period-selector.ts";
 import { getCurrentView, setCurrentView } from "./state/view-state.ts";
 
 // Only the two lines below still do anything: theme UI itself is owned by Sidebar.tsx
@@ -31,12 +33,12 @@ function applyTheme(theme: string) {
   appState.settings.theme = theme;
 }
 
-// Called by legacy modules that still trigger navigation imperatively (global-search.ts,
-// quick-access.ts, bulk-actions.ts, context-menu.ts, backup/index.ts, backup/restore.ts,
-// backup/reminder.ts) instead of going through App.tsx's onSelectView prop. Delegates the actual
-// view switch to state/view-state.ts, the same store App.tsx reads via useCurrentView(), so the
-// two stay in sync instead of switchToView() silently doing nothing (see view-state.ts's header
-// comment for how that used to fail).
+// Called by legacy modules that still trigger navigation imperatively (bulk-actions.ts,
+// context-menu.ts, backup/index.ts, backup/restore.ts, backup/reminder.ts) instead of going
+// through App.tsx's onSelectView prop. Delegates the actual view switch to state/view-state.ts,
+// the same store App.tsx reads via useCurrentView(), so the two stay in sync instead of
+// switchToView() silently doing nothing (see view-state.ts's header comment for how that used to
+// fail).
 function switchToView(view: string) {
   if (view !== "activities" && activitiesState.selectedIds) {
     activitiesState.selectedIds.clear();
@@ -71,24 +73,11 @@ async function renderView(view: string) {
 
 function renderAll() {
   populateDropdowns();
-  renderQuickAccessAll();
-  updateActivePeriodDescription();
   renderView(getCurrentView());
 }
 
 function populateDropdowns() {
-  const filterSallePanel = document.getElementById("filter-salle-panel") as HTMLElement | null;
   const deptsSelects = [document.getElementById("form-activity-dept") as HTMLSelectElement | null];
-
-  // Multi-select: rebuild the checkbox list, preserving whatever was checked
-  if (filterSallePanel) {
-    const previousSalleValues = getMultiSelectValues("filter-salle-panel");
-    const rooms = appState.settings?.rooms || [];
-    filterSallePanel.innerHTML = rooms
-      .map(r => `<label class="multi-select-option"><input type="checkbox" value="${escapeHtml(r.name)}" /> ${escapeHtml(r.name)}</label>`)
-      .join("");
-    setMultiSelectValues("filter-salle-panel", previousSalleValues);
-  }
 
   // Note: the salle selector inside each reservation card is a searchable combobox built
   // directly from appState.settings.rooms at card-creation time (see buildRoomSelectItems()
@@ -108,17 +97,6 @@ function populateDropdowns() {
       select.innerHTML += `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`;
     });
   });
-
-  const reportAccountSelect = document.getElementById("filter-report-account") as HTMLSelectElement | null;
-  if (reportAccountSelect) {
-    const previousReportValue = reportAccountSelect.value;
-    reportAccountSelect.innerHTML = '<option value="">Tous les comptes</option>';
-    appState.settings.accounts.forEach(acc => {
-      reportAccountSelect.innerHTML += `<option value="${escapeHtml(acc.code)}">${escapeHtml(acc.code)} (${escapeHtml(acc.description)})</option>`;
-    });
-    reportAccountSelect.value = previousReportValue;
-  }
 }
 
-export { applyTheme, switchToView, renderView, renderAll, populateDropdowns, renderQuickAccessAll };
-export { initPeriodSelector } from "./navigation/period-selector.ts";
+export { applyTheme, switchToView, renderView, renderAll, populateDropdowns };

@@ -73,41 +73,16 @@ function checkBackupReminder() {
   }
 }
 
+// Only refreshes the safety-backups list now. The date/status-badge/reminder-input it used to
+// also write into (#backup-status-date, #backup-status-badge-container,
+// #backup-reminder-days-input) are all real React-controlled elements in
+// components/backup/BackupView.tsx, driven directly off appState via useAppState — writing into
+// them here just fought that on every call, and lost every time BackupView itself next
+// re-rendered (e.g. right after any backup, since nothing re-ran this function to "fix" it back).
+// getDaysSinceLastBackup()/formatLocalDateToFrench() stay exported: BackupView.tsx computes the
+// same badge/date directly from them.
 function renderBackupView() {
-  const lastBackup = appState.settings.last_backup_date;
-  const reminderDays = appState.settings.backup_reminder_days || 7;
-
-  // Update date text
-  const dateEl = document.getElementById("backup-status-date");
-  if (dateEl) {
-    dateEl.textContent = lastBackup ? `${formatLocalDateToFrench(lastBackup)} (${lastBackup})` : "Aucune sauvegarde effectuée";
-  }
-
-  // Update status badge
-  const badgeContainer = document.getElementById("backup-status-badge-container");
-  if (badgeContainer) {
-    if (appState.activities.length === 0) {
-      badgeContainer.innerHTML = `<span class="badge badge-info">Aucune donnée à sauvegarder</span>`;
-    } else if (!lastBackup) {
-      badgeContainer.innerHTML = `<span class="badge badge-danger">Non sauvegardé</span>`;
-    } else {
-      const days = getDaysSinceLastBackup();
-      if (days !== null && days >= reminderDays) {
-        badgeContainer.innerHTML = `<span class="badge badge-warning">Sauvegarde requise</span>`;
-      } else {
-        badgeContainer.innerHTML = `<span class="badge badge-success">À jour</span>`;
-      }
-    }
-  }
-
-  // Update reminder input value
-  const inputEl = document.getElementById("backup-reminder-days-input") as HTMLInputElement | null;
-  if (inputEl) {
-    inputEl.value = String(reminderDays);
-  }
-
   renderSafetyBackupsList();
-  updateDeletedActivitiesBadge();
 }
 
 // Soft-deleted activities (see appState.activities[].deleted) so a user who removed one by
@@ -118,13 +93,6 @@ function renderBackupView() {
 // list, since that list has no upper bound over the life of the app.
 function getDeletedActivities() {
   return appState.activities.filter((a: any) => a.deleted);
-}
-
-function updateDeletedActivitiesBadge() {
-  const badge = document.getElementById("deleted-activities-count-badge");
-  if (!badge) return;
-  const count = getDeletedActivities().length;
-  badge.textContent = count > 0 ? `(${count})` : "";
 }
 
 function formatActivityDateLabel(act: any): string {
@@ -282,7 +250,6 @@ async function restoreDeletedActivity(id: string) {
 
   if (saved) {
     showToast("Activité restaurée.", "success");
-    updateDeletedActivitiesBadge();
     const searchInput = document.getElementById("deleted-activities-search") as HTMLInputElement | null;
     renderDeletedActivitiesModalList(searchInput?.value || "");
     const { reconciliationState, reconcileLedger } = await import("../reconciliation.ts");
@@ -387,7 +354,6 @@ export {
   checkBackupReminder,
   renderBackupView,
   renderSafetyBackupsList,
-  updateDeletedActivitiesBadge,
   renderDeletedActivitiesModalList,
   openDeletedActivitiesModal,
   closeDeletedActivitiesModal,

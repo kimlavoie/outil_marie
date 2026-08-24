@@ -44,12 +44,12 @@ function isFavoriteActivity(id: string) {
 }
 
 function toggleFavoriteActivity(id: string) {
-  if (!appState.favorites) appState.favorites = [];
-  if (appState.favorites.includes(id)) {
-    appState.favorites = appState.favorites.filter(f => f !== id);
-  } else {
-    appState.favorites.push(id);
-  }
+  const favorites = appState.favorites || [];
+  // Always reassign to a new array, even when adding: useAppState()'s useSyncExternalStore
+  // compares snapshots by reference, so mutating the existing array in place (push) leaves
+  // components selecting appState.favorites unaware anything changed until some unrelated
+  // re-render happens to catch it up.
+  appState.favorites = favorites.includes(id) ? favorites.filter(f => f !== id) : [...favorites, id];
   saveDatabase();
 }
 

@@ -232,7 +232,7 @@ function getExcelColName(colIdx: number) {
 function exportToExcel(customOptions?: ExcelExportOptions) {
   if (!customOptions) {
     // Open the export modal if no options were passed
-    import("./excel-export-modal.ts").then(m => m.openExcelExportModal());
+    import("../components/modals/ExcelExportModal.tsx").then(m => m.openExcelExportModal());
     return;
   }
 

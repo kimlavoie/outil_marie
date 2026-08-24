@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useAppState, saveDatabase, saveDatabaseOrRollback, seedDatabase } from "../../state/state.ts";
+import { useAppState, appState, saveDatabase, saveDatabaseOrRollback, saveSafetyBackupToDb, seedDatabase } from "../../state/state.ts";
 import { showToast } from "../../utils/utils.ts";
+import { logError } from "../../utils/logger.ts";
 import { exportToExcel } from "../../services/excel-export.ts";
 import { handleJsonBackupFile } from "../../services/backup/restore.ts";
 import {
   checkBackupReminder,
-  renderBackupView,
+  getDaysSinceLastBackup,
+  formatLocalDateToFrench,
   renderSafetyBackupsList,
   openDeletedActivitiesModal,
   exportDiagnosticLogs
@@ -24,7 +26,6 @@ export const BackupView: React.FC = () => {
   useEffect(() => {
     // Initialise auto backup & safety backups logic on mount
     initAutoBackup();
-    renderBackupView();
     renderSafetyBackupsList();
   }, []);
 
@@ -80,10 +81,16 @@ export const BackupView: React.FC = () => {
   const handleResetDatabase = () => {
     if (window.confirm("ÊTES-VOUS SÛR ? Cette action va EFFACER TOUTES LES ACTIVITÉS saisies et réinitialiser l'application.")) {
       if (window.confirm("CONFIRMATION FINALE : Réinitialiser complètement la base de données ?")) {
-        seedDatabase().then(() => {
+        (async () => {
+          try {
+            await saveSafetyBackupToDb("avant_reinitialisation", JSON.parse(JSON.stringify(appState)));
+          } catch (err) {
+            logError("backup", "sauvegarde de sécurité avant réinitialisation", err);
+          }
+          await seedDatabase();
           showToast("Base de données réinitialisée.", "info");
           window.location.reload();
-        });
+        })();
       }
     }
   };
@@ -188,13 +195,26 @@ export const BackupView: React.FC = () => {
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "0.95rem" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border-color)", paddingBottom: "8px" }}>
               <span style={{ color: "var(--text-secondary)" }}>Dernière sauvegarde :</span>
-              <span id="backup-status-date" style={{ fontWeight: 600 }}>
-                {lastBackup ? lastBackup : "Aucune sauvegarde effectuée"}
+              <span style={{ fontWeight: 600 }}>
+                {lastBackup ? `${formatLocalDateToFrench(lastBackup)} (${lastBackup})` : "Aucune sauvegarde effectuée"}
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "4px" }}>
               <span style={{ color: "var(--text-secondary)" }}>Statut :</span>
-              <span id="backup-status-badge-container"></span>
+              <span>
+                {activities.length === 0 ? (
+                  <span className="badge badge-info">Aucune donnée à sauvegarder</span>
+                ) : !lastBackup ? (
+                  <span className="badge badge-danger">Non sauvegardé</span>
+                ) : (() => {
+                    const days = getDaysSinceLastBackup();
+                    return days !== null && days >= reminderDays ? (
+                      <span className="badge badge-warning">Sauvegarde requise</span>
+                    ) : (
+                      <span className="badge badge-success">À jour</span>
+                    );
+                  })()}
+              </span>
             </div>
           </div>
         </div>
