@@ -2,16 +2,20 @@
  * calendar-view.tsx - Activities calendar modal (day/week/month views of activities, colored by
  * the room(s) they're booked in).
  *
+ * <CalendarModal> is rendered directly by App.tsx's own tree (same pattern as settings/mount.ts's
+ * useSettingsCommand/<SettingsView command={...}>), not mounted as a second, detached React root —
+ * that used to createRoot() into a #calendar-modal-root div nobody but this module cared about.
+ *
  * External entry points called from outside this module:
  * - main.ts's DOMContentLoaded bootstrap calls initCalendarModal()/initViewCalendarButtons() once
  * - src/activities/form.ts calls reopenCalendarModal(calendarReturn) ("back to calendar" button),
  *   via a dynamic import() since this is a .tsx file and that module must stay importable by
  *   plain `node --test` (Node can't load .tsx)
- * These are relayed through a small command/sequence-number queue the mounted component applies
- * via useEffect, same pattern as src/components/dashboard-view.tsx and src/components/settings/view.tsx.
+ * These go through a plain command store (useSyncExternalStore, same pattern as
+ * src/components/settings/mount.ts) that the live <CalendarModal> instance in App.tsx reads via
+ * useCalendarCommand().
  */
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { appState, parseLocalDateStr } from "../state/state.ts";
 import { getRoomColor, getReservationRoomLabel } from "../utils/utils.ts";
 import { openActivityDrawer, openActivityDetailModal } from "../activities/financials.ts";
@@ -228,7 +232,7 @@ interface Command {
   viewMode: ViewMode;
 }
 
-function CalendarModal({ command }: { command: Command | null }) {
+export function CalendarModal({ command }: { command: Command | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [refDate, setRefDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
@@ -540,20 +544,22 @@ function CalendarModal({ command }: { command: Command | null }) {
   );
 }
 
-let root: Root | null = null;
 let pendingCommand: Command | null = null;
 let seqCounter = 0;
+const listeners = new Set<() => void>();
 
-function mount() {
-  const container = document.getElementById("calendar-modal-root");
-  if (!container) return;
-  if (!root) root = createRoot(container);
-  root.render(<CalendarModal command={pendingCommand} />);
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function useCalendarCommand(): Command | null {
+  return useSyncExternalStore(subscribe, () => pendingCommand);
 }
 
 function pushCommand(refDate: Date, viewMode: ViewMode) {
   pendingCommand = { seq: ++seqCounter, refDate, viewMode };
-  mount();
+  listeners.forEach(listener => listener());
 }
 
 function openCalendarModal() {
@@ -593,3 +599,4 @@ function initViewCalendarButtons() {
 }
 
 export { initCalendarModal, initViewCalendarButtons, openCalendarModal, openCalendarAtDate, reopenCalendarModal };
+export type { Command };

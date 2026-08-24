@@ -484,16 +484,25 @@ export function autoAddLinkedStaffAndFees(card: HTMLElement, roomName: string) {
   const room = appState.settings.rooms.find((r: any) => r.name === roomName);
   if (!room) return;
 
-  const staffList = card.querySelector<HTMLInputElement>(".room-staff-list")!;
-  (room.linked_staff || []).forEach((s: any) => {
-    const numToCreate = typeof s.count === "number" ? s.count : 1;
-    for (let i = 0; i < numToCreate; i++) {
-      addStaffRow(staffList, s.salary_id, "", 0, 0, true);
-    }
-  });
+  // Non-null-safe: .room-staff-list/.room-fees-list live in StaffServicesFeesFields.tsx, a
+  // separate React root mounted asynchronously by card.tsx's addReservationCard() — this can run
+  // (from RoomTariffFields.tsx's room-select onChange) before it's committed. Silently skipping
+  // in that unlikely window beats crashing; a user picking a room always has this section
+  // already visible on screen in practice.
+  const staffList = card.querySelector<HTMLInputElement>(".room-staff-list");
+  if (staffList) {
+    (room.linked_staff || []).forEach((s: any) => {
+      const numToCreate = typeof s.count === "number" ? s.count : 1;
+      for (let i = 0; i < numToCreate; i++) {
+        addStaffRow(staffList, s.salary_id, "", 0, 0, true);
+      }
+    });
+  }
 
-  const feesList = card.querySelector<HTMLInputElement>(".room-fees-list")!;
-  (room.linked_fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, true));
+  const feesList = card.querySelector<HTMLInputElement>(".room-fees-list");
+  if (feesList) {
+    (room.linked_fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, true));
+  }
 }
 
 // Rows dropped by collectStaffFromForm/collectServicesFromForm/collectFeesFromForm because they're

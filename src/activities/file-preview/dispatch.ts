@@ -8,36 +8,10 @@
  * constructor signature) is loaded via dynamic import so pdfjs-dist/xlsx/mammoth stay out of the
  * main bundle, same as file-links/preview.ts already does for the form/submission/contract tabs.
  */
-import { escapeHtml } from "../../utils/utils.ts";
-
-const TEXT_EXTENSIONS = new Set([".txt", ".csv", ".json", ".md", ".log", ".xml"]);
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg"]);
 
 let currentObjectUrl: string | null = null;
 let currentDownload: { blob: Blob; fileName: string } | null = null;
-
-function extensionOf(fileName: string): string {
-  const idx = fileName.lastIndexOf(".");
-  return idx === -1 ? "" : fileName.slice(idx).toLowerCase();
-}
-
-function showMountError(mount: HTMLElement, message: string) {
-  mount.innerHTML = `
-    <div class="pdf-preview-error" style="margin: 40px auto; max-width: 80%;">
-      <span class="error-badge">⚠️</span>
-      <p>${escapeHtml(message)}</p>
-    </div>
-  `;
-}
-
-function showUnsupportedFallback(mount: HTMLElement, fileName: string) {
-  mount.innerHTML = `
-    <div class="pdf-preview-empty">
-      <svg viewBox="0 0 24 24" class="pdf-preview-icon"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V7h2v2zm6 8h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/></svg>
-      <p>Aucun aperçu disponible pour ce type de fichier (${escapeHtml(fileName)}). Utilisez « Télécharger » pour l'ouvrir avec une autre application.</p>
-    </div>
-  `;
-}
 
 import { triggerOpenFilePreviewModal } from "../../components/modals/FilePreviewModal.tsx";
 

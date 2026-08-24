@@ -159,13 +159,10 @@ function val(id: string) {
 test("fillActivityFormFields binds the top-level and manager fields onto the form", () => {
   fillActivityFormFields(ACTIVITY);
 
-  assert.equal(val("form-activity-coba"), "COBA-123");
-  assert.equal(val("form-activity-name"), "Conférence Test");
-  assert.equal(val("form-activity-attendees"), "42");
-  // form-activity-responsable-firstname/lastname/client-type are no longer bound here — that's
-  // React-controlled state in components/activities/ActivityDrawer.tsx now (see
-  // test/responsable-facturation-address.test.tsx).
-  assert.equal(val("form-activity-description"), "Une description détaillée");
+  // form-activity-coba/name/attendees/description ("Informations générales") and
+  // form-activity-responsable-firstname/lastname/client-type ("Responsable") are no longer bound
+  // here — both are React-controlled state in components/activities/ActivityDrawer.tsx now (see
+  // test/responsable-facturation-address.test.tsx and test/activity-drawer-general-info.test.tsx).
   assert.equal(val("form-activity-notes"), "Prévoir du café");
 
   assert.equal(val("form-activity-manager-firstname"), "Marie");
@@ -217,13 +214,9 @@ test("fillActivityFormFields leaves the mode toggle unlocked for a brouillon act
   assert.equal(document.getElementById("activity-mode-group")!.style.display, "block");
 });
 
-test("fillActivityFormFields auto-adds a blank reservation card (with one slot) when the activity has none yet", () => {
-  fillActivityFormFields({ ...ACTIVITY, reservations: [] });
-
-  const cards = document.querySelectorAll("#form-activity-reservations .reservation-card");
-  assert.equal(cards.length, 1);
-  assert.equal(cards[0].querySelectorAll(".reservation-slot-row").length, 1);
-});
+// The blank-reservation-card auto-add used to happen here too — it's now
+// components/activities/ActivityDrawer.tsx's reservationCardIds seeding effect
+// (see test/activity-drawer-reservations.test.tsx).
 
 test("fillActivityFormFields loads the activity's distributions as GL distribution rows", () => {
   fillActivityFormFields(ACTIVITY);

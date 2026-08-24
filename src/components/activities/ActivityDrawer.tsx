@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useAppState, appState, recordActivityView, saveDatabaseOrRollback } from "../../state/state.ts";
-import { showToast, elById, debounce, formatPostalCode } from "../../utils/utils.ts";
+import { createRoot, type Root } from "react-dom/client";
+import { InstallDismantleFields } from "./InstallDismantleFields.tsx";
+import { useAppState, appState, recordActivityView } from "../../state/state.ts";
+import { elById, debounce, formatPostalCode, generateUid } from "../../utils/utils.ts";
 import { activitiesState, renderActivities } from "../../activities/render.ts";
 import {
   fillActivityFormFields,
@@ -9,15 +11,16 @@ import {
   commitActivityPatch,
   initFormHandlers
 } from "../../activities/form.ts";
+import { addReservationCard, collectSlotsFromCard } from "../../activities/reservations/index.ts";
 import { updateSubmissionFinancialSummary } from "../../activities/financial-summary.ts";
 import { showAutoSaveStatus, autoSaveActivityForm } from "../../activities/autosave.ts";
-import { cancelActivityDrawer, closeActivityDrawer as legacyCloseActivityDrawer, clearDrawerUiState } from "../../activities/drawer.ts";
+import { cancelActivityDrawer, clearDrawerUiState } from "../../activities/drawer.ts";
 import { updateFormDatesHelper, loadAndRenderActivityHistory } from "../../activities/history/index.ts";
 import { renderPlanningTab } from "../../activities/planning-tab.ts";
 import { renderBillingStateStatus } from "../../activities/billing-tab.ts";
 import { renderFileLinkStatus } from "../../activities/file-links/index.ts";
 import { renderSupportingDocsStatus } from "../../activities/supporting-docs/index.ts";
-import type { Activity } from "../../types/activity.ts";
+import { populateDropdowns } from "../../navigation.ts";
 
 let openDrawerSubscriber: ((id: string, calendarReturn?: any, initialTab?: string) => void) | null = null;
 let closeDrawerSubscriber: (() => void) | null = null;
@@ -39,7 +42,9 @@ export function triggerCloseActivityDrawer(): void {
 }
 
 export const ActivityDrawer: React.FC = () => {
-  const state = useAppState();
+  // Subscribed for its re-render side effect only: much of this component reads appState.* directly
+  // (not from useAppState's returned snapshot), so it needs this call just to re-render on any change.
+  useAppState();
   const [isOpen, setIsOpen] = useState(false);
   const [activityId, setActivityId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("submission");
@@ -61,6 +66,32 @@ export const ActivityDrawer: React.FC = () => {
   // Mirrors #form-activity-manager-type's live value (that field stays legacy/uncontrolled) so we
   // can derive the "manager is external + same-as-manager checked" client-type lock reactively.
   const [managerTypeForLock, setManagerTypeForLock] = useState("");
+
+  // React-controlled "Informations générales" fields (next Phase-1-style slice of
+  // activities/form.ts's conversion, same pattern as the Responsable fields above).
+  const [coba, setCoba] = useState("");
+  const [name, setName] = useState("");
+  const [attendeesCount, setAttendeesCount] = useState("");
+  const [description, setDescription] = useState("");
+
+  // React-owned reservation-card shell (Phase-1-style "sub-tranche A" of the reservations
+  // conversion): reservationCardIds is the list of cards that exist. Each card's internal content
+  // (room, tariff, créneaux, bar service, staff/services/fees...) still comes from the legacy
+  // addReservationCard()/card.ts — this only owns which cards exist and their mount points, not
+  // what's inside them. cardInitRef holds the one-time data each id's card should be built from
+  // (existing reservation data on open, or extra créneaux carried over from the last card when
+  // adding a new blank one) — addReservationCard() consumes it once, on mount, via
+  // mountReservationCard() below. mountedCardIdsRef guards against re-running that on every
+  // re-render (e.g. from the useAppState() subscription at the top of this component).
+  const [reservationCardIds, setReservationCardIds] = useState<string[]>([]);
+  const cardInitRef = useRef<Record<string, { data: any; extraSlots?: any[]; addBlankSlot?: boolean }>>({});
+  const mountedCardIdsRef = useRef<Set<string>>(new Set());
+  // One secondary React root per card for InstallDismantleFields (see mountReservationCard) —
+  // torn down explicitly in handleRemoveReservation, unlike the old dead-root bugs fixed earlier
+  // (settings/mount.ts, reconciliation-mount.ts, dashboard-mount.ts): this one really is mounted.
+  // Créneaux (SlotsFields, "sous-tranche C") is a similar secondary root but created and torn
+  // down by card.tsx's addReservationCard() itself instead — see its header comment for why.
+  const installDismantleRootsRef = useRef<Record<string, Root>>({});
 
   const drawerRef = useRef<HTMLDivElement>(null);
   const debouncedAutoSaveRef = useRef(debounce(autoSaveActivityForm, 500));
@@ -117,6 +148,108 @@ export const ActivityDrawer: React.FC = () => {
     setResponsablePostalCode(formatPostalCode(act.responsable_postal_code || ""));
     setManagerTypeForLock(act.activity_manager?.type || "employe");
   }, [isOpen, activityId]);
+
+  // Seed the React-controlled "Informations générales" fields the same way.
+  useEffect(() => {
+    if (!isOpen || !activityId) return;
+    const act = appState.activities.find((a: any) => a.id === activityId);
+    if (!act) return;
+
+    setCoba(act.coba || "");
+    setName(act.name || "");
+    setAttendeesCount(act.attendees_count ? String(act.attendees_count) : "");
+    setDescription(act.description || "");
+  }, [isOpen, activityId]);
+
+  // Seed the reservation-card shell: one id per existing reservation, or a single blank card
+  // (with one blank créneau) when the activity has none yet — matches what
+  // fillActivityFormFields() used to do directly before this slice.
+  useEffect(() => {
+    if (!isOpen || !activityId) return;
+    const act = appState.activities.find((a: any) => a.id === activityId);
+    if (!act) return;
+
+    mountedCardIdsRef.current = new Set();
+    cardInitRef.current = {};
+
+    const reservations = act.reservations || [];
+    if (reservations.length === 0) {
+      const blankId = generateUid("res");
+      cardInitRef.current[blankId] = { data: null, addBlankSlot: true };
+      setReservationCardIds([blankId]);
+    } else {
+      const ids: string[] = [];
+      reservations.forEach((r: any) => {
+        const id = r.id || generateUid("res");
+        cardInitRef.current[id] = { data: r };
+        ids.push(id);
+      });
+      setReservationCardIds(ids);
+    }
+  }, [isOpen, activityId]);
+
+  // Builds the one-time card content into a mount point once React has attached it — guarded so
+  // it only ever runs once per id, since the ref callback re-fires on every re-render otherwise.
+  const mountReservationCard = (id: string, el: HTMLDivElement | null) => {
+    if (!el || mountedCardIdsRef.current.has(id)) return;
+    mountedCardIdsRef.current.add(id);
+    const init = cardInitRef.current[id] || { data: null };
+    // Créneaux (SlotsFields — "sous-tranche C") are seeded/mounted by addReservationCard() itself
+    // now (see card.tsx), since collectReservationsFromForm()/computeFormRevenueSubtotal() need
+    // the rows to exist immediately, unlike install/dismantle's toggle. init.addBlankSlot/
+    // extraSlots override reservationData.slots for the two cases that aren't just "load this
+    // reservation's own slots": a brand new blank card starts with one blank créneau, and a new
+    // card added via handleAddReservation carries over the previous card's créneaux.
+    const initialSlots = init.addBlankSlot ? [{}] : init.extraSlots?.length ? init.extraSlots : undefined;
+    const card = addReservationCard(init.data, el, () => handleRemoveReservation(id), initialSlots);
+    if (card) {
+      // Montage/Démontage ("sous-tranche B") is its own React root mounted into the placeholder
+      // card.ts leaves for it — see InstallDismantleFields.tsx's header comment for why it's a
+      // separate root instead of JSX rendered here (the rest of the card is legacy HTML).
+      const installDismantleMount = card.querySelector<HTMLElement>(".reservation-install-dismantle-mount");
+      if (installDismantleMount) {
+        const root = createRoot(installDismantleMount);
+        installDismantleRootsRef.current[id] = root;
+        root.render(
+          <InstallDismantleFields uid={card.id} initialInstall={init.data?.install} initialDismantle={init.data?.dismantle} />
+        );
+      }
+    }
+    // Deferred: mountReservationCard runs from this wrapper div's ref callback, which fires
+    // during ActivityDrawer's own commit — calling flushSync there to force the secondary
+    // InstallDismantleFields root above to commit synchronously isn't allowed (React rejects
+    // flushSync nested inside another commit). updateFormDatesHelper()/updateSubmissionFinancialSummary()
+    // read .reservation-install-toggle unconditionally via collectReservationsFromForm(), so they
+    // need to run after that root has actually committed — a macrotask away is enough.
+    setTimeout(() => {
+      updateFormDatesHelper();
+      updateSubmissionFinancialSummary();
+    }, 0);
+  };
+
+  const handleAddReservation = () => {
+    const container = document.getElementById("form-activity-reservations");
+    const existingCards = container ? container.querySelectorAll<HTMLElement>(".reservation-card") : [];
+    const lastCard = existingCards[existingCards.length - 1] as HTMLElement | undefined;
+    const previousSlots = lastCard ? collectSlotsFromCard(lastCard) : [];
+
+    const newId = generateUid("res");
+    cardInitRef.current[newId] = { data: null, extraSlots: previousSlots.length ? previousSlots : undefined };
+    setReservationCardIds(ids => [...ids, newId]);
+  };
+
+  const handleRemoveReservation = (id: string) => {
+    mountedCardIdsRef.current.delete(id);
+    delete cardInitRef.current[id];
+    const installDismantleRoot = installDismantleRootsRef.current[id];
+    if (installDismantleRoot) {
+      installDismantleRoot.unmount();
+      delete installDismantleRootsRef.current[id];
+    }
+    // The SlotsFields root is unmounted by card.tsx's own remove-button handler before it calls
+    // this callback (it created that root, so it owns tearing it down too) — nothing to do here.
+    setReservationCardIds(ids => ids.filter(x => x !== id));
+  };
 
   // #form-activity-manager-type stays a legacy/uncontrolled <select> (outside this slice); mirror
   // its live value into React state so the client-type lock below can react to it.
@@ -195,6 +328,7 @@ export const ActivityDrawer: React.FC = () => {
     if (!act) return;
 
     const timer = setTimeout(() => {
+      populateDropdowns();
       fillActivityFormFields(act);
       renderActivityStateBar(act);
       initFormHandlers();
@@ -424,24 +558,54 @@ export const ActivityDrawer: React.FC = () => {
                     </div>
                     <div className="form-group">
                       <label htmlFor="form-activity-coba">Références COBA collégial</label>
-                      <input type="text" id="form-activity-coba" className="form-input" placeholder="Ex: 123456; 789012" />
+                      <input
+                        type="text"
+                        id="form-activity-coba"
+                        className="form-input"
+                        placeholder="Ex: 123456; 789012"
+                        value={coba}
+                        onChange={e => setCoba(e.target.value)}
+                      />
                     </div>
                   </div>
 
                   <div className="form-group-row">
                     <div className="form-group">
                       <label htmlFor="form-activity-name">Nom de l'activité *</label>
-                      <input type="text" id="form-activity-name" className="form-input" required placeholder="Ex: Réunion SCOUTS" />
+                      <input
+                        type="text"
+                        id="form-activity-name"
+                        className="form-input"
+                        required
+                        placeholder="Ex: Réunion SCOUTS"
+                        value={name}
+                        onChange={e => setName(e.target.value)}
+                      />
                     </div>
                     <div className="form-group estimation-hide">
                       <label htmlFor="form-activity-attendees">Nombre de personnes attendues</label>
-                      <input type="number" id="form-activity-attendees" className="form-input" min="0" placeholder="Ex: 50" />
+                      <input
+                        type="number"
+                        id="form-activity-attendees"
+                        className="form-input"
+                        min="0"
+                        placeholder="Ex: 50"
+                        value={attendeesCount}
+                        onChange={e => setAttendeesCount(e.target.value)}
+                      />
                     </div>
                   </div>
 
                   <div className="form-group estimation-hide">
                     <label htmlFor="form-activity-description">Description de l'activité</label>
-                    <textarea id="form-activity-description" className="form-input" rows={2} placeholder="Décrivez l'activité..." />
+                    <textarea
+                      id="form-activity-description"
+                      className="form-input"
+                      rows={2}
+                      placeholder="Décrivez l'activité..."
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                    />
                   </div>
                 </div>
               </details>
@@ -647,10 +811,20 @@ export const ActivityDrawer: React.FC = () => {
                   <span>Réservation de salles</span>
                 </summary>
                 <div className="form-accordion-content">
-                  <div id="form-activity-reservations" />
+                  <div id="form-activity-reservations">
+                    {reservationCardIds.map(id => (
+                      <div key={id} ref={el => mountReservationCard(id, el)} />
+                    ))}
+                  </div>
                   <div id="form-activity-room-conflicts" style={{ display: "none", marginTop: "8px", marginBottom: "4px" }} />
                   <div style={{ marginTop: "8px", marginBottom: "12px" }}>
-                    <button type="button" id="add-reservation-btn" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "0.8rem" }}>
+                    <button
+                      type="button"
+                      id="add-reservation-btn"
+                      className="btn btn-secondary"
+                      style={{ padding: "6px 12px", fontSize: "0.8rem" }}
+                      onClick={handleAddReservation}
+                    >
                       + Ajouter une réservation
                     </button>
                   </div>

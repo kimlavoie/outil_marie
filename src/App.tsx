@@ -8,6 +8,7 @@ import { ActivityDrawer } from "./components/activities/ActivityDrawer.tsx";
 import { ReconciliationView } from "./components/reconciliation-view.tsx";
 import { SettingsView } from "./components/settings/view.tsx";
 import { useSettingsCommand } from "./components/settings/mount.ts";
+import { CalendarModal, useCalendarCommand } from "./components/calendar-view.tsx";
 import { AccountReportView } from "./components/account-report/AccountReportView.tsx";
 import { BackupView } from "./components/backup/BackupView.tsx";
 import { GlobalModals } from "./components/modals/GlobalModals.tsx";
@@ -15,13 +16,13 @@ import { checkBackupReminder } from "./services/backup/reminder.ts";
 import { initAutoBackup } from "./services/backup/auto-backup.ts";
 import { openActivityDrawer } from "./activities/financials.ts";
 import { getSavedDrawerUiState } from "./activities/financials.ts";
-import { switchActivityTab } from "./activities/form.ts";
 import { appState } from "./state/state.ts";
 import { useCurrentView, setCurrentView } from "./state/view-state.ts";
 
 export const App: React.FC = () => {
   const currentView = useCurrentView();
   const settingsCommand = useSettingsCommand();
+  const calendarCommand = useCalendarCommand();
   const [isHelpOpen, setIsHelpOpen] = React.useState(false);
 
   const handleSelectView = (view: string) => {
@@ -98,6 +99,7 @@ export const App: React.FC = () => {
       <HelpCenterModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       <GlobalModals />
       <ActivityDrawer />
+      <CalendarModal command={calendarCommand} />
     </div>
   );
 };

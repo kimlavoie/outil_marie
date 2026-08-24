@@ -11,7 +11,6 @@ import {
 } from "../../utils/utils.ts";
 import { reconciliationState, reconcileLedger } from "../../services/reconciliation.ts";
 import { openActivityDrawer } from "../../activities/financials.ts";
-import { openNewActivityModal } from "../../activities/new-activity-modal.ts";
 import { openCalendarModal } from "../calendar-view.tsx";
 import { showActivityContextMenu, closeActivityContextMenu } from "../../activities/context-menu.ts";
 import { TECHNICAL_DIRECTOR_SALARY_ID } from "../../activities/reservations/subrows.ts";
@@ -56,7 +55,7 @@ function getPlanningProgress(act: Activity) {
 }
 
 export const ActivitiesView: React.FC = () => {
-  const activities = useAppState(s => s.activities) || [];
+  const activities = useAppState(s => s.activities);
   const rooms = useAppState(s => s.settings?.rooms) || [];
   const selectedYear = useAppState(s => s.selected_year);
   const selectedQuarters = useAppState(s => s.selected_quarters);
@@ -97,7 +96,7 @@ export const ActivitiesView: React.FC = () => {
         }
       };
       localStorage.setItem("outil_marie_ui_state", JSON.stringify(updated));
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }, [searchQuery, selectedSalles, selectedClientTypes, selectedStatuses, sortKey, sortOrder, page, pageSize]);
@@ -139,7 +138,7 @@ export const ActivitiesView: React.FC = () => {
   const filteredActivities = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return activities.filter(act => {
+    return (activities || []).filter(act => {
       if (act.deleted) return false;
 
       // Search filter

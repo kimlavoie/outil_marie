@@ -13,9 +13,26 @@ test.after(() => dom.window.close());
   clear() { this.store = {}; }
 };
 
-import { act, fireEvent } from "@testing-library/react";
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+
+import { render, cleanup, act, fireEvent } from "@testing-library/react";
 import { setAppState } from "../src/state/state.ts";
-import { openCalendarModal, openCalendarAtDate, reopenCalendarModal } from "../src/components/calendar-view.tsx";
+import {
+  CalendarModal,
+  useCalendarCommand,
+  openCalendarModal,
+  openCalendarAtDate,
+  reopenCalendarModal
+} from "../src/components/calendar-view.tsx";
+
+// <CalendarModal> now reads its command via useCalendarCommand() (a plain useSyncExternalStore
+// store, same pattern as settings/mount.ts) instead of owning its own createRoot() — App.tsx
+// renders it directly. Mirror that here with a small harness component rendered through
+// @testing-library/react, same pattern as the activity-drawer tests.
+function Harness() {
+  const command = useCalendarCommand();
+  return <CalendarModal command={command} />;
+}
 
 const YEAR = "2025-2026";
 const ALL_QUARTERS = [1, 2, 3, 4];
@@ -55,27 +72,16 @@ function activity(overrides: any = {}) {
   };
 }
 
-// This module manages its own persistent React root (via createRoot), cached at module scope
-// (see calendar-view.tsx's `root` variable) — unlike the other view components, it isn't rendered
-// through @testing-library/react's render(). The container must therefore stay attached to the
-// document for the whole file (recreating it per test would leave `root` pointing at a detached
-// node), so tests reset state by calling the exported open*/reopen* functions rather than
-// wiping the DOM.
-let modalRoot: HTMLElement;
-
-test.before(() => {
-  modalRoot = document.createElement("div");
-  modalRoot.id = "calendar-modal-root";
-  document.body.appendChild(modalRoot);
-
+test.beforeEach(() => {
+  setAppState(baseState());
+  document.body.innerHTML = "";
   const backdrop = document.createElement("div");
   backdrop.id = "modal-backdrop";
   document.body.appendChild(backdrop);
+  render(<Harness />);
 });
 
-test.beforeEach(() => {
-  setAppState(baseState());
-});
+test.afterEach(() => cleanup());
 
 test("openCalendarModal opens the modal in month view showing the current month", () => {
   const now = new Date();

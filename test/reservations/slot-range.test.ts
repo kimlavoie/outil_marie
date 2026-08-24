@@ -118,7 +118,10 @@ test("rejects a range where the start date is after the end date, without adding
 test("the generate button hides the range generator panel again and a single-day range produces exactly one slot", () => {
   const card = buildCard();
   const generatorEl = card.querySelector<HTMLElement>(".reservation-slot-range-generator")!;
-  generatorEl.style.display = "block";
+  // Open the panel through the real toggle button (its visibility is React state now —
+  // SlotsFields.tsx's generatorOpen — not a class/style the test can force directly).
+  click(card.querySelector(".reservation-add-slot-range-btn")!);
+  assert.equal(generatorEl.style.display, "block");
 
   card.querySelector<HTMLInputElement>(".slot-range-start-date")!.value = "2025-08-04";
   card.querySelector<HTMLInputElement>(".slot-range-end-date")!.value = "2025-08-04";

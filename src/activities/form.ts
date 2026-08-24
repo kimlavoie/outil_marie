@@ -3,8 +3,9 @@
  * file link tabs, planning tab, and drawer field population.
  * Part 2/5 of the activities module (see activities-render.ts for context).
  *
- * The activity drawer/form itself isn't yet React (that's Réservations, the last Phase 4 step —
- * addReservationCard/addSlotRow live there and this file calls into them), so like
+ * The activity drawer/form itself isn't yet React (React migration in progress — see
+ * components/activities/ActivityDrawer.tsx for the fields already converted: Responsable,
+ * Informations générales, and the reservation-card shell/add/remove), so like
  * js/datepicker.ts, js/activities-file-links.ts, js/activities-history.ts,
  * js/activities-financials.ts and js/activities-render.ts, this stays a plain TS module.
  *
@@ -30,7 +31,6 @@ import { undoActivityFormChange, redoActivityFormChange, loadAndRenderActivityHi
 import { submitActivityForm } from "./history/index.ts";
 import { renderFileLinkStatus } from "./file-links/index.ts";
 import { renderSupportingDocsStatus } from "./supporting-docs/index.ts";
-import { addReservationCard, addSlotRow, initReservationsSection } from "./reservations/index.ts";
 
 import {
   initNewActivityModal,
@@ -246,8 +246,8 @@ function initFormHandlers() {
   // Estimation / Soumission mode toggle
   initActivityModeToggle();
 
-  // "+ Ajouter une réservation" button
-  initReservationsSection();
+  // "+ Ajouter une réservation" button is wired directly in ActivityDrawer.tsx now (React
+  // onClick driving reservationCardIds state) — see reservations/index.ts's header comment.
 
   // Event type "Autre" reveals a free-text field
   el("form-activity-event-type")?.addEventListener("change", e => {
@@ -297,18 +297,10 @@ function initFormHandlers() {
 
 function fillActivityFormFields(act: any) {
   applyActivityFormMode(act.mode || "estimation", act.state !== "brouillon");
-  const cubaEl = el("form-activity-coba");
-  if (cubaEl) cubaEl.value = act.coba || "";
-  const nameEl = el("form-activity-name");
-  if (nameEl) nameEl.value = act.name;
-  const attendeesEl = el("form-activity-attendees");
-  if (attendeesEl) attendeesEl.value = act.attendees_count || "";
-  // Responsable firstname/lastname/client-type/address/city/province/postal-code are no longer
-  // populated here — ActivityDrawer.tsx seeds its own React state for them from `act` directly
-  // (see its "Seed the React-controlled Responsable fields" effect).
-
-  const descEl = el("form-activity-description");
-  if (descEl) descEl.value = act.description || "";
+  // COBA/name/attendees/description ("Informations générales") and Responsable firstname/
+  // lastname/client-type/address/city/province/postal-code are no longer populated here —
+  // ActivityDrawer.tsx seeds its own React state for them from `act` directly (see its "Seed the
+  // React-controlled Informations générales fields" / "...Responsable fields" effects).
   const notesEl = el("form-activity-notes");
   if (notesEl) notesEl.value = act.notes || "";
   const mgrFnEl = el("form-activity-manager-firstname");
@@ -338,18 +330,9 @@ function fillActivityFormFields(act: any) {
   // form-activity-responsable-same-as-manager is React-controlled now (ActivityDrawer.tsx seeds
   // it from act.responsable_same_as_manager directly) — nothing to do here.
 
-  const resContainer = el("form-activity-reservations");
-  if (resContainer) {
-    resContainer.innerHTML = "";
-    (act.reservations || []).forEach((r: any) => addReservationCard(r));
-    if ((act.reservations || []).length === 0) {
-      const card = addReservationCard();
-      if (card) {
-        const slotsList = card.querySelector(".reservation-slots-list");
-        if (slotsList) addSlotRow(slotsList as HTMLElement);
-      }
-    }
-  }
+  // Reservation cards are no longer built/emptied here — ActivityDrawer.tsx's
+  // reservationCardIds React state owns which cards exist, seeded from act.reservations (or one
+  // blank card with one blank créneau when there are none) in its own effect.
   updateFormDatesHelper();
   const deptEl = el("form-activity-dept");
   if (deptEl) deptEl.value = act.department;

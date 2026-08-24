@@ -59,7 +59,13 @@ function buildTariffClientTypeOptionsHtml(roomName: string, dateStr: string, sel
 }
 
 function updateResolvedPriceDisplay(card: HTMLElement) {
-  const roomName = card.querySelector<HTMLInputElement>(".searchable-select-value")!.value;
+  // Non-null-safe: RoomTariffFields.tsx, the React root that owns all of these, is mounted
+  // asynchronously by card.tsx's addReservationCard() and may not have committed yet in the
+  // brief window right after the card itself is inserted (see collectReservationsFromForm()'s
+  // header comment on the same pattern).
+  const roomNameEl = card.querySelector<HTMLInputElement>(".searchable-select-value");
+  if (!roomNameEl) return;
+  const roomName = roomNameEl.value;
   const paramSelect = card.querySelector<HTMLInputElement>(".room-tariff-parameter");
   const ctSelect = card.querySelector<HTMLInputElement>(".room-tariff-client-type");
   const displayEl = card.querySelector<HTMLInputElement>(".room-tariff-resolved-price-display");

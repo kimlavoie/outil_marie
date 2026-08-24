@@ -7,8 +7,6 @@
  */
 import { appState, getActivePricingGrid } from "../../state/state.ts";
 import { OTHER_ROOM_VALUE, getExclusivePillValueEl } from "../../utils/utils.ts";
-import { updateSubmissionFinancialSummary } from "../financials.ts";
-import { updateFormDatesHelper } from "../history/index.ts";
 import {
   collectStaffFromForm,
   collectServicesFromForm,
@@ -16,38 +14,24 @@ import {
   resetIncompleteRowWarnings,
   pushIncompleteRowWarning
 } from "./subrows.ts";
-import { addSlotRow, collectSlotsFromCard } from "./slots.ts";
-import { addReservationCard } from "./card.ts";
+import { collectSlotsFromCard } from "./slots.ts";
 
-function el<T extends Element = HTMLInputElement>(id: string): T {
-  return document.getElementById(id) as unknown as T;
-}
-
-function initReservationsSection() {
-  const addBtn = el("add-reservation-btn");
-  if (!addBtn) return;
-  addBtn.addEventListener("click", () => {
-    const container = el("form-activity-reservations");
-    const existingCards = container ? container.querySelectorAll<HTMLElement>(".reservation-card") : [];
-    const lastCard = existingCards[existingCards.length - 1];
-    const previousSlots = lastCard ? collectSlotsFromCard(lastCard) : [];
-
-    const newCard = addReservationCard();
-    if (newCard && previousSlots.length) {
-      const slotsList = newCard.querySelector<HTMLElement>(".reservation-slots-list")!;
-      previousSlots.forEach(s => addSlotRow(slotsList, s.date, s.start_time, s.end_time, s.details));
-    }
-    updateFormDatesHelper();
-    updateSubmissionFinancialSummary();
-  });
-}
+// initReservationsSection() (wired the #add-reservation-btn click) used to live here. It's gone:
+// ActivityDrawer.tsx now owns that button's onClick directly, driving a reservationCardIds React
+// state array instead of calling addReservationCard()/card.remove() straight against
+// #form-activity-reservations — see that file's handleAddReservation, which reproduces the same
+// "carry the previous card's créneaux into a new blank one" behavior this used to have.
 
 function collectReservationsFromForm() {
   resetIncompleteRowWarnings();
   const cards = document.querySelectorAll<HTMLInputElement>("#form-activity-reservations .reservation-card")!;
   return Array.from(cards).map(card => {
     const uid = card.id;
-    const roomName = card.querySelector<HTMLInputElement>(".searchable-select-value")!.value;
+    // Non-null-safe below (room/tariff fields): RoomTariffFields.tsx, a separate React root
+    // mounted asynchronously by card.tsx's addReservationCard() — same reasoning as the
+    // install/dismantle fields further down. Treat "not committed yet" as empty rather than
+    // crashing collectReservationsFromForm().
+    const roomName = card.querySelector<HTMLInputElement>(".searchable-select-value")?.value || "";
     const isOther = roomName === OTHER_ROOM_VALUE;
 
     const paramSelect = card.querySelector<HTMLInputElement>(".room-tariff-parameter")!;
@@ -59,8 +43,8 @@ function collectReservationsFromForm() {
       tariffAmount = 0;
 
     if (paramVal === "__custom__") {
-      tariffDescription = card.querySelector<HTMLInputElement>(".room-tariff-custom-desc")!.value.trim();
-      const rawAmount = card.querySelector<HTMLInputElement>(".room-tariff-custom-amount")!.value.trim();
+      tariffDescription = card.querySelector<HTMLInputElement>(".room-tariff-custom-desc")?.value.trim() || "";
+      const rawAmount = card.querySelector<HTMLInputElement>(".room-tariff-custom-amount")?.value.trim() || "";
       tariffAmount = parseFloat(rawAmount) || 0;
       // A filled-in description with a missing/invalid amount silently defaulted to a free ($0)
       // tariff — warn instead so the user notices before the activity gets saved that way.
@@ -84,23 +68,30 @@ function collectReservationsFromForm() {
       }
     }
 
-    const installEnabled = card.querySelector<HTMLInputElement>(".reservation-install-toggle")!.classList.contains("active");
-    const dismantleEnabled = card.querySelector<HTMLInputElement>(".reservation-dismantle-toggle")!.classList.contains("active");
+    // Non-null-safe on purpose: the Montage/Démontage toggle is InstallDismantleFields.tsx, a
+    // separate React root mounted into the card asynchronously (see card.tsx's addReservationCard
+    // and ActivityDrawer.tsx's mountReservationCard) — it may not have committed to the DOM yet
+    // in the brief window right after the card itself is inserted. Treat "not there yet" the same
+    // as "toggled off" rather than crashing collectReservationsFromForm().
+    const installEnabled = card.querySelector<HTMLInputElement>(".reservation-install-toggle")?.classList.contains("active") || false;
+    const dismantleEnabled = card.querySelector<HTMLInputElement>(".reservation-dismantle-toggle")?.classList.contains("active") || false;
 
-    const barToggleActive = card.querySelector<HTMLInputElement>(".room-bar-toggle-group .pill-toggle.active")! !== null;
-    const barDrinkType = getExclusivePillValueEl(card.querySelector<HTMLInputElement>(".room-bar-drink-group")!);
-    const barServiceType = getExclusivePillValueEl(card.querySelector<HTMLInputElement>(".room-bar-service-type-group")!);
-    const barHostessCount = parseInt(card.querySelector<HTMLInputElement>(".room-bar-hostess-count")!.value, 10) || 0;
-    const barSpecialOrder = card.querySelector<HTMLInputElement>(".room-bar-special-order")!.value.trim();
-    const hostDutiesSelected = Array.from(card.querySelectorAll<HTMLInputElement>(".room-host-duties-group .pill-toggle.active")!).map(
+    // Same non-null-safety reasoning as install/dismantle above: BarHostTechFields.tsx (bar
+    // service, host duties, technical services) is also a separate, asynchronously-mounted root.
+    const barToggleActive = card.querySelector<HTMLInputElement>(".room-bar-toggle-group .pill-toggle.active") !== null;
+    const barDrinkType = getExclusivePillValueEl(card.querySelector<HTMLInputElement>(".room-bar-drink-group"));
+    const barServiceType = getExclusivePillValueEl(card.querySelector<HTMLInputElement>(".room-bar-service-type-group"));
+    const barHostessCount = parseInt(card.querySelector<HTMLInputElement>(".room-bar-hostess-count")?.value || "", 10) || 0;
+    const barSpecialOrder = card.querySelector<HTMLInputElement>(".room-bar-special-order")?.value.trim() || "";
+    const hostDutiesSelected = Array.from(card.querySelectorAll<HTMLInputElement>(".room-host-duties-group .pill-toggle.active")).map(
       b => b.dataset.value
     );
-    const hostDutiesCount = parseInt(card.querySelector<HTMLInputElement>(".room-host-duties-count")!.value, 10) || 0;
+    const hostDutiesCount = parseInt(card.querySelector<HTMLInputElement>(".room-host-duties-count")?.value || "", 10) || 0;
 
     return {
       id: card.dataset.reservationId,
       room_name: roomName,
-      room_other_details: isOther ? card.querySelector<HTMLInputElement>(".room-other-details-input")!.value.trim() : "",
+      room_other_details: isOther ? card.querySelector<HTMLInputElement>(".room-other-details-input")?.value.trim() || "" : "",
       tariff_id: tariffId,
       tariff_description: tariffDescription,
       tariff_amount: tariffAmount,
@@ -157,5 +148,5 @@ export {
   updateResolvedPriceDisplay,
   refreshReservationTariffSelect
 } from "./tariff.ts";
-export { buildRoomSelectItems, buildRoomDateTimeFieldHtml, buildDatePeriodFieldHtml, addReservationCard } from "./card.ts";
-export { getAggregateEventDates, initReservationsSection, collectReservationsFromForm };
+export { buildRoomSelectItems, buildRoomDateTimeFieldHtml, buildDatePeriodFieldHtml, addReservationCard } from "./card.tsx";
+export { getAggregateEventDates, collectReservationsFromForm };
