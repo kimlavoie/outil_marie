@@ -200,7 +200,7 @@ export const ActivityDrawer: React.FC = () => {
     // reservation's own slots": a brand new blank card starts with one blank créneau, and a new
     // card added via handleAddReservation carries over the previous card's créneaux.
     const initialSlots = init.addBlankSlot ? [{}] : init.extraSlots?.length ? init.extraSlots : undefined;
-    const card = addReservationCard(init.data, el, () => handleRemoveReservation(id), initialSlots);
+    const card = addReservationCard(init.data, el, () => handleRemoveReservation(id), initialSlots, true);
     if (card) {
       // Montage/Démontage ("sous-tranche B") is its own React root mounted into the placeholder
       // card.ts leaves for it — see InstallDismantleFields.tsx's header comment for why it's a

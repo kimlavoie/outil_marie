@@ -45,11 +45,18 @@ const staffServicesFeesRootsByCardId = new Map<string, Root>();
 // (ActivityDrawer.tsx's handleAddReservation carries the previous card's créneaux into a new
 // blank one, and its blank-activity seed starts a lone card with one blank créneau) — when
 // omitted, initial slots come from reservationData.slots as usual.
+// deferRender: true when the caller (ActivityDrawer.tsx's mountReservationCard) is itself running
+// from a ref callback mid-commit — flushSync always throws "called from inside a lifecycle method"
+// there, and although the try/catch below already falls back to a plain (deferred) render, React
+// still logs that violation via console.error before throwing it, so every card mount spammed the
+// console. Skipping the flushSync attempt entirely in that case avoids the noise; the plain
+// createRoot().render() below is already async/deferred either way.
 function addReservationCard(
   reservationData: any = null,
   targetContainer: HTMLElement | null = null,
   onRemove: (() => void) | null = null,
-  initialSlotsOverride?: SlotData[]
+  initialSlotsOverride?: SlotData[],
+  deferRender = false
 ) {
   const container = targetContainer || el("form-activity-reservations");
   if (!container) return;
@@ -124,10 +131,14 @@ function addReservationCard(
     roomTariffRootsByCardId.set(card.id, roomTariffRoot);
     const renderRoomTariff = () =>
       roomTariffRoot.render(<RoomTariffFields card={card} initialData={reservationData} onRemoveCard={removeThisCard} />);
-    try {
-      flushSync(renderRoomTariff);
-    } catch {
+    if (deferRender) {
       renderRoomTariff();
+    } else {
+      try {
+        flushSync(renderRoomTariff);
+      } catch {
+        renderRoomTariff();
+      }
     }
   }
 
@@ -152,10 +163,14 @@ function addReservationCard(
     slotsRootsByCardId.set(card.id, slotsRoot);
     const initialSlots = initialSlotsOverride ?? (reservationData && reservationData.slots) ?? [];
     const renderSlots = () => slotsRoot.render(<SlotsFields card={card} initialSlots={initialSlots} />);
-    try {
-      flushSync(renderSlots);
-    } catch {
+    if (deferRender) {
       renderSlots();
+    } else {
+      try {
+        flushSync(renderSlots);
+      } catch {
+        renderSlots();
+      }
     }
   }
 
@@ -169,10 +184,14 @@ function addReservationCard(
     const barHostTechRoot = createRoot(barHostTechMount);
     barHostTechRootsByCardId.set(card.id, barHostTechRoot);
     const renderBarHostTech = () => barHostTechRoot.render(<BarHostTechFields card={card} initialData={reservationData} />);
-    try {
-      flushSync(renderBarHostTech);
-    } catch {
+    if (deferRender) {
       renderBarHostTech();
+    } else {
+      try {
+        flushSync(renderBarHostTech);
+      } catch {
+        renderBarHostTech();
+      }
     }
   }
 
@@ -195,10 +214,14 @@ function addReservationCard(
     staffServicesFeesRootsByCardId.set(card.id, staffServicesFeesRoot);
     const renderStaffServicesFees = () =>
       staffServicesFeesRoot.render(<StaffServicesFeesFields card={card} initialData={reservationData} />);
-    try {
-      flushSync(renderStaffServicesFees);
-    } catch {
+    if (deferRender) {
       renderStaffServicesFees();
+    } else {
+      try {
+        flushSync(renderStaffServicesFees);
+      } catch {
+        renderStaffServicesFees();
+      }
     }
   }
 

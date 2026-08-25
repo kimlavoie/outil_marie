@@ -167,7 +167,9 @@ function closeActivityDrawer() {
 }
 
 function cancelActivityDrawer() {
-  const id = elById("form-activity-internal-id").value;
+  if (!elById("activity-drawer")?.classList.contains("active")) return;
+
+  const id = elById("form-activity-internal-id")?.value;
   const nameInput = elById("form-activity-name");
 
   if (nameInput && !nameInput.value.trim()) {
