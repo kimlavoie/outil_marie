@@ -364,7 +364,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
       { col: "E", style: S.sigBlank },
       { col: "F", style: S.sigBlank }
     ]);
-    const rebeccaName = "Rébecca Audy, gestionnaire administrative des services communautaires";
+    const rebeccaName = "Rébecca Audy, coordonnatrice administrative des services communautaires";
     sb.addRow(wrapRowHeight(rebeccaName, 66, 16), [
       { col: "A", style: S.sigBlank, value: "", mergeTo: "C" },
       { col: "D", style: S.sigLineName2, value: rebeccaName, mergeTo: "F" },
