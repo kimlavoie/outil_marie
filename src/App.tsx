@@ -8,16 +8,35 @@ import { ActivityDrawer } from "./components/activities/ActivityDrawer.tsx";
 import { ReconciliationView } from "./components/reconciliation-view.tsx";
 import { SettingsView } from "./components/settings/view.tsx";
 import { useSettingsCommand } from "./components/settings/mount.ts";
-import { CalendarModal, useCalendarCommand } from "./components/calendar-view.tsx";
+import { CalendarModal, useCalendarCommand, initCalendarModal, initViewCalendarButtons } from "./components/calendar-view.tsx";
 import { AccountReportView } from "./components/account-report/AccountReportView.tsx";
 import { BackupView } from "./components/backup/BackupView.tsx";
 import { GlobalModals } from "./components/modals/GlobalModals.tsx";
 import { checkBackupReminder } from "./services/backup/reminder.ts";
 import { initAutoBackup } from "./services/backup/auto-backup.ts";
-import { openActivityDrawer } from "./activities/financials.ts";
+import { initBackupHandlers } from "./services/backup/index.ts";
+import { openActivityDrawer, initActivityDetailsModal, initTaxOverrideModal } from "./activities/financials.ts";
 import { getSavedDrawerUiState } from "./activities/financials.ts";
-import { appState } from "./state/state.ts";
+import { initFormHandlers, initNewActivityModal } from "./activities/form.ts";
+import { initReconciliationHandlers } from "./components/reconciliation-mount.ts";
+import { initCustomDatepickers } from "./activities/datepicker.ts";
+import { initActivitiesSort } from "./activities/history/index.ts";
+import { logError } from "./utils/logger.ts";
+import { appState, restoreUiState } from "./state/state.ts";
+import { populateDropdowns } from "./navigation.ts";
 import { useCurrentView, setCurrentView } from "./state/view-state.ts";
+
+// Fire-and-forget: not needed for the app to be usable, so it doesn't block mounting.
+async function requestPersistentStorage() {
+  try {
+    if (!navigator.storage?.persist) return;
+    const alreadyPersisted = await navigator.storage.persisted?.();
+    if (alreadyPersisted) return;
+    await navigator.storage.persist();
+  } catch (e) {
+    logError("main", "demande de stockage persistant", e);
+  }
+}
 
 export const App: React.FC = () => {
   const currentView = useCurrentView();
@@ -28,6 +47,30 @@ export const App: React.FC = () => {
   const handleSelectView = (view: string) => {
     setCurrentView(view);
   };
+
+  // One-time wiring for the legacy (non-React) modules still driving the activity drawer,
+  // reconciliation, backup, calendar and datepicker DOM handlers — moved here from main.tsx so
+  // that entry point can stay a plain createRoot().render(). Runs once after this first commit,
+  // same order main.tsx used to call them in. Unlike main.tsx's ad-hoc "call right after
+  // root.render()" ordering (which happened to work because React's initial commit is normally
+  // synchronous, not because it's guaranteed to be), a useEffect here is guaranteed to run after
+  // the DOM has actually committed.
+  useEffect(() => {
+    void requestPersistentStorage();
+    initFormHandlers();
+    initNewActivityModal();
+    initActivityDetailsModal();
+    initTaxOverrideModal();
+    initReconciliationHandlers();
+    initBackupHandlers();
+    initCustomDatepickers();
+    initCalendarModal();
+    initViewCalendarButtons();
+
+    populateDropdowns();
+    restoreUiState();
+    initActivitiesSort();
+  }, []);
 
   useEffect(() => {
     checkBackupReminder();

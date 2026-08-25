@@ -3,15 +3,8 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
 import { logError } from "./utils/logger.ts";
 import { showToast } from "./utils/utils.ts";
-import { appState, loadDatabase, restoreUiState } from "./state/state.ts";
-import { applyTheme, populateDropdowns } from "./navigation.ts";
-import { initFormHandlers, initNewActivityModal } from "./activities/form.ts";
-import { initReconciliationHandlers } from "./components/reconciliation-mount.ts";
-import { initBackupHandlers } from "./services/backup/index.ts";
-import { initCustomDatepickers } from "./activities/datepicker.ts";
-import { initCalendarModal, initViewCalendarButtons } from "./components/calendar-view.tsx";
-import { initActivitiesSort } from "./activities/history/index.ts";
-import { initActivityDetailsModal, initTaxOverrideModal } from "./activities/financials.ts";
+import { appState, loadDatabase } from "./state/state.ts";
+import { applyTheme } from "./navigation.ts";
 
 window.addEventListener("error", e => {
   logError("main", "erreur non gérée", e.error || e.message);
@@ -23,44 +16,22 @@ window.addEventListener("unhandledrejection", e => {
   showToast("Une erreur inattendue est survenue. Voir la console pour les détails.", "error");
 });
 
-async function requestPersistentStorage() {
-  try {
-    if (!navigator.storage?.persist) return;
-    const alreadyPersisted = await navigator.storage.persisted?.();
-    if (alreadyPersisted) return;
-    await navigator.storage.persist();
-  } catch (e) {
-    logError("main", "demande de stockage persistant", e);
-  }
-}
-
 document.addEventListener("DOMContentLoaded", async () => {
+  // Blocking, in this order, before the first render: appState must hold real data (not
+  // defaults) and the theme must be applied before React ever paints, or the app would flash
+  // empty/default content and the wrong theme for a frame. Everything else the app used to wire
+  // up here at startup (activity drawer/backup/reconciliation/calendar/datepicker handlers,
+  // dropdown population, saved UI state) now happens in App.tsx's own mount effect instead —
+  // it doesn't need to block the first paint, just to run once React has actually committed.
   await loadDatabase();
-  void requestPersistentStorage();
   applyTheme(appState.settings.theme || "dark");
 
-  // Mount React App
   const rootElement = document.getElementById("root");
   if (rootElement) {
-    const root = createRoot(rootElement);
-    root.render(
+    createRoot(rootElement).render(
       <React.StrictMode>
         <App />
       </React.StrictMode>
     );
   }
-
-  initFormHandlers();
-  initNewActivityModal();
-  initActivityDetailsModal();
-  initTaxOverrideModal();
-  initReconciliationHandlers();
-  initBackupHandlers();
-  initCustomDatepickers();
-  initCalendarModal();
-  initViewCalendarButtons();
-
-  populateDropdowns();
-  restoreUiState();
-  initActivitiesSort();
 });
