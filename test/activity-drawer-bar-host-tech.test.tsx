@@ -138,21 +138,6 @@ test("picking a bar service type that needs hostesses reveals the hostess-count 
   assert.equal(hostessCountGroup.style.display, "flex");
 });
 
-test("selecting an 'Autres services' (host duties) option reveals the hostess-count field", async () => {
-  await openDrawer(baseActivity({ reservations: [{ id: "res-1", room_name: "", slots: [] }] }));
-
-  const card = document.querySelector<HTMLElement>(".reservation-card")!;
-  const dutyBtn = card.querySelector<HTMLElement>(".room-host-duties-group .pill-toggle")!;
-  const countGroup = card.querySelector<HTMLElement>(".room-host-duties-count-group")!;
-  assert.equal(countGroup.style.display, "none");
-
-  act(() => fireEvent.click(dutyBtn));
-  assert.equal(countGroup.style.display, "flex");
-
-  act(() => fireEvent.click(dutyBtn));
-  assert.equal(countGroup.style.display, "none");
-});
-
 test("opening a reservation with saved bar service / host duties pre-fills and shows them", async () => {
   await openDrawer(
     baseActivity({
@@ -162,7 +147,7 @@ test("opening a reservation with saved bar service / host duties pre-fills and s
           room_name: "",
           slots: [],
           bar_service: { active: true, drink_type: "Avec alcool", service_type: "Service d'hôtesses", hostess_count: 3, special_order: "Glaçons" },
-          host_duties: { duties: ["Distribution de bouchées"], hostess_count: 2 }
+          host_duties: { duties: ["Autre"], other_duty_description: "Vestiaire" }
         }
       ]
     })
@@ -173,8 +158,55 @@ test("opening a reservation with saved bar service / host duties pre-fills and s
   assert.equal(card.querySelector<HTMLElement>(".room-bar-details")!.style.display, "block");
   assert.equal(card.querySelector<HTMLInputElement>(".room-bar-hostess-count")!.value, "3");
   assert.equal(card.querySelector<HTMLInputElement>(".room-bar-special-order")!.value, "Glaçons");
-  assert.equal(card.querySelector<HTMLElement>(".room-host-duties-count-group")!.style.display, "flex");
-  assert.equal(card.querySelector<HTMLInputElement>(".room-host-duties-count")!.value, "2");
+  assert.equal(card.querySelector<HTMLElement>(".room-host-duties-other-group")!.style.display, "flex");
+  assert.equal(card.querySelector<HTMLInputElement>(".room-host-duties-other")!.value, "Vestiaire");
+});
+
+test("activating 'Autre' under Autres services reveals a text field, and it is cleared on deactivation", async () => {
+  await openDrawer(baseActivity({ reservations: [{ id: "res-1", room_name: "", slots: [] }] }));
+
+  const card = document.querySelector<HTMLElement>(".reservation-card")!;
+  const otherBtn = Array.from(card.querySelectorAll<HTMLElement>(".room-host-duties-group .pill-toggle")).find(
+    b => b.dataset.value === "Autre"
+  )!;
+  const otherGroup = card.querySelector<HTMLElement>(".room-host-duties-other-group")!;
+  const otherInput = card.querySelector<HTMLInputElement>(".room-host-duties-other")!;
+  assert.equal(otherGroup.style.display, "none");
+
+  act(() => fireEvent.click(otherBtn));
+  assert.equal(otherGroup.style.display, "flex");
+
+  act(() => fireEvent.change(otherInput, { target: { value: "Vestiaire" } }));
+  assert.equal(otherInput.value, "Vestiaire");
+
+  const collected = collectReservationsFromForm();
+  assert.equal(collected[0].host_duties.other_duty_description, "Vestiaire");
+
+  act(() => fireEvent.click(otherBtn)); // deactivate
+  assert.equal(otherGroup.style.display, "none");
+  assert.equal(otherInput.value, "");
+
+  const collectedAfter = collectReservationsFromForm();
+  assert.equal(collectedAfter[0].host_duties.other_duty_description, "");
+});
+
+test("opening a reservation with a saved 'Autre' host duty pre-fills its description", async () => {
+  await openDrawer(
+    baseActivity({
+      reservations: [
+        {
+          id: "res-1",
+          room_name: "",
+          slots: [],
+          host_duties: { duties: ["Autre"], hostess_count: 0, other_duty_description: "Vestiaire" }
+        }
+      ]
+    })
+  );
+
+  const card = document.querySelector<HTMLElement>(".reservation-card")!;
+  assert.equal(card.querySelector<HTMLElement>(".room-host-duties-other-group")!.style.display, "flex");
+  assert.equal(card.querySelector<HTMLInputElement>(".room-host-duties-other")!.value, "Vestiaire");
 });
 
 test("collectReservationsFromForm reports bar service and host duties after interacting with the pills", async () => {

@@ -33,10 +33,11 @@ interface BarService {
 
 interface HostDuties {
   duties?: string[];
-  hostess_count?: number;
+  other_duty_description?: string;
 }
 
 const HOSTESS_SERVICE_TYPES = ["Service d'hôtesses", "Distribution de breuvages et nettoyage de coupes"];
+const OTHER_HOST_DUTY_VALUE = "Autre";
 
 export function BarHostTechFields({ card, initialData }: { card: HTMLElement; initialData: any }) {
   const techGroupRef = useRef<HTMLDivElement>(null);
@@ -48,8 +49,8 @@ export function BarHostTechFields({ card, initialData }: { card: HTMLElement; in
   const barHostessCountInputRef = useRef<HTMLInputElement>(null);
   const barSpecialOrderRef = useRef<HTMLInputElement>(null);
   const hostDutiesGroupRef = useRef<HTMLDivElement>(null);
-  const hostDutiesCountGroupRef = useRef<HTMLDivElement>(null);
-  const hostDutiesCountInputRef = useRef<HTMLInputElement>(null);
+  const hostDutiesOtherGroupRef = useRef<HTMLDivElement>(null);
+  const hostDutiesOtherInputRef = useRef<HTMLInputElement>(null);
   const wiredRef = useRef(false);
 
   useEffect(() => {
@@ -102,8 +103,11 @@ export function BarHostTechFields({ card, initialData }: { card: HTMLElement; in
 
     initPillToggleEl(hostDutiesGroupRef.current);
     hostDutiesGroupRef.current?.addEventListener("click", () => {
-      const anyActive = (hostDutiesGroupRef.current?.querySelectorAll(".pill-toggle.active").length ?? 0) > 0;
-      if (hostDutiesCountGroupRef.current) hostDutiesCountGroupRef.current.style.display = anyActive ? "flex" : "none";
+      const otherActive =
+        hostDutiesGroupRef.current?.querySelector<HTMLElement>(`.pill-toggle[data-value="${OTHER_HOST_DUTY_VALUE}"]`)?.classList.contains("active") ??
+        false;
+      if (hostDutiesOtherGroupRef.current) hostDutiesOtherGroupRef.current.style.display = otherActive ? "flex" : "none";
+      if (!otherActive && hostDutiesOtherInputRef.current) hostDutiesOtherInputRef.current.value = "";
       autoSaveActivityForm();
     });
 
@@ -124,12 +128,11 @@ export function BarHostTechFields({ card, initialData }: { card: HTMLElement; in
       if (barHostessCountInputRef.current) barHostessCountInputRef.current.value = String(barService.hostess_count || 1);
       if (barSpecialOrderRef.current) barSpecialOrderRef.current.value = barService.special_order || "";
 
-      const hostDuties: HostDuties = initialData.host_duties || { duties: [], hostess_count: 0 };
+      const hostDuties: HostDuties = initialData.host_duties || { duties: [] };
       setPillGroupActiveEl(hostDutiesGroupRef.current, hostDuties.duties || []);
-      if (hostDutiesCountGroupRef.current) {
-        hostDutiesCountGroupRef.current.style.display = (hostDuties.duties || []).length > 0 ? "flex" : "none";
-      }
-      if (hostDutiesCountInputRef.current) hostDutiesCountInputRef.current.value = String(hostDuties.hostess_count || 1);
+      const otherDutyActive = (hostDuties.duties || []).includes(OTHER_HOST_DUTY_VALUE);
+      if (hostDutiesOtherGroupRef.current) hostDutiesOtherGroupRef.current.style.display = otherDutyActive ? "flex" : "none";
+      if (hostDutiesOtherInputRef.current) hostDutiesOtherInputRef.current.value = hostDuties.other_duty_description || "";
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -235,16 +238,14 @@ export function BarHostTechFields({ card, initialData }: { card: HTMLElement; in
           ))}
         </div>
       </div>
-      <div ref={hostDutiesCountGroupRef} className="form-group room-host-duties-count-group" style={{ display: "none" }}>
-        <label htmlFor={`${card.id}-room-host-duties-count`}>Nombre d'hôtesses</label>
+      <div ref={hostDutiesOtherGroupRef} className="form-group room-host-duties-other-group" style={{ display: "none" }}>
+        <label htmlFor={`${card.id}-room-host-duties-other`}>Précisez le service</label>
         <input
-          ref={hostDutiesCountInputRef}
-          type="number"
-          id={`${card.id}-room-host-duties-count`}
-          className="form-input room-host-duties-count"
-          min="1"
-          step="1"
-          defaultValue="1"
+          ref={hostDutiesOtherInputRef}
+          type="text"
+          id={`${card.id}-room-host-duties-other`}
+          className="form-input room-host-duties-other"
+          placeholder="Précisez le service..."
         />
       </div>
     </>

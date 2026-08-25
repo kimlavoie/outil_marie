@@ -86,7 +86,7 @@ function collectReservationsFromForm() {
     const hostDutiesSelected = Array.from(card.querySelectorAll<HTMLInputElement>(".room-host-duties-group .pill-toggle.active")).map(
       b => b.dataset.value
     );
-    const hostDutiesCount = parseInt(card.querySelector<HTMLInputElement>(".room-host-duties-count")?.value || "", 10) || 0;
+    const hostDutiesOtherDescription = card.querySelector<HTMLInputElement>(".room-host-duties-other")?.value.trim() || "";
 
     return {
       id: card.dataset.reservationId,
@@ -124,7 +124,7 @@ function collectReservationsFromForm() {
       },
       host_duties: {
         duties: hostDutiesSelected,
-        hostess_count: hostDutiesSelected.length > 0 ? hostDutiesCount : 0
+        other_duty_description: hostDutiesSelected.includes("Autre") ? hostDutiesOtherDescription : ""
       },
       staff: collectStaffFromForm(card),
       services: collectServicesFromForm(card),

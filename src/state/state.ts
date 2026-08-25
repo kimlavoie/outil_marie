@@ -28,7 +28,7 @@ const TECHNICAL_SERVICES: string[] = [
 ];
 const BAR_DRINK_TYPES: string[] = ["Avec alcool", "Sans alcool"];
 const BAR_SERVICE_TYPES: string[] = ["Service autonome", "Service d'hôtesses", "Distribution de breuvages et nettoyage de coupes"];
-const HOST_DUTY_OPTIONS: string[] = ["Distribution de bouchées"];
+const HOST_DUTY_OPTIONS: string[] = ["Autre"];
 const EVENT_TYPES = [
   { value: "pedagogique", label: "Activité pédagogique" },
   { value: "parascolaire", label: "Activité parascolaire" },
