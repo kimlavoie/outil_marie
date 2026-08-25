@@ -587,6 +587,7 @@ function showRestoreOptionsModal(parsed: any) {
       <div id="restore-added-details" style="display: none; font-size: 0.75rem; margin-top: 10px; padding: 10px; border-radius: var(--radius-sm); background-color: var(--bg-card, #fff); border: 1px solid var(--success-text, #166534); flex-direction: column; gap: 6px;"></div>
       <div id="restore-modified-details" style="display: none; font-size: 0.75rem; margin-top: 10px; padding: 10px; border-radius: var(--radius-sm); background-color: var(--bg-card, #fff); border: 1px solid var(--warning-text, #92400e); flex-direction: column; gap: 6px;"></div>
       <div id="restore-app-only-details" style="display: none; font-size: 0.75rem; margin-top: 10px; padding: 10px; border-radius: var(--radius-sm); background-color: var(--bg-card, #fff); border: 1px solid rgba(244, 63, 94, 0.3); flex-direction: column; gap: 6px;"></div>
+      <div id="restore-configs-summary-details" style="display: none; font-size: 0.75rem; margin-top: 10px; padding: 10px; border-radius: var(--radius-sm); background-color: var(--bg-card, #fff); border: 1px solid var(--info-text, #075985); flex-direction: column; gap: 6px;"></div>
     `;
 
     // Populate added details
@@ -660,6 +661,45 @@ function showRestoreOptionsModal(parsed: any) {
     }
   }
 
+  const configLabels: Record<string, string> = {
+    rooms: "Salles et Tarifs",
+    salaries: "Salaires et main d'œuvre",
+    services: "Équipements et Services",
+    accounts: "Comptes de Grand Livre",
+    departments: "Départements",
+    tasks: "Tâches de planification",
+    taxes: "Taxes",
+    preferences: "Préférences (Thème, rappels...)"
+  };
+
+  // Populate configs summary details (mirrors the activities modified-details block above)
+  const configsSummaryDetails = document.getElementById("restore-configs-summary-details");
+  if (configsSummaryDetails) {
+    const modifiedKeys = Object.keys(configLabels).filter(key => diff.configs.categories[key]?.isDifferent);
+    if (modifiedKeys.length > 0) {
+      const itemsHtml = modifiedKeys
+        .map(key => {
+          const catDiff = diff.configs.categories[key];
+          const changesHtml = (catDiff?.changesList && catDiff.changesList.length > 0)
+            ? catDiff.changesList.map(c => `<div style="line-height: 1.4;">${c}</div>`).join("")
+            : `<div style="color: var(--text-muted);">Modifié</div>`;
+          return `
+            <div style="padding: 6px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background-color: var(--bg-main);">
+              <div style="font-weight: 700; color: var(--info-text, #075985); margin-bottom: 4px;">• ${escapeHtml(configLabels[key])}</div>
+              <div style="display: flex; flex-direction: column; gap: 2px;">${changesHtml}</div>
+            </div>
+          `;
+        })
+        .join("");
+      configsSummaryDetails.innerHTML = `
+        <div style="font-weight: 700; color: var(--info-text, #075985);">Détail des configurations modifiées (${modifiedKeys.length}) :</div>
+        <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">${itemsHtml}</div>
+      `;
+    } else {
+      configsSummaryDetails.innerHTML = `<div style="color: var(--text-muted);">Aucune configuration modifiée par rapport à l'application.</div>`;
+    }
+  }
+
   // Update configuration badges & detail containers
   const configKeys = ["rooms", "salaries", "services", "accounts", "departments", "tasks", "taxes", "preferences"];
   configKeys.forEach(key => {
@@ -703,6 +743,7 @@ function showRestoreOptionsModal(parsed: any) {
   const configsBtn = document.getElementById("restore-summary-badge-configs");
   if (configsBtn) {
     configsBtn.onclick = () => {
+      toggleSummaryDetail(configsSummaryDetails);
       const customRadio = document.getElementById("restore-mode-custom") as HTMLInputElement;
       if (customRadio) {
         customRadio.checked = true;
@@ -752,7 +793,7 @@ function showRestoreOptionsModal(parsed: any) {
   const appOnlyDetails = document.getElementById("restore-app-only-details");
 
   const toggleSummaryDetail = (target: HTMLElement | null) => {
-    [addedDetails, modifiedDetails, appOnlyDetails].forEach(el => {
+    [addedDetails, modifiedDetails, appOnlyDetails, configsSummaryDetails].forEach(el => {
       if (!el) return;
       if (el === target) {
         const isHidden = el.style.display === "none" || !el.style.display;
