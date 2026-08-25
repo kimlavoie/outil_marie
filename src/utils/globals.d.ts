@@ -1,11 +1,10 @@
-// Ambient declarations for globals that come from outside our own ES modules: third-party
-// vendored scripts loaded as plain non-module <script> tags (lib/xlsx.full.min.js,
-// lib/chart.umd.js — see index.html), and browser APIs (File System Access) not yet in
-// TypeScript's default DOM lib types. Every app-owned function/value is a real import now.
+// Ambient declarations for globals that come from outside our own ES modules: browser APIs (File
+// System Access) not yet in TypeScript's default DOM lib types. Chart.js and xlsx used to be
+// vendored scripts loaded as plain non-module <script> tags — both are real npm imports now (see
+// dashboard-view.tsx's "chart.js/auto" import and excel-export.ts's dynamic import("xlsx")), so
+// every app-owned function/value is a real import.
 
 declare global {
-  const Chart: any;
-
   interface Window {
     // File System Access API (Chrome/Edge only).
     showOpenFilePicker?: () => Promise<any[]>;

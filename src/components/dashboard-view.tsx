@@ -10,14 +10,22 @@
  * theme toggle, from before useAppState() was wired in here — but its root (#dashboard-root) was
  * never actually rendered anywhere in the DOM, so those calls were dead no-ops. Removed as part of
  * the React migration (see reconciliation-mount.ts and settings/mount.ts for the same pattern).
+ *
+ * Chart.js itself used to be a vendored public/lib/chart.umd.js loaded via a global <script> tag
+ * (declare const Chart: any), rather than an npm dependency like every other third-party library
+ * this app bundles (xlsx, pdfjs-dist, docx-preview, jszip). Switched to importing "chart.js/auto"
+ * — the same auto-registering build the vendored UMD bundle was built from, so chart behavior is
+ * unchanged — so it's bundled by Vite like everything else instead of needing its own <script> tag
+ * and CSP allowance.
  */
 import { useEffect, useRef, useState, type RefObject } from "react";
+import { Chart, type ChartConfiguration } from "chart.js/auto";
 import { appState, getFiscalYear, getQuarterNumber, getQuarter, useAppState } from "../state/state.ts";
 import { getReservationRoomLabel, formatCurrency } from "../utils/utils.ts";
 import { computeDashboardStats, computeEmployeeStats, computeJobsYearlyHours } from "../dashboard.ts";
 import { reconciliationState } from "../services/reconciliation.ts";
 
-function buildQuarterlyRevenuesConfig(textColor: string, gridColor: string) {
+function buildQuarterlyRevenuesConfig(textColor: string, gridColor: string): ChartConfiguration<"bar"> {
   const quarterlySums: Record<string, number> = {
     "T1 (Jul-Sep)": 0,
     "T2 (Oct-Dec)": 0,
@@ -64,7 +72,7 @@ function buildQuarterlyRevenuesConfig(textColor: string, gridColor: string) {
   };
 }
 
-function buildSalleShareConfig(isDark: boolean, textColor: string) {
+function buildSalleShareConfig(isDark: boolean, textColor: string): ChartConfiguration<"doughnut"> {
   const roomSums: Record<string, number> = {};
   appState.activities.forEach(act => {
     if (act.deleted) return;
@@ -111,7 +119,7 @@ function buildSalleShareConfig(isDark: boolean, textColor: string) {
   };
 }
 
-function buildAccountsVolumeConfig(textColor: string, gridColor: string) {
+function buildAccountsVolumeConfig(textColor: string, gridColor: string): ChartConfiguration<"bar"> {
   const accountSums: Record<string, number> = {};
   appState.activities.forEach(act => {
     if (act.deleted) return;
@@ -172,7 +180,7 @@ function buildAccountsVolumeConfig(textColor: string, gridColor: string) {
 // Creates a Chart.js instance on `canvasRef` from `buildConfig()` and destroys it on the next
 // render/unmount. No dependency array on purpose: DashboardView re-renders on every appState
 // change (see the file header), and each of those should fully recompute + redraw the chart.
-function useChart(canvasRef: RefObject<HTMLCanvasElement | null>, buildConfig: () => unknown) {
+function useChart(canvasRef: RefObject<HTMLCanvasElement | null>, buildConfig: () => ChartConfiguration) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
