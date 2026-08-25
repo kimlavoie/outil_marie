@@ -98,7 +98,7 @@ export function getStaffRowHours(row: HTMLElement): { hours: number; overtimeHou
   }
 }
 
-export function updateStaffRowOvertimeVisibility(row: HTMLElement, isOvertimeChecked = false) {
+function updateStaffRowOvertimeVisibility(row: HTMLElement, isOvertimeChecked = false) {
   const salarySelect = row.querySelector<HTMLSelectElement>(".staff-salary-select")!;
   const salaryId = salarySelect.value;
   const container = row.querySelector<HTMLElement>(".staff-overtime-container")!;

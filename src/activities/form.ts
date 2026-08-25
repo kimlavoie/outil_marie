@@ -425,6 +425,6 @@ function initActivitiesViewHandlers() {
   }
 }
 
-export { initFormHandlers, initActivitiesViewHandlers, fillActivityFormFields, WEEKDAY_PILL_OPTIONS };
+export { initFormHandlers, fillActivityFormFields, WEEKDAY_PILL_OPTIONS };
 export { initNewActivityModal, createActivity, createDraftActivity, duplicateActivityAndOpen };
 export { getActivityFormMode, switchActivityTab, renderActivityStateBar, commitActivityPatch, updateFormTabIndicators };

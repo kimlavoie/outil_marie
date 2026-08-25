@@ -197,4 +197,4 @@ async function renderXlsxPreview(kind: "submission" | "contract", act: any) {
   }
 }
 
-export { XLSX_PREVIEW_CONTAINER_IDS, XLSX_PREVIEW_EMPTY_LABEL, renderPdfPreview, renderXlsxPreview };
+export { XLSX_PREVIEW_CONTAINER_IDS, renderPdfPreview, renderXlsxPreview };

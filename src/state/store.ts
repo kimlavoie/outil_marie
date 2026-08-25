@@ -6,7 +6,7 @@ import type { Activity } from "../types/activity.ts";
 // name (e.g. reading `s.rate` on a Service, which has none — rates live under its tarifs' own
 // rate_versions) is caught at compile time instead of silently computing 0 at runtime.
 
-export interface RateVersion {
+interface RateVersion {
   id: string;
   effective_date: string;
   rate: number;
@@ -40,24 +40,24 @@ export interface Account {
   description: string;
 }
 
-export interface GlobalTask {
+interface GlobalTask {
   id: string;
   description: string;
 }
 
-export interface LinkedStaff {
+interface LinkedStaff {
   id: string;
   salary_id: string;
   count: number;
 }
 
-export interface LinkedFee {
+interface LinkedFee {
   id: string;
   description: string;
   amount: number;
 }
 
-export interface LinkedTask {
+interface LinkedTask {
   id: string;
   description: string;
 }
@@ -74,7 +74,7 @@ export interface GridClientType {
   gl_account_code?: string;
 }
 
-export interface GridCell {
+interface GridCell {
   parameter_id: string;
   client_type_id: string;
   amount: number;

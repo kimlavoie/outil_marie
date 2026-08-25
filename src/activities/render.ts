@@ -69,11 +69,6 @@ function el<T extends Element = HTMLInputElement>(id: string): T {
 import { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT } from "./activities-table-state.ts";
 export { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT };
 
-// Which flow the "Nom de l'activité" modal is currently serving: "soumission" creates and saves
-// the activity immediately in soumission mode; "estimation" only builds it in memory (estimation
-// mode) until the user actually saves the drawer form.
-const newActivityModalIntent = "soumission";
-
 // Activity lifecycle states, in order
 const ACTIVITY_STATES = [
   { value: "brouillon", label: "Brouillon" },
@@ -423,7 +418,6 @@ subscribeAppState(() => {
 
 export {
   ACTIVITY_STATES,
-  newActivityModalIntent,
   getActivityStateLabel,
   getActivityStateBadgeClass,
   getPlanningProgress,

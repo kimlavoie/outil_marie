@@ -5,7 +5,7 @@
 import type { AppState } from "../../state/store.ts";
 import type { Activity } from "../../types/activity.ts";
 
-export interface FieldDiff {
+interface FieldDiff {
   field: string;
   backupValue: string;
   currentValue: string;
@@ -21,7 +21,7 @@ export interface ActivityDiff {
   fieldDiffs: FieldDiff[];
 }
 
-export interface ConfigCategoryDiff {
+interface ConfigCategoryDiff {
   key: string;
   label: string;
   isDifferent: boolean;
@@ -129,7 +129,7 @@ export function detectActivityChanges(backupAct: Activity, currentAct: Activity)
 /**
  * Build explicit side-by-side field diffs between backup activity and current activity.
  */
-export function buildActivityFieldDiffs(backupAct: Activity, currentAct: Activity): FieldDiff[] {
+function buildActivityFieldDiffs(backupAct: Activity, currentAct: Activity): FieldDiff[] {
   const diffs: FieldDiff[] = [];
 
   const bName = (backupAct.name || "").trim();

@@ -12,7 +12,6 @@ export {
 } from "./financial-summary.ts";
 export {
   buildPrintActivitySheetHtml,
-  printActivitySheet,
   buildActivityDetailsHtml,
   openActivityDetailsModal,
   closeActivityDetailsModal,
@@ -22,10 +21,8 @@ export {
   generateNextActivityId,
   openActivityDrawer,
   openActivityDetailModal,
-  closeActivityDrawer,
   cancelActivityDrawer,
   persistDrawerUiState,
-  clearDrawerUiState,
   getSavedDrawerUiState
 } from "./drawer.ts";
 export { addDistributionRow } from "./distribution-rows.ts";
@@ -34,7 +31,5 @@ export { openTaxOverrideModal, closeTaxOverrideModal, initTaxOverrideModal } fro
 export {
   showAutoSaveStatus,
   autoSaveActivityForm,
-  activityUndoSnapshotTimer,
-  ACTIVITY_UNDO_DEBOUNCE_MS,
   setActivityUndoSnapshotTimer
 } from "./autosave.ts";

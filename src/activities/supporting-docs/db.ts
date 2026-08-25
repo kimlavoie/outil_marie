@@ -41,4 +41,4 @@ async function idbGetSupportingDocsFolder(id: string): Promise<{ handle: any; na
   });
 }
 
-export { openSupportingDocsDb, idbSetSupportingDocsFolder, idbGetSupportingDocsFolder };
+export { idbSetSupportingDocsFolder, idbGetSupportingDocsFolder };

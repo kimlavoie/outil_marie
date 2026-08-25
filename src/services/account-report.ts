@@ -17,7 +17,7 @@
 import { appState, getFiscalYear, getQuarterNumber, saveUiState, parseLocalDateStr } from "../state/state.ts";
 import { escapeHtml, formatCurrency, buildPaginationBarHtml } from "../utils/utils.ts";
 
-export interface AccountReportState {
+interface AccountReportState {
   sortKey: string;
   sortOrder: "asc" | "desc";
   pageSize: number;

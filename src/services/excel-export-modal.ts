@@ -25,7 +25,7 @@ export function loadPresets(): ExcelReportPreset[] {
   }
 }
 
-export function savePresetsToStorage(presets: ExcelReportPreset[]): void {
+function savePresetsToStorage(presets: ExcelReportPreset[]): void {
   try {
     localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
   } catch (err) {

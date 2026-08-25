@@ -9,6 +9,5 @@
  * Renders into #supporting-docs-status, a container living inside the activity drawer's "Pièces
  * justificatives" tab.
  */
-export { idbSetSupportingDocsFolder, idbGetSupportingDocsFolder } from "./db.ts";
-export { pickAndLinkFolder, unlinkFolder } from "./actions.ts";
+export { idbSetSupportingDocsFolder } from "./db.ts";
 export { renderSupportingDocsStatus } from "./status.ts";

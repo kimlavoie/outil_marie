@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { generateUid, formatDateMask, showToast } from "../../utils/utils.ts";
 import { DeleteIcon } from "./common.tsx";
-import type { GridParameter, GridClientType, GridCell, PricingGrid } from "../../state/store.ts";
+import type { GridParameter, GridClientType, PricingGrid } from "../../state/store.ts";
 
 // Re-exported under this file's original names — GridParameter is the canonical (store.ts) name,
 // GridParam is what rooms.tsx (this editor's only consumer) already imports.
-export type { GridClientType, GridCell, PricingGrid };
+export type { GridClientType, PricingGrid };
 export type GridParam = GridParameter;
 
 // The "Configuration des Tarifs" editor for a room: manages a versioned pricing grid (one

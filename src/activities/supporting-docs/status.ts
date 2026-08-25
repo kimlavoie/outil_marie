@@ -261,4 +261,4 @@ async function renderSupportingDocsStatus(act: any): Promise<void> {
   wireDropZone(dropzone, resolved.handle, act);
 }
 
-export { SUPPORTING_DOCS_CONTAINER_ID, renderSupportingDocsStatus };
+export { renderSupportingDocsStatus };

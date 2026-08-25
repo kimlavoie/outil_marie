@@ -70,7 +70,6 @@ export { submitActivityForm, initActivitiesSort };
 export {
   scheduleActivityUndoSnapshot,
   pushActivityUndoSnapshot,
-  restoreActivitySnapshot,
   undoActivityFormChange,
   redoActivityFormChange
 } from "./undo.ts";
@@ -85,6 +84,5 @@ export {
   formatTimestampToFrench,
   saveActivityVersion,
   computeActivityDiff,
-  loadAndRenderActivityHistory,
-  restoreActivityVersion
+  loadAndRenderActivityHistory
 } from "./version-history.ts";

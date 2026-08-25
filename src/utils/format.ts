@@ -235,7 +235,6 @@ export {
   calculateHoursFromTimes,
   formatDateMask,
   maskDateInput,
-  formatTimeMask,
   maskTimeInput,
   maskPhoneInput,
   formatPostalCode,

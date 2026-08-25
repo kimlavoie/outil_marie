@@ -11,10 +11,6 @@ function extensionOf(fileName: string): string {
 
 let openFilePreviewSubscriber: ((file: File) => void) | null = null;
 
-export function isFilePreviewModalSubscribed() {
-  return openFilePreviewSubscriber !== null;
-}
-
 export function triggerOpenFilePreviewModal(file: File) {
   if (openFilePreviewSubscriber) {
     openFilePreviewSubscriber(file);

@@ -2,7 +2,7 @@
  * Activity & Reservation Domain Interfaces
  */
 
-export interface ActivityManager {
+interface ActivityManager {
   first_name?: string;
   last_name?: string;
   type?: string;
@@ -16,13 +16,13 @@ export interface ActivityManager {
   postal_code?: string;
 }
 
-export interface ReservationSlot {
+interface ReservationSlot {
   date: string;
   start_time: string;
   end_time: string;
 }
 
-export interface StaffRow {
+interface StaffRow {
   id?: string;
   salary_id?: string;
   hours?: number;
@@ -30,7 +30,7 @@ export interface StaffRow {
   tarif_id?: string;
 }
 
-export interface ServiceRow {
+interface ServiceRow {
   id?: string;
   service_id?: string;
   tarif_id?: string;
@@ -38,21 +38,21 @@ export interface ServiceRow {
   amount_override?: number;
 }
 
-export interface OtherFeeRow {
+interface OtherFeeRow {
   id?: string;
   description?: string;
   amount?: number;
   gl_account_code?: string;
 }
 
-export interface BarDrinkSale {
+interface BarDrinkSale {
   drink_type?: string;
   quantity?: number;
   price_per_unit?: number;
   total?: number;
 }
 
-export interface BarRevenueRow {
+interface BarRevenueRow {
   active?: boolean;
   drink_sales?: BarDrinkSale[];
   hostess_hours?: number;
@@ -86,41 +86,41 @@ export interface DistributionRow {
   reference?: string;
 }
 
-export interface SubmissionInfo {
+interface SubmissionInfo {
   file_link_id?: string;
   generated_at?: string;
   sent_at?: string;
 }
 
-export interface ContractInfo {
+interface ContractInfo {
   file_link_id?: string;
   approved_at?: string;
 }
 
-export interface FormLinkInfo {
+interface FormLinkInfo {
   file_link_id?: string;
   linked_at?: string;
 }
 
-export interface SupportingDocsInfo {
+interface SupportingDocsInfo {
   folder_link_id?: string;
   linked_at?: string;
 }
 
-export interface PlanningTaskItem {
+interface PlanningTaskItem {
   id?: string;
   description?: string;
   completed?: boolean;
   date_due?: string;
 }
 
-export interface TaxOverrideSetting {
+interface TaxOverrideSetting {
   mode?: "rate" | "amount";
   value?: number;
   note?: string;
 }
 
-export interface TaxOverrides {
+interface TaxOverrides {
   tps?: TaxOverrideSetting;
   tvq?: TaxOverrideSetting;
 }

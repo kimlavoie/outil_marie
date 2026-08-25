@@ -95,4 +95,4 @@ function redoActivityFormChange() {
   showToast("Modification rétablie.", "info", 2000);
 }
 
-export { scheduleActivityUndoSnapshot, pushActivityUndoSnapshot, restoreActivitySnapshot, undoActivityFormChange, redoActivityFormChange };
+export { scheduleActivityUndoSnapshot, pushActivityUndoSnapshot, undoActivityFormChange, redoActivityFormChange };

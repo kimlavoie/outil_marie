@@ -119,11 +119,6 @@ function setPillGroupActiveEl(container: HTMLElement | null, activeValues: strin
   });
 }
 
-// Sets which pills are marked active within a pill-toggle group, based on a list of values
-function setPillGroupActive(containerId: string, activeValues: string[]) {
-  setPillGroupActiveEl(document.getElementById(containerId), activeValues);
-}
-
 // Delegated click handler for a pill-toggle container element (survives innerHTML rebuilds)
 function initPillToggleEl(container: HTMLElement | null) {
   if (!container) return;
@@ -134,11 +129,6 @@ function initPillToggleEl(container: HTMLElement | null) {
 
     btn.classList.toggle("active");
   });
-}
-
-// Delegated click handler for a pill-toggle container (survives innerHTML rebuilds)
-function initPillToggle(containerId: string) {
-  initPillToggleEl(document.getElementById(containerId));
 }
 
 // Delegated click handler for a pill-toggle container element where only one pill can be active
@@ -158,29 +148,14 @@ function initExclusivePillToggleEl(container: HTMLElement | null, onChange?: (va
   });
 }
 
-// Delegated click handler for a pill-toggle container where only one pill can be active at a
-// time (clicking the already-active pill deselects it). `onChange(value)` fires with the new
-// value ("" if deselected) so callers can reveal/hide conditional fields.
-function initExclusivePillToggle(containerId: string, onChange?: (value: string) => void) {
-  initExclusivePillToggleEl(document.getElementById(containerId), onChange);
-}
-
 function getExclusivePillValueEl(container: HTMLElement | null) {
   const btn = container ? container.querySelector(".pill-toggle.active") : null;
   return btn ? (btn as HTMLElement).dataset.value : "";
 }
 
-function getExclusivePillValue(containerId: string) {
-  return getExclusivePillValueEl(document.getElementById(containerId));
-}
-
 function setExclusivePillValueEl(container: HTMLElement | null, value: string) {
   if (!container) return;
   container.querySelectorAll(".pill-toggle").forEach(b => b.classList.toggle("active", (b as HTMLElement).dataset.value === value));
-}
-
-function setExclusivePillValue(containerId: string, value: string) {
-  setExclusivePillValueEl(document.getElementById(containerId), value);
 }
 
 /* ==========================================================================
@@ -266,15 +241,10 @@ export {
   buildPaginationBarHtml,
   renderPaginationBar,
   setPillGroupActiveEl,
-  setPillGroupActive,
   initPillToggleEl,
-  initPillToggle,
   initExclusivePillToggleEl,
-  initExclusivePillToggle,
   getExclusivePillValueEl,
-  getExclusivePillValue,
   setExclusivePillValueEl,
-  setExclusivePillValue,
   showLoadingOverlay,
   hideLoadingOverlay,
   showToast,

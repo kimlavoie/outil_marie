@@ -9,8 +9,6 @@ import {
   formatCurrency,
   escapeHtml,
   getReservationRoomLabel,
-  showLoadingOverlay,
-  hideLoadingOverlay,
   calculateHoursFromTimes,
   formatPostalCode
 } from "../utils/utils.ts";
@@ -433,24 +431,9 @@ function initActivityDetailsModal() {
   ensureActivityDetailsModalExists();
 }
 
-function printActivitySheet() {
-  const inputEl = document.getElementById("form-activity-internal-id") as HTMLInputElement | null;
-  const id = inputEl ? inputEl.value : "";
-  const act = appState.activities.find(a => a.id === id);
-  if (!act) return;
-  showLoadingOverlay("Préparation du document...");
-  setTimeout(() => {
-    const sheetEl = document.getElementById("print-activity-sheet");
-    if (sheetEl) sheetEl.innerHTML = buildPrintActivitySheetHtml(act);
-    hideLoadingOverlay();
-    window.print();
-  }, 20);
-}
-
 export {
   buildPrintActivitySheetHtml,
   buildActivityDetailsHtml,
-  printActivitySheet,
   openActivityDetailsModal,
   closeActivityDetailsModal,
   initActivityDetailsModal

@@ -1,6 +1,6 @@
 import type { Activity } from "../types/activity.ts";
 
-export interface CalendarReturn {
+interface CalendarReturn {
   refDate: string;
   viewMode: string;
 }

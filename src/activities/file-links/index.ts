@@ -15,6 +15,6 @@
  * its own turn.
  */
 export { idbSetFileLink, idbGetFileLink } from "./db.ts";
-export { pickAndLinkFile, openLinkedFile } from "./actions.ts";
+export { pickAndLinkFile } from "./actions.ts";
 export { renderFileLinkStatus } from "./status.ts";
 export { renderPdfPreview, renderXlsxPreview } from "./preview.ts";

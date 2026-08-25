@@ -11,7 +11,7 @@
  */
 import { useSyncExternalStore } from "react";
 
-export const VALID_VIEWS = ["dashboard", "activities", "validation", "account-report", "settings", "backup"];
+const VALID_VIEWS = ["dashboard", "activities", "validation", "account-report", "settings", "backup"];
 const LAST_VIEW_KEY = "outil_marie_last_view";
 
 function getInitialView(): string {
@@ -37,7 +37,7 @@ export function setCurrentView(view: string): void {
   listeners.forEach(listener => listener());
 }
 
-export function subscribeCurrentView(listener: () => void): () => void {
+function subscribeCurrentView(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }

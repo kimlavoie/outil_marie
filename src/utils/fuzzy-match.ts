@@ -50,4 +50,4 @@ function textSimilarity(a: any, b: any) {
   return (2 * common) / (tokensA.size + tokensB.size);
 }
 
-export { FUZZY_TEXT_STOPWORDS, tokenizeForMatch, textSimilarity };
+export { tokenizeForMatch, textSimilarity };

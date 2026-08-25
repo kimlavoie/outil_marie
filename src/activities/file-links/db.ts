@@ -40,4 +40,4 @@ async function idbGetFileLink(id: string): Promise<{ handle: any; name: string }
   });
 }
 
-export { openFileLinksDb, idbSetFileLink, idbGetFileLink };
+export { idbSetFileLink, idbGetFileLink };

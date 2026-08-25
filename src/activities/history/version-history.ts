@@ -313,4 +313,4 @@ function restoreActivityVersion(versionRecord: any) {
   });
 }
 
-export { formatTimestampToFrench, saveActivityVersion, computeActivityDiff, loadAndRenderActivityHistory, restoreActivityVersion };
+export { formatTimestampToFrench, saveActivityVersion, computeActivityDiff, loadAndRenderActivityHistory };

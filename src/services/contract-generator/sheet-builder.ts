@@ -181,4 +181,3 @@ class SheetBuilder {
 }
 
 export { xmlEscapeText, formatDateFr, wrapRowHeight, SheetBuilder };
-export type { CellSpec };

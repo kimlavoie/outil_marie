@@ -141,12 +141,12 @@ function getAggregateEventDates(reservations: any[]) {
   };
 }
 
-export { addSlotRow, collectSlotsFromCard, addNextSlotRow, buildSlotRangeGeneratorHtml, wireSlotRangeGenerator } from "./slots.ts";
+export { addSlotRow, collectSlotsFromCard, addNextSlotRow } from "./slots.ts";
 export {
   buildTariffParameterOptionsHtml,
   buildTariffClientTypeOptionsHtml,
   updateResolvedPriceDisplay,
   refreshReservationTariffSelect
 } from "./tariff.ts";
-export { buildRoomSelectItems, buildRoomDateTimeFieldHtml, buildDatePeriodFieldHtml, addReservationCard } from "./card.tsx";
+export { buildRoomSelectItems, addReservationCard } from "./card.tsx";
 export { getAggregateEventDates, collectReservationsFromForm };
