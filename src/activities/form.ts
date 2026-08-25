@@ -176,6 +176,54 @@ function initFormHandlers() {
     });
   }
 
+  // Discreet manual override to show the "Revenus du bar" section for activities that don't have
+  // a "Service d'hôtesses" bar service (the section's normal, automatic trigger)
+  const enableBarRevenueBtn = document.getElementById("enable-bar-revenue-btn");
+  if (enableBarRevenueBtn) {
+    enableBarRevenueBtn.addEventListener("click", () => {
+      const id = el("form-activity-internal-id")?.value;
+      if (!id) return;
+      commitActivityPatch(id, (a: any) => {
+        a.bar_revenue_manually_enabled = true;
+      });
+      const updated = appState.activities.find((a: any) => a.id === id);
+      updateBarRevenueSectionVisibility(updated);
+    });
+  }
+
+  // Undoes the manual override above — only offered while it's the sole reason the section is
+  // showing (see updateBarRevenueSectionVisibility), so there's always a way back after an
+  // accidental click. Clears any lines already entered so they don't linger, hidden, in the saved
+  // activity.
+  const disableBarRevenueBtn = document.getElementById("disable-bar-revenue-btn");
+  if (disableBarRevenueBtn) {
+    disableBarRevenueBtn.addEventListener("click", () => {
+      const id = el("form-activity-internal-id")?.value;
+      if (!id) return;
+
+      const hasContent = Array.from(document.querySelectorAll<HTMLElement>("#form-bar-revenue-list .bar-revenue-row")).some(row => {
+        const amt = parseFloat(row.querySelector<HTMLInputElement>(".bar-amount-input")?.value || "") || 0;
+        const acc = row.querySelector<HTMLInputElement>(".bar-account-select-wrapper .searchable-select-value")?.value || "";
+        const receipt = row.querySelector<HTMLInputElement>(".bar-receipt-input")?.value.trim() || "";
+        const pay = row.querySelector<HTMLSelectElement>(".bar-payment-method-select")?.value || "";
+        return amt > 0 || !!acc || !!receipt || !!pay;
+      });
+      if (hasContent && !confirm("Des revenus de bar ont été saisis. Retirer la section et effacer ces lignes ?")) return;
+
+      const list = el("form-bar-revenue-list");
+      if (list) list.innerHTML = "";
+      addBarRevenueRow("", 0, "", "");
+
+      commitActivityPatch(id, (a: any) => {
+        a.bar_revenue_manually_enabled = false;
+        a.bar_revenue_lines = [];
+        a.bar_revenue = 0;
+      });
+      const updated = appState.activities.find((a: any) => a.id === id);
+      updateBarRevenueSectionVisibility(updated);
+    });
+  }
+
   // Submit Button
   const submitBtn = el("activity-drawer-submit");
   if (submitBtn) {

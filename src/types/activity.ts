@@ -162,4 +162,5 @@ export interface Activity {
   non_taxable?: boolean;
   deleted?: boolean;
   bar_revenue_lines?: any[];
+  bar_revenue_manually_enabled?: boolean;
 }

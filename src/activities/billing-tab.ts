@@ -226,10 +226,20 @@ export function hasHostessBarService(act?: Partial<Activity>): boolean {
   return false;
 }
 
-// Updates the visibility of the "Revenus du bar" section in the Facturation tab
+// Updates the visibility of the "Revenus du bar" section in the Facturation tab. Normally driven
+// entirely by hasHostessBarService, but act.bar_revenue_manually_enabled (set via the discreet
+// "Activer les revenus du bar" button) can force it on for activities without a hostess bar
+// service — e.g. cash bar revenue collected outside that service type.
 export function updateBarRevenueSectionVisibility(act?: Partial<Activity>): void {
   const section = document.getElementById("billing-bar-revenue-section");
-  if (!section) return;
-  const visible = hasHostessBarService(act);
-  section.style.display = visible ? "block" : "none";
+  const enableBtn = document.getElementById("enable-bar-revenue-btn");
+  const disableBtn = document.getElementById("disable-bar-revenue-btn");
+  const autoVisible = hasHostessBarService(act);
+  const manuallyEnabled = !!act?.bar_revenue_manually_enabled;
+  const visible = autoVisible || manuallyEnabled;
+  if (section) section.style.display = visible ? "block" : "none";
+  if (enableBtn) enableBtn.style.display = visible ? "none" : "inline-block";
+  // Only offer to remove the section when it's showing solely because of the manual override —
+  // if a real "Service d'hôtesses" bar service drives it, there's nothing to undo here.
+  if (disableBtn) disableBtn.style.display = manuallyEnabled && !autoVisible ? "inline-block" : "none";
 }

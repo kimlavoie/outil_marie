@@ -930,6 +930,16 @@ export const ActivityDrawer: React.FC = () => {
                 <div style={{ textAlign: "right" }}>
                   <span id="form-distribution-total-warning" style={{ display: "none", color: "var(--warning-text)", fontSize: "0.8rem" }} />
                 </div>
+                <div style={{ textAlign: "right", marginTop: "4px" }}>
+                  <button
+                    type="button"
+                    id="enable-bar-revenue-btn"
+                    className="btn-link"
+                    style={{ display: "none", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 0, fontSize: "0.75rem", textDecoration: "underline" }}
+                  >
+                    + Activer les revenus du bar
+                  </button>
+                </div>
               </div>
 
               <div className="distribution-section" id="billing-bar-revenue-section" style={{ display: "none" }}>
@@ -943,6 +953,16 @@ export const ActivityDrawer: React.FC = () => {
                 <div className="distribution-total">
                   <span>Total des revenus du bar</span>
                   <span id="form-bar-revenue-total-val">0,00 $</span>
+                </div>
+                <div style={{ textAlign: "right", marginTop: "4px" }}>
+                  <button
+                    type="button"
+                    id="disable-bar-revenue-btn"
+                    className="btn-link"
+                    style={{ display: "none", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 0, fontSize: "0.75rem", textDecoration: "underline" }}
+                  >
+                    Retirer les revenus du bar
+                  </button>
                 </div>
               </div>
 
