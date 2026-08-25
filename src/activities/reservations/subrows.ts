@@ -465,6 +465,11 @@ export function addFeeRow(container: HTMLElement, description = "", amount: stri
 // Salary id of the default "Directeur technique" entry seeded in config-defaults.ts.
 export const TECHNICAL_DIRECTOR_SALARY_ID = "salary-dt";
 
+// Salary id of the default "Hôte" entry seeded in config-defaults.ts — staff rows in "Personnel
+// requis" using this salary count as hostesses for the activities list's "Hôtesse" column, same
+// as the bar service's manual hostess_count field.
+export const HOSTESS_SALARY_ID = "salary-hote";
+
 export function autoAddLinkedStaffAndFees(card: HTMLElement, roomName: string) {
   const room = appState.settings.rooms.find((r: any) => r.name === roomName);
   if (!room) return;

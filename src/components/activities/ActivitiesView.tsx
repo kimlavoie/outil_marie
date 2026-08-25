@@ -13,7 +13,7 @@ import { reconciliationState, reconcileLedger } from "../../services/reconciliat
 import { openActivityDrawer } from "../../activities/financials.ts";
 import { openCalendarModal } from "../calendar-view.tsx";
 import { showActivityContextMenu, closeActivityContextMenu } from "../../activities/context-menu.ts";
-import { TECHNICAL_DIRECTOR_SALARY_ID } from "../../activities/reservations/subrows.ts";
+import { TECHNICAL_DIRECTOR_SALARY_ID, HOSTESS_SALARY_ID } from "../../activities/reservations/subrows.ts";
 import type { Activity } from "../../types/activity.ts";
 
 import { getSavedUiState } from "../../state/ui-state.ts";
@@ -52,6 +52,19 @@ function getPlanningProgress(act: Activity) {
   const total = tasks.length;
   const percent = total > 0 ? Math.round((done / total) * 100) : 0;
   return { done, total, percent };
+}
+
+// Total hostesses for the "Hôtesse" column/sort: the bar service's manual hostess_count field,
+// plus one per "Personnel requis" staff row using the "Hôte" salary (those are added separately,
+// e.g. when hostesses are needed without a hostess bar service).
+function getTotalHostesses(act: Activity) {
+  return (act.reservations || []).reduce(
+    (sum: number, r: any) =>
+      sum +
+      (r.bar_service?.hostess_count || 0) +
+      (r.staff || []).filter((s: any) => s.salary_id === HOSTESS_SALARY_ID).length,
+    0
+  );
 }
 
 export const ActivitiesView: React.FC = () => {
@@ -217,10 +230,7 @@ export const ActivitiesView: React.FC = () => {
         case "bar":
           return (act.reservations || []).some((r: any) => r.bar_service?.active) ? 1 : 0;
         case "hostess":
-          return (act.reservations || []).reduce(
-            (sum: number, r: any) => sum + (r.bar_service?.hostess_count || 0) + (r.host_duties?.hostess_count || 0),
-            0
-          );
+          return getTotalHostesses(act);
         case "totalRev":
           return (act.distributions || []).reduce((sum: number, d: any) => sum + d.amount, 0);
         case "sansFrais":
@@ -636,11 +646,7 @@ export const ActivitiesView: React.FC = () => {
                       s.salary_id === TECHNICAL_DIRECTOR_SALARY_ID && (s.count === undefined || s.count > 0 || !!s.date)
                   )
                 );
-                const totalHostesses = (act.reservations || []).reduce(
-                  (sum: number, r: any) =>
-                    sum + (r.bar_service?.hostess_count || 0) + (r.host_duties?.hostess_count || 0),
-                  0
-                );
+                const totalHostesses = getTotalHostesses(act);
 
                 // Reconciliation badge
                 const activityReferences = getActivityReferences(act);

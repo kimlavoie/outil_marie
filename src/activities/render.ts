@@ -56,7 +56,7 @@ import {
 } from "../utils/utils.ts";
 import { reconciliationState } from "../services/reconciliation.ts";
 import { openActivityDrawer } from "./financials.ts";
-import { TECHNICAL_DIRECTOR_SALARY_ID } from "./reservations/subrows.ts";
+import { TECHNICAL_DIRECTOR_SALARY_ID, HOSTESS_SALARY_ID } from "./reservations/subrows.ts";
 import { showActivityContextMenu } from "./context-menu.ts";
 import { updateBulkActionsBar } from "./bulk-actions.ts";
 
@@ -64,6 +64,19 @@ import { updateBulkActionsBar } from "./bulk-actions.ts";
 // activities-financials.ts's `el` helper doc comment for why this cast is needed/safe.
 function el<T extends Element = HTMLInputElement>(id: string): T {
   return document.getElementById(id) as unknown as T;
+}
+
+// Total hostesses for the activities list's "Hôtesse" column/sort: the bar service's manual
+// hostess_count field, plus one per "Personnel requis" staff row using the "Hôte" salary (those
+// are added separately, e.g. when hostesses are needed without a hostess bar service).
+function getTotalHostesses(act: any): number {
+  return (act.reservations || []).reduce(
+    (sum: number, r: any) =>
+      sum +
+      (r.bar_service?.hostess_count || 0) +
+      (r.staff || []).filter((s: any) => s.salary_id === HOSTESS_SALARY_ID).length,
+    0
+  );
 }
 
 import { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT } from "./activities-table-state.ts";
@@ -216,10 +229,7 @@ function renderActivities() {
       case "bar":
         return (act.reservations || []).some((r: any) => r.bar_service?.active) ? 1 : 0;
       case "hostess":
-        return (act.reservations || []).reduce(
-          (sum: number, r: any) => sum + (r.bar_service?.hostess_count || 0) + (r.host_duties?.hostess_count || 0),
-          0
-        );
+        return getTotalHostesses(act);
       case "totalRev":
         return act.distributions.reduce((sum: number, d: any) => sum + d.amount, 0);
       case "sansFrais":
@@ -315,10 +325,7 @@ function renderActivities() {
     const hasTechnicalDirector = (act.reservations || []).some((r: any) =>
       (r.staff || []).some((s: any) => s.salary_id === TECHNICAL_DIRECTOR_SALARY_ID && (s.count === undefined || s.count > 0 || !!s.date))
     );
-    const totalHostesses = (act.reservations || []).reduce(
-      (sum: number, r: any) => sum + (r.bar_service?.hostess_count || 0) + (r.host_duties?.hostess_count || 0),
-      0
-    );
+    const totalHostesses = getTotalHostesses(act);
 
     // Reconciliation badge if ledger file has been uploaded
     const activityReferences = getActivityReferences(act);
