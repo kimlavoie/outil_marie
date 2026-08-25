@@ -462,23 +462,8 @@ export function addFeeRow(container: HTMLElement, description = "", amount: stri
   rejectNegativeAmountOnBlur(row.querySelector<HTMLInputElement>(".fee-amount-input")!);
 }
 
-// Salary id of the default "Directeur technique" entry seeded in config-defaults.ts. Activating
-// any "service technique" (Microphone, éclairage, etc.) on a reservation requires a technical
-// director on site, so we auto-add one to "Personnel requis" the first time such a service is
-// toggled on for that room.
+// Salary id of the default "Directeur technique" entry seeded in config-defaults.ts.
 export const TECHNICAL_DIRECTOR_SALARY_ID = "salary-dt";
-
-export function autoAddTechnicalDirectorIfNeeded(staffList: HTMLElement) {
-  const salaryExists = (appState.settings.salaries || []).some(s => s.id === TECHNICAL_DIRECTOR_SALARY_ID);
-  if (!salaryExists) return;
-
-  const alreadyPresent = Array.from(staffList.querySelectorAll<HTMLSelectElement>(".staff-salary-select")).some(
-    sel => sel.value === TECHNICAL_DIRECTOR_SALARY_ID
-  );
-  if (alreadyPresent) return;
-
-  addStaffRow(staffList, TECHNICAL_DIRECTOR_SALARY_ID, "", 0, 0, true);
-}
 
 export function autoAddLinkedStaffAndFees(card: HTMLElement, roomName: string) {
   const room = appState.settings.rooms.find((r: any) => r.name === roomName);

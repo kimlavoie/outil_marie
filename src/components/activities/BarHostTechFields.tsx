@@ -14,15 +14,14 @@
  * addEventListener calls, not reimplemented as React state (nothing else needs to know a pill's
  * state reactively; collectReservationsFromForm() reads the "active" class straight off the DOM,
  * same as before). Visibility toggles (bar details, hostess-count fields) are likewise still plain
- * style.display writes from those same callbacks. Picking "Projecteur"/toggling technical services
- * reaches into the still-legacy .room-staff-list/.room-services-list (sous-tranche F) via `card`,
- * exactly like the original code did.
+ * style.display writes from those same callbacks. Picking "Projecteur" reaches into the still-legacy
+ * .room-services-list (sous-tranche F) via `card`, exactly like the original code did.
  */
 import { useEffect, useRef } from "react";
 import { TECHNICAL_SERVICES, BAR_DRINK_TYPES, BAR_SERVICE_TYPES, HOST_DUTY_OPTIONS } from "../../state/state.ts";
 import { initPillToggleEl, initExclusivePillToggleEl, setExclusivePillValueEl, setPillGroupActiveEl } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../../activities/financials.ts";
-import { autoAddTechnicalDirectorIfNeeded, autoAddProjectorIfNeeded, autoRemoveProjectorIfNeeded } from "../../activities/reservations/subrows.ts";
+import { autoAddProjectorIfNeeded, autoRemoveProjectorIfNeeded } from "../../activities/reservations/subrows.ts";
 
 interface BarService {
   active?: boolean;
@@ -63,10 +62,8 @@ export function BarHostTechFields({ card, initialData }: { card: HTMLElement; in
       if (btn) {
         const isProjecteur = btn.dataset.value === "Projecteur";
         const isActive = btn.classList.contains("active");
-        const staffList = card.querySelector<HTMLElement>(".room-staff-list");
         const servicesList = card.querySelector<HTMLElement>(".room-services-list");
         if (isActive) {
-          if (staffList) autoAddTechnicalDirectorIfNeeded(staffList);
           if (isProjecteur && servicesList) {
             autoAddProjectorIfNeeded(servicesList);
           }

@@ -24,8 +24,6 @@ import {
   collectFeesFromForm,
   resetIncompleteRowWarnings,
   getIncompleteRowWarnings,
-  autoAddTechnicalDirectorIfNeeded,
-  TECHNICAL_DIRECTOR_SALARY_ID,
   autoAddProjectorIfNeeded,
   autoRemoveProjectorIfNeeded,
   PROJECTOR_SERVICE_ID
@@ -249,25 +247,6 @@ test("collectFeesFromForm drops a fee row with no description but warns since an
   const fees = collectFeesFromForm(card);
   assert.equal(fees.length, 0);
   assert.equal(getIncompleteRowWarnings().length, 1);
-});
-
-test("autoAddTechnicalDirectorIfNeeded adds the technical director row once, and is a no-op if already present", () => {
-  const staffList = freshContainer();
-  autoAddTechnicalDirectorIfNeeded(staffList);
-  assert.equal(staffList.querySelectorAll(".staff-salary-select").length, 1);
-
-  autoAddTechnicalDirectorIfNeeded(staffList);
-  assert.equal(staffList.querySelectorAll(".staff-salary-select").length, 1);
-
-  const select = staffList.querySelector(".staff-salary-select") as HTMLSelectElement;
-  assert.equal(select.value, TECHNICAL_DIRECTOR_SALARY_ID);
-});
-
-test("autoAddTechnicalDirectorIfNeeded does nothing when the technical director salary isn't configured", () => {
-  setAppState(baseState({ settings: { ...baseState().settings, salaries: [] } }));
-  const staffList = freshContainer();
-  autoAddTechnicalDirectorIfNeeded(staffList);
-  assert.equal(staffList.querySelectorAll(".staff-salary-select").length, 0);
 });
 
 test("autoAddProjectorIfNeeded adds the projector rental row once, and is a no-op if already present", () => {

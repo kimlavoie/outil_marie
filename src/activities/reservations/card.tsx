@@ -181,8 +181,8 @@ function addReservationCard(
   // NOT own its row lists as React state/reconciled children — the .room-staff-list/
   // .room-services-list/.room-fees-list containers stay "opaque" to React (mounted once, never
   // re-rendered), with addStaffRow()/addServiceRow()/addFeeRow() still doing raw
-  // insertAdjacentHTML into them exactly as before. That's deliberate: autoAddTechnicalDirectorIfNeeded/
-  // autoAddLinkedStaffAndFees/autoAddProjectorIfNeeded/autoRemoveProjectorIfNeeded are called from
+  // insertAdjacentHTML into them exactly as before. That's deliberate: autoAddLinkedStaffAndFees/
+  // autoAddProjectorIfNeeded/autoRemoveProjectorIfNeeded are called from
   // *other* React roots on this same card (BarHostTechFields.tsx's technical-services toggle,
   // RoomTariffFields.tsx's room select) reaching into these containers directly — if React
   // reconciled their children from its own state, those cross-root DOM insertions would be

@@ -14,8 +14,8 @@
  * reservations/subrows.ts's addStaffRow()/addServiceRow()/addFeeRow() still do raw
  * insertAdjacentHTML into them exactly as before, unchanged. That's deliberate: other React
  * roots on this same card reach into these same containers directly —
- * BarHostTechFields.tsx's technical-services toggle (autoAddTechnicalDirectorIfNeeded/
- * autoAddProjectorIfNeeded/autoRemoveProjectorIfNeeded) and RoomTariffFields.tsx's room select
+ * BarHostTechFields.tsx's technical-services toggle (autoAddProjectorIfNeeded/
+ * autoRemoveProjectorIfNeeded) and RoomTariffFields.tsx's room select
  * (autoAddLinkedStaffAndFees) — and none of those roots know about this one's state. If React
  * reconciled these lists from state here, those cross-root DOM insertions would be invisible to
  * it and could get silently wiped out on this component's next re-render (the same class of bug
@@ -25,7 +25,7 @@
  * one-time initial population from `initialData`.
  */
 import { useEffect, useRef } from "react";
-import { addStaffRow, addServiceRow, addFeeRow, autoAddTechnicalDirectorIfNeeded } from "../../activities/reservations/subrows.ts";
+import { addStaffRow, addServiceRow, addFeeRow } from "../../activities/reservations/subrows.ts";
 
 export function StaffServicesFeesFields({ card, initialData }: { card: HTMLElement; initialData: any }) {
   const staffListRef = useRef<HTMLDivElement>(null);
@@ -61,10 +61,6 @@ export function StaffServicesFeesFields({ card, initialData }: { card: HTMLEleme
         addServiceRow(servicesList, s.service_id, s.hours, s.tarif_id, s.auto_generated, s.custom_rate || 0)
       );
       (initialData.fees || []).forEach((f: any) => addFeeRow(feesList, f.description, f.amount, f.auto_generated));
-
-      if ((initialData.technical_services || []).length > 0) {
-        autoAddTechnicalDirectorIfNeeded(staffList);
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

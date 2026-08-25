@@ -208,19 +208,6 @@ test("picking a room with linked staff/fees (RoomTariffFields' auto-add) adds th
   assert.equal(card.querySelector<HTMLInputElement>(".fee-desc-input")!.value, "Frais de nettoyage");
 });
 
-test("toggling a technical service (BarHostTechFields) auto-adds the technical director without React clobbering the list", async () => {
-  await openDrawer(baseActivity({ reservations: [{ id: "res-1", room_name: "", slots: [] }] }));
-
-  const card = document.querySelector<HTMLElement>(".reservation-card")!;
-  assert.equal(card.querySelectorAll(".room-staff-list .distribution-row").length, 0);
-
-  act(() => fireEvent.click(card.querySelector<HTMLElement>(".room-technical-services-group .pill-toggle")!));
-
-  const staffRows = card.querySelectorAll(".room-staff-list .distribution-row");
-  assert.equal(staffRows.length, 1);
-  assert.equal((staffRows[0].querySelector(".staff-salary-select") as HTMLSelectElement).value, "salary-dt");
-});
-
 test("collectReservationsFromForm/autosave persist staff, services and fees", async () => {
   await openDrawer(baseActivity({ reservations: [{ id: "res-1", room_name: "", slots: [] }] }));
 
