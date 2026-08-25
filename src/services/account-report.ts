@@ -1,6 +1,18 @@
 /**
  * account-report.ts - "Grand Livre local" view: per-account ledger cards
- * built from activity distributions
+ * built from activity distributions.
+ *
+ * PRODUCTION STATUS (React migration audit): renderAccountReport()'s rendering body below is
+ * unreachable in the running app, same situation as activities/render.ts's renderActivities() (see
+ * that file's header comment for the fuller version of this story). components/account-report/
+ * AccountReportView.tsx is a full, independent React reimplementation of this view (filter/sort/
+ * pagination all in its own useState, now also saving/restoring its own localStorage slice — see
+ * state/ui-state.ts's header comment) that renders none of the ids this file looks for
+ * (#account-report-container), so `if (!container || !filterAccountSelect) return;` always exits
+ * immediately. Kept anyway: it's covered by its own tests (test/account-report.test.ts) that build
+ * a matching legacy DOM fixture and verify genuinely correct behavior, just behavior nothing in
+ * production triggers today. renderAccountReport() stays exported/called from navigation.ts's
+ * renderView() for the same reason renderActivities() does.
  */
 import { appState, getFiscalYear, getQuarterNumber, saveUiState, parseLocalDateStr } from "../state/state.ts";
 import { escapeHtml, formatCurrency, buildPaginationBarHtml } from "../utils/utils.ts";

@@ -1,69 +1,26 @@
 /**
- * activities/file-preview/dispatch.ts - Generic "Aperçu du fichier" modal (#file-preview-modal):
- * given any File, picks the right viewer by extension and mounts it. Backs the pièces
- * justificatives folder preview (supporting-docs/actions.ts), but is deliberately not tied to
- * activities so it can be reused anywhere a File needs a quick look.
+ * activities/file-preview/dispatch.ts - Trigger for the generic "Aperçu du fichier" modal: given
+ * any File, hands it to components/modals/FilePreviewModal.tsx (React), which picks the right
+ * viewer by extension and mounts it. Backs the pièces justificatives folder preview
+ * (supporting-docs/actions.ts), but is deliberately not tied to activities so it can be reused
+ * anywhere a File needs a quick look.
  *
- * Every viewer (including the existing pdf-viewer.ts/xlsx-viewer.ts, reused as-is — same
- * constructor signature) is loaded via dynamic import so pdfjs-dist/xlsx/mammoth stay out of the
- * main bundle, same as file-links/preview.ts already does for the form/submission/contract tabs.
+ * Used to also hold the modal's own DOM wiring (close button/backdrop/Escape listeners, a download
+ * handler) from before FilePreviewModal.tsx existed — all dead once it did: those ids
+ * (#file-preview-modal, #file-preview-modal-close, #file-preview-download-btn) are not rendered by
+ * the live app, so initFilePreviewModal() (called once from main.tsx) never had anything to attach
+ * to. Its Escape-key handler was the only one attempting to close this modal externally, and
+ * FilePreviewModal.tsx had none of its own — so pressing Escape while the modal was open silently
+ * did nothing (the X button/backdrop click, both real React onClick handlers, were the only way to
+ * close it). Fixed by giving FilePreviewModal.tsx its own Escape handler directly, same pattern as
+ * CalendarModal.tsx; this file now only holds the open trigger, which already correctly delegates.
  */
-const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg"]);
-
-let currentObjectUrl: string | null = null;
-let currentDownload: { blob: Blob; fileName: string } | null = null;
-
 import { triggerOpenFilePreviewModal } from "../../components/modals/FilePreviewModal.tsx";
+
+const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg"]);
 
 async function openFilePreviewModal(file: File): Promise<void> {
   triggerOpenFilePreviewModal(file);
 }
 
-function downloadCurrentFile() {
-  if (!currentDownload) return;
-  const url = URL.createObjectURL(currentDownload.blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = currentDownload.fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function closeFilePreviewModal(): void {
-  document.getElementById("file-preview-modal")?.classList.remove("active");
-  document.getElementById("modal-backdrop")?.classList.remove("active");
-
-  if (currentObjectUrl) {
-    URL.revokeObjectURL(currentObjectUrl);
-    currentObjectUrl = null;
-  }
-  currentDownload = null;
-
-  // A PdfViewer/XlsxViewer in pseudo-fullscreen moves its element to document.body; clearing the
-  // mount here would otherwise leave that detached element behind since it's no longer a
-  // descendant of #file-preview-mount.
-  const orphanedFullscreenViewer = document.querySelector(
-    ".pdf-custom-viewer.pdf-fullscreen-mode, .xlsx-custom-viewer.xlsx-fullscreen-mode"
-  );
-  orphanedFullscreenViewer?.remove();
-
-  const mount = document.getElementById("file-preview-mount");
-  if (mount) mount.innerHTML = "";
-}
-
-function initFilePreviewModal(): void {
-  document.getElementById("file-preview-modal-close")?.addEventListener("click", closeFilePreviewModal);
-  document.getElementById("file-preview-download-btn")?.addEventListener("click", downloadCurrentFile);
-  document.getElementById("modal-backdrop")?.addEventListener("click", () => {
-    if (document.getElementById("file-preview-modal")?.classList.contains("active")) closeFilePreviewModal();
-  });
-  window.addEventListener("keydown", e => {
-    if (e.key === "Escape" && document.getElementById("file-preview-modal")?.classList.contains("active")) {
-      closeFilePreviewModal();
-    }
-  });
-}
-
-export { openFilePreviewModal, closeFilePreviewModal, initFilePreviewModal, IMAGE_EXTENSIONS };
+export { openFilePreviewModal, IMAGE_EXTENSIONS };

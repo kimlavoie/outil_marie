@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAppState, getFiscalYear, getQuarterNumber, parseLocalDateStr } from "../../state/state.ts";
 import { formatCurrency } from "../../utils/utils.ts";
 import { openActivityDrawer } from "../../activities/financials.ts";
+import { getSavedUiState } from "../../state/ui-state.ts";
 
 interface Entry {
   activity: any;
@@ -15,11 +16,29 @@ interface AccountReportViewProps {
 }
 
 export const AccountReportView: React.FC<AccountReportViewProps> = ({ onSelectView }) => {
-  const [selectedAccountFilter, setSelectedAccountFilter] = useState("");
-  const [sortKey, setSortKey] = useState<string>("id");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [pages, setPages] = useState<Record<string, number>>({});
+  const savedState = getSavedUiState()?.accountReport || {};
+
+  const [selectedAccountFilter, setSelectedAccountFilter] = useState<string>(() => savedState.filterAccount || "");
+  const [sortKey, setSortKey] = useState<string>(() => savedState.sortKey || "id");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(() => savedState.sortOrder || "asc");
+  const [pages, setPages] = useState<Record<string, number>>(() => savedState.pages || {});
   const pageSize = 10;
+
+  // Save UI state to localStorage on changes — merged with whatever the other views' own effects
+  // wrote under the same key, same pattern as ActivitiesView.tsx.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("outil_marie_ui_state");
+      const existing = raw ? JSON.parse(raw) : {};
+      const updated = {
+        ...existing,
+        accountReport: { filterAccount: selectedAccountFilter, sortKey, sortOrder, pages }
+      };
+      localStorage.setItem("outil_marie_ui_state", JSON.stringify(updated));
+    } catch {
+      // Ignore
+    }
+  }, [selectedAccountFilter, sortKey, sortOrder, pages]);
 
   const activities = useAppState(s => s.activities);
   const accounts = useAppState(s => s.settings.accounts);

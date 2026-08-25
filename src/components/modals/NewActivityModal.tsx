@@ -5,6 +5,7 @@ import { createActivity, createDraftActivity } from "../../activities/new-activi
 import { openActivityDrawer } from "../../activities/financials.ts";
 
 let openSubscriber: ((intent: string) => void) | null = null;
+let closeSubscriber: (() => void) | null = null;
 
 export function isNewActivityModalSubscribed() {
   return openSubscriber !== null;
@@ -13,6 +14,12 @@ export function isNewActivityModalSubscribed() {
 export function triggerOpenNewActivityModal(intent = "soumission") {
   if (openSubscriber) {
     openSubscriber(intent);
+  }
+}
+
+export function triggerCloseNewActivityModal() {
+  if (closeSubscriber) {
+    closeSubscriber();
   }
 }
 
@@ -27,8 +34,10 @@ export const NewActivityModal: React.FC = () => {
       setName("");
       setIsOpen(true);
     };
+    closeSubscriber = () => setIsOpen(false);
     return () => {
       openSubscriber = null;
+      closeSubscriber = null;
     };
   }, []);
 

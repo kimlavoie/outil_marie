@@ -25,7 +25,8 @@ import {
   addBarRevenueRow,
   showAutoSaveStatus,
   updateSubmissionFinancialSummary,
-  openTaxOverrideModal
+  openTaxOverrideModal,
+  closeActivityDetailsModal
 } from "./financials.ts";
 import { undoActivityFormChange, redoActivityFormChange, loadAndRenderActivityHistory, updateFormDatesHelper } from "./history/index.ts";
 import { submitActivityForm } from "./history/index.ts";
@@ -283,6 +284,7 @@ function initFormHandlers() {
       }
       cancelActivityDrawer();
       closeNewActivityModal();
+      closeActivityDetailsModal();
       import("../components/settings/mount.ts").then(m => m.closeAllSettingsModals());
     }
   });

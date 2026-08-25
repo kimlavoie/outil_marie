@@ -31,7 +31,11 @@ export function initNewActivityModal() {
   });
 }
 
-import { triggerOpenNewActivityModal, isNewActivityModalSubscribed } from "../components/modals/NewActivityModal.tsx";
+import {
+  triggerOpenNewActivityModal,
+  triggerCloseNewActivityModal,
+  isNewActivityModalSubscribed
+} from "../components/modals/NewActivityModal.tsx";
 
 export function openNewActivityModal(intent = "soumission") {
   newActivityModalIntent = intent;
@@ -54,6 +58,10 @@ export function openNewActivityModal(intent = "soumission") {
 }
 
 export function closeNewActivityModal() {
+  if (isNewActivityModalSubscribed()) {
+    triggerCloseNewActivityModal();
+    return;
+  }
   if (newActivityFocusTrap) {
     newActivityFocusTrap.deactivate();
     newActivityFocusTrap = null;

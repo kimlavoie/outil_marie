@@ -24,6 +24,7 @@ test.after(() => dom.window.close());
 import { setAppState } from "../src/state/state.ts";
 import { activitiesState } from "../src/activities/render.ts";
 import { initFormHandlers } from "../src/activities/form.ts";
+import { openActivityDetailsModal, initActivityDetailsModal } from "../src/activities/financials.ts";
 
 function baseState(overrides: any = {}) {
   return {
@@ -147,6 +148,28 @@ test("Alt+2 delegates to the 'activities' nav item's button (Alt+[1-6] tab-switc
   window.dispatchEvent(new (window as any).KeyboardEvent("keydown", { key: "2", altKey: true }));
 
   assert.equal(clicked, true);
+});
+
+test("Escape closes the read-only activity-details modal", () => {
+  // Regression test: closeActivityDetailsModal() (print-sheet.ts) is a plain DOM toggle with no
+  // React counterpart, unlike closeNewActivityModal() — but the global Escape handler here used to
+  // only call cancelActivityDrawer()/closeNewActivityModal()/closeAllSettingsModals(), never this
+  // one, so pressing Escape while "Voir les détails" was open silently left it on screen.
+  setAppState(baseState({ activities: [{ id: "A1", name: "Gala", responsable: "", distributions: [], reservations: [], client_type: "interne", state: "brouillon", date_start: "", date_end: "", deleted: false, coba: "" }] }));
+  setupFixture();
+  // cancelActivityDrawer() (also invoked by the Escape handler, before closeActivityDetailsModal())
+  // reads these unconditionally — always present in the real app via ActivityDrawer.tsx, but not
+  // part of the shared minimal fixture above.
+  document.body.insertAdjacentHTML("beforeend", `<input id="form-activity-internal-id" value=""><input id="form-activity-name" value="">`);
+  initActivityDetailsModal();
+  initFormHandlers();
+
+  openActivityDetailsModal("A1");
+  assert.ok(document.getElementById("activity-details-modal")!.classList.contains("active"));
+
+  window.dispatchEvent(new (window as any).KeyboardEvent("keydown", { key: "Escape" }));
+
+  assert.equal(document.getElementById("activity-details-modal")!.classList.contains("active"), false);
 });
 
 test("changing 'form-activity-manager-type' to 'externe' reveals the external-manager fields", () => {

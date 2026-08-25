@@ -37,6 +37,20 @@ export const FilePreviewModal: React.FC = () => {
     };
   }, []);
 
+  // Escape closes this modal — except while a PDF/XLSX viewer inside it is in fullscreen mode,
+  // where Escape should exit fullscreen instead (that viewer's own keydown handler does that;
+  // same fullscreen-takes-priority check as activities/form.ts's global Escape handler).
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (document.querySelector(".pdf-custom-viewer.pdf-fullscreen-mode, .xlsx-custom-viewer.xlsx-fullscreen-mode")) return;
+      setIsOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen || !currentFile || !mountRef.current) return;
 
