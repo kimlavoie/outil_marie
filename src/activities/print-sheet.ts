@@ -4,7 +4,9 @@
  * the other for the "Voir les détails" row action).
  * Split out of activities-financials.ts (see that file for the rest of the module's history).
  */
-import { appState, EVENT_TYPES } from "../state/state.ts";
+import { EVENT_TYPES } from "../state/state.ts";
+import { getActivityById } from "../state/activities-repository.ts";
+import { getRoomByName } from "../state/settings-repository.ts";
 import {
   formatCurrency,
   escapeHtml,
@@ -127,7 +129,7 @@ function buildPrintActivitySheetHtml(act: any) {
 
   const roomsRows = reservations
     .map((r: any) => {
-      const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+      const room = getRoomByName(r.room_name);
       const isHourly = room && room.rate_type === "hourly";
       const sortedSlots = getSortedSlotsForReservation(r);
       const slotsText =
@@ -260,7 +262,7 @@ function buildActivityDetailsHtml(act: any) {
 
   const roomsRows = reservations
     .map((r: any) => {
-      const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+      const room = getRoomByName(r.room_name);
       const isHourly = room && room.rate_type === "hourly";
       const sortedSlots = getSortedSlotsForReservation(r);
       const slotsText =
@@ -413,7 +415,7 @@ function ensureActivityDetailsModalExists() {
 // Opens the read-only activity details modal for the given activity id (used by the "Voir les
 // détails" row action — unlike the drawer, this never mutates the activity).
 function openActivityDetailsModal(id: string) {
-  const act = appState.activities.find((a: any) => a.id === id);
+  const act = getActivityById(id);
   if (!act) return;
   ensureActivityDetailsModalExists();
   const contentEl = document.getElementById("activity-details-content");

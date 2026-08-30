@@ -11,6 +11,8 @@ import {
   getActivePricingGrid,
   saveSafetyBackupToDb
 } from "../state/state.ts";
+import { getActivityById } from "../state/activities-repository.ts";
+import { getRoomByName, getSalaryById, getServiceById } from "../state/settings-repository.ts";
 import { formatCurrency, calculateHoursFromTimes, escapeHtml } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
 import { addDistributionRow, updateDistributionTotal } from "./financials.ts";
@@ -20,7 +22,7 @@ import { commitActivityPatch } from "./form-state-bar.ts";
 import { deriveActivityState } from "./render.ts";
 import { renderSafetyBackupsList } from "../services/backup/reminder.ts";
 import type { Activity, Reservation } from "../types/activity.ts";
-import type { Room, Salary, Service, Tarif, GridClientType } from "../state/store.ts";
+import type { Tarif, GridClientType } from "../state/store.ts";
 
 // Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
 // comment for why this cast is needed/safe.
@@ -59,7 +61,7 @@ export async function generateBillingLines(act: Partial<Activity>) {
   const isInternal = clientTypeEl ? clientTypeEl.value === "interne" : act.client_type === "interne";
 
   reservations.forEach((r: Reservation) => {
-    const room = appState.settings.rooms.find((rm: Room) => rm.name === r.room_name);
+    const room = getRoomByName(r.room_name);
     let roomGlAccountCode = "";
     if (room && r.tariff_id) {
       const grid = getActivePricingGrid(room, eventDateStart);
@@ -99,7 +101,7 @@ export async function generateBillingLines(act: Partial<Activity>) {
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-staff-list .distribution-row-wrapper").forEach(wrapper => {
     const row = wrapper.querySelector<HTMLElement>(".distribution-row")!;
     const salaryId = row.querySelector<HTMLInputElement>(".staff-salary-select")!.value;
-    const salary = (appState.settings.salaries || []).find((s: Salary) => s.id === salaryId);
+    const salary = getSalaryById(salaryId);
     if (!salary) return;
 
     const staffDateInput = row.querySelector<HTMLInputElement>(".staff-date-input");
@@ -133,7 +135,7 @@ export async function generateBillingLines(act: Partial<Activity>) {
 
   document.querySelectorAll<HTMLElement>("#form-activity-reservations .room-services-list .distribution-row").forEach(row => {
     const serviceId = row.querySelector<HTMLInputElement>(".service-select")!.value;
-    const service = (appState.settings.services || []).find((s: Service) => s.id === serviceId);
+    const service = getServiceById(serviceId);
     const tarifId = row.querySelector<HTMLSelectElement>(".service-tarif-select")!.value;
     if (!service) return;
 
@@ -189,7 +191,7 @@ export function renderBillingStateStatus(act: Activity) {
       a.billed_at = a.billed_at ? "" : new Date().toISOString().split("T")[0];
       a.state = deriveActivityState(a);
     });
-    const updated = appState.activities.find((a: Activity) => a.id === act.id);
+    const updated = getActivityById(act.id);
     if (updated) renderBillingStateStatus(updated);
   });
 
@@ -199,7 +201,7 @@ export function renderBillingStateStatus(act: Activity) {
       a.completed_at = a.completed_at ? "" : new Date().toISOString().split("T")[0];
       a.state = deriveActivityState(a);
     });
-    const updated = appState.activities.find((a: Activity) => a.id === act.id);
+    const updated = getActivityById(act.id);
     if (updated) renderBillingStateStatus(updated);
   });
 }

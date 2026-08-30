@@ -5,7 +5,7 @@
  * kept out of the main form flow (a small icon next to the TPS/TVQ lines, not a form field) since
  * this is an exception path used rarely, not a routine input.
  */
-import { appState } from "../state/state.ts";
+import { getActivityById } from "../state/activities-repository.ts";
 import { commitActivityPatch } from "./form-state-bar.ts";
 import { updateSubmissionFinancialSummary } from "./financial-summary.ts";
 import type { TaxOverride } from "./financial-summary.ts";
@@ -52,7 +52,7 @@ export function openTaxOverrideModal(activityId: string) {
     return;
   }
 
-  const act = appState.activities.find((a: any) => a.id === activityId);
+  const act = getActivityById(activityId);
   if (!act) return;
 
   currentActivityId = activityId;

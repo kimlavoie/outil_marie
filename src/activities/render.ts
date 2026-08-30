@@ -44,6 +44,7 @@
  * this codebase (e.g. utils.ts <-> state.ts).
  */
 import { appState, subscribeAppState, getFiscalYear, getQuarterNumber, parseLocalDateStr, saveUiState } from "../state/state.ts";
+import { getActivities } from "../state/activities-repository.ts";
 import {
   getReservationRoomAbbreviation,
   getActivityReferences,
@@ -174,7 +175,7 @@ function renderActivities() {
   tbody.innerHTML = "";
 
   // Filter activities
-  const filtered = appState.activities.filter(act => {
+  const filtered = getActivities().filter(act => {
     if (act.deleted) return false;
 
     // Search filter: ID, Name, Responsable, Reference, or any ventilated Account Code

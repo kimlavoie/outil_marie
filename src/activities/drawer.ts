@@ -10,6 +10,7 @@
  */
 import { clearDateFieldErrors } from "./datepicker.ts";
 import { appState, saveDatabaseOrRollback, recordActivityView } from "../state/state.ts";
+import { getActivities, getActivityById, replaceAllActivities, removeActivity } from "../state/activities-repository.ts";
 import { showToast, elById } from "../utils/utils.ts";
 import { activitiesState, renderActivities } from "./render.ts";
 import { fillActivityFormFields, renderActivityStateBar, switchActivityTab } from "./form.ts";
@@ -51,7 +52,7 @@ function generateNextActivityId() {
 
   let maxSeq = 0;
   const regex = new RegExp(`^${prefix}-(\\d{3})$`);
-  appState.activities.forEach(act => {
+  getActivities().forEach(act => {
     const match = act.id.match(regex);
     if (match) {
       const seq = parseInt(match[1]);
@@ -85,7 +86,7 @@ function openActivityDrawer(id: string, calendarReturn: any = null, initialTab: 
   const form = elById<HTMLFormElement>("activity-form");
   const titleEl = elById("activity-drawer-title");
 
-  const act = appState.activities.find((a: any) => a.id === id);
+  const act = getActivityById(id);
   if (!act) return;
 
   clearTimeout(activityUndoSnapshotTimer ?? undefined);
@@ -148,7 +149,7 @@ function closeActivityDrawer() {
   }
   const currentId = elById("form-activity-internal-id")?.value;
   if (currentId) {
-    const currentAct = appState.activities.find((a: any) => a.id === currentId);
+    const currentAct = getActivityById(currentId);
     const snapshot = activitiesState.openedActivitySnapshot;
     if (currentAct && snapshot && currentAct.id === snapshot.id) {
       if (JSON.stringify(currentAct) !== JSON.stringify(snapshot)) {
@@ -175,12 +176,12 @@ function cancelActivityDrawer() {
   if (nameInput && !nameInput.value.trim()) {
     const isDraft = activitiesState.draftActivityId === id;
     if (isDraft) {
-      const prevActivities = appState.activities;
+      const prevActivities = getActivities();
       const prevDraftId = activitiesState.draftActivityId;
-      appState.activities = appState.activities.filter(a => a.id !== id);
+      removeActivity(id);
       activitiesState.draftActivityId = null;
       saveDatabaseOrRollback(() => {
-        appState.activities = prevActivities;
+        replaceAllActivities(prevActivities);
         activitiesState.draftActivityId = prevDraftId;
       }, "L'annulation n'a pas été enregistrée. Réessayez.").then(() => {
         closeActivityDrawer();

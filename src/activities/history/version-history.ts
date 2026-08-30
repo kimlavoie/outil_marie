@@ -5,13 +5,13 @@
  * alongside undo.ts/room-conflicts.ts).
  */
 import {
-  appState,
   EVENT_TYPES,
   saveDatabaseOrRollback,
   getActivityVersionsFromDb,
   addActivityVersionToDb,
   pruneActivityVersions
 } from "../../state/state.ts";
+import { getActivityById, getActivities, getActivityIndex, replaceActivity } from "../../state/activities-repository.ts";
 import { showToast, escapeHtml, formatCurrency, rateToPercentString } from "../../utils/utils.ts";
 import { logError } from "../../utils/logger.ts";
 import { activitiesState, renderActivities, getActivityStateLabel, getActivityStateBadgeClass } from "../render.ts";
@@ -176,7 +176,7 @@ async function loadAndRenderActivityHistory(activityId: string) {
     }
 
     // Fetch the current version of the activity
-    const currentAct = appState.activities.find((a: any) => a.id === activityId);
+    const currentAct = getActivityById(activityId);
 
     let html = "";
     versions.forEach((v: any, index: number) => {
@@ -278,30 +278,30 @@ function restoreActivityVersion(versionRecord: any) {
   const currentId = (document.getElementById("form-activity-internal-id") as HTMLInputElement).value;
   if (!currentId) return;
 
-  const idx = appState.activities.findIndex((a: any) => a.id === currentId);
+  const idx = getActivityIndex(currentId);
   if (idx === -1) return;
 
   // Restore the activity data
-  const previous = appState.activities[idx];
-  appState.activities[idx] = JSON.parse(JSON.stringify(versionRecord.activityData));
+  const previous = getActivities()[idx];
+  replaceActivity(currentId, JSON.parse(JSON.stringify(versionRecord.activityData)));
 
   // Re-save DB
   saveDatabaseOrRollback(() => {
-    appState.activities[idx] = previous;
+    getActivities()[idx] = previous;
     fillActivityFormFields(previous);
     renderActivityStateBar(previous);
   }, "La restauration de version n'a pas été enregistrée. Réessayez.").then(saved => {
     if (!saved) return;
 
     // Refresh the drawer fields and state bar
-    fillActivityFormFields(appState.activities[idx]);
-    renderActivityStateBar(appState.activities[idx]);
+    fillActivityFormFields(getActivities()[idx]);
+    renderActivityStateBar(getActivities()[idx]);
 
     // Update openedActivitySnapshot to prevent saving immediately a new version upon closing
-    activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(appState.activities[idx]));
+    activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(getActivities()[idx]));
 
     // Save a new version to the history representing the restored state
-    saveActivityVersion(appState.activities[idx]).then(() => {
+    saveActivityVersion(getActivities()[idx]).then(() => {
       // Reload history list
       loadAndRenderActivityHistory(currentId);
     });

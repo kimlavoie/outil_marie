@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabaseOrRollback, getActiveServiceRate } from "../../state/state.ts";
+import { saveDatabaseOrRollback, getActiveServiceRate } from "../../state/state.ts";
+import { getServices, setServices, addService, replaceServiceAt, removeServiceById } from "../../state/settings-repository.ts";
 import { showToast, generateUid, newRateVersionRow } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
 import { DeleteIcon, Modal, TarifsEditor, TarifRow } from "./common.tsx";
 
 export function ServicesPanel({ active, openModal, bump }: { active: boolean; openModal: (id: string | null) => void; bump: () => void }) {
-  const services = appState.settings.services || [];
+  const services = getServices() || [];
   const deleteService = (id: string) => {
     const svc = services.find((s: { id: string }) => s.id === id);
     const serviceName = svc ? svc.name : "";
     if (!confirm(`Voulez-vous vraiment supprimer l'équipement "${serviceName}" ?`)) return;
-    const prevServices = appState.settings.services;
-    appState.settings.services = services.filter((s: { id: string }) => s.id !== id);
+    const prevServices = getServices();
+    removeServiceById(id);
     saveDatabaseOrRollback(() => {
-      appState.settings.services = prevServices;
+      setServices(prevServices);
     }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => bump());
   };
 
@@ -68,7 +69,7 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
 
   useEffect(() => {
     if (!isOpen) return;
-    const services = appState.settings.services || [];
+    const services = getServices() || [];
     const svc = originalId ? services.find((s: { id: string }) => s.id === originalId) : null;
     if (svc) {
       setName(svc.name);
@@ -123,7 +124,7 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
       return;
     }
 
-    const services = appState.settings.services || [];
+    const services = getServices() || [];
     const duplicate = services.some(
       (s: { name: string; id: string }) => s.name.toUpperCase() === serviceName.toUpperCase() && s.id !== originalId
     );
@@ -134,23 +135,19 @@ export function ServiceModal({ id, onClose, bump }: { id: string | null | undefi
 
     const prevServices = [...services];
     if (originalId) {
-      const idx = services.findIndex((s: { id: string }) => s.id === originalId);
-      if (idx !== -1) {
-        services[idx] = { id: originalId, name: serviceName, type, tarifs: tarifsResult };
-      }
+      replaceServiceAt(originalId, { id: originalId, name: serviceName, type, tarifs: tarifsResult });
     } else {
-      services.push({
+      addService({
         id: generateUid("service"),
         name: serviceName,
         type,
         tarifs: tarifsResult
       });
     }
-    services.sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
-    appState.settings.services = services;
+    getServices().sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
 
     saveDatabaseOrRollback(() => {
-      appState.settings.services = prevServices;
+      setServices(prevServices);
     }, "L'enregistrement de l'équipement a échoué. Réessayez.").then(saved => {
       if (!saved) {
         bump();

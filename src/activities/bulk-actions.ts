@@ -9,6 +9,7 @@
  * imports already in this codebase (e.g. utils.ts <-> state.ts).
  */
 import { appState, saveDatabase } from "../state/state.ts";
+import { getActivityById } from "../state/activities-repository.ts";
 import { showToast } from "../utils/utils.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { closeActivityContextMenu } from "./context-menu.ts";
@@ -103,7 +104,7 @@ function initBulkActionsHandlers() {
       const prevFavorites = appState.favorites ? [...appState.favorites] : [];
 
       ids.forEach(id => {
-        const act = appState.activities.find(a => a.id === id);
+        const act = getActivityById(id);
         if (act) {
           touched.push({ act, prevDeleted: act.deleted });
           act.deleted = true;
@@ -150,7 +151,7 @@ function initBulkActionsHandlers() {
 
       const touched: { act: Activity; prevState: string }[] = [];
       activitiesState.selectedIds.forEach(id => {
-        const act = appState.activities.find(a => a.id === id);
+        const act = getActivityById(id);
         if (act) {
           touched.push({ act, prevState: act.state });
           act.state = newState;

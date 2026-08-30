@@ -3,7 +3,8 @@
  * room-booking conflict detection. Split out of index.ts (see that file for why it stays a
  * barrel importing/re-exporting this alongside undo.ts/version-history.ts).
  */
-import { appState, parseLocalDateStr } from "../../state/state.ts";
+import { parseLocalDateStr } from "../../state/state.ts";
+import { getActivities } from "../../state/activities-repository.ts";
 import { escapeHtml, OTHER_ROOM_VALUE } from "../../utils/utils.ts";
 import { collectReservationsFromForm } from "../reservations/index.ts";
 
@@ -94,7 +95,7 @@ function checkRoomReservationConflicts(reservations: any[]) {
   }
 
   validReservations.forEach(({ roomName, myRanges }) => {
-    appState.activities.forEach((other: any) => {
+    getActivities().forEach((other: any) => {
       if (other.deleted || other.id === currentId) return;
       (other.reservations || []).forEach((otherRes: any) => {
         if (otherRes.room_name !== roomName) return;

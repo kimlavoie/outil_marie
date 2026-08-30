@@ -4,7 +4,7 @@
  * submission/contract/form file links. Split out of index.ts (see that file for why it stays
  * a barrel importing/re-exporting this alongside db.ts/actions.ts/preview.ts).
  */
-import { appState } from "../../state/state.ts";
+import { getActivityById } from "../../state/activities-repository.ts";
 import { commitActivityPatch } from "../form.ts";
 import { deriveActivityState } from "../render.ts";
 import { autoSaveActivityForm } from "../financials.ts";
@@ -95,7 +95,7 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
     // from the last-saved record and silently miss any not-yet-saved room price/reservation edit.
     generateBtn.addEventListener("click", async () => {
       autoSaveActivityForm();
-      const freshAct = appState.activities.find((a: any) => a.id === act.id) || act;
+      const freshAct = getActivityById(act.id) || act;
       await generateAndLinkFile(freshAct, "contract");
     });
   }
@@ -103,7 +103,7 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
   if (generateSoumissionBtn) {
     generateSoumissionBtn.addEventListener("click", async () => {
       autoSaveActivityForm();
-      const freshAct = appState.activities.find((a: any) => a.id === act.id) || act;
+      const freshAct = getActivityById(act.id) || act;
       await generateAndLinkFile(freshAct, "submission");
     });
   }
@@ -121,7 +121,7 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
           }
           a.state = deriveActivityState(a);
         });
-        const updated = appState.activities.find((a: any) => a.id === act.id);
+        const updated = getActivityById(act.id);
         renderFileLinkStatus("submission", updated);
         renderFileLinkStatus("contract", updated);
       });
@@ -134,7 +134,7 @@ function renderFileLinkStatus(kind: "submission" | "contract" | "form", act: any
           a.contract.approved_at = a.contract.approved_at ? "" : new Date().toISOString().split("T")[0];
           a.state = deriveActivityState(a);
         });
-        const updated = appState.activities.find((a: any) => a.id === act.id);
+        const updated = getActivityById(act.id);
         renderFileLinkStatus("submission", updated);
         renderFileLinkStatus("contract", updated);
       });

@@ -4,7 +4,7 @@
  * of index.ts (see that file for why it stays a barrel importing/re-exporting this alongside
  * db.ts/status.ts/preview.ts).
  */
-import { appState } from "../../state/state.ts";
+import { getActivityById } from "../../state/activities-repository.ts";
 import { generateUid, showToast } from "../../utils/utils.ts";
 import { commitActivityPatch } from "../form.ts";
 import { deriveActivityState } from "../render.ts";
@@ -55,10 +55,7 @@ async function pickAndLinkFile(activityId: string, kind: "submission" | "contrac
     if (kind === "submission") act.submission.generated_at = new Date().toISOString().split("T")[0];
     if (kind === "form") act.form.linked_at = new Date().toISOString().split("T")[0];
   });
-  renderFileLinkStatus(
-    kind,
-    appState.activities.find((a: any) => a.id === activityId)
-  );
+  renderFileLinkStatus(kind, getActivityById(activityId));
 }
 
 async function generateAndLinkFile(act: any, kind: "contract" | "submission") {
@@ -129,7 +126,7 @@ async function generateAndLinkFile(act: any, kind: "contract" | "submission") {
 
     showToast(kind === "contract" ? "Contrat généré et lié avec succès !" : "Soumission générée et liée avec succès !", "success");
 
-    const updated = appState.activities.find((a: any) => a.id === act.id) || act;
+    const updated = getActivityById(act.id) || act;
     renderFileLinkStatus(kind, updated);
   } else {
     let result;
@@ -197,7 +194,7 @@ async function unlinkFile(activityId: string, kind: "submission" | "contract" | 
     expandedXlsxPreviews.delete(`${kind}:${activityId}`);
   }
   showToast("Le lien vers le fichier a été retiré.", "success");
-  const updated = appState.activities.find((a: any) => a.id === activityId);
+  const updated = getActivityById(activityId);
   if (updated) {
     renderFileLinkStatus(kind, updated);
     if (kind === "submission" || kind === "contract") {

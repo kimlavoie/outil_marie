@@ -22,7 +22,8 @@ import { initReconciliationHandlers } from "./components/reconciliation-mount.ts
 import { initCustomDatepickers } from "./activities/datepicker.ts";
 import { initActivitiesSort } from "./activities/history/index.ts";
 import { logError } from "./utils/logger.ts";
-import { appState, restoreUiState } from "./state/state.ts";
+import { restoreUiState } from "./state/state.ts";
+import { getActivities } from "./state/activities-repository.ts";
 import { populateDropdowns } from "./navigation.ts";
 import { useCurrentView, setCurrentView } from "./state/view-state.ts";
 
@@ -79,12 +80,12 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     const activityId = new URLSearchParams(window.location.search).get("activity");
-    if (activityId && appState.activities.some(a => a.id === activityId && !a.deleted)) {
+    if (activityId && getActivities().some(a => a.id === activityId && !a.deleted)) {
       handleSelectView("activities");
       openActivityDrawer(activityId);
     } else {
       const savedDrawer = getSavedDrawerUiState();
-      if (savedDrawer && appState.activities.some(a => a.id === savedDrawer.id && !a.deleted)) {
+      if (savedDrawer && getActivities().some(a => a.id === savedDrawer.id && !a.deleted)) {
         handleSelectView("activities");
         openActivityDrawer(savedDrawer.id, null, savedDrawer.tab);
       }

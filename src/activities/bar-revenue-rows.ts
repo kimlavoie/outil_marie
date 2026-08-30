@@ -2,7 +2,7 @@
  * activities-bar-revenue-rows.ts - Adds a bar revenue row to the activity form.
  * Handles row creation, deleting, values binding, and total calculation.
  */
-import { appState } from "../state/state.ts";
+import { getAccounts } from "../state/settings-repository.ts";
 import {
   escapeHtml,
   buildSearchableSelectHtml,
@@ -68,7 +68,7 @@ export function addBarRevenueRow(accountCode = "", amount = 0, receiptNumber = "
     autoSaveActivityForm();
   });
 
-  const glItems = appState.settings.accounts.map(acc => ({
+  const glItems = getAccounts().map(acc => ({
     value: acc.code,
     label: `${acc.code} (${acc.description})`
   }));

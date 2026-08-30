@@ -3,6 +3,7 @@
  * safety snapshots taken before a destructive operation, and diagnostic log export.
  */
 import { appState, getSafetyBackupsFromDb, saveDatabaseOrRollback } from "../../state/state.ts";
+import { getActivities, getActivityById } from "../../state/activities-repository.ts";
 import { logError, getLogHistory } from "../../utils/logger.ts";
 import { showToast, escapeHtml } from "../../utils/utils.ts";
 import { parseLocalDateStr } from "../../state/date-helpers.ts";
@@ -45,7 +46,7 @@ function checkBackupReminder() {
   const alertTextEl = document.getElementById("backup-alert-text");
   if (!banner || !alertTextEl) return;
 
-  if (appState.activities.length === 0) {
+  if (getActivities().length === 0) {
     banner.style.display = "none";
     return;
   }
@@ -92,7 +93,7 @@ function renderBackupView() {
 // (opened from the "Voir les activités supprimées" button) with a search box instead of an inline
 // list, since that list has no upper bound over the life of the app.
 function getDeletedActivities() {
-  return appState.activities.filter((a: any) => a.deleted);
+  return getActivities().filter((a: any) => a.deleted);
 }
 
 function formatActivityDateLabel(act: any): string {
@@ -240,7 +241,7 @@ function handleActivityDetailsModalClosed() {
 }
 
 async function restoreDeletedActivity(id: string) {
-  const target = appState.activities.find((a: any) => a.id === id);
+  const target = getActivityById(id);
   if (!target) return;
 
   target.deleted = false;

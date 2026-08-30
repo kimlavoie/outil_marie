@@ -4,7 +4,8 @@
  * commitActivityPatch (the save-and-refresh helper used by lifecycle mutations outside the main
  * "Enregistrer" submit). Split out of activities-form.ts (activity drawer form wiring).
  */
-import { appState, saveDatabaseOrRollback } from "../state/state.ts";
+import { saveDatabaseOrRollback } from "../state/state.ts";
+import { getActivities, getActivityIndex } from "../state/activities-repository.ts";
 import {
   activitiesState,
   getPlanningProgress,
@@ -225,12 +226,12 @@ function updateFormAccordionCompletion(act: any) {
 // for lifecycle mutations (file links, state transitions) that happen outside the main
 // "Enregistrer" form submit, so they take effect immediately.
 export function commitActivityPatch(id: string, patchFn: (act: any) => void) {
-  const idx = appState.activities.findIndex((a: any) => a.id === id);
+  const idx = getActivityIndex(id);
   if (idx === -1) return;
-  const previous = JSON.parse(JSON.stringify(appState.activities[idx]));
-  patchFn(appState.activities[idx]);
+  const previous = JSON.parse(JSON.stringify(getActivities()[idx]));
+  patchFn(getActivities()[idx]);
   saveDatabaseOrRollback(() => {
-    appState.activities[idx] = previous;
+    getActivities()[idx] = previous;
     renderActivityStateBar(previous);
   }, "La modification n'a pas été enregistrée. Réessayez.").then(saved => {
     if (!saved) {
@@ -238,7 +239,7 @@ export function commitActivityPatch(id: string, patchFn: (act: any) => void) {
       return;
     }
 
-    renderActivityStateBar(appState.activities[idx]);
+    renderActivityStateBar(getActivities()[idx]);
     const drawer = document.getElementById("activity-drawer");
     const isDrawerOpen = drawer ? drawer.classList.contains("active") : false;
     if (!isDrawerOpen) {
@@ -246,7 +247,7 @@ export function commitActivityPatch(id: string, patchFn: (act: any) => void) {
     }
 
     // Save version on lifecycle patch and update the open snapshot to match
-    const updatedAct = appState.activities[idx];
+    const updatedAct = getActivities()[idx];
     saveActivityVersion(updatedAct).then(() => {
       // If the drawer is currently open on this activity, update the initial snapshot to match this new state
       const currentOpenId = el("form-activity-internal-id").value;

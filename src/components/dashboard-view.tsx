@@ -21,6 +21,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Chart, type ChartConfiguration } from "chart.js/auto";
 import { appState, getFiscalYear, getQuarterNumber, getQuarter, useAppState } from "../state/state.ts";
+import { getActivities } from "../state/activities-repository.ts";
 import { getReservationRoomLabel, formatCurrency } from "../utils/utils.ts";
 import { computeDashboardStats, computeEmployeeStats, computeJobsYearlyHours } from "../dashboard.ts";
 import { reconciliationState } from "../services/reconciliation.ts";
@@ -33,7 +34,7 @@ function buildQuarterlyRevenuesConfig(textColor: string, gridColor: string): Cha
     "T4 (Apr-Jun)": 0
   };
 
-  appState.activities.forEach(act => {
+  getActivities().forEach(act => {
     if (act.deleted) return;
     if (act.name.trim() === "") return;
     if (getFiscalYear(act.date_start) !== appState.selected_year) return;
@@ -74,7 +75,7 @@ function buildQuarterlyRevenuesConfig(textColor: string, gridColor: string): Cha
 
 function buildSalleShareConfig(isDark: boolean, textColor: string): ChartConfiguration<"doughnut"> {
   const roomSums: Record<string, number> = {};
-  appState.activities.forEach(act => {
+  getActivities().forEach(act => {
     if (act.deleted) return;
     if (act.name.trim() === "") return;
 
@@ -121,7 +122,7 @@ function buildSalleShareConfig(isDark: boolean, textColor: string): ChartConfigu
 
 function buildAccountsVolumeConfig(textColor: string, gridColor: string): ChartConfiguration<"bar"> {
   const accountSums: Record<string, number> = {};
-  appState.activities.forEach(act => {
+  getActivities().forEach(act => {
     if (act.deleted) return;
     if (act.name.trim() === "") return;
 
@@ -213,7 +214,7 @@ export function DashboardView() {
   useChart(accountsRef, () => buildAccountsVolumeConfig(textColor, gridColor));
 
   const empStats = selectedEmployeeId
-    ? computeEmployeeStats(selectedEmployeeId, appState.activities, appState.selected_year, appState.selected_quarters, salaries)
+    ? computeEmployeeStats(selectedEmployeeId, getActivities(), appState.selected_year, appState.selected_quarters, salaries)
     : null;
 
   return (

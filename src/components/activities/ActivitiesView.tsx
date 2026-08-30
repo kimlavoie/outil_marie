@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useAppState, appState, saveDatabase } from "../../state/state.ts";
+import { getActivityById } from "../../state/activities-repository.ts";
 import { getFiscalYear, getQuarterNumber, parseLocalDateStr } from "../../state/date-helpers.ts";
 import {
   getActivityReferences,
@@ -325,7 +326,7 @@ export const ActivitiesView: React.FC = () => {
     const prevFavorites = appState.favorites ? [...appState.favorites] : [];
 
     ids.forEach(id => {
-      const act = appState.activities.find(a => a.id === id);
+      const act = getActivityById(id);
       if (act) {
         touched.push({ act, prevDeleted: act.deleted });
         act.deleted = true;
@@ -355,7 +356,7 @@ export const ActivitiesView: React.FC = () => {
 
     const touched: { act: Activity; prevState: string }[] = [];
     selectedIds.forEach(id => {
-      const act = appState.activities.find(a => a.id === id);
+      const act = getActivityById(id);
       if (act) {
         touched.push({ act, prevState: act.state });
         act.state = newState;

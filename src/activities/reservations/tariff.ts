@@ -3,13 +3,14 @@
  * against the room's active pricing grid: option list builders, the resolved-price/stale-tariff
  * display, and re-populating the parameter/client-type selects when the room or date changes.
  */
-import { appState, getActivePricingGrid } from "../../state/state.ts";
+import { getActivePricingGrid } from "../../state/state.ts";
+import { getRoomByName } from "../../state/settings-repository.ts";
 import { escapeHtml, formatCurrency, OTHER_ROOM_VALUE } from "../../utils/utils.ts";
 import { collectSlotsFromCard } from "./slots.ts";
 
 function buildTariffParameterOptionsHtml(roomName: string, dateStr: string, selectedTariffId: string) {
   if (!roomName || roomName === OTHER_ROOM_VALUE) return "";
-  const roomConfig = appState.settings.rooms.find((r: any) => r.name === roomName);
+  const roomConfig = getRoomByName(roomName);
   const grid = roomConfig ? getActivePricingGrid(roomConfig, dateStr) : null;
   if (!grid) return "";
 
@@ -28,7 +29,7 @@ function buildTariffParameterOptionsHtml(roomName: string, dateStr: string, sele
 
 function buildTariffClientTypeOptionsHtml(roomName: string, dateStr: string, selectedTariffId: string, selectedParamId = "") {
   if (!roomName || roomName === OTHER_ROOM_VALUE) return "";
-  const roomConfig = appState.settings.rooms.find((r: any) => r.name === roomName);
+  const roomConfig = getRoomByName(roomName);
   const grid = roomConfig ? getActivePricingGrid(roomConfig, dateStr) : null;
   if (!grid) return "";
 
@@ -79,7 +80,7 @@ function updateResolvedPriceDisplay(card: HTMLElement) {
 
   if (staleEl) staleEl.style.display = "none";
 
-  const roomConfig = appState.settings.rooms.find((r: any) => r.name === roomName);
+  const roomConfig = getRoomByName(roomName);
   const isHourly = roomConfig && roomConfig.rate_type === "hourly";
 
   const unitEl = card.querySelector<HTMLElement>(".resolved-price-unit");

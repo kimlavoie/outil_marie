@@ -1,5 +1,15 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabaseOrRollback, EVENT_TYPES, TECHNICAL_SERVICES } from "../../state/state.ts";
+import { saveDatabaseOrRollback, EVENT_TYPES, TECHNICAL_SERVICES } from "../../state/state.ts";
+import {
+  getDepartments,
+  getRooms,
+  getServices,
+  getSchedulableTasks,
+  setSchedulableTasks,
+  addSchedulableTask,
+  replaceSchedulableTaskAt,
+  removeSchedulableTaskById
+} from "../../state/settings-repository.ts";
 import { showToast, generateUid } from "../../utils/utils.ts";
 import { DeleteIcon, Modal } from "./common.tsx";
 import type { TaskCondition, ConditionGroup, SchedulableTask } from "../../state/store.ts";
@@ -28,13 +38,13 @@ function fieldOptions(field: string): { value: string; label: string }[] {
         { value: "externe", label: "Externe" }
       ];
     case "department":
-      return (appState.settings.departments || []).map((d: string) => ({ value: d, label: d }));
+      return (getDepartments() || []).map((d: string) => ({ value: d, label: d }));
     case "room":
-      return (appState.settings.rooms || []).map((r: any) => ({ value: r.name, label: r.name }));
+      return (getRooms() || []).map((r: any) => ({ value: r.name, label: r.name }));
     case "technical_service":
       return TECHNICAL_SERVICES.map(s => ({ value: s, label: s }));
     case "service":
-      return (appState.settings.services || []).map((s: any) => ({ value: s.id, label: s.name }));
+      return (getServices() || []).map((s: any) => ({ value: s.id, label: s.name }));
     default:
       return [];
   }
@@ -121,13 +131,13 @@ export function SchedulableTasksPanel({
   openModal: (id: string | null) => void;
   bump: () => void;
 }) {
-  const tasks: SchedulableTask[] = appState.settings.schedulable_tasks || [];
+  const tasks: SchedulableTask[] = getSchedulableTasks() || [];
   const deleteTask = (id: string) => {
     if (!confirm("Voulez-vous vraiment supprimer cette tâche programmable ?")) return;
-    const prevTasks = appState.settings.schedulable_tasks;
-    appState.settings.schedulable_tasks = tasks.filter(t => t.id !== id);
+    const prevTasks = getSchedulableTasks();
+    removeSchedulableTaskById(id);
     saveDatabaseOrRollback(() => {
-      appState.settings.schedulable_tasks = prevTasks;
+      setSchedulableTasks(prevTasks);
     }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => bump());
   };
 
@@ -176,7 +186,7 @@ export function SchedulableTaskModal({ id, onClose, bump }: { id: string | null 
 
   useEffect(() => {
     if (!isOpen) return;
-    const tasks: SchedulableTask[] = appState.settings.schedulable_tasks || [];
+    const tasks: SchedulableTask[] = getSchedulableTasks() || [];
     const task = originalId ? tasks.find(t => t.id === originalId) : null;
     setDesc(task ? task.description : "");
     setGroupsLogic(task ? task.groups_logic : "AND");
@@ -221,19 +231,17 @@ export function SchedulableTaskModal({ id, onClose, bump }: { id: string | null 
       return;
     }
 
-    const tasks: SchedulableTask[] = appState.settings.schedulable_tasks || [];
+    const tasks: SchedulableTask[] = getSchedulableTasks() || [];
     const prevTasks = [...tasks];
     const record: SchedulableTask = { id: originalId || generateUid("schedulable-task"), description, groups_logic: groupsLogic, groups };
     if (originalId) {
-      const idx = tasks.findIndex(t => t.id === originalId);
-      if (idx !== -1) tasks[idx] = record;
+      replaceSchedulableTaskAt(originalId, record);
     } else {
-      tasks.push(record);
+      addSchedulableTask(record);
     }
-    appState.settings.schedulable_tasks = tasks;
 
     saveDatabaseOrRollback(() => {
-      appState.settings.schedulable_tasks = prevTasks;
+      setSchedulableTasks(prevTasks);
     }, "L'enregistrement de la tâche a échoué. Réessayez.").then(saved => {
       if (!saved) {
         bump();

@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabaseOrRollback, getActiveSalaryRate, getActiveSalaryOvertimeRate } from "../../state/state.ts";
+import { saveDatabaseOrRollback, getActiveSalaryRate, getActiveSalaryOvertimeRate } from "../../state/state.ts";
+import { getSalaries, setSalaries, addSalary, replaceSalaryAt, removeSalaryById } from "../../state/settings-repository.ts";
 import { showToast, generateUid, newRateVersionRow, RateVersionRow } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
 import { DeleteIcon, Modal, RateVersionsEditor } from "./common.tsx";
 
 export function SalariesPanel({ active, openModal, bump }: { active: boolean; openModal: (id: string | null) => void; bump: () => void }) {
-  const salaries: any[] = appState.settings.salaries || [];
+  const salaries: any[] = getSalaries() || [];
   const deleteSalary = (id: string) => {
     const sal = salaries.find((s: { id: string }) => s.id === id);
     const jobName = sal ? sal.job : "";
     if (!confirm(`Voulez-vous vraiment supprimer l'emploi "${jobName}" ?`)) return;
-    const prevSalaries = appState.settings.salaries;
-    appState.settings.salaries = salaries.filter((s: { id: string }) => s.id !== id);
+    const prevSalaries = getSalaries();
+    removeSalaryById(id);
     saveDatabaseOrRollback(() => {
-      appState.settings.salaries = prevSalaries;
+      setSalaries(prevSalaries);
     }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => bump());
   };
 
@@ -69,7 +70,7 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
 
   useEffect(() => {
     if (!isOpen) return;
-    const salaries: any[] = appState.settings.salaries || [];
+    const salaries: any[] = getSalaries() || [];
     const sal = originalId ? salaries.find((s: { id: string }) => s.id === originalId) : null;
     if (sal) {
       setJob(sal.job);
@@ -123,7 +124,7 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
       return;
     }
 
-    const salaries: any[] = appState.settings.salaries || [];
+    const salaries: any[] = getSalaries() || [];
     const duplicate = salaries.some(
       (s: { job: string; id: string }) => s.job.toUpperCase() === jobName.toUpperCase() && s.id !== originalId
     );
@@ -134,16 +135,14 @@ export function SalaryModal({ id, onClose, bump }: { id: string | null | undefin
 
     const prevSalaries = [...salaries];
     if (originalId) {
-      const idx = salaries.findIndex((s: { id: string }) => s.id === originalId);
-      if (idx !== -1) salaries[idx] = { id: originalId, job: jobName, rate_versions: rateVersions };
+      replaceSalaryAt(originalId, { id: originalId, job: jobName, rate_versions: rateVersions });
     } else {
-      salaries.push({ id: generateUid("salary"), job: jobName, rate_versions: rateVersions });
+      addSalary({ id: generateUid("salary"), job: jobName, rate_versions: rateVersions });
     }
-    salaries.sort((a: { job: string }, b: { job: string }) => a.job.localeCompare(b.job));
-    appState.settings.salaries = salaries;
+    getSalaries().sort((a: { job: string }, b: { job: string }) => a.job.localeCompare(b.job));
 
     saveDatabaseOrRollback(() => {
-      appState.settings.salaries = prevSalaries;
+      setSalaries(prevSalaries);
     }, "L'enregistrement de l'emploi a échoué. Réessayez.").then(saved => {
       if (!saved) {
         bump();

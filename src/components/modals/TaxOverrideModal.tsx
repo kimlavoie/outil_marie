@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { appState } from "../../state/state.ts";
+import { getActivityById } from "../../state/activities-repository.ts";
 import { commitActivityPatch } from "../../activities/form-state-bar.ts";
 import { updateSubmissionFinancialSummary } from "../../activities/financial-summary.ts";
 
@@ -31,7 +31,7 @@ export const TaxOverrideModal: React.FC = () => {
 
   useEffect(() => {
     openTaxSubscriber = (id: string) => {
-      const act = appState.activities.find((a: any) => a.id === id);
+      const act = getActivityById(id);
       if (!act) return;
 
       setActivityId(id);

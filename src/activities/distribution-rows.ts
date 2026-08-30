@@ -2,7 +2,7 @@
  * activities-distribution-rows.ts - Adds a GL distribution row to the activity form.
  * Split out of activities-financials.ts (see that file for the rest of the module's history).
  */
-import { appState } from "../state/state.ts";
+import { getAccounts } from "../state/settings-repository.ts";
 import {
   escapeHtml,
   buildSearchableSelectHtml,
@@ -47,7 +47,7 @@ function addDistributionRow(accountCode = "", amount = 0, reference = "", detail
     autoSaveActivityForm();
   });
 
-  const glItems = appState.settings.accounts.map(acc => ({
+  const glItems = getAccounts().map(acc => ({
     value: acc.code,
     label: `${acc.code} (${acc.description})`
   }));

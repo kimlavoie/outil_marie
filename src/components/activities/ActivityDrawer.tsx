@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { InstallDismantleFields } from "./InstallDismantleFields.tsx";
-import { useAppState, appState, recordActivityView } from "../../state/state.ts";
+import { useAppState, recordActivityView } from "../../state/state.ts";
+import { getActivityById } from "../../state/activities-repository.ts";
 import { elById, debounce, formatPostalCode, generateUid } from "../../utils/utils.ts";
 import { activitiesState, renderActivities } from "../../activities/render.ts";
 import {
@@ -98,7 +99,7 @@ export const ActivityDrawer: React.FC = () => {
 
   useEffect(() => {
     openDrawerSubscriber = (id: string, calReturn: any = null, initialTab: string = "submission") => {
-      const act = appState.activities.find((a: any) => a.id === id);
+      const act = getActivityById(id);
       if (!act) return;
 
       activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(act));
@@ -134,7 +135,7 @@ export const ActivityDrawer: React.FC = () => {
   // — fillActivityFormFields() (below) no longer touches these specific fields.
   useEffect(() => {
     if (!isOpen || !activityId) return;
-    const act = appState.activities.find((a: any) => a.id === activityId);
+    const act = getActivityById(activityId);
     if (!act) return;
 
     setResponsableFirstName(act.responsable_first_name || "");
@@ -151,7 +152,7 @@ export const ActivityDrawer: React.FC = () => {
   // Seed the React-controlled "Informations générales" fields the same way.
   useEffect(() => {
     if (!isOpen || !activityId) return;
-    const act = appState.activities.find((a: any) => a.id === activityId);
+    const act = getActivityById(activityId);
     if (!act) return;
 
     setCoba(act.coba || "");
@@ -165,7 +166,7 @@ export const ActivityDrawer: React.FC = () => {
   // fillActivityFormFields() used to do directly before this slice.
   useEffect(() => {
     if (!isOpen || !activityId) return;
-    const act = appState.activities.find((a: any) => a.id === activityId);
+    const act = getActivityById(activityId);
     if (!act) return;
 
     mountedCardIdsRef.current = new Set();
@@ -323,7 +324,7 @@ export const ActivityDrawer: React.FC = () => {
   useEffect(() => {
     if (!isOpen || !activityId) return;
 
-    const act = appState.activities.find((a: any) => a.id === activityId);
+    const act = getActivityById(activityId);
     if (!act) return;
 
     const timer = setTimeout(() => {
@@ -344,7 +345,7 @@ export const ActivityDrawer: React.FC = () => {
   useEffect(() => {
     if (!isOpen || !activityId) return;
 
-    const act = appState.activities.find((a: any) => a.id === activityId);
+    const act = getActivityById(activityId);
     if (!act) return;
 
     const timer = setTimeout(() => {
@@ -370,7 +371,7 @@ export const ActivityDrawer: React.FC = () => {
 
   if (!isOpen || !activityId) return null;
 
-  const currentActivity = appState.activities.find((a: any) => a.id === activityId);
+  const currentActivity = getActivityById(activityId);
   const titleText = currentActivity?.name.trim() ? currentActivity.name : `Activité ${activityId}`;
 
   const handleClose = () => {

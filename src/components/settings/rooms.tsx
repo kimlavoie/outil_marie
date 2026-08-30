@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabaseOrRollback, getFlattenedRoomTarifs } from "../../state/state.ts";
+import { saveDatabaseOrRollback, getFlattenedRoomTarifs } from "../../state/state.ts";
+import { getActivities } from "../../state/activities-repository.ts";
+import { getRooms, getRoomByName, setRooms, addRoom, replaceRoomAt, removeRoomByName, getSalaries } from "../../state/settings-repository.ts";
 import { generateUid, formatCurrency, getRoomColor, FALLBACK_ROOM_COLORS, showToast } from "../../utils/utils.ts";
 import { populateDropdowns } from "../../navigation.ts";
 import { DeleteIcon, Modal } from "./common.tsx";
@@ -17,14 +19,14 @@ import {
 export function RoomsPanel({ active, openModal, bump }: { active: boolean; openModal: (name: string | null) => void; bump: () => void }) {
   const deleteRoom = (name: string) => {
     if (!confirm(`Voulez-vous vraiment supprimer la salle ${name} ?`)) return;
-    const prevRooms = appState.settings.rooms;
-    const prevLinkedRooms = appState.settings.rooms.map((r: { linked_rooms?: string[] }) => ({ r, linked_rooms: r.linked_rooms }));
-    appState.settings.rooms = appState.settings.rooms.filter((r: { name: string }) => r.name !== name);
-    appState.settings.rooms.forEach((r: { linked_rooms?: string[] }) => {
+    const prevRooms = getRooms();
+    const prevLinkedRooms = getRooms().map((r: { linked_rooms?: string[] }) => ({ r, linked_rooms: r.linked_rooms }));
+    removeRoomByName(name);
+    getRooms().forEach((r: { linked_rooms?: string[] }) => {
       r.linked_rooms = (r.linked_rooms || []).filter((n: string) => n !== name);
     });
     saveDatabaseOrRollback(() => {
-      appState.settings.rooms = prevRooms;
+      setRooms(prevRooms);
       prevLinkedRooms.forEach(({ r, linked_rooms }) => {
         r.linked_rooms = linked_rooms;
       });
@@ -47,7 +49,7 @@ export function RoomsPanel({ active, openModal, bump }: { active: boolean; openM
         </button>
       </div>
       <div className="settings-list">
-        {appState.settings.rooms.map(
+        {getRooms().map(
           (r: { name: string; abbreviation?: string; pricing_grids?: unknown[]; rate_type?: string; setup_fee?: number }) => {
             const tarifs = getFlattenedRoomTarifs(r, "");
             const unit = r.rate_type === "hourly" ? "h" : "jour";
@@ -104,11 +106,11 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
 
   useEffect(() => {
     if (!isOpen) return;
-    const room = originalName ? appState.settings.rooms.find((r: { name: string; setup_fee?: number }) => r.name === originalName) : null;
+    const room = originalName ? getRoomByName(originalName) : null;
 
     setRoomName(room ? room.name : "");
     setAbbreviation((room && room.abbreviation) || "");
-    setColor(room ? getRoomColor(room.name) : FALLBACK_ROOM_COLORS[appState.settings.rooms.length % FALLBACK_ROOM_COLORS.length]);
+    setColor(room ? getRoomColor(room.name) : FALLBACK_ROOM_COLORS[getRooms().length % FALLBACK_ROOM_COLORS.length]);
     setRateType(room && room.rate_type === "hourly" ? "hourly" : "daily");
     setSetupFee(room && room.setup_fee !== undefined ? String(room.setup_fee) : "0");
 
@@ -230,15 +232,14 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
       linked_tasks: linkedTasksPayload
     };
 
-    const prevRooms = [...appState.settings.rooms];
+    const prevRooms = [...getRooms()];
     const touchedReservations: { r: { room_name: string }; prevRoomName: string }[] = [];
-    const prevLinkedRooms = appState.settings.rooms.map((r: { linked_rooms?: string[] }) => ({ r, linked_rooms: r.linked_rooms }));
+    const prevLinkedRooms = getRooms().map((r: { linked_rooms?: string[] }) => ({ r, linked_rooms: r.linked_rooms }));
 
     if (originalName) {
-      const idx = appState.settings.rooms.findIndex((r: { name: string }) => r.name === originalName);
-      if (idx !== -1) {
-        appState.settings.rooms[idx] = payload;
-        appState.activities.forEach(act => {
+      const replaced = replaceRoomAt(originalName, payload);
+      if (replaced) {
+        getActivities().forEach(act => {
           (act.reservations || []).forEach((r: { room_name: string }) => {
             if (r.room_name === originalName) {
               touchedReservations.push({ r, prevRoomName: r.room_name });
@@ -246,20 +247,20 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
             }
           });
         });
-        appState.settings.rooms.forEach((r: { linked_rooms?: string[] }) => {
+        getRooms().forEach((r: { linked_rooms?: string[] }) => {
           r.linked_rooms = (r.linked_rooms || []).map((n: string) => (n === originalName ? newName : n));
         });
       }
     } else {
-      if (appState.settings.rooms.some((r: { name: string }) => r.name === newName)) {
+      if (getRooms().some((r: { name: string }) => r.name === newName)) {
         showToast("Cette salle existe déjà.", "warning");
         return;
       }
-      appState.settings.rooms.push(payload);
+      addRoom(payload);
     }
 
     saveDatabaseOrRollback(() => {
-      appState.settings.rooms = prevRooms;
+      setRooms(prevRooms);
       touchedReservations.forEach(({ r, prevRoomName }) => {
         r.room_name = prevRoomName;
       });
@@ -377,14 +378,9 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
         rateType={rateType}
       />
 
-      <LinkedRoomsSection
-        rooms={appState.settings.rooms}
-        originalName={originalName}
-        linkedRooms={linkedRooms}
-        toggleLinkedRoom={toggleLinkedRoom}
-      />
+      <LinkedRoomsSection rooms={getRooms()} originalName={originalName} linkedRooms={linkedRooms} toggleLinkedRoom={toggleLinkedRoom} />
 
-      <LinkedStaffSection linkedStaff={linkedStaff} setLinkedStaff={setLinkedStaff} salaries={appState.settings.salaries || []} />
+      <LinkedStaffSection linkedStaff={linkedStaff} setLinkedStaff={setLinkedStaff} salaries={getSalaries() || []} />
 
       <LinkedFeesSection linkedFees={linkedFees} setLinkedFees={setLinkedFees} />
 

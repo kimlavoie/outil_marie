@@ -9,7 +9,8 @@
 import { computeActivityFinancials } from "../../activities/financials.ts";
 import { getAggregateEventDates } from "../../activities/reservations/index.ts";
 import { getReservationRoomLabel, formatCurrency, calculateHoursFromTimes, formatPostalCode } from "../../utils/utils.ts";
-import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../../state/state.ts";
+import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../../state/state.ts";
+import { getRoomByName, getSalaryById, getServiceById } from "../../state/settings-repository.ts";
 import { S } from "./styles.ts";
 import { SheetBuilder, formatDateFr, wrapRowHeight } from "./sheet-builder.ts";
 import { SUPPLIER, ATTESTATIONS, CANCELLATION_CLAUSE, LOCATION_CLAUSE_GROUPS } from "./static-content.ts";
@@ -104,7 +105,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     reservations.forEach((r: any) => {
       sb.subHeader(getReservationRoomLabel(r) || "(salle non définie)");
 
-      const room = appState.settings.rooms.find((rm: any) => rm.name === r.room_name);
+      const room = getRoomByName(r.room_name);
       if (room && room.linked_rooms && room.linked_rooms.length > 0) {
         const note = `Réservation(s) incluse(s): ${room.linked_rooms.join(", ")}`;
         sb.addRow(wrapRowHeight(note, 132), [{ col: "A", style: S.linkedRoomNote, value: note, mergeTo: "F" }]);
@@ -171,7 +172,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
       if (staff.length > 0) {
         sb.itemTableHeader("Personnel", "Date", "Heures", "Sous-total");
         staff.forEach((s: any) => {
-          const salary = (appState.settings.salaries || []).find((sal: any) => sal.id === s.salary_id);
+          const salary = getSalaryById(s.salary_id);
           let rate = 0;
           let overtimeRate = 0;
           const targetDate = s.date || eventDateStart;
@@ -198,7 +199,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
       if (services.length > 0) {
         sb.itemTableHeader("Équipements", "Nombre", "Heures", "Sous-total");
         services.forEach((s: any) => {
-          const service = (appState.settings.services || []).find((sv: any) => sv.id === s.service_id);
+          const service = getServiceById(s.service_id);
           let rate = 0;
           if (s.tarif_id === "__custom__") {
             rate = s.custom_rate || 0;

@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabaseOrRollback } from "../../state/state.ts";
+import { saveDatabaseOrRollback } from "../../state/state.ts";
+import { getActivities } from "../../state/activities-repository.ts";
+import { getDepartments, setDepartments, addDepartment, replaceDepartmentAt, removeDepartment } from "../../state/settings-repository.ts";
 import { showToast } from "../../utils/utils.ts";
 import { requireNonEmpty } from "../../utils/validation.ts";
 import { populateDropdowns } from "../../navigation.ts";
@@ -16,10 +18,10 @@ export function DepartmentsPanel({
 }) {
   const deleteDept = (name: string) => {
     if (!confirm(`Voulez-vous vraiment supprimer le département "${name}" ?`)) return;
-    const prevDepartments = appState.settings.departments;
-    appState.settings.departments = appState.settings.departments.filter((d: string) => d !== name);
+    const prevDepartments = getDepartments();
+    removeDepartment(name);
     saveDatabaseOrRollback(() => {
-      appState.settings.departments = prevDepartments;
+      setDepartments(prevDepartments);
     }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => {
       populateDropdowns();
       bump();
@@ -39,7 +41,7 @@ export function DepartmentsPanel({
         </button>
       </div>
       <div className="settings-list">
-        {appState.settings.departments.map((dept: string) => (
+        {getDepartments().map((dept: string) => (
           <div key={dept} className="settings-list-item" onClick={() => openModal(dept)}>
             <div className="settings-list-item-info">
               <span className="settings-list-item-code" style={{ fontFamily: "inherit" }}>
@@ -76,7 +78,7 @@ export function DeptModal({ name, onClose, bump }: { name: string | null | undef
       return;
     }
 
-    const duplicate = appState.settings.departments.some(
+    const duplicate = getDepartments().some(
       (d: string) => d.toUpperCase() === newName.toUpperCase() && d.toUpperCase() !== originalName.toUpperCase()
     );
     if (duplicate) {
@@ -84,14 +86,13 @@ export function DeptModal({ name, onClose, bump }: { name: string | null | undef
       return;
     }
 
-    const prevDepartments = [...appState.settings.departments];
+    const prevDepartments = [...getDepartments()];
     const touchedActivities: { act: { department: string }; prevDepartment: string }[] = [];
 
     if (originalName) {
-      const idx = appState.settings.departments.findIndex((d: string) => d === originalName);
-      if (idx !== -1) {
-        appState.settings.departments[idx] = newName;
-        appState.activities.forEach(act => {
+      const replaced = replaceDepartmentAt(originalName, newName);
+      if (replaced) {
+        getActivities().forEach(act => {
           if (act.department === originalName) {
             touchedActivities.push({ act, prevDepartment: act.department });
             act.department = newName;
@@ -99,12 +100,12 @@ export function DeptModal({ name, onClose, bump }: { name: string | null | undef
         });
       }
     } else {
-      appState.settings.departments.push(newName);
+      addDepartment(newName);
     }
 
-    appState.settings.departments.sort();
+    getDepartments().sort();
     saveDatabaseOrRollback(() => {
-      appState.settings.departments = prevDepartments;
+      setDepartments(prevDepartments);
       touchedActivities.forEach(({ act, prevDepartment }) => {
         act.department = prevDepartment;
       });

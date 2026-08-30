@@ -5,10 +5,10 @@
  * format/DOM/searchable-select helper modules) — the real circular import with state.ts (state.ts
  * imports generateUid/calculateDaysCount from format.ts) is unaffected by this split.
  */
-import { appState } from "../state/state.ts";
+import { getRoomByName, getAccounts } from "../state/settings-repository.ts";
 import { escapeHtml, calculateHoursFromTimes } from "./format.ts";
 import type { Activity, Reservation, DistributionRow } from "../types/activity.ts";
-import type { Room, Account } from "../state/store.ts";
+import type { Account } from "../state/store.ts";
 
 // Joined list of distinct RI/Facture references across an activity's per-account distributions
 function getActivityReferences(act: Partial<Activity>) {
@@ -20,7 +20,7 @@ function getActivityReferences(act: Partial<Activity>) {
 // booked for an activity
 function getRoomsTariffTotal(act: Partial<Activity>) {
   return (act.reservations || []).reduce((sum: number, r: Reservation) => {
-    const room = appState.settings.rooms.find((rm: Room) => rm.name === r.room_name);
+    const room = getRoomByName(r.room_name);
     const isHourly = room && room.rate_type === "hourly";
     if (isHourly) {
       const hours = (r.slots || []).reduce((slotSum: number, s) => {
@@ -49,14 +49,14 @@ function getReservationRoomLabel(reservation?: Partial<Reservation> | null) {
 function getReservationRoomAbbreviation(reservation?: Partial<Reservation> | null) {
   if (!reservation) return "";
   if (reservation.room_name === OTHER_ROOM_VALUE) return reservation.room_other_details || "Autre";
-  const room = appState.settings.rooms.find((r: Room) => r.name === reservation.room_name);
+  const room = getRoomByName(reservation.room_name || "");
   return (room && room.abbreviation) || reservation.room_name || "";
 }
 
 // Room color, with a stable fallback for rooms saved before the color picker existed
 const FALLBACK_ROOM_COLORS = ["#4f46e5", "#059669", "#d97706", "#db2777", "#0891b2", "#7c3aed", "#dc2626", "#65a30d"];
 function getRoomColor(name: string) {
-  const room = appState.settings.rooms.find((r: Room) => r.name === name);
+  const room = getRoomByName(name);
   if (room && room.color) return room.color;
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -69,7 +69,7 @@ function getRoomColor(name: string) {
 // <GlAccountOptions> equivalent for its own forms, since it doesn't need an HTML string.
 function buildGlAccountOptionsHtml(selectedCode = "") {
   let html = '<option value="">Aucun</option>';
-  appState.settings.accounts.forEach((acc: Account) => {
+  getAccounts().forEach((acc: Account) => {
     html += `<option value="${acc.code}" ${acc.code === selectedCode ? "selected" : ""}>${acc.code} (${escapeHtml(acc.description)})</option>`;
   });
   return html;
@@ -78,7 +78,7 @@ function buildGlAccountOptionsHtml(selectedCode = "") {
 // Sum of setup/teardown fees across all reservations booked for an activity
 function getSetupTeardownTotal(act: Partial<Activity>) {
   return (act.reservations || []).reduce((sum: number, r: Reservation) => {
-    const room = appState.settings.rooms.find((rm: Room) => rm.name === r.room_name);
+    const room = getRoomByName(r.room_name);
     return sum + (room && typeof room.setup_fee === "number" ? room.setup_fee : 0);
   }, 0);
 }

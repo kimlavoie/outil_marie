@@ -9,7 +9,8 @@
  * already in this codebase: safe since nothing runs during either module's
  * top-level evaluation.
  */
-import { appState, saveDatabaseOrRollback } from "../state/state.ts";
+import { saveDatabaseOrRollback } from "../state/state.ts";
+import { getActivityById, getActivityIndex, getActivities, updateActivity } from "../state/activities-repository.ts";
 import { showToast, elById } from "../utils/utils.ts";
 import { isNonEmptyString } from "../utils/validation.ts";
 import { activitiesState, renderActivities } from "./render.ts";
@@ -94,7 +95,7 @@ function autoSaveActivityForm() {
   const reservations = collectReservationsFromForm();
   getIncompleteRowWarnings().forEach(msg => showToast(msg, "warning"));
   const aggregateDates = getAggregateEventDates(reservations);
-  const existingActivity = appState.activities.find(a => a.id === internalId);
+  const existingActivity = getActivityById(internalId);
   // If every slot was removed (reservation kept but emptied), don't let the activity lose its
   // date range silently — keep whatever dates it already had and warn instead.
   const datesCleared = (!aggregateDates.date_start || !aggregateDates.date_end) && existingActivity?.date_start;
@@ -194,18 +195,18 @@ function autoSaveActivityForm() {
     distributions
   };
 
-  const idx = appState.activities.findIndex(a => a.id === internalId);
+  const idx = getActivityIndex(internalId);
   if (idx === -1) return;
-  const previous = appState.activities[idx];
+  const previous = getActivities()[idx];
   const prevDraftId = activitiesState.draftActivityId;
-  appState.activities[idx] = { ...appState.activities[idx], ...payload };
+  updateActivity(internalId, payload);
 
   if (activitiesState.draftActivityId === internalId) {
     activitiesState.draftActivityId = null;
   }
 
   saveDatabaseOrRollback(() => {
-    appState.activities[idx] = previous;
+    getActivities()[idx] = previous;
     activitiesState.draftActivityId = prevDraftId;
   }, "Les modifications n'ont pas été enregistrées. Réessayez.").then(saved => {
     if (!saved) return;
@@ -217,7 +218,7 @@ function autoSaveActivityForm() {
     }
 
     showAutoSaveStatus("saved");
-    updateFormTabIndicators(appState.activities[idx]);
+    updateFormTabIndicators(getActivities()[idx]);
   });
 
   // Any new edit invalidates whatever "future" the redo stack held, but the undo snapshot itself

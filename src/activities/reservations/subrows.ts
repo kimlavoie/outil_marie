@@ -1,4 +1,5 @@
-import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../../state/state.ts";
+import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../../state/state.ts";
+import { getSalaries, getSalaryById, getServices, getServiceById, getRoomByName } from "../../state/settings-repository.ts";
 import {
   escapeHtml,
   formatCurrency,
@@ -78,7 +79,7 @@ function buildTarifOptionsHtml(
 
 export function getStaffRowHours(row: HTMLElement): { hours: number; overtimeHours: number } {
   const salaryId = row.querySelector<HTMLSelectElement>(".staff-salary-select")!.value;
-  const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+  const salary = getSalaryById(salaryId);
   const isDT = salaryId === TECHNICAL_DIRECTOR_SALARY_ID || !!(salary && salary.job && salary.job.toLowerCase() === "directeur technique");
 
   const rawHours = parseFloat(row.querySelector<HTMLInputElement>(".staff-hours-input")!.value) || 0;
@@ -104,7 +105,7 @@ function updateStaffRowOvertimeVisibility(row: HTMLElement, isOvertimeChecked = 
   const container = row.querySelector<HTMLElement>(".staff-overtime-container")!;
   if (!container) return;
 
-  const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+  const salary = getSalaryById(salaryId);
   const isDT = salaryId === TECHNICAL_DIRECTOR_SALARY_ID || !!(salary && salary.job && salary.job.toLowerCase() === "directeur technique");
 
   if (isDT) {
@@ -142,7 +143,7 @@ export function addStaffRow(
   const rowId = generateUid("staff-row");
   const wrapperId = rowId + "-wrapper";
 
-  const salaryOptionsHtml = (appState.settings.salaries || [])
+  const salaryOptionsHtml = (getSalaries() || [])
     .map(s => `<option value="${s.id}" ${s.id === salaryId ? "selected" : ""}>${s.job}</option>`)
     .join("");
 
@@ -175,7 +176,7 @@ export function addStaffRow(
     hours = calculateHoursFromTimes(defaultStart, defaultEnd);
   }
 
-  const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+  const salary = getSalaryById(salaryId);
   const isDT = salaryId === TECHNICAL_DIRECTOR_SALARY_ID || !!(salary && salary.job && salary.job.toLowerCase() === "directeur technique");
   const displayedHours = isDT && overtimeHours > 0 ? overtimeHours : hours;
   const isOvertimeChecked = isDT && overtimeHours > 0;
@@ -301,7 +302,7 @@ export function updateStaffRowSubtotal(row: HTMLElement) {
   const wrapper = row.closest(".distribution-row-wrapper");
   const useCustomRate = wrapper?.querySelector<HTMLInputElement>(".staff-use-custom-rate")?.checked || false;
   const { hours, overtimeHours } = getStaffRowHours(row);
-  const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+  const salary = getSalaryById(salaryId);
   const staffDateInput = row.querySelector<HTMLInputElement>(".staff-date-input");
   const dateStr = (staffDateInput ? staffDateInput.value : "") || getEarliestSlotDateFromDom();
 
@@ -326,10 +327,10 @@ export function addServiceRow(container: HTMLElement, serviceId = "", hours = 0,
   const wrapperId = rowId + "-wrapper";
   const isCustom = tarifId === "__custom__";
 
-  const serviceOptionsHtml = (appState.settings.services || [])
+  const serviceOptionsHtml = (getServices() || [])
     .map(s => `<option value="${s.id}" ${s.id === serviceId ? "selected" : ""}>${s.name}</option>`)
     .join("");
-  const initialService = (appState.settings.services || []).find(s => s.id === serviceId);
+  const initialService = getServiceById(serviceId);
 
   container.insertAdjacentHTML(
     "beforeend",
@@ -377,7 +378,7 @@ export function addServiceRow(container: HTMLElement, serviceId = "", hours = 0,
   });
 
   row.querySelector<HTMLSelectElement>(".service-select")!.addEventListener("change", e => {
-    const service = (appState.settings.services || []).find(s => s.id === (e.target as HTMLSelectElement).value);
+    const service = getServiceById((e.target as HTMLSelectElement).value);
     tarifSelect.innerHTML = buildTarifOptionsHtml(service);
     customFields.style.display = tarifSelect.value === "__custom__" ? "block" : "none";
   });
@@ -404,7 +405,7 @@ export function updateServiceRowSubtotal(row: HTMLElement) {
   const tarifId = row.querySelector<HTMLInputElement>(".service-tarif-select")!.value;
   const count = 1;
   const hours = parseFloat(row.querySelector<HTMLInputElement>(".service-hours-input")!.value) || 0;
-  const service = (appState.settings.services || []).find(s => s.id === serviceId);
+  const service = getServiceById(serviceId);
   const dateStr = getEarliestSlotDateFromDom();
 
   let rate = 0;
@@ -471,7 +472,7 @@ export const TECHNICAL_DIRECTOR_SALARY_ID = "salary-dt";
 export const HOSTESS_SALARY_ID = "salary-hote";
 
 export function autoAddLinkedStaffAndFees(card: HTMLElement, roomName: string) {
-  const room = appState.settings.rooms.find((r: any) => r.name === roomName);
+  const room = getRoomByName(roomName);
   if (!room) return;
 
   // Non-null-safe: .room-staff-list/.room-fees-list live in StaffServicesFeesFields.tsx, a
@@ -589,7 +590,7 @@ export function collectFeesFromForm(card: HTMLElement) {
 export const PROJECTOR_SERVICE_ID = "service-location-projecteur";
 
 export function autoAddProjectorIfNeeded(servicesList: HTMLElement) {
-  const serviceExists = (appState.settings.services || []).some(s => s.id === PROJECTOR_SERVICE_ID);
+  const serviceExists = (getServices() || []).some(s => s.id === PROJECTOR_SERVICE_ID);
   if (!serviceExists) return;
 
   const alreadyPresent = Array.from(servicesList.querySelectorAll<HTMLSelectElement>(".service-select")).some(

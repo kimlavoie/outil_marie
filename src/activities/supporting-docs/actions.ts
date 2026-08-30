@@ -6,7 +6,7 @@
  * permission from read to readwrite on demand), and unlinking. Split out of index.ts, mirroring
  * file-links/actions.ts but for a directory instead of a single file.
  */
-import { appState } from "../../state/state.ts";
+import { getActivityById } from "../../state/activities-repository.ts";
 import { generateUid, showToast } from "../../utils/utils.ts";
 import { commitActivityPatch } from "../form-state-bar.ts";
 import { idbSetSupportingDocsFolder, idbGetSupportingDocsFolder } from "./db.ts";
@@ -49,7 +49,7 @@ async function pickAndLinkFolder(activityId: string) {
     act.supporting_docs.folder_link_id = linkId;
     act.supporting_docs.linked_at = new Date().toISOString().split("T")[0];
   });
-  const updated = appState.activities.find((a: any) => a.id === activityId);
+  const updated = getActivityById(activityId);
   if (updated) renderSupportingDocsStatus(updated);
 }
 
@@ -176,7 +176,7 @@ function unlinkFolder(activityId: string) {
     act.supporting_docs.linked_at = "";
   });
   showToast("Le lien vers le dossier a été retiré.", "success");
-  const updated = appState.activities.find((a: any) => a.id === activityId);
+  const updated = getActivityById(activityId);
   if (updated) renderSupportingDocsStatus(updated);
 }
 

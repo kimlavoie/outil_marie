@@ -14,7 +14,7 @@
  * billing-tab.ts); this file keeps the top-level drawer event wiring and field population, and
  * re-exports the others' public API so existing imports from "./form.ts" keep working.
  */
-import { appState } from "../state/state.ts";
+import { getActivityById } from "../state/activities-repository.ts";
 import { debounce, generateUid, maskPhoneInput, initMultiSelectDropdown, maskPostalCodeInput, formatPostalCode } from "../utils/utils.ts";
 import { activitiesState, renderActivities, initBulkActionsHandlers } from "./render.ts";
 import {
@@ -136,7 +136,7 @@ function initFormHandlers() {
       }
       if (tabName === "supporting-docs") {
         const id = el("form-activity-internal-id")?.value;
-        const act = appState.activities.find((a: any) => a.id === id);
+        const act = id ? getActivityById(id) : undefined;
         if (act) renderSupportingDocsStatus(act);
       }
     });
@@ -148,7 +148,7 @@ function initFormHandlers() {
     const docsTab = el("activity-tab-panel-supporting-docs");
     if (!docsTab || !docsTab.classList.contains("active")) return;
     const id = el("form-activity-internal-id")?.value;
-    const act = appState.activities.find((a: any) => a.id === id);
+    const act = id ? getActivityById(id) : undefined;
     if (act) renderSupportingDocsStatus(act);
   });
 
@@ -186,7 +186,7 @@ function initFormHandlers() {
       commitActivityPatch(id, (a: any) => {
         a.bar_revenue_manually_enabled = true;
       });
-      const updated = appState.activities.find((a: any) => a.id === id);
+      const updated = id ? getActivityById(id) : undefined;
       updateBarRevenueSectionVisibility(updated);
     });
   }
@@ -219,7 +219,7 @@ function initFormHandlers() {
         a.bar_revenue_lines = [];
         a.bar_revenue = 0;
       });
-      const updated = appState.activities.find((a: any) => a.id === id);
+      const updated = id ? getActivityById(id) : undefined;
       updateBarRevenueSectionVisibility(updated);
     });
   }
@@ -261,7 +261,7 @@ function initFormHandlers() {
   // Planification tab buttons
   el("generate-planning-tasks-btn")?.addEventListener("click", () => {
     const id = el("form-activity-internal-id")?.value;
-    const act = appState.activities.find(a => a.id === id);
+    const act = id ? getActivityById(id) : undefined;
     if (act) generatePlanningTasks(act);
   });
   el("add-planning-task-btn")?.addEventListener("click", () => {
@@ -271,7 +271,7 @@ function initFormHandlers() {
   // Facturation tab button
   el("generate-billing-lines-btn")?.addEventListener("click", () => {
     const id = el("form-activity-internal-id")?.value;
-    const act = appState.activities.find(a => a.id === id) || { id, distributions: [] };
+    const act = (id ? getActivityById(id) : undefined) || { id, distributions: [] };
     generateBillingLines(act);
   });
 

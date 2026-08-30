@@ -16,6 +16,7 @@
  * three call sites above no longer call anything here — React already re-renders on its own.
  */
 import { appState, EVENT_TYPES } from "./state/state.ts";
+import { getDepartments } from "./state/settings-repository.ts";
 import { escapeHtml } from "./utils/utils.ts";
 import { activitiesState, renderActivities } from "./activities/render.ts";
 import { renderReconciliation } from "./components/reconciliation-mount.ts";
@@ -93,7 +94,7 @@ function populateDropdowns() {
   deptsSelects.forEach(select => {
     if (!select) return;
     select.innerHTML = '<option value="">Sélectionner un département...</option>';
-    appState.settings.departments.forEach(d => {
+    getDepartments().forEach(d => {
       select.innerHTML += `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`;
     });
   });

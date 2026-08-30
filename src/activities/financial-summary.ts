@@ -4,6 +4,8 @@
  * Split out of activities-financials.ts (see that file for the rest of the module's history).
  */
 import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
+import { getActivityById } from "../state/activities-repository.ts";
+import { getSalaryById, getServiceById } from "../state/settings-repository.ts";
 import { formatCurrency, escapeHtml, rateToPercentString, getRoomsTariffTotal, getSetupTeardownTotal, elById } from "../utils/utils.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
 import { updateStaffRowSubtotal, updateServiceRowSubtotal, getStaffRowHours } from "./reservations/subrows.ts";
@@ -84,7 +86,7 @@ function computeFormRevenueSubtotal(): {
       rate = parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-rate-input")!.value) || 0;
       overtimeRate = parseFloat(wrapper.querySelector<HTMLInputElement>(".staff-custom-overtime-rate-input")!.value) || 0;
     } else {
-      const salary = (appState.settings.salaries || []).find(s => s.id === salaryId);
+      const salary = getSalaryById(salaryId);
       const staffDateInput = row.querySelector<HTMLInputElement>(".staff-date-input");
       const dateStr = (staffDateInput ? staffDateInput.value : "") || eventDateStart;
       rate = salary ? getActiveSalaryRate(salary, dateStr) : 0;
@@ -104,10 +106,10 @@ function computeFormRevenueSubtotal(): {
       const wrapper = row.closest(".distribution-row-wrapper");
       rate = wrapper ? parseFloat(wrapper.querySelector<HTMLInputElement>(".service-custom-rate-input")!.value) || 0 : 0;
     } else {
-      const service = (appState.settings.services || []).find(s => s.id === serviceId);
+      const service = getServiceById(serviceId);
       rate = service ? getActiveServiceRate(service, eventDateStart, tarifId) : 0;
     }
-    const service = (appState.settings.services || []).find(s => s.id === serviceId);
+    const service = getServiceById(serviceId);
     servicesTotal += service && service.type === "hourly" ? rate * hours : rate;
   });
 
@@ -118,7 +120,7 @@ function computeFormRevenueSubtotal(): {
 
   const clientTypeEl = document.getElementById("form-activity-client-type") as HTMLSelectElement | null;
   const internalId = (document.getElementById("form-activity-internal-id") as HTMLInputElement | null)?.value;
-  const act = appState.activities.find((a: any) => a.id === internalId);
+  const act = getActivityById(internalId ?? "");
   const isInternal = clientTypeEl ? clientTypeEl.value === "interne" : act ? act.client_type === "interne" : false;
 
   return {
@@ -139,7 +141,7 @@ function updateSubmissionFinancialSummary() {
   const container = elById("submission-financial-summary");
   if (container) {
     const internalId = (document.getElementById("form-activity-internal-id") as HTMLInputElement | null)?.value;
-    const act = appState.activities.find((a: any) => a.id === internalId);
+    const act = getActivityById(internalId ?? "");
     const { tps, tvq } = computeTaxes(subtotal, act);
     const total = subtotal + tps.amount + tvq.amount;
 
@@ -193,7 +195,7 @@ function computeActivityFinancials(act: any) {
 
   reservations.forEach((r: any) => {
     (r.staff || []).forEach((s: any) => {
-      const salary = (appState.settings.salaries || []).find(sal => sal.id === s.salary_id);
+      const salary = getSalaryById(s.salary_id);
       let rate = 0;
       let overtimeRate = 0;
       const targetDate = s.date || eventDateStart;
@@ -208,7 +210,7 @@ function computeActivityFinancials(act: any) {
       staffTotal += rate * (s.hours || 0) * count + overtimeRate * (s.overtime_hours || 0) * count;
     });
     (r.services || []).forEach((s: any) => {
-      const service = (appState.settings.services || []).find(sv => sv.id === s.service_id);
+      const service = getServiceById(s.service_id);
       let rate = 0;
       if (s.tarif_id === "__custom__") {
         rate = s.custom_rate || 0;

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabaseOrRollback } from "../../state/state.ts";
+import { saveDatabaseOrRollback } from "../../state/state.ts";
+import { getTaxRates, setTaxRates } from "../../state/settings-repository.ts";
 import { showToast } from "../../utils/utils.ts";
 import { rateToPercentString } from "../../utils/format.ts";
 
@@ -7,12 +8,12 @@ import { rateToPercentString } from "../../utils/format.ts";
 // (see the "Ajuster les taxes..." link in the activity drawer). Kept configurable here so a
 // future rate change doesn't require touching the code.
 export function TaxesPanel({ active }: { active: boolean }) {
-  const rates = appState.settings.tax_rates || { tps: 0.05, tvq: 0.09975 };
+  const rates = getTaxRates() || { tps: 0.05, tvq: 0.09975 };
   const [tpsPct, setTpsPct] = useState(rateToPercentString(rates.tps));
   const [tvqPct, setTvqPct] = useState(rateToPercentString(rates.tvq));
 
   useEffect(() => {
-    const current = appState.settings.tax_rates || { tps: 0.05, tvq: 0.09975 };
+    const current = getTaxRates() || { tps: 0.05, tvq: 0.09975 };
     setTpsPct(rateToPercentString(current.tps));
     setTvqPct(rateToPercentString(current.tvq));
   }, [active]);
@@ -25,10 +26,10 @@ export function TaxesPanel({ active }: { active: boolean }) {
       return;
     }
 
-    const previous = appState.settings.tax_rates;
-    appState.settings.tax_rates = { tps: tps / 100, tvq: tvq / 100 };
+    const previous = getTaxRates();
+    setTaxRates({ tps: tps / 100, tvq: tvq / 100 });
     saveDatabaseOrRollback(() => {
-      appState.settings.tax_rates = previous;
+      setTaxRates(previous);
     }, "L'enregistrement des taux de taxes a échoué. Réessayez.").then(saved => {
       if (saved) showToast("Taux de taxes enregistrés.", "success");
     });

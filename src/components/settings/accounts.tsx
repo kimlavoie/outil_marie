@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabaseOrRollback } from "../../state/state.ts";
+import { saveDatabaseOrRollback } from "../../state/state.ts";
+import { getActivities } from "../../state/activities-repository.ts";
+import { getAccounts, setAccounts, removeAccountByCode, replaceAccountAt, addAccount, sortAccountsByCode } from "../../state/settings-repository.ts";
 import { showToast } from "../../utils/utils.ts";
 import { populateDropdowns } from "../../navigation.ts";
 import { DeleteIcon, Modal } from "./common.tsx";
@@ -15,14 +17,14 @@ export function AccountsPanel({
 }) {
   const deleteAccount = (code: string) => {
     if (!confirm(`Voulez-vous vraiment supprimer le compte ${code} ? Les ventilations liées à ce compte seront effacées.`)) return;
-    const prevAccounts = appState.settings.accounts;
-    const prevDistributions = appState.activities.map(act => ({ act, distributions: act.distributions }));
-    appState.settings.accounts = appState.settings.accounts.filter(a => a.code !== code);
-    appState.activities.forEach(act => {
+    const prevAccounts = getAccounts();
+    const prevDistributions = getActivities().map(act => ({ act, distributions: act.distributions }));
+    removeAccountByCode(code);
+    getActivities().forEach(act => {
       act.distributions = act.distributions.filter((d: { account_code: string }) => d.account_code !== code);
     });
     saveDatabaseOrRollback(() => {
-      appState.settings.accounts = prevAccounts;
+      setAccounts(prevAccounts);
       prevDistributions.forEach(({ act, distributions }) => {
         act.distributions = distributions;
       });
@@ -45,7 +47,7 @@ export function AccountsPanel({
         </button>
       </div>
       <div className="settings-list">
-        {appState.settings.accounts.map(acc => (
+        {getAccounts().map(acc => (
           <div key={acc.code} className="settings-list-item" onClick={() => openModal(acc.code)}>
             <div className="settings-list-item-info">
               <span className="settings-list-item-code">{acc.code}</span>
@@ -66,7 +68,7 @@ export function AccountsPanel({
 export function AccountModal({ code, onClose, bump }: { code: string | null | undefined; onClose: () => void; bump: () => void }) {
   const isOpen = code !== undefined;
   const originalCode = code || "";
-  const existing = originalCode ? appState.settings.accounts.find(a => a.code === originalCode) : null;
+  const existing = originalCode ? getAccounts().find(a => a.code === originalCode) : null;
   const [codeVal, setCodeVal] = useState("");
   const [desc, setDesc] = useState("");
 
@@ -91,14 +93,13 @@ export function AccountModal({ code, onClose, bump }: { code: string | null | un
     }
 
     const payload = { code: newCode, description };
-    const prevAccounts = [...appState.settings.accounts];
+    const prevAccounts = [...getAccounts()];
     const touchedDistributions: { dist: { account_code: string }; prevCode: string }[] = [];
 
     if (originalCode) {
-      const idx = appState.settings.accounts.findIndex(a => a.code === originalCode);
-      if (idx !== -1) {
-        appState.settings.accounts[idx] = payload;
-        appState.activities.forEach(act => {
+      const replaced = replaceAccountAt(originalCode, payload);
+      if (replaced) {
+        getActivities().forEach(act => {
           act.distributions.forEach((dist: { account_code: string }) => {
             if (dist.account_code === originalCode) {
               touchedDistributions.push({ dist, prevCode: dist.account_code });
@@ -108,16 +109,16 @@ export function AccountModal({ code, onClose, bump }: { code: string | null | un
         });
       }
     } else {
-      if (appState.settings.accounts.some(a => a.code === newCode)) {
+      if (getAccounts().some(a => a.code === newCode)) {
         showToast("Ce code de compte existe déjà.", "warning");
         return;
       }
-      appState.settings.accounts.push(payload);
+      addAccount(payload);
     }
 
-    appState.settings.accounts.sort((a, b) => a.code.localeCompare(b.code));
+    sortAccountsByCode();
     saveDatabaseOrRollback(() => {
-      appState.settings.accounts = prevAccounts;
+      setAccounts(prevAccounts);
       touchedDistributions.forEach(({ dist, prevCode }) => {
         dist.account_code = prevCode;
       });

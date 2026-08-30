@@ -14,7 +14,7 @@ import { SlotsFields, type SlotData } from "../../components/activities/SlotsFie
 import { RoomTariffFields } from "../../components/activities/RoomTariffFields.tsx";
 import { BarHostTechFields } from "../../components/activities/BarHostTechFields.tsx";
 import { StaffServicesFeesFields } from "../../components/activities/StaffServicesFeesFields.tsx";
-import { appState } from "../../state/state.ts";
+import { getRooms } from "../../state/settings-repository.ts";
 import { generateUid, OTHER_ROOM_VALUE, maskTimeInput } from "../../utils/utils.ts";
 import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../financials.ts";
 import { updateFormDatesHelper } from "../history/index.ts";
@@ -24,7 +24,7 @@ function el<T extends Element = HTMLInputElement>(id: string): T {
 }
 
 function buildRoomSelectItems() {
-  return [...appState.settings.rooms.map(r => ({ value: r.name, label: r.name })), { value: OTHER_ROOM_VALUE, label: "Autre" }];
+  return [...getRooms().map(r => ({ value: r.name, label: r.name })), { value: OTHER_ROOM_VALUE, label: "Autre" }];
 }
 
 // Tracks each card's five React roots by the card's own DOM id, so the remove closure below can

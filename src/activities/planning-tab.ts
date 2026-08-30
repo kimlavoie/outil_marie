@@ -3,7 +3,9 @@
  * the activity's rooms/global tasks/schedulable tasks, and progress display. Split out of
  * activities-form.ts (activity drawer form wiring).
  */
-import { appState, activityMatchesTask } from "../state/state.ts";
+import { activityMatchesTask } from "../state/state.ts";
+import { getActivityById } from "../state/activities-repository.ts";
+import { getRoomByName, getGlobalTasks, getSchedulableTasks } from "../state/settings-repository.ts";
 import { generateUid, escapeHtml, getReservationRoomLabel, OTHER_ROOM_VALUE, debounce } from "../utils/utils.ts";
 import { getPlanningProgress, buildProgressBarHtml } from "./render.ts";
 import { commitActivityPatch } from "./form-state-bar.ts";
@@ -92,7 +94,7 @@ function persistPlanningTasks() {
     act.state = deriveActivityState(act);
   });
 
-  const updated = appState.activities.find((a: any) => a.id === id);
+  const updated = getActivityById(id);
   if (updated) {
     updatePlanningProgressDisplay(updated);
     el("generate-planning-tasks-btn").disabled = (updated.planning_tasks || []).length > 0;
@@ -111,7 +113,7 @@ export function generatePlanningTasks(act: any) {
   const tasks: any[] = [];
   (act.reservations || []).forEach((r: any) => {
     const roomLabel = getReservationRoomLabel(r);
-    const roomConfig = r.room_name === OTHER_ROOM_VALUE ? null : appState.settings.rooms.find((rc: any) => rc.name === r.room_name);
+    const roomConfig = r.room_name === OTHER_ROOM_VALUE ? null : getRoomByName(r.room_name);
     const linkedNames = roomConfig ? roomConfig.linked_rooms || [] : [];
     const reserveDesc = linkedNames.length
       ? `Réserver la salle ${roomLabel} (et salles liées : ${linkedNames.join(", ")}) dans le logiciel officiel`
@@ -146,7 +148,7 @@ export function generatePlanningTasks(act: any) {
     });
   });
 
-  (appState.settings.global_tasks || []).forEach((gt: any) => {
+  (getGlobalTasks() || []).forEach((gt: any) => {
     tasks.push({
       id: generateUid("task"),
       description: gt.description,
@@ -156,7 +158,7 @@ export function generatePlanningTasks(act: any) {
     });
   });
 
-  (appState.settings.schedulable_tasks || []).forEach((st: any) => {
+  (getSchedulableTasks() || []).forEach((st: any) => {
     if (activityMatchesTask(act, st)) {
       tasks.push({
         id: generateUid("task"),
@@ -171,5 +173,5 @@ export function generatePlanningTasks(act: any) {
   commitActivityPatch(act.id, (a: any) => {
     a.planning_tasks = tasks;
   });
-  renderPlanningTab(appState.activities.find((a: any) => a.id === act.id));
+  renderPlanningTab(getActivityById(act.id));
 }

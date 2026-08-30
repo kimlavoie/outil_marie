@@ -4,6 +4,8 @@
  */
 import { logError } from "../utils/logger.ts";
 import { appState, getFiscalYear, getQuarterNumber, getActivePricingGrid, getFlattenedRoomTarifs } from "../state/state.ts";
+import { getActivities } from "../state/activities-repository.ts";
+import { getAccounts, getRooms } from "../state/settings-repository.ts";
 import {
   showToast,
   showLoadingOverlay,
@@ -104,7 +106,7 @@ export function getDefaultExportOptions(): ExcelExportOptions {
       manager_contact_info: false,
       description: false,
       notes: false,
-      accounts: (appState.settings.accounts || []).map(a => a.code),
+      accounts: (getAccounts() || []).map(a => a.code),
       total_revenue: true
     },
     sheets: {
@@ -254,7 +256,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
   if (typeof lib === "undefined" || !lib?.utils?.book_new) {
     throw new Error("La librairie Excel (XLSX) n'a pas pu être chargée.");
   }
-  if (!appState.settings.accounts || appState.settings.accounts.length === 0) {
+  if (!getAccounts() || getAccounts().length === 0) {
     throw new Error("Aucun compte configuré : ajoutez des comptes dans les paramètres avant d'exporter.");
   }
 
@@ -262,7 +264,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
   const wb = lib.utils.book_new();
 
   // Selected accounts list
-  const selectedAccounts = (options.columns.accounts || []).filter(code => appState.settings.accounts.some(a => a.code === code));
+  const selectedAccounts = (options.columns.accounts || []).filter(code => getAccounts().some(a => a.code === code));
 
   // Define dynamic headers based on column selections
   interface ColumnDef {
@@ -370,7 +372,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
   // Account columns
   const firstAccColIdx = activeCols.length;
   selectedAccounts.forEach(code => {
-    const label = appState.settings.accounts.find(a => a.code === code)?.description || "";
+    const label = getAccounts().find(a => a.code === code)?.description || "";
     activeCols.push({
       key: `account_${code}`,
       header: `${code}\n${label}`,
@@ -408,7 +410,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
   }
 
   // Filter activities
-  const activeActivities = filterActivitiesForExport(appState.activities, options.filters);
+  const activeActivities = filterActivitiesForExport(getActivities(), options.filters);
 
   // Build rows
   const sheetData: any[][] = [activeCols.map(c => c.header)];
@@ -454,7 +456,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
   // Sheet 2: Configuration Salles
   if (options.sheets.includeRoomsSheet) {
     const roomsData = [["SALLE", "TYPE DE TARIF", "GRILLE (ENTRÉE EN VIGUEUR)", "TARIF", "MONTANT ($)"]];
-    (appState.settings.rooms || []).forEach(r => {
+    (getRooms() || []).forEach(r => {
       const grid = getActivePricingGrid(r, "");
       const tarifs = grid ? getFlattenedRoomTarifs(r, "") : [];
       const rateTypeLabel = r.rate_type === "hourly" ? "À l'heure" : "À la journée";
@@ -505,7 +507,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
     // Breakdown by GL Account
     summaryData.push(["RÉPARTITION PAR COMPTE GL"]);
     summaryData.push(["Code Compte", "Description", "Montant total ($)"]);
-    (appState.settings.accounts || []).forEach(acc => {
+    (getAccounts() || []).forEach(acc => {
       let accTotal = 0;
       activeActivities.forEach(a => {
         const dist = (a.distributions || []).find((d: any) => d.account_code === acc.code);

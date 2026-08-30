@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { appState, saveDatabaseOrRollback } from "../../state/state.ts";
+import { saveDatabaseOrRollback } from "../../state/state.ts";
+import { getGlobalTasks, setGlobalTasks, addGlobalTask, replaceGlobalTaskAt, removeGlobalTaskById } from "../../state/settings-repository.ts";
 import { showToast, generateUid } from "../../utils/utils.ts";
 import { DeleteIcon, Modal } from "./common.tsx";
 
@@ -12,13 +13,13 @@ export function GlobalTasksPanel({
   openModal: (id: string | null) => void;
   bump: () => void;
 }) {
-  const globalTasks = appState.settings.global_tasks || [];
+  const globalTasks = getGlobalTasks() || [];
   const deleteGlobalTask = (id: string) => {
     if (!confirm("Voulez-vous vraiment supprimer cette tâche globale ?")) return;
-    const prevGlobalTasks = appState.settings.global_tasks;
-    appState.settings.global_tasks = globalTasks.filter((t: { id: string }) => t.id !== id);
+    const prevGlobalTasks = getGlobalTasks();
+    removeGlobalTaskById(id);
     saveDatabaseOrRollback(() => {
-      appState.settings.global_tasks = prevGlobalTasks;
+      setGlobalTasks(prevGlobalTasks);
     }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => bump());
   };
 
@@ -62,7 +63,7 @@ export function GlobalTaskModal({ id, onClose, bump }: { id: string | null | und
 
   useEffect(() => {
     if (!isOpen) return;
-    const task = originalId ? (appState.settings.global_tasks || []).find((t: { id: string }) => t.id === originalId) : null;
+    const task = originalId ? (getGlobalTasks() || []).find((t: { id: string }) => t.id === originalId) : null;
     setDesc(task ? task.description : "");
   }, [isOpen, originalId]);
 
@@ -73,18 +74,16 @@ export function GlobalTaskModal({ id, onClose, bump }: { id: string | null | und
       return;
     }
 
-    const globalTasks = appState.settings.global_tasks || [];
+    const globalTasks = getGlobalTasks() || [];
     const prevGlobalTasks = [...globalTasks];
     if (originalId) {
-      const idx = globalTasks.findIndex((t: { id: string }) => t.id === originalId);
-      if (idx !== -1) globalTasks[idx] = { ...globalTasks[idx], description };
+      replaceGlobalTaskAt(originalId, { id: originalId, description });
     } else {
-      globalTasks.push({ id: generateUid("global-task"), description });
+      addGlobalTask({ id: generateUid("global-task"), description });
     }
-    appState.settings.global_tasks = globalTasks;
 
     saveDatabaseOrRollback(() => {
-      appState.settings.global_tasks = prevGlobalTasks;
+      setGlobalTasks(prevGlobalTasks);
     }, "L'enregistrement de la tâche a échoué. Réessayez.").then(saved => {
       if (!saved) {
         bump();

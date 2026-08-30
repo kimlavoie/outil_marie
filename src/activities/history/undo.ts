@@ -3,7 +3,8 @@
  * drawer currently open. Split out of index.ts (see that file for why it stays a barrel
  * importing/re-exporting this alongside room-conflicts.ts/version-history.ts).
  */
-import { appState, saveDatabaseOrRollback } from "../../state/state.ts";
+import { saveDatabaseOrRollback } from "../../state/state.ts";
+import { getActivities, getActivityIndex, replaceActivity } from "../../state/activities-repository.ts";
 import { showToast } from "../../utils/utils.ts";
 import { reconciliationState, reconcileLedger } from "../../services/reconciliation.ts";
 import { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT, renderActivities } from "../render.ts";
@@ -16,7 +17,7 @@ function scheduleActivityUndoSnapshot(idx: number) {
   clearTimeout(activityUndoSnapshotTimer ?? undefined);
   setActivityUndoSnapshotTimer(
     setTimeout(() => {
-      const act = appState.activities[idx];
+      const act = getActivities()[idx];
       // Skip if the drawer has since closed or moved on to a different activity.
       const internalIdEl = document.getElementById("form-activity-internal-id") as HTMLInputElement | null;
       if (!act || !internalIdEl || internalIdEl.value !== act.id) return;
@@ -36,22 +37,22 @@ function pushActivityUndoSnapshot(act: any) {
 // Replaces the open activity's record with `snapshot`, then rebuilds the whole form from it
 // (same rebuild openActivityDrawer does), without touching the undo/redo stacks themselves.
 function restoreActivitySnapshot(snapshot: any) {
-  const idx = appState.activities.findIndex((a: any) => a.id === snapshot.id);
+  const idx = getActivityIndex(snapshot.id);
   if (idx === -1) return;
 
   // Cancel any pending debounced snapshot from the edit that's being undone/redone away, so it
   // can't fire afterwards and silently push a stale state back onto the stack.
   clearTimeout(activityUndoSnapshotTimer ?? undefined);
 
-  const previous = appState.activities[idx];
-  appState.activities[idx] = JSON.parse(JSON.stringify(snapshot));
+  const previous = getActivities()[idx];
+  replaceActivity(snapshot.id, JSON.parse(JSON.stringify(snapshot)));
 
   const titleEl = document.getElementById("activity-drawer-title");
   if (titleEl) {
     titleEl.textContent =
-      appState.activities[idx].name && appState.activities[idx].name.trim() !== ""
-        ? appState.activities[idx].name
-        : `Activité ${appState.activities[idx].id}`;
+      getActivities()[idx].name && getActivities()[idx].name.trim() !== ""
+        ? getActivities()[idx].name
+        : `Activité ${getActivities()[idx].id}`;
   }
 
   const resContainer = document.getElementById("form-activity-reservations");
@@ -60,11 +61,11 @@ function restoreActivitySnapshot(snapshot: any) {
   const distContainer = document.getElementById("form-distribution-list");
   if (distContainer) distContainer.innerHTML = "";
 
-  fillActivityFormFields(appState.activities[idx]);
-  renderActivityStateBar(appState.activities[idx]);
+  fillActivityFormFields(getActivities()[idx]);
+  renderActivityStateBar(getActivities()[idx]);
 
   saveDatabaseOrRollback(() => {
-    appState.activities[idx] = previous;
+    getActivities()[idx] = previous;
     fillActivityFormFields(previous);
     renderActivityStateBar(previous);
   }, "L'annulation/rétablissement n'a pas été enregistré. Réessayez.").then(() => {

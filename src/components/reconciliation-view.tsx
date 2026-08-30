@@ -11,6 +11,8 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { appState, saveDatabaseOrRollback } from "../state/state.ts";
+import { getActivityById } from "../state/activities-repository.ts";
+import { getAccountByCode } from "../state/settings-repository.ts";
 import { showToast, showLoadingOverlay, hideLoadingOverlay, formatCurrency, renderPaginationBar } from "../utils/utils.ts";
 import { logError } from "../utils/logger.ts";
 import {
@@ -51,7 +53,7 @@ function runReconciliationExcelExport(XLSX: any) {
     ];
     const reviewLabels: Record<string, string> = { validated: "Validé manuellement", ignored: "Ignoré" };
     const rows = reconciliationState.results.map((r: any) => {
-      const accountDesc = appState.settings.accounts.find((a: any) => a.code === r.account_code)?.description || "Inconnu";
+      const accountDesc = getAccountByCode(r.account_code)?.description || "Inconnu";
       const activityLabel = r.activityId ? `${r.activityId} : ${r.activityName}` : r.activityName;
       const diff = r.status === "unlogged" ? r.amount_saisi : r.status === "unentered" ? -r.amount_gl : r.diff || 0;
       return [
@@ -383,7 +385,7 @@ function ReconDetailModal({ record, onClose }: { record: any; onClose: () => voi
           >
             <div>
               <strong>Compte :</strong> {record.account_code} (
-              {appState.settings.accounts.find((a: any) => a.code === record.account_code)?.description || "Inconnu"})
+              {getAccountByCode(record.account_code)?.description || "Inconnu"})
             </div>
             <div style={{ marginTop: 4 }}>
               <strong>Référence :</strong> {record.reference}
@@ -463,7 +465,7 @@ function ReconciliationRow({
     diffNode = <span className="text-info bold">-{formatCurrency(r.amount_gl)}</span>;
   }
 
-  const accountDesc = appState.settings.accounts.find((a: any) => a.code === r.account_code)?.description || "Inconnu";
+  const accountDesc = getAccountByCode(r.account_code)?.description || "Inconnu";
 
   return (
     <tr style={r.reviewStatus ? { opacity: 0.65 } : undefined}>
@@ -767,7 +769,7 @@ export function ReconciliationView() {
   };
 
   const acceptSuggestion = (result: any, newReference: string) => {
-    const act = appState.activities.find((a: any) => a.id === result.activityId);
+    const act = getActivityById(result.activityId);
     if (!act || !act.distributions[result.distIndex]) return;
     const prevReference = act.distributions[result.distIndex].reference;
     act.distributions[result.distIndex].reference = newReference;

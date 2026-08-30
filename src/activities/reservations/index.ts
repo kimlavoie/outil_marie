@@ -5,7 +5,8 @@
  * keep working, and keeps the section init + form-collection logic that ties them together.
  * Part 3/5 of the activities module (see render.ts for context).
  */
-import { appState, getActivePricingGrid } from "../../state/state.ts";
+import { getActivePricingGrid } from "../../state/state.ts";
+import { getRoomByName } from "../../state/settings-repository.ts";
 import { OTHER_ROOM_VALUE, getExclusivePillValueEl } from "../../utils/utils.ts";
 import {
   collectStaffFromForm,
@@ -52,7 +53,7 @@ function collectReservationsFromForm() {
         pushIncompleteRowWarning(`Le tarif personnalisé "${tariffDescription}" n'a pas de montant valide : la salle sera facturée 0 $.`);
       }
     } else if (paramVal && clientTypeVal && !isOther) {
-      const roomConfig = appState.settings.rooms.find(r => r.name === roomName);
+      const roomConfig = getRoomByName(roomName);
       const slots = collectSlotsFromCard(card);
       const firstSlotDate = slots.length ? [...slots].map(s => s.date).sort()[0] : "";
       const grid = roomConfig ? getActivePricingGrid(roomConfig, firstSlotDate) : null;

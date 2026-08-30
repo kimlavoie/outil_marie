@@ -15,6 +15,8 @@
  * renderView() for the same reason renderActivities() does.
  */
 import { appState, getFiscalYear, getQuarterNumber, saveUiState, parseLocalDateStr } from "../state/state.ts";
+import { getActivities } from "../state/activities-repository.ts";
+import { getAccounts } from "../state/settings-repository.ts";
 import { escapeHtml, formatCurrency, buildPaginationBarHtml } from "../utils/utils.ts";
 
 interface AccountReportState {
@@ -47,12 +49,12 @@ function renderAccountReport() {
   const accountEntries: Record<string, any[]> = {};
 
   // Initialize for all configured accounts
-  appState.settings.accounts.forEach(acc => {
+  getAccounts().forEach(acc => {
     accountEntries[acc.code] = [];
   });
 
   // Populate from activities
-  appState.activities.forEach(act => {
+  getActivities().forEach(act => {
     if (act.deleted) return;
     if (act.name.trim() === "") return; // Skip blank activities
 
@@ -106,13 +108,13 @@ function renderAccountReport() {
   // chart of accounts (deleted account, stale tariff config...). Surface those as "Compte inconnu"
   // cards instead of silently dropping the entries from the report — otherwise the report total
   // wouldn't match the sum of what was actually saved, with no way to find the discrepancy.
-  const configuredCodes = new Set(appState.settings.accounts.map(a => a.code));
+  const configuredCodes = new Set(getAccounts().map(a => a.code));
   const orphanAccounts = Object.keys(accountEntries)
     .filter(code => code && !configuredCodes.has(code) && accountEntries[code].length > 0)
     .map(code => ({ code, description: "Compte inconnu (compte supprimé ou introuvable)" }));
 
   // Determine which accounts to render
-  let accountsToRender = [...appState.settings.accounts, ...orphanAccounts];
+  let accountsToRender = [...getAccounts(), ...orphanAccounts];
   if (filterAccount) {
     accountsToRender = accountsToRender.filter(a => a.code === filterAccount);
   }

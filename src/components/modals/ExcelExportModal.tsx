@@ -12,6 +12,8 @@
  */
 import React, { useEffect, useState } from "react";
 import { appState } from "../../state/state.ts";
+import { getActivities } from "../../state/activities-repository.ts";
+import { getAccounts, getRooms, getDepartments } from "../../state/settings-repository.ts";
 import { showToast } from "../../utils/utils.ts";
 import { exportToExcel, getDefaultExportOptions, filterActivitiesForExport, type ExcelExportOptions } from "../../services/excel-export.ts";
 import { loadPresets, savePreset, deletePreset, loadSavedOptions, type ExcelReportPreset } from "../../services/excel-export-modal.ts";
@@ -118,7 +120,7 @@ export const ExcelExportModal: React.FC = () => {
   const setAllAccounts = (checked: boolean) =>
     setOptions(prev => ({
       ...prev,
-      columns: { ...prev.columns, accounts: checked ? (appState.settings.accounts || []).map(a => a.code) : [] }
+      columns: { ...prev.columns, accounts: checked ? (getAccounts() || []).map(a => a.code) : [] }
     }));
 
   const applyPreset = (presetId: string) => {
@@ -165,16 +167,16 @@ export const ExcelExportModal: React.FC = () => {
   };
 
   const allFiscalYears = Array.from(
-    new Set(appState.activities.filter(a => !a.deleted && a.date_start).map(a => a.date_start.substring(0, 4)))
+    new Set(getActivities().filter(a => !a.deleted && a.date_start).map(a => a.date_start.substring(0, 4)))
   )
     .sort()
     .reverse();
-  const depts = appState.settings.departments || [];
-  const rooms = (appState.settings.rooms || []).map(r => r.name);
-  const accounts = appState.settings.accounts || [];
+  const depts = getDepartments() || [];
+  const rooms = (getRooms() || []).map(r => r.name);
+  const accounts = getAccounts() || [];
 
-  const totalActivities = appState.activities.filter(a => !a.deleted && a.name?.trim() !== "").length;
-  const filteredCount = filterActivitiesForExport(appState.activities, options.filters).length;
+  const totalActivities = getActivities().filter(a => !a.deleted && a.name?.trim() !== "").length;
+  const filteredCount = filterActivitiesForExport(getActivities(), options.filters).length;
 
   return (
     <>

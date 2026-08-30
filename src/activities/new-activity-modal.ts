@@ -3,7 +3,8 @@
  * shared record-building helpers used by that modal, the "Estimation" quick button, and
  * duplication. Split out of activities-form.ts (activity drawer form wiring).
  */
-import { appState, saveDatabase } from "../state/state.ts";
+import { saveDatabase } from "../state/state.ts";
+import { addActivity, getActivityById } from "../state/activities-repository.ts";
 import { showToast } from "../utils/utils.ts";
 import { requireNonEmpty } from "../utils/validation.ts";
 import { activitiesState, renderActivities } from "./render.ts";
@@ -142,20 +143,20 @@ function buildNewActivityRecord(id: string, name: string, mode: string) {
 
 export function createActivity(name: string, mode = "soumission") {
   const id = generateNextActivityId();
-  appState.activities.push(buildNewActivityRecord(id, name, mode));
+  addActivity(buildNewActivityRecord(id, name, mode));
   saveDatabase();
   return id;
 }
 
 export function createDraftActivity(name: string) {
   const id = generateNextActivityId();
-  appState.activities.push(buildNewActivityRecord(id, name, "estimation"));
+  addActivity(buildNewActivityRecord(id, name, "estimation"));
   activitiesState.draftActivityId = id;
   return id;
 }
 
 export function duplicateActivityAndOpen(sourceId: string) {
-  const source = appState.activities.find((a: any) => a.id === sourceId);
+  const source = getActivityById(sourceId);
   if (!source) return;
 
   const clone = JSON.parse(JSON.stringify(source));
@@ -168,7 +169,7 @@ export function duplicateActivityAndOpen(sourceId: string) {
   clone.billed_at = "";
   clone.completed_at = "";
 
-  appState.activities.push(clone);
+  addActivity(clone);
   saveDatabase();
   renderActivities();
   openActivityDrawer(clone.id);

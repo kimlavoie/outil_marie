@@ -9,11 +9,11 @@
  * imports already in this codebase (e.g. utils.ts <-> state.ts).
  */
 import { appState, isFavoriteActivity, toggleFavoriteActivity, saveDatabaseOrRollback } from "../state/state.ts";
+import { getActivityById } from "../state/activities-repository.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { openActivityDetailsModal } from "./financials.ts";
 import { duplicateActivityAndOpen } from "./form.ts";
 import { renderActivities } from "./render.ts";
-import type { Activity } from "../types/activity.ts";
 
 function closeActivityContextMenu() {
   const existing = document.getElementById("activity-context-menu");
@@ -23,7 +23,7 @@ function closeActivityContextMenu() {
 function showActivityContextMenu(e: MouseEvent, id: string) {
   closeActivityContextMenu();
 
-  const act = appState.activities.find((a: Activity) => a.id === id);
+  const act = getActivityById(id);
   if (!act) return;
   const isFilled = act.name.trim() !== "";
 
@@ -60,7 +60,7 @@ function showActivityContextMenu(e: MouseEvent, id: string) {
     danger: true,
     onClick: () => {
       if (confirm(`Voulez-vous vraiment supprimer l'activité ${id} ?`)) {
-        const target = appState.activities.find((a: Activity) => a.id === id);
+        const target = getActivityById(id);
         const prevDeleted = target?.deleted;
         const prevFavorites = appState.favorites ? [...appState.favorites] : [];
         if (target) {

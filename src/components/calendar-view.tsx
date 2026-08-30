@@ -16,7 +16,9 @@
  * useCalendarCommand().
  */
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import { appState, parseLocalDateStr } from "../state/state.ts";
+import { parseLocalDateStr } from "../state/state.ts";
+import { getActivities } from "../state/activities-repository.ts";
+import { getRooms } from "../state/settings-repository.ts";
 import { getRoomColor, getReservationRoomLabel } from "../utils/utils.ts";
 import { openActivityDrawer, openActivityDetailModal } from "../activities/financials.ts";
 import { createDraftActivity } from "../activities/form.ts";
@@ -65,7 +67,7 @@ interface ParsedActivity {
 
 function getParsedActivities(): ParsedActivity[] {
   const list: ParsedActivity[] = [];
-  appState.activities.forEach(act => {
+  getActivities().forEach(act => {
     if (act.deleted) return;
     if (!act.name || act.name.trim() === "" || !act.date_start) return;
     const start = parseLocalDateStr(act.date_start);
@@ -245,7 +247,7 @@ export function CalendarModal({ command }: { command: Command | null }) {
     lastSeqRef.current = command.seq;
     setRefDate(command.refDate);
     setViewMode(command.viewMode);
-    setLegendOpen(appState.settings.rooms.length <= 5);
+    setLegendOpen(getRooms().length <= 5);
     setIsOpen(true);
   }, [command]);
 
@@ -319,7 +321,7 @@ export function CalendarModal({ command }: { command: Command | null }) {
     setRefDate(d);
   };
 
-  const rooms = appState.settings.rooms;
+  const rooms = getRooms();
   const parsedList = getParsedActivities();
 
   let monthLabel = "";
