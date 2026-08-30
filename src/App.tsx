@@ -26,6 +26,7 @@ import { restoreUiState } from "./state/state.ts";
 import { getActivities } from "./state/activities-repository.ts";
 import { populateDropdowns } from "./navigation.ts";
 import { useCurrentView, setCurrentView } from "./state/view-state.ts";
+import { getCurrentUserRole, canAccessView } from "./state/permissions.ts";
 
 // Fire-and-forget: not needed for the app to be usable, so it doesn't block mounting.
 async function requestPersistentStorage() {
@@ -41,6 +42,11 @@ async function requestPersistentStorage() {
 
 export const App: React.FC = () => {
   const currentView = useCurrentView();
+  // Guards against the persisted/restored view (localStorage, a search/quick-access jump, a
+  // keyboard shortcut) being one the current role can't see — falls back to the dashboard rather
+  // than rendering nothing. Doesn't touch currentView/view-state.ts itself, just what gets
+  // rendered/highlighted, so nothing here changes today while every role is "full_access".
+  const effectiveView = canAccessView(currentView, getCurrentUserRole()) ? currentView : "dashboard";
   const settingsCommand = useSettingsCommand();
   const calendarCommand = useCalendarCommand();
   const [isHelpOpen, setIsHelpOpen] = React.useState(false);
@@ -95,13 +101,13 @@ export const App: React.FC = () => {
   return (
     <div className="app-container">
       <Sidebar
-        currentView={currentView}
+        currentView={effectiveView}
         onSelectView={handleSelectView}
         onOpenHelp={() => setIsHelpOpen(true)}
       />
 
       <main className="main-content">
-        <Header currentView={currentView} onSelectView={handleSelectView} />
+        <Header currentView={effectiveView} onSelectView={handleSelectView} />
 
         {/* Global Backup Banners */}
         <div
@@ -135,12 +141,12 @@ export const App: React.FC = () => {
         </div>
 
         <div className="view-container">
-          {currentView === "dashboard" && <DashboardView />}
-          {currentView === "activities" && <ActivitiesView />}
-          {currentView === "validation" && <ReconciliationView />}
-          {currentView === "account-report" && <AccountReportView onSelectView={handleSelectView} />}
-          {currentView === "settings" && <SettingsView command={settingsCommand} />}
-          {currentView === "backup" && <BackupView />}
+          {effectiveView === "dashboard" && <DashboardView />}
+          {effectiveView === "activities" && <ActivitiesView />}
+          {effectiveView === "validation" && <ReconciliationView />}
+          {effectiveView === "account-report" && <AccountReportView onSelectView={handleSelectView} />}
+          {effectiveView === "settings" && <SettingsView command={settingsCommand} />}
+          {effectiveView === "backup" && <BackupView />}
         </div>
       </main>
 

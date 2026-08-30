@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useAppState, saveDatabaseOrRollback } from "../../state/state.ts";
+import { getCurrentUserRole, canAccessView } from "../../state/permissions.ts";
 import logoUrl from "../../assets/logo.png";
 
 interface SidebarProps {
@@ -19,19 +20,26 @@ export const NAV_ITEMS = [
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView, onOpenHelp }) => {
   const theme = useAppState(s => s.settings.theme || "dark");
+  // Every real user is "full_access" today (no login yet), so this filter is a no-op in
+  // practice — see state/permissions.ts.
+  const visibleNavItems = NAV_ITEMS.filter(item => canAccessView(item.id, getCurrentUserRole()));
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && e.key >= "1" && e.key <= "6") {
         const index = parseInt(e.key, 10) - 1;
-        if (NAV_ITEMS[index]) {
+        if (visibleNavItems[index]) {
           e.preventDefault();
-          onSelectView(NAV_ITEMS[index].id);
+          onSelectView(visibleNavItems[index].id);
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+    // visibleNavItems is a fresh array every render (derived from a role that's static per
+    // session) — omitted from deps on purpose, since including it would just rebind this
+    // listener every render for no behavioral difference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onSelectView]);
 
   const handleToggleTheme = () => {
@@ -56,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView, onO
       </div>
 
       <nav className="nav-menu">
-        {NAV_ITEMS.map(item => (
+        {visibleNavItems.map(item => (
           <li
             key={item.id}
             className={`nav-item ${currentView === item.id ? "active" : ""}`}
