@@ -5,7 +5,7 @@ import { DEFAULT_CONFIG } from "./config-defaults.ts";
 import { checkBackupReminder } from "../services/backup/reminder.ts";
 import { scheduleAutoBackupWrite } from "../services/backup/auto-backup.ts";
 
-import { type AppState, appState, setAppState, notifyAppStateChange, subscribeAppState, useAppState } from "./store.ts";
+import { type AppState, appState, setAppState, notifyAppStateChange, subscribeAppState, useAppState, CURRENT_SCHEMA_VERSION } from "./store.ts";
 import { getDefaultFiscalYear } from "./date-helpers.ts";
 import {
   sanitizeActivitiesList,
@@ -99,6 +99,7 @@ async function loadDatabase(): Promise<void> {
     }
 
     if (dbData) {
+      appState.schema_version = dbData.schema_version || 1;
       appState.settings = dbData.settings || appState.settings;
       appState.activities = sanitizeActivitiesList(dbData.activities);
       appState.favorites = dbData.favorites || [];
@@ -178,6 +179,7 @@ async function loadDatabase(): Promise<void> {
 
 // Seed Initial Database with empty activities list
 async function seedDatabase(): Promise<void> {
+  appState.schema_version = CURRENT_SCHEMA_VERSION;
   appState.settings = {
     theme: "dark",
     rooms: [...DEFAULT_CONFIG.rooms],
@@ -240,6 +242,7 @@ async function refreshFromRemoteChange(): Promise<void> {
   try {
     const dbData = await getAppStateFromDb();
     if (!dbData) return;
+    appState.schema_version = dbData.schema_version || 1;
     appState.settings = dbData.settings || appState.settings;
     appState.activities = sanitizeActivitiesList(dbData.activities);
     appState.favorites = (dbData.favorites || []).filter((id: string) => appState.activities.some(a => a.id === id && !a.deleted));

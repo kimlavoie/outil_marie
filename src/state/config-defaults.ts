@@ -20,6 +20,7 @@ function buildSeedPricingGrid(gridId: string, paramId: string, tarifPairs: { des
 const DEFAULT_CONFIG = {
   rooms: [
     {
+      id: "room-poly",
       name: "Salle Polyvalente (200.2)",
       color: "#4f46e5",
       pricing_grids: [
@@ -34,6 +35,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-sfb",
       name: "Salle François-Brassard (326.1)",
       color: "#059669",
       pricing_grids: [
@@ -48,6 +50,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-hall-sfb",
       name: "Hall de la salle François-Brassard (341.1)",
       color: "#d97706",
       pricing_grids: [
@@ -62,6 +65,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-salon-sfb",
       name: "Petit salon de la salle François-Brassard (326.1)",
       color: "#db2777",
       pricing_grids: [
@@ -76,6 +80,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-billetterie",
       name: "Billetterie de la salle François-Brassard (320.1)",
       color: "#0891b2",
       pricing_grids: [
@@ -90,6 +95,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-pas-perdus",
       name: "Pas perdus (201.2)",
       color: "#7c3aed",
       pricing_grids: [
@@ -104,6 +110,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-cafeteria",
       name: "Cafétéria (120.2)",
       color: "#ea580c",
       pricing_grids: [
@@ -118,6 +125,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-cantine-jangers",
       name: "Cantine Pavillon J.-Angers (CANATM)",
       color: "#0284c7",
       pricing_grids: [
@@ -132,6 +140,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-cantine-plg",
       name: "Cantine Pavillon Lionel-Gaudreault (CANPLG)",
       color: "#65a30d",
       pricing_grids: [
@@ -146,6 +155,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-piscine",
       name: "Piscine (261.1)",
       color: "#0d9488",
       pricing_grids: [
@@ -160,6 +170,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-gymnase",
       name: "Gymnase (249.1)",
       color: "#ca8a04",
       pricing_grids: [
@@ -174,6 +185,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-jardin",
       name: "Jardin intérieur (JAR.1)",
       color: "#16a34a",
       pricing_grids: [
@@ -188,6 +200,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-foret",
       name: "Terrain forêt nourricière (FON.1)",
       color: "#4d7c0f",
       pricing_grids: [
@@ -202,6 +215,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-piekouagami",
       name: "Terrain Piékouagami-PLG (TER-03)",
       color: "#9333ea",
       pricing_grids: [
@@ -216,6 +230,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-synthetique",
       name: "Surface synthétique (EDU.1)",
       color: "#be185d",
       pricing_grids: [
@@ -230,6 +245,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-club-social",
       name: "Local Club social (841.0)",
       color: "#475569",
       pricing_grids: [
@@ -244,6 +260,7 @@ const DEFAULT_CONFIG = {
       linked_tasks: [] as { id: string; description: string }[]
     },
     {
+      id: "room-halldg",
       name: "Hall de la direction générale (HALLDG)",
       color: "#0891b2",
       pricing_grids: [

@@ -91,6 +91,11 @@ export interface PricingGrid {
 }
 
 export interface Room {
+  // Optional for the same reason as AppState.schema_version: existing rooms only get one once
+  // migrateRoomsConfig() runs (see migrations.ts), and plenty of Room-shaped test fixtures don't
+  // set one. `name` remains the key every lookup/cascade-rename actually uses; `id` exists purely
+  // so a future migration tool has a stable identifier to key a Firestore document on.
+  id?: string;
   name: string;
   color: string;
   abbreviation?: string;
@@ -125,7 +130,19 @@ export interface SchedulableTask {
   groups: ConditionGroup[];
 }
 
+// Bumped whenever the shape of AppState (or what a nested record means) changes in a way a
+// future migration/import tool would need to know about — e.g. adding a stable `id` to rooms, or
+// eventually moving off this single-blob-per-save model when this data moves to Firestore. Not
+// used by anything at runtime yet; it exists so a backup/export JSON carries a self-describing
+// version instead of a migration script having to guess the shape from which fields are present.
+export const CURRENT_SCHEMA_VERSION = 1;
+
 export interface AppState {
+  // Optional rather than required: plenty of AppState-shaped values in the codebase (test
+  // fixtures, very old backups/exports predating this field) legitimately don't have it yet.
+  // Real app state always sets it explicitly (see the initializer below, loadDatabase() and
+  // seedDatabase() in state.ts).
+  schema_version?: number;
   settings: {
     theme: string;
     rooms: Room[];
@@ -147,6 +164,7 @@ export interface AppState {
 
 // Global App State
 export let appState: AppState = {
+  schema_version: CURRENT_SCHEMA_VERSION,
   settings: {
     theme: "dark",
     rooms: [...DEFAULT_CONFIG.rooms],

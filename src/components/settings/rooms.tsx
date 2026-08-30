@@ -219,7 +219,9 @@ export function RoomModal({ name, onClose, bump }: { name: string | null | undef
     const parsedSetupFee = parseFloat(setupFee);
     const validSetupFee = isNaN(parsedSetupFee) || parsedSetupFee < 0 ? 0 : parsedSetupFee;
 
+    const existingRoom = originalName ? getRoomByName(originalName) : null;
     const payload = {
+      id: existingRoom?.id || generateUid("room"),
       name: newName,
       abbreviation: abbreviation.trim(),
       color,

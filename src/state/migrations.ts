@@ -31,6 +31,8 @@ export function sanitizeActivitiesList(rawActivities: any[]): any[] {
 // and ensure the linked_* configuration arrays exist.
 export function migrateRoomsConfig(rooms: any[]) {
   (rooms || []).forEach(room => {
+    if (!room.id) room.id = generateUid("room");
+
     if (!room.tarifs && !room.pricing_grids) {
       const tarifs = [{ id: generateUid("tarif"), description: "Interne", amount: room.price_internal || 0 }];
       if (room.price_external > 0) {
