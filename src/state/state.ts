@@ -15,6 +15,7 @@ import {
   migrateActivities
 } from "./migrations.ts";
 import { getAppStateFromDb, saveAppStateToDb, saveSafetyBackupToDb, clearAllActivityVersionsFromDb } from "./db.ts";
+import { activitiesState } from "../activities/activities-table-state.ts";
 
 // Free technical services (no fee): paid technical items (location de projecteur, piano à
 // queue, projecteur / équipement informatique) live in appState.settings.services instead, so
@@ -210,28 +211,54 @@ let lastSaveFailed = false;
 
 // Cross-tab change notification: the app has no locking around IndexedDB, so if the user opens
 // it in two tabs, the second tab's saveDatabase() calls silently overwrite whatever the first
-// tab wrote, with no indication either tab is now working from stale in-memory data. Each tab
-// broadcasts a heartbeat after every successful save; on hearing one from a different tab, a
-// persistent (non-auto-dismissing) toast tells the user to reload before their next edit
-// clobbers the other tab's changes. Guarded by a feature check since BroadcastChannel doesn't
+// tab wrote. Each tab broadcasts a heartbeat after every successful save; on hearing one from a
+// different tab, this tab re-reads IndexedDB and refreshes appState in place — the same
+// "something changed elsewhere, re-fetch and notify subscribers" shape a real-time backend
+// listener would use later, rehearsed here against IndexedDB as the data source so swapping the
+// source later is a smaller change. Guarded by a feature check since BroadcastChannel doesn't
 // exist in the Node test environment. Also requires `window` (rather than just checking
 // BroadcastChannel itself) because Node exposes a global BroadcastChannel too — creating one
 // there would leave an open handle that keeps the test process alive indefinitely.
 const TAB_INSTANCE_ID = generateUid("tab");
 const crossTabSyncChannel =
   typeof window !== "undefined" && typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("outil_marie_sync") : null;
+// Only the drawer's open activity can carry unsaved edits (typed but not yet autosaved) that a
+// plain appState refresh won't touch — refreshing elsewhere (lists, dashboard, settings) is
+// always safe since nothing there holds unsaved local edits outside appState itself. So the
+// warning below fires only when a drawer is open, and only once per tab session, rather than on
+// every remote change.
 let remoteChangeWarningShown = false;
 
 if (crossTabSyncChannel) {
   crossTabSyncChannel.onmessage = (e: MessageEvent) => {
-    if (remoteChangeWarningShown || e.data?.tabId === TAB_INSTANCE_ID) return;
+    if (e.data?.tabId === TAB_INSTANCE_ID) return;
+    refreshFromRemoteChange();
+  };
+}
+
+async function refreshFromRemoteChange(): Promise<void> {
+  try {
+    const dbData = await getAppStateFromDb();
+    if (!dbData) return;
+    appState.settings = dbData.settings || appState.settings;
+    appState.activities = sanitizeActivitiesList(dbData.activities);
+    appState.favorites = (dbData.favorites || []).filter((id: string) => appState.activities.some(a => a.id === id && !a.deleted));
+    appState.selected_year = dbData.selected_year || appState.selected_year;
+    appState.selected_quarters = dbData.selected_quarters || appState.selected_quarters;
+    notifyAppStateChange();
+  } catch (e) {
+    logError("state", "rafraîchissement suite à une modification dans un autre onglet", e);
+    return;
+  }
+
+  if (!remoteChangeWarningShown && activitiesState.openedActivitySnapshot) {
     remoteChangeWarningShown = true;
     showToast(
-      "Les données ont été modifiées dans un autre onglet. Rechargez cette page avant de continuer, sinon vos prochaines modifications risquent d'écraser ces changements.",
+      "Les données ont été mises à jour depuis un autre onglet. Si vous modifiez actuellement une activité, enregistrez ou rechargez cette page pour éviter d'écraser ces changements.",
       "warning",
       0
     );
-  };
+  }
 }
 
 // Save state to IndexedDB. Returns whether the write actually succeeded, so callers that
