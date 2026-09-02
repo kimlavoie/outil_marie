@@ -14,6 +14,18 @@ body {
   transition: var(--transition-smooth);
 }
 
+/* #root has no height of its own by default, so it (and everything under
+   it) sizes to its content instead of the 100vh body gives it. With the
+   activities table's row count driving that content height, the whole
+   document would grow past the window and the browser would draw its own
+   page-level scrollbar on top of the app's internal ones. Pinning #root to
+   the body's height and clipping it keeps all scrolling inside the
+   explicit overflow:auto containers below (.view-container, .table-responsive). */
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
 .app-container {
   display: flex;
   width: 100%;
@@ -30,12 +42,24 @@ body {
 
 .view-container {
   flex-grow: 1;
+  min-height: 0;
   padding: 32px;
   overflow-y: auto;
   overflow-x: auto;
   position: relative;
   display: flex;
   flex-direction: column;
+}
+
+/* A table-card manages its own vertical scroll internally (see
+   .table-card:has(.table-responsive) in _table.scss) and is sized to fill
+   this container exactly. Despite that, .view-container's own overflow-y:auto
+   was still picking up the table's full unclipped row count as scrollable
+   overflow, producing a second, always-empty scrollbar on top of the
+   table's real one. Since the table already scrolls itself in that case,
+   the outer container has nothing left to scroll. */
+.view-container:has(> .table-card) {
+  overflow-y: hidden;
 }
 
 .view-section {
