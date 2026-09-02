@@ -14,9 +14,8 @@
  * reservations/subrows.ts's addStaffRow()/addServiceRow()/addFeeRow() still do raw
  * insertAdjacentHTML into them exactly as before, unchanged. That's deliberate: other React
  * roots on this same card reach into these same containers directly —
- * BarHostTechFields.tsx's technical-services toggle (autoAddProjectorIfNeeded/
- * autoRemoveProjectorIfNeeded) and RoomTariffFields.tsx's room select
- * (autoAddLinkedStaffAndFees) — and none of those roots know about this one's state. If React
+ * RoomTariffFields.tsx's room select (autoAddLinkedStaffAndFees) — and none of those roots know
+ * about this one's state. If React
  * reconciled these lists from state here, those cross-root DOM insertions would be invisible to
  * it and could get silently wiped out on this component's next re-render (the same class of bug
  * fixed in bulk-actions.ts earlier, see its comment there). Keeping the three lists
