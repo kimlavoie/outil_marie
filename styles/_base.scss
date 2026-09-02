@@ -14,14 +14,21 @@ body {
   transition: var(--transition-smooth);
 }
 
-/* #root has no height of its own by default, so it (and everything under
-   it) sizes to its content instead of the 100vh body gives it. With the
-   activities table's row count driving that content height, the whole
-   document would grow past the window and the browser would draw its own
-   page-level scrollbar on top of the app's internal ones. Pinning #root to
-   the body's height and clipping it keeps all scrolling inside the
-   explicit overflow:auto containers below (.view-container, .table-responsive). */
+/* #root has no size of its own by default, so it (and everything under it)
+   sizes to its content instead of filling the body. Vertically, that let
+   the activities table's row count grow the whole document past the window
+   and draw the browser's own page-level scrollbar on top of the app's
+   internal ones. Horizontally, since body lays #root out in a row (only the
+   cross axis stretches automatically), #root would shrink-to-fit to
+   whatever its widest descendant needed instead of the full viewport width
+   — usually masked by some row's content being wide enough to reach the
+   edge anyway, but exposed as a bare gap of body's background whenever
+   nothing currently on screen needed the full width (e.g. fewer table rows
+   after switching page size). Pinning #root to the body's exact size and
+   clipping it keeps all scrolling inside the explicit overflow:auto
+   containers below (.view-container, .table-responsive). */
 #root {
+  width: 100%;
   height: 100%;
   overflow: hidden;
 }
