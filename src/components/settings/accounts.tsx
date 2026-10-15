@@ -52,6 +52,11 @@ export function AccountsPanel({
             <div className="settings-list-item-info">
               <span className="settings-list-item-code">{acc.code}</span>
               <span className="settings-list-item-desc">{acc.description}</span>
+              {acc.excluded_from_reconciliation && (
+                <span className="badge badge-warning" style={{ marginLeft: 8 }}>
+                  Ignoré au rapprochement
+                </span>
+              )}
             </div>
             <div className="flex gap-2" onClick={e => e.stopPropagation()}>
               <button className="btn-icon" title="Supprimer" style={{ color: "var(--danger)" }} onClick={() => deleteAccount(acc.code)}>
@@ -71,11 +76,13 @@ export function AccountModal({ code, onClose, bump }: { code: string | null | un
   const existing = originalCode ? getAccounts().find(a => a.code === originalCode) : null;
   const [codeVal, setCodeVal] = useState("");
   const [desc, setDesc] = useState("");
+  const [excludedFromReconciliation, setExcludedFromReconciliation] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
     setCodeVal(existing ? existing.code : "");
     setDesc(existing ? existing.description : "");
+    setExcludedFromReconciliation(existing ? !!existing.excluded_from_reconciliation : false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, originalCode]);
 
@@ -92,7 +99,7 @@ export function AccountModal({ code, onClose, bump }: { code: string | null | un
       return;
     }
 
-    const payload = { code: newCode, description };
+    const payload = { code: newCode, description, excluded_from_reconciliation: excludedFromReconciliation };
     const prevAccounts = [...getAccounts()];
     const touchedDistributions: { dist: { account_code: string }; prevCode: string }[] = [];
 
@@ -165,6 +172,16 @@ export function AccountModal({ code, onClose, bump }: { code: string | null | un
           value={desc}
           onChange={e => setDesc(e.target.value)}
         />
+      </div>
+      <div className="form-group">
+        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={excludedFromReconciliation}
+            onChange={e => setExcludedFromReconciliation(e.target.checked)}
+          />
+          Ignorer ce compte lors du rapprochement GL
+        </label>
       </div>
     </Modal>
   );

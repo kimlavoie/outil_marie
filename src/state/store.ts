@@ -38,6 +38,9 @@ export interface Service {
 export interface Account {
   code: string;
   description: string;
+  // When true, this account is excluded from the GL reconciliation (e.g. accounts the user
+  // doesn't manage in the accounting software) — see src/services/reconciliation.ts.
+  excluded_from_reconciliation?: boolean;
 }
 
 interface GlobalTask {

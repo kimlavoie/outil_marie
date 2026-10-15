@@ -118,6 +118,28 @@ test("ignores a bar revenue line with no account_code or a zero amount", () => {
   assert.equal(results.length, 0);
 });
 
+test("skips an account flagged excluded_from_reconciliation entirely, for distributions, bar revenue and GL-only lines", () => {
+  const prevAccounts = appState.settings.accounts;
+  appState.settings.accounts = [{ code: "892-1", description: "Ignoré", excluded_from_reconciliation: true }];
+  try {
+    const activities = [
+      activity({
+        distributions: [{ account_code: "892-1", reference: "RI001", amount: 100 }],
+        bar_revenue_lines: [{ account_code: "892-1", amount: 30, receipt_number: "RI003" }]
+      })
+    ];
+    const ledger = [
+      { "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 },
+      { "Date versée": "2025-08-16", "Poste budgétaire": "892-1", "No référence": "RI002", "Montant courant": -40 }
+    ];
+
+    const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+    assert.equal(results.length, 0);
+  } finally {
+    appState.settings.accounts = prevAccounts;
+  }
+});
+
 test("marks a ledger entry with no matching activity distribution as unentered", () => {
   const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
 

@@ -19,6 +19,7 @@ import {
   deleteReconDecisionFromDb
 } from "../state/state.ts";
 import { getActivities } from "../state/activities-repository.ts";
+import { getAccounts } from "../state/settings-repository.ts";
 
 // Reconciliation view/engine state, grouped so ledger data and UI state live together
 const reconciliationState = {
@@ -154,6 +155,11 @@ function findBestColumnMatch(headers: string[], possibleNames: string[]) {
 function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[], selectedYear: string, selectedQuarters: number[]) {
   const results: any[] = [];
 
+  // Accounts the user flagged as not managed in the accounting software (settings > Comptes) are
+  // left out entirely: neither their GL lines nor their app-side distributions/bar revenue should
+  // surface as unlogged/unentered/diff noise.
+  const excludedAccounts = new Set(getAccounts().filter(a => a.excluded_from_reconciliation).map(a => a.code));
+
   // 1. Group ledger transactions by Account & Clean Reference
   const ledgerGroups: Record<string, any> = {};
 
@@ -168,6 +174,7 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
     }
 
     const acc = String(tx["Poste budgétaire"] || "").trim();
+    if (excludedAccounts.has(acc)) return;
 
     // The reference can be in "No référence" (typically 6-digit numeric) or buried inside "Nom"
     // (e.g. "PAIEMENT RI001 SALLE X" or a plain number amid other text)
@@ -222,6 +229,7 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
 
     // Check reconciliation for each distribution (reference is now defined per account)
     act.distributions.forEach((dist: any, distIndex: number) => {
+      if (excludedAccounts.has(dist.account_code)) return;
       const distRef = cleanRef(dist.reference);
 
       if (!distRef) {
@@ -287,6 +295,7 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
     // même logique pour le rapport de comptes).
     (act.bar_revenue_lines || []).forEach((bar: any, barIndex: number) => {
       if (!bar.account_code || !(bar.amount > 0)) return;
+      if (excludedAccounts.has(bar.account_code)) return;
       const barRef = cleanRef(bar.receipt_number);
 
       if (!barRef) {
