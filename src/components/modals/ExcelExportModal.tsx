@@ -15,7 +15,13 @@ import { appState } from "../../state/state.ts";
 import { getActivities } from "../../state/activities-repository.ts";
 import { getAccounts, getRooms, getDepartments } from "../../state/settings-repository.ts";
 import { showToast } from "../../utils/utils.ts";
-import { exportToExcel, getDefaultExportOptions, filterActivitiesForExport, type ExcelExportOptions } from "../../services/excel-export.ts";
+import {
+  exportToExcel,
+  getDefaultExportOptions,
+  getQuarterEndExportOptions,
+  filterActivitiesForExport,
+  type ExcelExportOptions
+} from "../../services/excel-export.ts";
 import { loadPresets, savePreset, deletePreset, loadSavedOptions, type ExcelReportPreset } from "../../services/excel-export-modal.ts";
 
 const STATE_OPTIONS = [
@@ -163,7 +169,9 @@ export const ExcelExportModal: React.FC = () => {
 
   const handleSubmit = () => {
     close();
-    exportToExcel(options.mode === "standard" ? getDefaultExportOptions() : options);
+    if (options.mode === "standard") exportToExcel(getDefaultExportOptions());
+    else if (options.mode === "quarter_end") exportToExcel(getQuarterEndExportOptions());
+    else exportToExcel(options);
   };
 
   const allFiscalYears = Array.from(
@@ -209,6 +217,20 @@ export const ExcelExportModal: React.FC = () => {
               <div className="mode-card-content">
                 <span className="mode-card-title">📄 Rapport Standard</span>
                 <span className="mode-card-desc">Génère le rapport Excel complet avec la période active et les colonnes par défaut.</span>
+              </div>
+            </label>
+
+            <label className={`excel-export-mode-card ${options.mode === "quarter_end" ? "active" : ""}`}>
+              <input
+                type="radio"
+                name="excel_mode"
+                value="quarter_end"
+                checked={options.mode === "quarter_end"}
+                onChange={() => setOptions(prev => ({ ...prev, mode: "quarter_end" }))}
+              />
+              <div className="mode-card-content">
+                <span className="mode-card-title">📅 Rapport de fin de trimestre</span>
+                <span className="mode-card-desc">Rapport simplifié (activité, date, référence, comptes 892 utilisés et revenus totaux) pour la fin de trimestre.</span>
               </div>
             </label>
 

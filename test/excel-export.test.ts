@@ -2,7 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { appState } from "../src/state/state.ts";
-import { getExcelColName, runExportToExcel } from "../src/services/excel-export.ts";
+import {
+  getExcelColName,
+  runExportToExcel,
+  getQuarterEndExportOptions,
+  addBoldStyleToSheetXml,
+  addBoldStyleToColumnXml,
+  freezePanesXml,
+  buildQuarterEndBlob
+} from "../src/services/excel-export.ts";
 
 // excel-export.ts talks to `document` (loading overlay/toasts, which no-op when the elements
 // aren't found) and the global `XLSX` (declared `any` in src/utils/globals.d.ts, provided by
@@ -31,7 +39,11 @@ function makeXlsxMock() {
     },
     writeFile: (wb: any, filename: string) => {
       lastWriteFile = { wb, filename };
-    }
+    },
+    // Deliberately not a valid zip — only used by the quarter_end path (buildQuarterEndBlob),
+    // which is expected to fall back gracefully (see its own JSZip.loadAsync try/catch) when the
+    // bytes it gets back aren't styleable, rather than needing a real xlsx roundtrip in every test.
+    write: () => new Uint8Array([0, 0, 0, 0])
   };
 }
 
@@ -503,5 +515,216 @@ test("generateExcelWorkbook supports custom filters, column selection, and SOMMA
   const summaryRows: any[][] = xlsx.sheets["SOMMAIRE"].data;
   assert.ok(summaryRows.some(r => r[0] === "SOMMAIRE SYNTHÉTIQUE DU RAPPORT D'ACTIVITÉS"));
   assert.ok(summaryRows.some(r => r[0] === "Total activités incluses :" && r[1] === 1));
+});
+
+test("quarter-end report only includes id/name/date_start/references, 892 accounts with a non-zero amount, and total revenue", async () => {
+  const xlsx = makeXlsxMock();
+  (globalThis as any).XLSX = xlsx;
+  appState.settings = baseSettings({
+    accounts: [
+      { code: "892-0000-00-000", description: "SCOLAIRE" },
+      { code: "892-1111-00-000", description: "ADULTE" },
+      { code: "892-2222-00-000", description: "JAMAIS UTILISÉ" },
+      { code: "700-0000-00-000", description: "HORS 892" }
+    ]
+  });
+  appState.activities = [
+    makeActivity({
+      id: "a1",
+      name: "Spectacle Musique",
+      date_start: "2025-08-01",
+      distributions: [
+        { account_code: "892-0000-00-000", amount: 100, reference: "RI001" },
+        { account_code: "892-2222-00-000", amount: 0 },
+        { account_code: "700-0000-00-000", amount: 50 }
+      ],
+      bar_revenue_lines: [{ account_code: "892-1111-00-000", amount: 25, receipt_number: "RI002" }]
+    }),
+    makeActivity({
+      id: "a2",
+      name: "Activité sans revenu",
+      date_start: "2025-08-02",
+      distributions: [{ account_code: "892-0000-00-000", amount: 0 }]
+    }),
+    makeActivity({
+      id: "a3",
+      name: "Spectacle Théâtre",
+      date_start: "2025-08-03",
+      distributions: [{ account_code: "892-0000-00-000", amount: 0 }],
+      bar_revenue_lines: [{ account_code: "892-1111-00-000", amount: 10, receipt_number: "RI003" }]
+    })
+  ];
+  appState.selected_year = "2025-2026";
+  appState.selected_quarters = [1];
+
+  await runExportToExcel(getExcelColName, xlsx, getQuarterEndExportOptions());
+
+  assert.ok(xlsx.sheetOrder.includes("ACTIVITÉS"));
+  assert.equal(xlsx.sheetOrder.includes("SALLES"), false);
+  assert.equal(xlsx.sheetOrder.includes("SOMMAIRE"), false);
+
+  const ws = xlsx.sheets["ACTIVITÉS"];
+  const headers: string[] = ws.data[0];
+  // ID, NOM, DATE DÉBUT, RÉFÉRENCES, then the two 892 accounts actually used, then total revenue.
+  assert.deepEqual(
+    headers.map(h => h.split("\n")[0]),
+    [
+      "NUMERO ACTIVITE",
+      "NOM DE L'ACTIVITÉ",
+      "DATE DÉBUT",
+      "NUMÉRO DE FACTURE, RÉQUISITION INTERNE OU ENCAISSEMENT",
+      "892-0000-00-000",
+      "892-1111-00-000",
+      "REVENUS TOTAL RÉÈL"
+    ]
+  );
+
+  // Account columns are 15 wide, per spec.
+  assert.equal(ws["!cols"][4].wch, 15);
+  assert.equal(ws["!cols"][5].wch, 15);
+
+  // Header row is taller; the totals row is its own row (so 2 data rows + header + totals).
+  assert.equal(ws["!rows"][0].hpt, 30);
+  assert.equal(ws.data.length, 4);
+
+  // AutoFilter spans the header + data rows, but excludes the totals row.
+  assert.deepEqual(ws["!autofilter"], { ref: "A1:G3" });
+
+  const row = ws.data[1];
+  assert.equal(row[0], "a1");
+  assert.equal(row[1], "Spectacle Musique");
+  assert.equal(row[2], "2025-08-01");
+  assert.equal(row[4], 100);
+  assert.equal(row[5], 25);
+
+  // "Activité sans revenu" (total revenue 0) is excluded entirely.
+  assert.ok(!ws.data.some((r: any[]) => r[0] === "a2"));
+
+  // "Spectacle Théâtre" has revenue only on 892-1111: its 892-0000 cell (a zero amount) is left
+  // blank, not shown as "0", while the account it does carry revenue on is not (and the total
+  // revenue column, a SUM formula over the account columns here, isn't blanked either).
+  const rowA3 = ws.data.find((r: any[]) => r[0] === "a3")!;
+  assert.equal(rowA3[4], "");
+  assert.equal(rowA3[5], 10);
+  assert.equal(rowA3[6].f, "SUM(E3:F3)");
+});
+
+test("quarter-end report omits the autofilter when every activity has zero revenue", async () => {
+  const xlsx = makeXlsxMock();
+  (globalThis as any).XLSX = xlsx;
+  appState.settings = baseSettings();
+  appState.activities = [
+    makeActivity({ id: "a1", name: "Sans revenu", date_start: "2025-08-01", distributions: [{ account_code: "892-0000-00-000", amount: 0 }] })
+  ];
+  appState.selected_year = "2025-2026";
+  appState.selected_quarters = [1];
+
+  await runExportToExcel(getExcelColName, xlsx, getQuarterEndExportOptions());
+
+  const ws = xlsx.sheets["ACTIVITÉS"];
+  assert.equal(ws.data.length, 1); // header only, no total row either (includeTotalRow requires activities)
+  assert.equal(ws["!autofilter"], undefined);
+});
+
+test("addBoldStyleToSheetXml patches a new bold font/cellXf and references it on the target row's cells", () => {
+  const stylesXml =
+    '<styleSheet><fonts count="1"><font><sz val="12"/><name val="Calibri"/></font></fonts>' +
+    '<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs></styleSheet>';
+  const sheetXml =
+    "<worksheet><sheetData>" +
+    '<row r="1"><c r="A1" t="str"><v>ID</v></c></row>' +
+    '<row r="2"><c r="A2" t="str" s="0"><v>a1</v></c><c r="B2"><v>100</v></c></row>' +
+    "</sheetData></worksheet>";
+
+  const { stylesXml: patchedStyles, sheetXml: patchedSheet } = addBoldStyleToSheetXml(stylesXml, sheetXml, 2);
+
+  assert.match(patchedStyles, /<fonts count="2">/);
+  assert.match(patchedStyles, /<font><b\/>/);
+  assert.match(patchedStyles, /<cellXfs count="2">/);
+  assert.match(patchedStyles, /<xf numFmtId="0" fontId="1"[^>]*applyFont="1"/);
+
+  // Row 2's cells now reference the new (bold) style index, and any prior style was replaced
+  // rather than duplicated.
+  assert.match(patchedSheet, /<c r="A2" t="str" s="1">/);
+  assert.match(patchedSheet, /<c r="B2" s="1">/);
+  // Row 1 is untouched.
+  assert.match(patchedSheet, /<row r="1"><c r="A1" t="str"><v>ID<\/v><\/c><\/row>/);
+});
+
+test("addBoldStyleToSheetXml leaves the XML untouched when styles.xml doesn't have the expected shape", () => {
+  const result = addBoldStyleToSheetXml("<styleSheet/>", "<worksheet/>", 2);
+  assert.equal(result.stylesXml, "<styleSheet/>");
+  assert.equal(result.sheetXml, "<worksheet/>");
+});
+
+test("addBoldStyleToColumnXml patches every cell of the given column within the given row range, leaving other columns/rows alone", () => {
+  const stylesXml =
+    '<styleSheet><fonts count="1"><font><sz val="12"/><name val="Calibri"/></font></fonts>' +
+    '<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs></styleSheet>';
+  const sheetXml =
+    "<worksheet><sheetData>" +
+    '<row r="1"><c r="A1" t="str"><v>ID</v></c><c r="B1" t="str"><v>TOTAL</v></c></row>' +
+    '<row r="2"><c r="A2" t="str"><v>a1</v></c><c r="B2"><v>100</v></c></row>' +
+    '<row r="3"><c r="A3" t="str"><v>TOTAUX</v></c><c r="B3"><f>SUM(B2:B2)</f></c></row>' +
+    "</sheetData></worksheet>";
+
+  const { stylesXml: patchedStyles, sheetXml: patchedSheet } = addBoldStyleToColumnXml(stylesXml, sheetXml, "B", 2, 2);
+
+  assert.match(patchedStyles, /<font><b\/>/);
+  assert.match(patchedStyles, /<cellXfs count="2">/);
+
+  // B2 (within the given row range) is bold; A2 (a different column) and B3 (outside the range)
+  // are not.
+  assert.match(patchedSheet, /<c r="B2" s="1">/);
+  assert.doesNotMatch(patchedSheet, /<c r="A2"[^>]* s="\d+"/);
+  assert.doesNotMatch(patchedSheet, /<c r="B3"[^>]* s="\d+"/);
+});
+
+test("buildQuarterEndBlob produces a real .xlsx whose totals row is rendered bold", async () => {
+  const XLSX = await import("xlsx");
+  const JSZip = (await import("jszip")).default;
+
+  const ws = XLSX.utils.aoa_to_sheet([
+    ["NUMERO ACTIVITE", "892-0000-00-000"],
+    ["a1", 100],
+    ["TOTAUX COMPLETS", { t: "n", f: "SUM(B2:B2)" }]
+  ]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "ACTIVITÉS");
+
+  const blob = await buildQuarterEndBlob(XLSX, wb, { totalRowNumber: 3, totalColLetter: "B", lastDataRow: 2 });
+  const buffer = Buffer.from(await blob.arrayBuffer());
+  const zip = await JSZip.loadAsync(buffer);
+
+  const stylesXml = await zip.file("xl/styles.xml")!.async("text");
+  const sheetXml = await zip.file("xl/worksheets/sheet1.xml")!.async("text");
+
+  assert.match(stylesXml, /<font><b\/>/);
+  assert.match(stylesXml, /<alignment wrapText="1"\/>/);
+
+  // Row 1 (the header) and row 3 (the totals row) carry a bold style; cell A2 (a plain activity
+  // row, outside the total column) does not — but B2 (the total column, "892-0000-00-000" here)
+  // does, since the whole total column is bold.
+  const row1 = sheetXml.match(/<row r="1"[^>]*>[\s\S]*?<\/row>/)![0];
+  const row3 = sheetXml.match(/<row r="3"[^>]*>[\s\S]*?<\/row>/)![0];
+  const cellA2 = sheetXml.match(/<c r="A2"[^>]*\/?>/)![0];
+  const cellB2 = sheetXml.match(/<c r="B2"[^>]*\/?>/)![0];
+  assert.match(row1, /s="\d+"/);
+  assert.doesNotMatch(cellA2, /s="\d+"/);
+  assert.match(cellB2, /s="\d+"/);
+  assert.match(row3, /s="\d+"/);
+
+  // The header row and the first 4 columns (id/name/date_start/references) are frozen.
+  assert.match(sheetXml, /<pane xSplit="4" ySplit="1" topLeftCell="E2"[^>]*state="frozen"\/>/);
+});
+
+test("freezePanesXml patches a frozen pane into the sheet's sheetView, splitting after the given column", () => {
+  const sheetXml = '<worksheet><sheetViews><sheetView workbookViewId="0"/></sheetViews></worksheet>';
+  const patched = freezePanesXml(sheetXml, 4);
+  assert.match(
+    patched,
+    /<sheetView workbookViewId="0"><pane xSplit="4" ySplit="1" topLeftCell="E2" activePane="bottomRight" state="frozen"\/>/
+  );
+  assert.match(patched, /<selection pane="bottomRight" activeCell="E2" sqref="E2"\/><\/sheetView>/);
 });
 

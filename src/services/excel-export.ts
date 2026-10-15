@@ -2,6 +2,7 @@
  * excel-export.ts - Generates the structured "ACTIVITÉS"/"SALLES" Excel export matching the
  * original template used before this app existed.
  */
+import JSZip from "jszip";
 import { logError } from "../utils/logger.ts";
 import { appState, getFiscalYear, getQuarterNumber, getActivePricingGrid, getFlattenedRoomTarifs } from "../state/state.ts";
 import { getActivities } from "../state/activities-repository.ts";
@@ -17,7 +18,7 @@ import {
 } from "../utils/utils.ts";
 
 export interface ExcelExportOptions {
-  mode: "standard" | "custom";
+  mode: "standard" | "custom" | "quarter_end";
   filters: {
     periodMode: "active" | "all" | "fiscal_year" | "custom_dates";
     fiscalYear: string;
@@ -113,6 +114,49 @@ export function getDefaultExportOptions(): ExcelExportOptions {
       includeTotalRow: true,
       useExcelFormulas: true,
       includeRoomsSheet: true,
+      includeSummarySheet: false
+    }
+  };
+}
+
+// Fixed-format report for quarter-end purposes: just the essentials (activity id/name/date,
+// invoice reference, the 892-xxx budget accounts actually in use, and the real total revenue), not
+// user-configurable like the "custom" mode. Which 892 accounts actually show up as columns depends
+// on the data (see generateExcelWorkbook's selectedAccounts filtering for quarter_end mode) so
+// `columns.accounts` here is only a starting candidate list, narrowed down at generation time.
+export function getQuarterEndExportOptions(): ExcelExportOptions {
+  const base = getDefaultExportOptions();
+  return {
+    mode: "quarter_end",
+    filters: base.filters,
+    columns: {
+      id: true,
+      responsable: false,
+      name: true,
+      date_start: true,
+      date_end: false,
+      days_count: false,
+      client_type: false,
+      category: false,
+      rooms: false,
+      remi_time: false,
+      department: false,
+      room_sans_frais: false,
+      references: true,
+      state: false,
+      attendees_count: false,
+      manager_name: false,
+      manager_company: false,
+      manager_contact_info: false,
+      description: false,
+      notes: false,
+      accounts: (getAccounts() || []).filter(a => a.code.startsWith("892")).map(a => a.code),
+      total_revenue: true
+    },
+    sheets: {
+      includeTotalRow: true,
+      useExcelFormulas: true,
+      includeRoomsSheet: false,
       includeSummarySheet: false
     }
   };
@@ -223,6 +267,32 @@ export function filterActivitiesForExport(activities: any[], filters: ExcelExpor
   });
 }
 
+// The quarter-end report's final activity list (date-sorted, zero-revenue rows dropped) and its
+// 892-xxx account columns (only the ones actually carrying a non-zero amount on one of those
+// activities). Exported so runExportToExcel can compute the totals row's position (for the bold
+// patch) from the exact same list generateExcelWorkbook builds its rows from, instead of
+// re-deriving a count that could drift out of sync with it.
+export function getQuarterEndActivities(options: ExcelExportOptions): { activities: any[]; selectedAccounts: string[] } {
+  const sortedActivities = filterActivitiesForExport(getActivities(), options.filters).sort((a, b) =>
+    (a.date_start || "").localeCompare(b.date_start || "")
+  );
+
+  const selectedAccounts = (options.columns.accounts || [])
+    .filter(code => getAccounts().some(a => a.code === code))
+    .filter(
+      code =>
+        code.startsWith("892") &&
+        sortedActivities.some(act => getRevenueLines(act).some((d: any) => d.account_code === code && (Number(d.amount) || 0) !== 0))
+    );
+
+  const activities = sortedActivities.filter(act => {
+    const lines = getRevenueLines(act).filter((d: any) => selectedAccounts.length === 0 || selectedAccounts.includes(d.account_code));
+    return lines.reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0) !== 0;
+  });
+
+  return { activities, selectedAccounts };
+}
+
 // Converts a 1-based column index to its Excel letter (1 -> "A", 27 -> "AA"), exported alongside
 // runExportToExcel so both can be exercised directly by tests without going through the
 // setTimeout-deferred exportToExcel() entry point.
@@ -270,8 +340,21 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
   const options = customOptions || getDefaultExportOptions();
   const wb = lib.utils.book_new();
 
-  // Selected accounts list
-  const selectedAccounts = (options.columns.accounts || []).filter(code => getAccounts().some(a => a.code === code));
+  // Filter activities, sorted by start date ascending (oldest first) — computed up front since the
+  // quarter-end report's account columns (below) depend on which accounts actually carry an amount
+  // among these activities.
+  let activeActivities: any[];
+  let selectedAccounts: string[];
+  if (options.mode === "quarter_end") {
+    const quarterEnd = getQuarterEndActivities(options);
+    activeActivities = quarterEnd.activities;
+    selectedAccounts = quarterEnd.selectedAccounts;
+  } else {
+    activeActivities = filterActivitiesForExport(getActivities(), options.filters).sort((a, b) =>
+      (a.date_start || "").localeCompare(b.date_start || "")
+    );
+    selectedAccounts = (options.columns.accounts || []).filter(code => getAccounts().some(a => a.code === code));
+  }
 
   // Define dynamic headers based on column selections
   interface ColumnDef {
@@ -383,7 +466,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
     activeCols.push({
       key: `account_${code}`,
       header: `${code}\n${label}`,
-      width: 18,
+      width: options.mode === "quarter_end" ? 15 : 18,
       accountCode: code,
       getValue: act => {
         // An activity can have several billing lines on the same account (e.g. split amounts, or
@@ -392,11 +475,14 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
         const amounts = getRevenueLines(act)
           .filter((d: any) => d.account_code === code)
           .map((d: any) => Number(d.amount) || 0);
+        const total = amounts.reduce((sum, a) => sum + a, 0);
+        // Quarter-end report: a zero amount on this account is left blank rather than showing "0".
+        if (options.mode === "quarter_end" && total === 0) return "";
         if (options.sheets.useExcelFormulas && amounts.length > 1) {
           // Show the addition instead of the combined total, so the individual amounts stay visible.
           return { t: "n", f: amounts.join("+") };
         }
-        return amounts.reduce((sum, a) => sum + a, 0);
+        return total;
       }
     });
   });
@@ -409,26 +495,25 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
       header: "REVENUS TOTAL RÉÈL",
       width: 20,
       getValue: (act, rowIdx) => {
-        if (selectedAccounts.length === 0) {
-          return getRevenueLines(act).reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
-        }
+        const lines =
+          selectedAccounts.length === 0
+            ? getRevenueLines(act)
+            : getRevenueLines(act).filter((d: any) => selectedAccounts.includes(d.account_code));
+        const total = lines.reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
+        // Quarter-end report: zero-total rows are already excluded (see getQuarterEndActivities),
+        // but leave this blank too rather than showing "0" if that total ever is zero.
+        if (options.mode === "quarter_end" && total === 0) return "";
+        if (selectedAccounts.length === 0) return total;
         if (options.sheets.useExcelFormulas) {
           const excelRow = rowIdx + 2;
           const firstColLetter = getExcelColName(firstAccColIdx + 1);
           const lastColLetter = getExcelColName(lastAccColIdx + 1);
           return { t: "n", f: `SUM(${firstColLetter}${excelRow}:${lastColLetter}${excelRow})` };
         }
-        return getRevenueLines(act)
-          .filter((d: any) => selectedAccounts.includes(d.account_code))
-          .reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
+        return total;
       }
     });
   }
-
-  // Filter activities, sorted by start date ascending (oldest first)
-  const activeActivities = filterActivitiesForExport(getActivities(), options.filters).sort((a, b) =>
-    (a.date_start || "").localeCompare(b.date_start || "")
-  );
 
   // Build rows
   const sheetData: any[][] = [activeCols.map(c => c.header)];
@@ -469,6 +554,15 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
 
   const ws = lib.utils.aoa_to_sheet(sheetData);
   ws["!cols"] = activeCols.map(c => ({ wch: c.width }));
+  if (options.mode === "quarter_end") {
+    // Taller header row — bold + word wrap are patched into the written XML afterwards (see
+    // buildQuarterEndBlob), since SheetJS's community-edition writer drops cell styling, but row
+    // height and the autofilter below are plain worksheet properties it writes natively.
+    ws["!rows"] = [{ hpt: 30 }];
+    const lastColLetter = getExcelColName(activeCols.length);
+    const lastDataRow = 1 + activeActivities.length; // header + data rows, excluding the totals row
+    if (lastDataRow > 1) ws["!autofilter"] = { ref: `A1:${lastColLetter}${lastDataRow}` };
+  }
   lib.utils.book_append_sheet(wb, ws, "ACTIVITÉS");
 
   // Sheet 2: Configuration Salles
@@ -543,7 +637,166 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
   return wb;
 }
 
-function runExportToExcel(_getExcelColName: (colIdx: number) => string, xlsxInstance?: any, customOptions?: ExcelExportOptions) {
+// Adds a bold (optionally word-wrapped) font + cellXfs entry to a SheetJS-generated styles.xml, as
+// plain OOXML text, returning the new entry's style index for a caller to reference from cells.
+// SheetJS's community-edition writer accepts a cell's `.s` style property but silently drops it
+// when writing (see get_cell_style() in xlsx.js, which only ever tracks number formats) — so the
+// style has to be patched into the already-written XML instead of being requested through the
+// SheetJS object model. Returns xfIndex -1 (styles.xml unchanged) if that XML isn't the shape
+// expected, so callers can skip applying a style that was never added.
+function addBoldXf(stylesXml: string, opts: { wrapText?: boolean } = {}): { stylesXml: string; xfIndex: number } {
+  const fontsMatch = stylesXml.match(/<fonts count="(\d+)"([^>]*)>([\s\S]*?)<\/fonts>/);
+  const cellXfsMatch = stylesXml.match(/<cellXfs count="(\d+)">([\s\S]*?)<\/cellXfs>/);
+  if (!fontsMatch || !cellXfsMatch) return { stylesXml, xfIndex: -1 };
+
+  const fontEntries = fontsMatch[3].match(/<font\b[^>]*\/>|<font\b[^>]*>[\s\S]*?<\/font>/g) || [];
+  const baseFont = fontEntries[0] || '<font><sz val="11"/><name val="Calibri"/></font>';
+  const boldFont = /<b\/>/.test(baseFont) ? baseFont : baseFont.replace(/^<font(\s*)>/, "<font$1><b/>");
+  const boldFontId = parseInt(fontsMatch[1], 10);
+
+  const stylesWithBoldFont = stylesXml
+    .replace(/<fonts count="(\d+)"([^>]*)>/, (_m, count, attrs) => `<fonts count="${parseInt(count, 10) + 1}"${attrs}>`)
+    .replace("</fonts>", `${boldFont}</fonts>`);
+
+  const xfCount = parseInt(cellXfsMatch[1], 10);
+  const boldXf = opts.wrapText
+    ? `<xf numFmtId="0" fontId="${boldFontId}" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment wrapText="1"/></xf>`
+    : `<xf numFmtId="0" fontId="${boldFontId}" fillId="0" borderId="0" xfId="0" applyFont="1"/>`;
+  const patchedStyles = stylesWithBoldFont
+    .replace(/<cellXfs count="(\d+)">/, `<cellXfs count="${xfCount + 1}">`)
+    .replace("</cellXfs>", `${boldXf}</cellXfs>`);
+
+  return { stylesXml: patchedStyles, xfIndex: xfCount };
+}
+
+// Patches a sheet.xml's given row so every one of its cells references the given style index.
+function applyXfToRow(sheetXml: string, rowNumber: number, xfIndex: number): string {
+  const rowRegex = new RegExp(`(<row r="${rowNumber}"[^>]*>)([\\s\\S]*?)(</row>)`);
+  return sheetXml.replace(rowRegex, (_m, open, body, close) => {
+    const newBody = body.replace(/<c\s+r="([^"]+)"([^>]*?)(\/?)>/g, (_cm: string, ref: string, attrs: string, slash: string) => {
+      const cleanedAttrs = attrs.replace(/\s+s="\d+"/, "");
+      return `<c r="${ref}"${cleanedAttrs} s="${xfIndex}"${slash}>`;
+    });
+    return `${open}${newBody}${close}`;
+  });
+}
+
+// Patches a sheet.xml's given column (within the given 1-based row range, inclusive) so every one
+// of its cells references the given style index.
+function applyXfToColumn(sheetXml: string, colLetter: string, startRow: number, endRow: number, xfIndex: number): string {
+  const cellRegex = new RegExp(`<c\\s+r="${colLetter}(\\d+)"([^>]*?)(\\/?)>`, "g");
+  return sheetXml.replace(cellRegex, (match: string, rowStr: string, attrs: string, slash: string) => {
+    const rowNumber = parseInt(rowStr, 10);
+    if (rowNumber < startRow || rowNumber > endRow) return match;
+    const cleanedAttrs = attrs.replace(/\s+s="\d+"/, "");
+    return `<c r="${colLetter}${rowStr}"${cleanedAttrs} s="${xfIndex}"${slash}>`;
+  });
+}
+
+// One row's cells rendered bold (optionally word-wrapped too) — see addBoldXf/applyXfToRow above.
+function addBoldStyleToSheetXml(
+  stylesXml: string,
+  sheetXml: string,
+  rowNumber: number,
+  opts: { wrapText?: boolean } = {}
+): { stylesXml: string; sheetXml: string } {
+  const { stylesXml: patchedStyles, xfIndex } = addBoldXf(stylesXml, opts);
+  if (xfIndex === -1) return { stylesXml, sheetXml };
+  return { stylesXml: patchedStyles, sheetXml: applyXfToRow(sheetXml, rowNumber, xfIndex) };
+}
+
+// One column's cells (within the given row range) rendered bold — see addBoldXf/applyXfToColumn
+// above.
+function addBoldStyleToColumnXml(
+  stylesXml: string,
+  sheetXml: string,
+  colLetter: string,
+  startRow: number,
+  endRow: number
+): { stylesXml: string; sheetXml: string } {
+  const { stylesXml: patchedStyles, xfIndex } = addBoldXf(stylesXml);
+  if (xfIndex === -1) return { stylesXml, sheetXml };
+  return { stylesXml: patchedStyles, sheetXml: applyXfToColumn(sheetXml, colLetter, startRow, endRow, xfIndex) };
+}
+
+// The quarter-end report's first 4 columns are always, in this fixed order (see
+// getQuarterEndExportOptions): id, name, date_start, references — frozen alongside the header row
+// so the invoice-reference column stays visible while scrolling through the 892-xxx accounts.
+const QUARTER_END_FROZEN_COLS = 4;
+
+// Freezes the header row (row 1) and the report's leading columns (see QUARTER_END_FROZEN_COLS) by
+// patching a <pane> into the sheet's <sheetView> — SheetJS's writer only ever emits a bare
+// `<sheetView workbookViewId="0"/>` (see write_ws_xml_sheetviews() in xlsx.js), with no supported
+// way to request frozen panes through the object model.
+function freezePanesXml(sheetXml: string, frozenCols: number): string {
+  const topLeftCell = `${getExcelColName(frozenCols + 1)}2`;
+  return sheetXml.replace(
+    /<sheetView([^>]*)\/>/,
+    (_m, attrs) =>
+      `<sheetView${attrs}><pane xSplit="${frozenCols}" ySplit="1" topLeftCell="${topLeftCell}" activePane="bottomRight" state="frozen"/>` +
+      `<selection pane="bottomRight" activeCell="${topLeftCell}" sqref="${topLeftCell}"/></sheetView>`
+  );
+}
+
+interface QuarterEndStyling {
+  totalRowNumber: number | null; // the "TOTAUX COMPLETS" row, or null when there's no data to total
+  totalColLetter: string; // the "REVENUS TOTAL RÉÈL" column, bolded for its full height
+  lastDataRow: number; // last activity row (header is row 1), so 1 when there's no data
+}
+
+// Builds the quarter-end report's .xlsx as a Blob with its header row bold/word-wrapped, its
+// totals row and "REVENUS TOTAL RÉÈL" column bold, and the header row + leading columns frozen.
+// The plain SheetJS write path (lib.writeFile, used for every other report) can't do any of that —
+// see addBoldStyleToSheetXml/addBoldStyleToColumnXml/freezePanesXml above — so this re-opens the
+// written bytes with JSZip and patches the "ACTIVITÉS" sheet (the quarter-end report's only sheet,
+// so always xl/worksheets/sheet1.xml) directly. Falls back to the plain, unstyled workbook if
+// anything about that OOXML isn't the shape this expects, so a SheetJS upgrade can't turn a
+// styling nice-to-have into a broken export.
+async function buildQuarterEndBlob(lib: any, wb: any, styling: QuarterEndStyling): Promise<Blob> {
+  const mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  const buffer = lib.write(wb, { type: "array", bookType: "xlsx" });
+
+  try {
+    const zip = await JSZip.loadAsync(buffer);
+    const stylesFile = zip.file("xl/styles.xml");
+    const sheetFile = zip.file("xl/worksheets/sheet1.xml");
+    if (!stylesFile || !sheetFile) return new Blob([buffer], { type: mimeType });
+
+    let stylesXml = await stylesFile.async("string");
+    let sheetXml = await sheetFile.async("string");
+
+    ({ stylesXml, sheetXml } = addBoldStyleToSheetXml(stylesXml, sheetXml, 1, { wrapText: true }));
+    if (styling.totalRowNumber !== null) {
+      ({ stylesXml, sheetXml } = addBoldStyleToSheetXml(stylesXml, sheetXml, styling.totalRowNumber));
+    }
+    if (styling.lastDataRow >= 2) {
+      ({ stylesXml, sheetXml } = addBoldStyleToColumnXml(stylesXml, sheetXml, styling.totalColLetter, 2, styling.lastDataRow));
+    }
+    sheetXml = freezePanesXml(sheetXml, QUARTER_END_FROZEN_COLS);
+
+    zip.file("xl/styles.xml", stylesXml);
+    zip.file("xl/worksheets/sheet1.xml", sheetXml);
+
+    const outBuffer = await zip.generateAsync({ type: "arraybuffer" });
+    return new Blob([outBuffer], { type: mimeType });
+  } catch (err) {
+    logError("backup", "mise en forme de l'en-tête et des totaux", err);
+    return new Blob([buffer], { type: mimeType });
+  }
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function runExportToExcel(_getExcelColName: (colIdx: number) => string, xlsxInstance?: any, customOptions?: ExcelExportOptions) {
   try {
     const lib = xlsxInstance || (globalThis as any).XLSX;
     const wb = generateExcelWorkbook(lib, customOptions);
@@ -557,10 +810,20 @@ function runExportToExcel(_getExcelColName: (colIdx: number) => string, xlsxInst
     }`;
     if (options.mode === "custom") {
       filenameSuffix += "_personnalise";
+    } else if (options.mode === "quarter_end") {
+      filenameSuffix += "_fin_trimestre";
     }
     const filename = `compta_marie_rapport_${filenameSuffix}_${new Date().toISOString().split("T")[0]}.xlsx`;
 
-    lib.writeFile(wb, filename);
+    if (options.mode === "quarter_end") {
+      const { activities, selectedAccounts } = getQuarterEndActivities(options);
+      const totalRowNumber = options.sheets.includeTotalRow && activities.length > 0 ? activities.length + 2 : null;
+      const totalColLetter = getExcelColName(QUARTER_END_FROZEN_COLS + selectedAccounts.length + 1);
+      const blob = await buildQuarterEndBlob(lib, wb, { totalRowNumber, totalColLetter, lastDataRow: activities.length + 1 });
+      downloadBlob(blob, filename);
+    } else {
+      lib.writeFile(wb, filename);
+    }
     showToast("Export Excel terminé.", "success");
   } catch (err: any) {
     logError("backup", "export Excel", err);
@@ -570,4 +833,13 @@ function runExportToExcel(_getExcelColName: (colIdx: number) => string, xlsxInst
   }
 }
 
-export { exportToExcel, getExcelColName, runExportToExcel, generateExcelWorkbook };
+export {
+  exportToExcel,
+  getExcelColName,
+  runExportToExcel,
+  generateExcelWorkbook,
+  addBoldStyleToSheetXml,
+  addBoldStyleToColumnXml,
+  freezePanesXml,
+  buildQuarterEndBlob
+};
