@@ -227,7 +227,13 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
       return; // Skip activity outside selected period
     }
 
-    // Check reconciliation for each distribution (reference is now defined per account)
+    // Check reconciliation for each distribution (reference is now defined per account). The GL
+    // export combines same-activity lines sharing the same compte+référence into a single ledger
+    // line (e.g. two billing rows for the same reservation), so distributions are grouped the same
+    // way here before comparing — otherwise each line would be compared against the *full*
+    // combined GL amount independently and wrongly flagged as a "diff".
+    const distGroups: Record<string, { indices: number[]; amount: number; account_code: string; reference: string }> = {};
+
     act.distributions.forEach((dist: any, distIndex: number) => {
       if (excludedAccounts.has(dist.account_code)) return;
       const distRef = cleanRef(dist.reference);
@@ -248,25 +254,37 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
         return;
       }
 
-      // Find matching ledger group key
       const key = `${dist.account_code}||${canonicalRefKey(distRef)}`;
+      if (!distGroups[key]) {
+        distGroups[key] = { indices: [], amount: 0, account_code: dist.account_code, reference: distRef };
+      }
+      distGroups[key].indices.push(distIndex);
+      distGroups[key].amount += dist.amount;
+    });
+
+    Object.values(distGroups).forEach(g => {
+      const key = `${g.account_code}||${canonicalRefKey(g.reference)}`;
       const group = ledgerGroups[key];
+      const baseResult = {
+        activityId: act.id,
+        activityName: act.name,
+        distIndex: g.indices[0],
+        distIndexes: g.indices,
+        activity_date: act.date_start,
+        account_code: g.account_code,
+        reference: g.reference,
+        amount_saisi: g.amount
+      };
 
       if (group) {
         matchedKeys.add(key);
         // Revenue in ledger is negative, so sum * -1 = positive revenue
         const expectedRevenue = group.montant_somme * -1;
-        const diff = dist.amount - expectedRevenue;
+        const diff = g.amount - expectedRevenue;
         const isMatch = Math.abs(diff) < 0.02;
 
         results.push({
-          activityId: act.id,
-          activityName: act.name,
-          distIndex,
-          activity_date: act.date_start,
-          account_code: dist.account_code,
-          reference: distRef,
-          amount_saisi: dist.amount,
+          ...baseResult,
           amount_gl: expectedRevenue,
           status: isMatch ? "valid" : "diff",
           diff: diff,
@@ -275,16 +293,10 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
       } else {
         // Logged in app, but not found in ledger
         results.push({
-          activityId: act.id,
-          activityName: act.name,
-          distIndex,
-          activity_date: act.date_start,
-          account_code: dist.account_code,
-          reference: distRef,
-          amount_saisi: dist.amount,
+          ...baseResult,
           amount_gl: 0,
           status: "unlogged",
-          diff: dist.amount
+          diff: g.amount
         });
       }
     });
@@ -293,6 +305,10 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
     // comptabilisés dans les codes budgétaires au Grand Livre, chacun via son propre account_code
     // et son numéro d'encaissement en guise de référence (voir account-report.ts qui applique la
     // même logique pour le rapport de comptes).
+    // Same combining logic as distributions above: several bar revenue lines on the same activity
+    // can share the same account_code+receipt_number and land as a single combined GL line.
+    const barGroups: Record<string, { indices: number[]; amount: number; account_code: string; reference: string }> = {};
+
     (act.bar_revenue_lines || []).forEach((bar: any, barIndex: number) => {
       if (!bar.account_code || !(bar.amount > 0)) return;
       if (excludedAccounts.has(bar.account_code)) return;
@@ -315,23 +331,36 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
       }
 
       const key = `${bar.account_code}||${canonicalRefKey(barRef)}`;
+      if (!barGroups[key]) {
+        barGroups[key] = { indices: [], amount: 0, account_code: bar.account_code, reference: barRef };
+      }
+      barGroups[key].indices.push(barIndex);
+      barGroups[key].amount += bar.amount;
+    });
+
+    Object.values(barGroups).forEach(g => {
+      const key = `${g.account_code}||${canonicalRefKey(g.reference)}`;
       const group = ledgerGroups[key];
+      const baseResult = {
+        activityId: act.id,
+        activityName: act.name,
+        distIndex: g.indices[0],
+        distIndexes: g.indices,
+        isBarRevenue: true,
+        activity_date: act.date_start,
+        account_code: g.account_code,
+        reference: g.reference,
+        amount_saisi: g.amount
+      };
 
       if (group) {
         matchedKeys.add(key);
         const expectedRevenue = group.montant_somme * -1;
-        const diff = bar.amount - expectedRevenue;
+        const diff = g.amount - expectedRevenue;
         const isMatch = Math.abs(diff) < 0.02;
 
         results.push({
-          activityId: act.id,
-          activityName: act.name,
-          distIndex: barIndex,
-          isBarRevenue: true,
-          activity_date: act.date_start,
-          account_code: bar.account_code,
-          reference: barRef,
-          amount_saisi: bar.amount,
+          ...baseResult,
           amount_gl: expectedRevenue,
           status: isMatch ? "valid" : "diff",
           diff: diff,
@@ -339,17 +368,10 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
         });
       } else {
         results.push({
-          activityId: act.id,
-          activityName: act.name,
-          distIndex: barIndex,
-          isBarRevenue: true,
-          activity_date: act.date_start,
-          account_code: bar.account_code,
-          reference: barRef,
-          amount_saisi: bar.amount,
+          ...baseResult,
           amount_gl: 0,
           status: "unlogged",
-          diff: bar.amount
+          diff: g.amount
         });
       }
     });

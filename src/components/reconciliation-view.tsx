@@ -842,20 +842,28 @@ export function ReconciliationView() {
 
   const acceptSuggestion = (result: any, newReference: string) => {
     const act = getActivityById(result.activityId);
-    const line = result.isBarRevenue ? act?.bar_revenue_lines?.[result.distIndex] : act?.distributions[result.distIndex];
-    if (!act || !line) return;
-    const prevReference = result.isBarRevenue ? line.receipt_number : line.reference;
-    if (result.isBarRevenue) {
-      line.receipt_number = newReference;
-    } else {
-      line.reference = newReference;
-    }
-    saveDatabaseOrRollback(() => {
+    // A result can represent several app-side lines combined (same compte+référence within the
+    // same activity, matching how the GL combines them into one line — see reconcileLedger()), so
+    // every underlying line must get the corrected reference, not just the first one.
+    const indices: number[] = result.distIndexes || [result.distIndex];
+    const lines = indices.map(i => (result.isBarRevenue ? act?.bar_revenue_lines?.[i] : act?.distributions[i]));
+    if (!act || lines.some((l: any) => !l)) return;
+    const prevReferences = lines.map((l: any) => (result.isBarRevenue ? l.receipt_number : l.reference));
+    lines.forEach((l: any) => {
       if (result.isBarRevenue) {
-        line.receipt_number = prevReference;
+        l.receipt_number = newReference;
       } else {
-        line.reference = prevReference;
+        l.reference = newReference;
       }
+    });
+    saveDatabaseOrRollback(() => {
+      lines.forEach((l: any, i: number) => {
+        if (result.isBarRevenue) {
+          l.receipt_number = prevReferences[i];
+        } else {
+          l.reference = prevReferences[i];
+        }
+      });
     }, "La mise à jour de la référence n'a pas été enregistrée. Réessayez.").then(saved => {
       if (!saved) {
         bump();

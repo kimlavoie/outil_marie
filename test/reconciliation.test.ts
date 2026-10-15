@@ -161,7 +161,26 @@ test("sums multiple ledger transactions sharing the same account+reference befor
   assert.equal(results[0].status, "valid"); // -60 + -40 = -100 -> expected revenue 100
 });
 
-test("evaluates two distributions sharing the same account+reference independently against the same ledger group", () => {
+test("combines two distributions on the same activity sharing the same account+reference before comparing to the ledger, instead of each against the full GL amount", () => {
+  const activities = [
+    activity({
+      id: "act-1",
+      distributions: [
+        { account_code: "892-1", reference: "RI001", amount: 60 },
+        { account_code: "892-1", reference: "RI001", amount: 40 }
+      ]
+    })
+  ];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
+
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "valid");
+  assert.equal((results[0] as any).amount_saisi, 100);
+  assert.deepEqual((results[0] as any).distIndexes, [0, 1]);
+});
+
+test("still reports a diff when the combined amount of same-activity, same-reference distributions doesn't match the GL", () => {
   const activities = [
     activity({
       id: "act-1",
@@ -174,9 +193,40 @@ test("evaluates two distributions sharing the same account+reference independent
   const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
 
   const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "diff");
+  assert.equal((results[0] as any).amount_saisi, 1099);
+  assert.equal((results[0] as any).diff, 999);
+});
+
+test("combines two distributions on the same activity sharing the same account+reference even when the ledger has no matching entry (unlogged)", () => {
+  const activities = [
+    activity({
+      id: "act-1",
+      distributions: [
+        { account_code: "892-1", reference: "RI999", amount: 60 },
+        { account_code: "892-1", reference: "RI999", amount: 40 }
+      ]
+    })
+  ];
+
+  const results = matchDistributionsToLedger(activities as any[], [], YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "unlogged");
+  assert.equal((results[0] as any).amount_saisi, 100);
+  assert.deepEqual((results[0] as any).distIndexes, [0, 1]);
+});
+
+test("does not combine distributions from different activities even when they share the same account+reference", () => {
+  const activities = [
+    activity({ id: "act-1", distributions: [{ account_code: "892-1", reference: "RI001", amount: 60 }] }),
+    activity({ id: "act-2", distributions: [{ account_code: "892-1", reference: "RI001", amount: 40 }] })
+  ];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
+
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
   assert.equal(results.length, 2);
-  assert.equal(results[0].status, "valid");
-  assert.equal(results[1].status, "diff");
+  assert.ok(results.every(r => r.status === "diff"));
 });
 
 test("treats a zero-amount distribution matching a zero-amount ledger entry as valid, not unlogged", () => {
