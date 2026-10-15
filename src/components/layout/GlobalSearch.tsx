@@ -14,6 +14,13 @@ function globalSearchMatches(text: string, query: string): boolean {
   return textSimilarity(value, query) >= GLOBAL_SEARCH_FUZZY_MIN_SCORE;
 }
 
+// Codes/numbers (activity id, GL account code, reference, receipt number) are compared by exact
+// substring only — fuzzy token matching treats a shared numeric segment (e.g. the "2425" year
+// prefix two activity ids both start with) as a strong match, flooding results with unrelated hits.
+function globalSearchMatchesCode(text: string, query: string): boolean {
+  return (text || "").toLowerCase().includes(query);
+}
+
 interface GlobalSearchProps {
   onSelectView: (view: string) => void;
 }
@@ -52,16 +59,16 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSelectView }) => {
       .filter(act => !act.deleted && act.name.trim() !== "")
       .filter(
         act =>
-          globalSearchMatches(act.id, normalizedQuery) ||
+          globalSearchMatchesCode(act.id, normalizedQuery) ||
           globalSearchMatches(act.name, normalizedQuery) ||
           globalSearchMatches(act.responsable || "", normalizedQuery) ||
           (act.distributions || []).some(
             (d: any) =>
-              globalSearchMatches(d.account_code || "", normalizedQuery) ||
-              globalSearchMatches(d.reference || "", normalizedQuery)
+              globalSearchMatchesCode(d.account_code || "", normalizedQuery) ||
+              globalSearchMatchesCode(d.reference || "", normalizedQuery)
           ) ||
           (act.bar_revenue_lines || []).some((b: any) =>
-            globalSearchMatches(b.receipt_number || "", normalizedQuery)
+            globalSearchMatchesCode(b.receipt_number || "", normalizedQuery)
           )
       )
       .slice(0, GLOBAL_SEARCH_MAX_PER_CATEGORY);
@@ -70,7 +77,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSelectView }) => {
   const matchingAccounts = React.useMemo(() => {
     if (!normalizedQuery) return [];
     return accounts
-      .filter(acc => globalSearchMatches(acc.code, normalizedQuery) || globalSearchMatches(acc.description, normalizedQuery))
+      .filter(acc => globalSearchMatchesCode(acc.code, normalizedQuery) || globalSearchMatches(acc.description, normalizedQuery))
       .slice(0, GLOBAL_SEARCH_MAX_PER_CATEGORY);
   }, [accounts, normalizedQuery]);
 

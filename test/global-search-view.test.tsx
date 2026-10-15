@@ -113,6 +113,26 @@ test("matches activities (excluding deleted/blank-name), accounts and department
   assert.match(resultsText, /Communications/);
 });
 
+test("searching an activity number matches only that activity, not others sharing a numeric segment", () => {
+  setAppState(
+    baseState({
+      activities: [
+        makeActivity({ id: "2425-001", name: "Gala annuel" }),
+        makeActivity({ id: "2425-002", name: "Souper bénéfice" }),
+        makeActivity({ id: "2425-003", name: "Assemblée générale" })
+      ]
+    })
+  );
+  const { container } = render(<GlobalSearch onSelectView={() => {}} />);
+  const input = container.querySelector("#global-search-input") as HTMLInputElement;
+
+  typeQuery(input, "2425-001");
+  const resultsText = container.querySelector("#global-search-results")!.textContent!;
+  assert.match(resultsText, /Gala annuel/);
+  assert.doesNotMatch(resultsText, /Souper bénéfice/);
+  assert.doesNotMatch(resultsText, /Assemblée générale/);
+});
+
 test("fuzzy-matches close typos, not unrelated text", () => {
   setAppState(baseState({ activities: [makeActivity({ id: "A1", name: "Réservation Salle A" })] }));
   const { container } = render(<GlobalSearch onSelectView={() => {}} />);
