@@ -213,6 +213,21 @@ input[type="checkbox"] {
   font-size: 1.05rem;
 }
 
+.dismiss-warning-link {
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  opacity: 0.5;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
 .financial-summary {
   display: flex;
   flex-direction: column;

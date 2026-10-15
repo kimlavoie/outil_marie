@@ -1042,8 +1042,18 @@ export const ActivityDrawer: React.FC = () => {
                   <span>Total saisi</span>
                   <span id="form-distribution-total-val">0,00 $</span>
                 </div>
-                <div style={{ textAlign: "right" }}>
+                <div style={{ textAlign: "right", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "8px" }}>
                   <span id="form-distribution-total-warning" style={{ display: "none", color: "var(--warning-text)", fontSize: "0.8rem" }} />
+                  <button
+                    type="button"
+                    id="dismiss-distribution-warning-btn"
+                    className="dismiss-warning-link"
+                    style={{ display: "none" }}
+                    title="Ignorer cet avertissement tant que l'écart ne change pas"
+                    aria-label="Ignorer cet avertissement"
+                  >
+                    ✕
+                  </button>
                 </div>
                 <div style={{ textAlign: "right", marginTop: "4px" }}>
                   <button

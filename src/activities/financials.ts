@@ -8,7 +8,9 @@ export {
   computeFormRevenueSubtotal,
   updateSubmissionFinancialSummary,
   computeActivityFinancials,
-  updateDistributionTotal
+  updateDistributionTotal,
+  dismissDistributionWarning,
+  resetDistributionWarningDismissal
 } from "./financial-summary.ts";
 export {
   buildPrintActivitySheetHtml,

@@ -244,6 +244,28 @@ function computeActivityFinancials(act: any) {
   };
 }
 
+// Diff amount (rounded to the cent) last dismissed via the "Ignorer" button, so the warning stays
+// hidden for that specific discrepancy but reappears if further edits change the amount — dismissing
+// isn't a blanket "never warn again" for this activity. Reset when a different activity's drawer opens.
+let dismissedDistributionDiff: number | null = null;
+
+function resetDistributionWarningDismissal() {
+  dismissedDistributionDiff = null;
+}
+
+// Records the discrepancy currently shown as acknowledged and re-runs the check so it hides right away.
+function dismissDistributionWarning() {
+  const warningEl = elById("form-distribution-total-warning");
+  if (!warningEl || warningEl.style.display === "none") return;
+  const subtotal = computeFormRevenueSubtotal().subtotal;
+  let total = 0;
+  document.querySelectorAll(".dist-amount-input").forEach(input => {
+    total += parseFloat((input as HTMLInputElement).value) || 0;
+  });
+  dismissedDistributionDiff = Math.round((total - subtotal) * 100) / 100;
+  updateDistributionTotal();
+}
+
 function updateDistributionTotal(cachedSubtotal?: number) {
   const distributionListEl = elById("form-distribution-total-val");
   if (!distributionListEl) return;
@@ -259,15 +281,19 @@ function updateDistributionTotal(cachedSubtotal?: number) {
   // GL distributions entered don't add up to the activity's own calculated revenue, so a typo or
   // a forgotten line doesn't silently understate/overstate what gets reported to the GL.
   const warningEl = elById("form-distribution-total-warning");
+  const dismissBtn = elById("dismiss-distribution-warning-btn");
   if (warningEl) {
     const subtotal = cachedSubtotal !== undefined ? cachedSubtotal : computeFormRevenueSubtotal().subtotal;
-    const diff = total - subtotal;
-    if (Math.abs(diff) > 0.01) {
+    const diff = Math.round((total - subtotal) * 100) / 100;
+    const isDismissed = dismissedDistributionDiff !== null && Math.abs(diff - dismissedDistributionDiff) < 0.01;
+    if (Math.abs(diff) > 0.01 && !isDismissed) {
       warningEl.textContent = `Écart de ${formatCurrency(Math.abs(diff))} ${diff > 0 ? "au-dessus" : "en dessous"} du total calculé (${formatCurrency(subtotal)})`;
       warningEl.style.display = "inline";
+      if (dismissBtn) dismissBtn.style.display = "inline";
     } else {
       warningEl.textContent = "";
       warningEl.style.display = "none";
+      if (dismissBtn) dismissBtn.style.display = "none";
     }
   }
 }
@@ -277,6 +303,8 @@ export {
   updateSubmissionFinancialSummary,
   computeActivityFinancials,
   updateDistributionTotal,
+  dismissDistributionWarning,
+  resetDistributionWarningDismissal,
   overrideMarkerHtml
 };
 export type { TaxOverride };

@@ -27,7 +27,8 @@ import {
   showAutoSaveStatus,
   updateSubmissionFinancialSummary,
   openTaxOverrideModal,
-  closeActivityDetailsModal
+  closeActivityDetailsModal,
+  dismissDistributionWarning
 } from "./financials.ts";
 import { undoActivityFormChange, redoActivityFormChange, loadAndRenderActivityHistory, updateFormDatesHelper } from "./history/index.ts";
 import { submitActivityForm } from "./history/index.ts";
@@ -171,6 +172,9 @@ function initFormHandlers() {
   // Facturation tab Annuler/Rétablir buttons — same drawer-wide undo/redo stack as Ctrl+Z/Ctrl+Y
   el("billing-undo-btn")?.addEventListener("click", () => undoActivityFormChange());
   el("billing-redo-btn")?.addEventListener("click", () => redoActivityFormChange());
+
+  // Dismisses the GL distribution total discrepancy warning for the amount currently shown
+  el("dismiss-distribution-warning-btn")?.addEventListener("click", () => dismissDistributionWarning());
 
   // Bar revenue buttons
   const addBarRevenueBtn = document.getElementById("form-add-bar-revenue-btn");
