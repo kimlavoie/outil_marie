@@ -14,7 +14,8 @@ import {
   getRoomsTariffTotal,
   getActivityReferences,
   getReservationRoomLabel,
-  calculateDaysCount
+  calculateDaysCount,
+  formatCurrency
 } from "../utils/utils.ts";
 
 export interface ExcelExportOptions {
@@ -363,6 +364,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
     width: number;
     accountCode?: string;
     getValue: (act: any, rowIdx: number) => any;
+    getComment?: (act: any) => string | null;
   }
 
   const activeCols: ColumnDef[] = [];
@@ -483,7 +485,22 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
           return { t: "n", f: amounts.join("+") };
         }
         return total;
-      }
+      },
+      getComment:
+        options.mode === "quarter_end"
+          ? act => {
+              // Which reference(s) the amount shown is made up of, e.g. "RI001 : 60,00 $" — a
+              // billing line's own reference, or a bar revenue line's receipt number.
+              const lines = getRevenueLines(act).filter((d: any) => d.account_code === code && (Number(d.amount) || 0) !== 0);
+              if (lines.length === 0) return null;
+              return lines
+                .map((d: any) => {
+                  const ref = (d.reference || d.receipt_number || "").trim() || "(sans référence)";
+                  return `${ref} : ${formatCurrency(Number(d.amount) || 0)}`;
+                })
+                .join("\n");
+            }
+          : undefined
     });
   });
 
@@ -562,6 +579,25 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
     const lastColLetter = getExcelColName(activeCols.length);
     const lastDataRow = 1 + activeActivities.length; // header + data rows, excluding the totals row
     if (lastDataRow > 1) ws["!autofilter"] = { ref: `A1:${lastColLetter}${lastDataRow}` };
+
+    // Note on each account cell spelling out which reference(s) make up its amount.
+    activeCols.forEach((col, cIdx) => {
+      if (!col.getComment) return;
+      const colLetter = getExcelColName(cIdx + 1);
+      activeActivities.forEach((act, rIdx) => {
+        const comment = col.getComment!(act);
+        if (!comment) return;
+        const cellRef = `${colLetter}${rIdx + 2}`;
+        if (!ws[cellRef]) return;
+        // `hidden: true` keeps the note tucked away until the cell is hovered, matching Excel's
+        // normal comment behavior — without it, SheetJS marks the note "always visible" (shown as
+        // soon as the file opens, with no `visibility:hidden` on its VML shape — see
+        // write_vml_comment() in xlsx.js).
+        const comments: any[] & { hidden?: boolean } = [{ a: "Compta Marie", t: comment }];
+        comments.hidden = true;
+        ws[cellRef].c = comments;
+      });
+    });
   }
   lib.utils.book_append_sheet(wb, ws, "ACTIVITÉS");
 
@@ -738,6 +774,31 @@ function freezePanesXml(sheetXml: string, frozenCols: number): string {
   );
 }
 
+// 2x (to stop a two-reference note from being cut off), then another 1.5x on top of that (still
+// not quite enough room) — see the commit history of this function for why it landed at 3x.
+const COMMENT_NOTE_HEIGHT_MULTIPLIER = 3;
+
+// Enlarges every account-cell note's comment box (by COMMENT_NOTE_HEIGHT_MULTIPLIER) so a note
+// with several reference lines isn't cut off. SheetJS hardcodes both a 64pt CSS height AND a
+// <x:Anchor> (the shape's position/size as a cell-relative row/column span) that spans 4 rows —
+// see write_vml_comment() in xlsx.js, with no option to request either taller. Scaling only the
+// CSS height has no visible effect: because the shape also carries <x:SizeWithCells/>, Excel
+// re-derives the rendered box from the Anchor's row span (not the literal style height) once the
+// file is opened, so the Anchor is what actually has to change.
+function enlargeCommentNotesXml(vmlXml: string): string {
+  return vmlXml
+    .replace(/height:64pt/g, `height:${64 * COMMENT_NOTE_HEIGHT_MULTIPLIER}pt`)
+    .replace(/<x:Anchor>([^<]+)<\/x:Anchor>/g, (whole, anchor) => {
+      const parts = String(anchor)
+        .split(",")
+        .map(n => parseInt(n, 10));
+      if (parts.length !== 8 || parts.some(n => Number.isNaN(n))) return whole;
+      const [startCol, startColOff, startRow, startRowOff, endCol, endColOff, endRow, endRowOff] = parts;
+      const scaledEndRow = startRow + (endRow - startRow) * COMMENT_NOTE_HEIGHT_MULTIPLIER;
+      return `<x:Anchor>${[startCol, startColOff, startRow, startRowOff, endCol, endColOff, scaledEndRow, endRowOff].join(",")}</x:Anchor>`;
+    });
+}
+
 interface QuarterEndStyling {
   totalRowNumber: number | null; // the "TOTAUX COMPLETS" row, or null when there's no data to total
   totalColLetter: string; // the "REVENUS TOTAL RÉÈL" column, bolded for its full height
@@ -773,6 +834,12 @@ async function buildQuarterEndBlob(lib: any, wb: any, styling: QuarterEndStyling
       ({ stylesXml, sheetXml } = addBoldStyleToColumnXml(stylesXml, sheetXml, styling.totalColLetter, 2, styling.lastDataRow));
     }
     sheetXml = freezePanesXml(sheetXml, QUARTER_END_FROZEN_COLS);
+
+    const vmlFile = zip.file("xl/drawings/vmlDrawing1.vml");
+    if (vmlFile) {
+      const vmlXml = await vmlFile.async("string");
+      zip.file("xl/drawings/vmlDrawing1.vml", enlargeCommentNotesXml(vmlXml));
+    }
 
     zip.file("xl/styles.xml", stylesXml);
     zip.file("xl/worksheets/sheet1.xml", sheetXml);
@@ -841,5 +908,6 @@ export {
   addBoldStyleToSheetXml,
   addBoldStyleToColumnXml,
   freezePanesXml,
+  enlargeCommentNotesXml,
   buildQuarterEndBlob
 };

@@ -2,13 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { appState } from "../src/state/state.ts";
+import { formatCurrency } from "../src/utils/utils.ts";
 import {
   getExcelColName,
   runExportToExcel,
+  generateExcelWorkbook,
   getQuarterEndExportOptions,
   addBoldStyleToSheetXml,
   addBoldStyleToColumnXml,
   freezePanesXml,
+  enlargeCommentNotesXml,
   buildQuarterEndBlob
 } from "../src/services/excel-export.ts";
 
@@ -607,6 +610,133 @@ test("quarter-end report only includes id/name/date_start/references, 892 accoun
   assert.equal(rowA3[4], "");
   assert.equal(rowA3[5], 10);
   assert.equal(rowA3[6].f, "SUM(E3:F3)");
+});
+
+test("quarter-end report attaches a note to each account cell spelling out which reference(s) make up its amount", async () => {
+  const XLSX = await import("xlsx");
+  appState.settings = baseSettings({
+    accounts: [
+      { code: "892-0000-00-000", description: "SCOLAIRE" },
+      { code: "892-1111-00-000", description: "ADULTE" }
+    ]
+  });
+  appState.activities = [
+    makeActivity({
+      id: "a1",
+      name: "Spectacle Musique",
+      date_start: "2025-08-01",
+      distributions: [
+        { account_code: "892-0000-00-000", amount: 60, reference: "RI001" },
+        { account_code: "892-0000-00-000", amount: 40, reference: "RI002" },
+        { account_code: "892-1111-00-000", amount: 0 }
+      ],
+      bar_revenue_lines: [{ account_code: "892-1111-00-000", amount: 25, receipt_number: "RI003" }]
+    }),
+    makeActivity({
+      id: "a2",
+      name: "Sans référence",
+      date_start: "2025-08-02",
+      distributions: [{ account_code: "892-0000-00-000", amount: 15 }]
+    })
+  ];
+  appState.selected_year = "2025-2026";
+  appState.selected_quarters = [1];
+
+  const wb = generateExcelWorkbook(XLSX, getQuarterEndExportOptions());
+  const ws = wb.Sheets["ACTIVITÉS"];
+
+  // Each note is marked "hidden" — shown only on hover, not pinned open as soon as the file opens
+  // (see the comment in excel-export.ts's generateExcelWorkbook for why that property matters).
+  const assertNote = (cell: any, text: string) => {
+    assert.deepEqual([...cell.c], [{ a: "Compta Marie", t: text }]);
+    assert.equal(cell.c.hidden, true);
+  };
+
+  // a1's 892-0000 cell (row 2) combines two referenced lines.
+  assertNote(ws["E2"], `RI001 : ${formatCurrency(60)}\nRI002 : ${formatCurrency(40)}`);
+  // a1's 892-1111 cell (row 2) only has the bar revenue line (the 0$ distribution is excluded).
+  assertNote(ws["F2"], `RI003 : ${formatCurrency(25)}`);
+  // a2's 892-0000 cell (row 3) has no reference at all.
+  assertNote(ws["E3"], `(sans référence) : ${formatCurrency(15)}`);
+  // a2's 892-1111 cell (row 3) is blank (0$) and gets no note.
+  assert.equal(ws["F3"].c, undefined);
+});
+
+test("quarter-end report's notes are written as hover-only comments, not pinned open, in the real .xlsx", async () => {
+  const XLSX = await import("xlsx");
+  const JSZip = (await import("jszip")).default;
+  appState.settings = baseSettings();
+  appState.activities = [
+    makeActivity({
+      id: "a1",
+      name: "Spectacle Musique",
+      date_start: "2025-08-01",
+      distributions: [{ account_code: "892-0000-00-000", amount: 60, reference: "RI001" }]
+    })
+  ];
+  appState.selected_year = "2025-2026";
+  appState.selected_quarters = [1];
+
+  const wb = generateExcelWorkbook(XLSX, getQuarterEndExportOptions());
+  const buffer = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+  const zip = await JSZip.loadAsync(buffer);
+
+  const vml = await zip.file("xl/drawings/vmlDrawing1.vml")!.async("text");
+  assert.match(vml, /visibility:hidden/);
+  assert.doesNotMatch(vml, /<x:Visible\/>/);
+});
+
+test("buildQuarterEndBlob enlarges the note's comment box so multi-line notes aren't cut off", async () => {
+  const XLSX = await import("xlsx");
+  const JSZip = (await import("jszip")).default;
+  appState.settings = baseSettings();
+  appState.activities = [
+    makeActivity({
+      id: "a1",
+      name: "Spectacle Musique",
+      date_start: "2025-08-01",
+      distributions: [
+        { account_code: "892-0000-00-000", amount: 60, reference: "RI001" },
+        { account_code: "892-0000-00-000", amount: 40, reference: "RI002" }
+      ]
+    })
+  ];
+  appState.selected_year = "2025-2026";
+  appState.selected_quarters = [1];
+
+  const wb = generateExcelWorkbook(XLSX, getQuarterEndExportOptions());
+  const blob = await buildQuarterEndBlob(XLSX, wb, { totalRowNumber: 3, totalColLetter: "F", lastDataRow: 2 });
+  const buffer = Buffer.from(await blob.arrayBuffer());
+  const zip = await JSZip.loadAsync(buffer);
+
+  const vml = await zip.file("xl/drawings/vmlDrawing1.vml")!.async("text");
+  assert.match(vml, /height:192pt/);
+  assert.doesNotMatch(vml, /height:64pt/);
+
+  // Excel actually sizes the comment box from the anchor's row span, not the CSS height above
+  // (see enlargeCommentNotesXml's comment) — that span must be scaled too, from its default 4
+  // rows to 12 (3x).
+  const [, startRow, endRow] = vml.match(/<x:Anchor>\d+,\d+,(\d+),\d+,\d+,\d+,(\d+),\d+<\/x:Anchor>/)!.map(Number);
+  assert.equal(endRow - startRow, 12);
+});
+
+test("enlargeCommentNotesXml scales every comment box's CSS height and its anchor's row span by 3x, leaving everything else untouched", () => {
+  const vml =
+    '<v:shape style="position:absolute; margin-left:80pt;margin-top:5pt;width:104pt;height:64pt;z-index:10;visibility:hidden"/>' +
+    "<x:Anchor>2,0,2,0,4,20,6,20</x:Anchor>" +
+    '<v:shape style="position:absolute; margin-left:80pt;margin-top:69pt;width:104pt;height:64pt;z-index:11;visibility:hidden"/>' +
+    "<x:Anchor>2,0,8,0,4,20,12,20</x:Anchor>";
+  const patched = enlargeCommentNotesXml(vml);
+
+  assert.equal((patched.match(/height:192pt/g) || []).length, 2);
+  assert.doesNotMatch(patched, /height:64pt/);
+  assert.match(patched, /width:104pt/);
+
+  // Excel actually sizes the box from the anchor's row span (<x:SizeWithCells/> makes it
+  // re-derive the rendered size from the anchor, ignoring the CSS height) — a 4-row span (2 to 6)
+  // becomes 12 rows (2 to 14); a later shape anchored at row 8 (8 to 12) becomes 8 to 20.
+  assert.match(patched, /<x:Anchor>2,0,2,0,4,20,14,20<\/x:Anchor>/);
+  assert.match(patched, /<x:Anchor>2,0,8,0,4,20,20,20<\/x:Anchor>/);
 });
 
 test("quarter-end report omits the autofilter when every activity has zero revenue", async () => {
