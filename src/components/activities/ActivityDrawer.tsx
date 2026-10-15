@@ -1060,14 +1060,14 @@ export const ActivityDrawer: React.FC = () => {
                     type="button"
                     id="enable-bar-revenue-btn"
                     className="btn-link"
-                    style={{ display: "none", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 0, fontSize: "0.75rem", textDecoration: "underline" }}
+                    style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 0, fontSize: "0.75rem", textDecoration: "underline" }}
                   >
                     + Activer les revenus du bar
                   </button>
                 </div>
               </div>
 
-              <div className="distribution-section" id="billing-bar-revenue-section" style={{ display: "none" }}>
+              <div className="distribution-section" id="billing-bar-revenue-section">
                 <div className="distribution-header">
                   <span className="field-label">Revenus du bar</span>
                   <button type="button" id="form-add-bar-revenue-btn" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "0.8rem" }}>
@@ -1084,7 +1084,7 @@ export const ActivityDrawer: React.FC = () => {
                     type="button"
                     id="disable-bar-revenue-btn"
                     className="btn-link"
-                    style={{ display: "none", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 0, fontSize: "0.75rem", textDecoration: "underline" }}
+                    style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 0, fontSize: "0.75rem", textDecoration: "underline" }}
                   >
                     Retirer les revenus du bar
                   </button>

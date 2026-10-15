@@ -134,7 +134,8 @@ function initFormHandlers() {
         }
       }
       if (tabName === "billing") {
-        updateBarRevenueSectionVisibility();
+        const id = el("form-activity-internal-id")?.value;
+        updateBarRevenueSectionVisibility(id ? getActivityById(id) : undefined);
       }
       if (tabName === "supporting-docs") {
         const id = el("form-activity-internal-id")?.value;
