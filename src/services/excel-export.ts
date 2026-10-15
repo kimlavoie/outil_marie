@@ -7,6 +7,7 @@ import { logError } from "../utils/logger.ts";
 import { appState, getFiscalYear, getQuarterNumber, getActivePricingGrid, getFlattenedRoomTarifs } from "../state/state.ts";
 import { getActivities } from "../state/activities-repository.ts";
 import { getAccounts, getRooms } from "../state/settings-repository.ts";
+import { getReconciliationIssuesByActivity } from "./reconciliation.ts";
 import {
   showToast,
   showLoadingOverlay,
@@ -292,6 +293,34 @@ export function getQuarterEndActivities(options: ExcelExportOptions): { activiti
   });
 
   return { activities, selectedAccounts };
+}
+
+// The quarter-end report's account cells (e.g. "E3") with an unresolved reconciliation issue
+// against the last-reconciled ledger (see getReconciliationIssuesByActivity), split by issue so
+// each gets its own highlight color in the generated file (see buildQuarterEndBlob): "diff" (the
+// entered amount doesn't match the ledger) vs "unlogged" (entered in the app, not found in the
+// ledger at all). Both empty when no reconciliation has been run this session, or when nothing's
+// off. Takes the exact (activities, selectedAccounts) pair generateExcelWorkbook built its
+// rows/columns from, so the cell refs line up with what's actually on the sheet.
+export function getQuarterEndReconciliationCellRefs(
+  activities: any[],
+  selectedAccounts: string[]
+): { diffCellRefs: Set<string>; unloggedCellRefs: Set<string> } {
+  const issuesByActivity = getReconciliationIssuesByActivity();
+  const diffCellRefs = new Set<string>();
+  const unloggedCellRefs = new Set<string>();
+  activities.forEach((act, rIdx) => {
+    const accountIssues = issuesByActivity.get(act.id);
+    if (!accountIssues) return;
+    selectedAccounts.forEach((code, accIdx) => {
+      const issue = accountIssues.get(code);
+      if (!issue) return;
+      const colLetter = getExcelColName(QUARTER_END_FROZEN_COLS + accIdx + 1);
+      const cellRef = `${colLetter}${rIdx + 2}`;
+      (issue === "diff" ? diffCellRefs : unloggedCellRefs).add(cellRef);
+    });
+  });
+  return { diffCellRefs, unloggedCellRefs };
 }
 
 // Converts a 1-based column index to its Excel letter (1 -> "A", 27 -> "AA"), exported alongside
@@ -755,6 +784,64 @@ function addBoldStyleToColumnXml(
   return { stylesXml: patchedStyles, sheetXml: applyXfToColumn(sheetXml, colLetter, startRow, endRow, xfIndex) };
 }
 
+// Fill colors for the quarter-end report's reconciliation highlights (see
+// getQuarterEndReconciliationCellRefs): yellow for an amount mismatch ("diff"), orange for an
+// amount missing from the ledger entirely ("unlogged") — distinct colors so the two kinds of
+// issue read differently at a glance.
+const RECONCILIATION_DIFF_FILL_ARGB = "FFFFFF00";
+const RECONCILIATION_UNLOGGED_FILL_ARGB = "FFFFA500";
+
+// Adds a solid fill (given as an ARGB hex string, e.g. "FFFFFF00") + cellXfs entry to a
+// SheetJS-generated styles.xml, returning the new entry's style index — same rationale and
+// limitation as addBoldXf (SheetJS's community-edition writer never writes a cell's `.s` style,
+// fill included, so this has to be patched into the already-written XML). Returns xfIndex -1 if
+// that XML isn't the shape expected.
+function addFillXf(stylesXml: string, argb: string): { stylesXml: string; xfIndex: number } {
+  const fillsMatch = stylesXml.match(/<fills count="(\d+)">([\s\S]*?)<\/fills>/);
+  const cellXfsMatch = stylesXml.match(/<cellXfs count="(\d+)">([\s\S]*?)<\/cellXfs>/);
+  if (!fillsMatch || !cellXfsMatch) return { stylesXml, xfIndex: -1 };
+
+  const fillCount = parseInt(fillsMatch[1], 10);
+  const fill = `<fill><patternFill patternType="solid"><fgColor rgb="${argb}"/><bgColor indexed="64"/></patternFill></fill>`;
+  const stylesWithFill = stylesXml
+    .replace(/<fills count="(\d+)">/, `<fills count="${fillCount + 1}">`)
+    .replace("</fills>", `${fill}</fills>`);
+
+  const xfCount = parseInt(cellXfsMatch[1], 10);
+  const fillXf = `<xf numFmtId="0" fontId="0" fillId="${fillCount}" borderId="0" xfId="0" applyFill="1"/>`;
+  const patchedStyles = stylesWithFill
+    .replace(/<cellXfs count="(\d+)">/, `<cellXfs count="${xfCount + 1}">`)
+    .replace("</cellXfs>", `${fillXf}</cellXfs>`);
+
+  return { stylesXml: patchedStyles, xfIndex: xfCount };
+}
+
+// Patches a sheet.xml so every cell in the given set of refs (e.g. "E3") references the given
+// style index, leaving every other cell untouched.
+function applyXfToCells(sheetXml: string, cellRefs: Set<string>, xfIndex: number): string {
+  if (cellRefs.size === 0) return sheetXml;
+  return sheetXml.replace(/<c\s+r="([^"]+)"([^>]*?)(\/?)>/g, (match: string, ref: string, attrs: string, slash: string) => {
+    if (!cellRefs.has(ref)) return match;
+    const cleanedAttrs = attrs.replace(/\s+s="\d+"/, "");
+    return `<c r="${ref}"${cleanedAttrs} s="${xfIndex}"${slash}>`;
+  });
+}
+
+// The given cells (scattered account cells with a reconciliation issue — see
+// getQuarterEndReconciliationCellRefs) highlighted with a solid fill, so they stand out for a
+// second look. See addFillXf/applyXfToCells above.
+function addFillStyleToCellsXml(
+  stylesXml: string,
+  sheetXml: string,
+  cellRefs: Set<string>,
+  argb: string
+): { stylesXml: string; sheetXml: string } {
+  if (cellRefs.size === 0) return { stylesXml, sheetXml };
+  const { stylesXml: patchedStyles, xfIndex } = addFillXf(stylesXml, argb);
+  if (xfIndex === -1) return { stylesXml, sheetXml };
+  return { stylesXml: patchedStyles, sheetXml: applyXfToCells(sheetXml, cellRefs, xfIndex) };
+}
+
 // The quarter-end report's first 4 columns are always, in this fixed order (see
 // getQuarterEndExportOptions): id, name, date_start, references — frozen alongside the header row
 // so the invoice-reference column stays visible while scrolling through the 892-xxx accounts.
@@ -803,6 +890,8 @@ interface QuarterEndStyling {
   totalRowNumber: number | null; // the "TOTAUX COMPLETS" row, or null when there's no data to total
   totalColLetter: string; // the "REVENUS TOTAL RÉÈL" column, bolded for its full height
   lastDataRow: number; // last activity row (header is row 1), so 1 when there's no data
+  diffCellRefs: Set<string>; // account cells with an amount mismatch — highlighted yellow
+  unloggedCellRefs: Set<string>; // account cells missing from the ledger entirely — highlighted orange
 }
 
 // Builds the quarter-end report's .xlsx as a Blob with its header row bold/word-wrapped, its
@@ -833,6 +922,8 @@ async function buildQuarterEndBlob(lib: any, wb: any, styling: QuarterEndStyling
     if (styling.lastDataRow >= 2) {
       ({ stylesXml, sheetXml } = addBoldStyleToColumnXml(stylesXml, sheetXml, styling.totalColLetter, 2, styling.lastDataRow));
     }
+    ({ stylesXml, sheetXml } = addFillStyleToCellsXml(stylesXml, sheetXml, styling.diffCellRefs, RECONCILIATION_DIFF_FILL_ARGB));
+    ({ stylesXml, sheetXml } = addFillStyleToCellsXml(stylesXml, sheetXml, styling.unloggedCellRefs, RECONCILIATION_UNLOGGED_FILL_ARGB));
     sheetXml = freezePanesXml(sheetXml, QUARTER_END_FROZEN_COLS);
 
     const vmlFile = zip.file("xl/drawings/vmlDrawing1.vml");
@@ -886,7 +977,15 @@ async function runExportToExcel(_getExcelColName: (colIdx: number) => string, xl
       const { activities, selectedAccounts } = getQuarterEndActivities(options);
       const totalRowNumber = options.sheets.includeTotalRow && activities.length > 0 ? activities.length + 2 : null;
       const totalColLetter = getExcelColName(QUARTER_END_FROZEN_COLS + selectedAccounts.length + 1);
-      const blob = await buildQuarterEndBlob(lib, wb, { totalRowNumber, totalColLetter, lastDataRow: activities.length + 1 });
+
+      const { diffCellRefs, unloggedCellRefs } = getQuarterEndReconciliationCellRefs(activities, selectedAccounts);
+      const blob = await buildQuarterEndBlob(lib, wb, {
+        totalRowNumber,
+        totalColLetter,
+        lastDataRow: activities.length + 1,
+        diffCellRefs,
+        unloggedCellRefs
+      });
       downloadBlob(blob, filename);
     } else {
       lib.writeFile(wb, filename);
@@ -907,6 +1006,7 @@ export {
   generateExcelWorkbook,
   addBoldStyleToSheetXml,
   addBoldStyleToColumnXml,
+  addFillStyleToCellsXml,
   freezePanesXml,
   enlargeCommentNotesXml,
   buildQuarterEndBlob

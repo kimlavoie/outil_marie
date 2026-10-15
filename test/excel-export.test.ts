@@ -3,13 +3,17 @@ import assert from "node:assert/strict";
 
 import { appState } from "../src/state/state.ts";
 import { formatCurrency } from "../src/utils/utils.ts";
+import { reconciliationState } from "../src/services/reconciliation.ts";
 import {
   getExcelColName,
   runExportToExcel,
   generateExcelWorkbook,
   getQuarterEndExportOptions,
+  getQuarterEndActivities,
+  getQuarterEndReconciliationCellRefs,
   addBoldStyleToSheetXml,
   addBoldStyleToColumnXml,
+  addFillStyleToCellsXml,
   freezePanesXml,
   enlargeCommentNotesXml,
   buildQuarterEndBlob
@@ -662,6 +666,132 @@ test("quarter-end report attaches a note to each account cell spelling out which
   assert.equal(ws["F3"].c, undefined);
 });
 
+test("getQuarterEndReconciliationCellRefs splits unresolved mismatches ('diff') from entries missing from the ledger ('unlogged')", () => {
+  const prevResults = reconciliationState.results;
+  try {
+    appState.settings = baseSettings({
+      accounts: [
+        { code: "892-0000-00-000", description: "SCOLAIRE" },
+        { code: "892-1111-00-000", description: "ADULTE" },
+        { code: "892-2222-00-000", description: "JEUNESSE" }
+      ]
+    });
+    appState.activities = [
+      makeActivity({
+        id: "a1",
+        name: "Spectacle Musique",
+        date_start: "2025-08-01",
+        distributions: [
+          { account_code: "892-0000-00-000", amount: 60, reference: "RI001" },
+          { account_code: "892-1111-00-000", amount: 25, reference: "RI002" },
+          { account_code: "892-2222-00-000", amount: 10, reference: "RI004" }
+        ]
+      }),
+      makeActivity({
+        id: "a2",
+        name: "Sans écart",
+        date_start: "2025-08-02",
+        distributions: [{ account_code: "892-0000-00-000", amount: 15, reference: "RI003" }]
+      })
+    ];
+    appState.selected_year = "2025-2026";
+    appState.selected_quarters = [1];
+
+    reconciliationState.results = [
+      // a1's 892-0000 : a real, unresolved amount mismatch.
+      { status: "diff", activityId: "a1", account_code: "892-0000-00-000" },
+      // a1's 892-1111 : flagged by the engine, but already manually reviewed — not highlighted.
+      { status: "diff", activityId: "a1", account_code: "892-1111-00-000", reviewStatus: "ignored" },
+      // a1's 892-2222 : entered in the app, but missing from the ledger entirely.
+      { status: "unlogged", activityId: "a1", account_code: "892-2222-00-000" },
+      // a2 : a clean match.
+      { status: "valid", activityId: "a2", account_code: "892-0000-00-000" }
+    ] as any[];
+
+    const options = getQuarterEndExportOptions();
+    const { activities, selectedAccounts } = getQuarterEndActivities(options);
+    const { diffCellRefs, unloggedCellRefs } = getQuarterEndReconciliationCellRefs(activities, selectedAccounts);
+
+    assert.deepEqual([...diffCellRefs], ["E2"]);
+    assert.deepEqual([...unloggedCellRefs], ["G2"]);
+  } finally {
+    reconciliationState.results = prevResults;
+  }
+});
+
+test("getQuarterEndReconciliationCellRefs is empty when no reconciliation has been run", () => {
+  const prevResults = reconciliationState.results;
+  try {
+    reconciliationState.results = [];
+    appState.settings = baseSettings();
+    appState.activities = [
+      makeActivity({
+        id: "a1",
+        name: "Spectacle Musique",
+        date_start: "2025-08-01",
+        distributions: [{ account_code: "892-0000-00-000", amount: 60, reference: "RI001" }]
+      })
+    ];
+    appState.selected_year = "2025-2026";
+    appState.selected_quarters = [1];
+
+    const options = getQuarterEndExportOptions();
+    const { activities, selectedAccounts } = getQuarterEndActivities(options);
+    const { diffCellRefs, unloggedCellRefs } = getQuarterEndReconciliationCellRefs(activities, selectedAccounts);
+    assert.equal(diffCellRefs.size, 0);
+    assert.equal(unloggedCellRefs.size, 0);
+  } finally {
+    reconciliationState.results = prevResults;
+  }
+});
+
+test("buildQuarterEndBlob highlights 'diff' cells in yellow and 'unlogged' cells in orange in the real .xlsx", async () => {
+  const XLSX = await import("xlsx");
+  const JSZip = (await import("jszip")).default;
+  appState.settings = baseSettings({
+    accounts: [
+      { code: "892-0000-00-000", description: "SCOLAIRE" },
+      { code: "892-1111-00-000", description: "ADULTE" }
+    ]
+  });
+  appState.activities = [
+    makeActivity({
+      id: "a1",
+      name: "Spectacle Musique",
+      date_start: "2025-08-01",
+      distributions: [
+        { account_code: "892-0000-00-000", amount: 60, reference: "RI001" },
+        { account_code: "892-1111-00-000", amount: 25, reference: "RI002" }
+      ]
+    })
+  ];
+  appState.selected_year = "2025-2026";
+  appState.selected_quarters = [1];
+
+  const wb = generateExcelWorkbook(XLSX, getQuarterEndExportOptions());
+  const blob = await buildQuarterEndBlob(XLSX, wb, {
+    totalRowNumber: 3,
+    totalColLetter: "G",
+    lastDataRow: 2,
+    diffCellRefs: new Set(["E2"]),
+    unloggedCellRefs: new Set(["F2"])
+  });
+  const buffer = Buffer.from(await blob.arrayBuffer());
+  const zip = await JSZip.loadAsync(buffer);
+
+  const stylesXml = await zip.file("xl/styles.xml")!.async("text");
+  const sheetXml = await zip.file("xl/worksheets/sheet1.xml")!.async("text");
+
+  assert.match(stylesXml, /<fgColor rgb="FFFFFF00"\/>/);
+  assert.match(stylesXml, /<fgColor rgb="FFFFA500"\/>/);
+  const cellE2 = sheetXml.match(/<c r="E2"[^>]*\/?>/)![0];
+  const cellF2 = sheetXml.match(/<c r="F2"[^>]*\/?>/)![0];
+  assert.match(cellE2, /s="\d+"/);
+  assert.match(cellF2, /s="\d+"/);
+  // The two cells reference distinct style indices (distinct fill colors).
+  assert.notEqual(cellE2.match(/s="(\d+)"/)![1], cellF2.match(/s="(\d+)"/)![1]);
+});
+
 test("quarter-end report's notes are written as hover-only comments, not pinned open, in the real .xlsx", async () => {
   const XLSX = await import("xlsx");
   const JSZip = (await import("jszip")).default;
@@ -705,7 +835,13 @@ test("buildQuarterEndBlob enlarges the note's comment box so multi-line notes ar
   appState.selected_quarters = [1];
 
   const wb = generateExcelWorkbook(XLSX, getQuarterEndExportOptions());
-  const blob = await buildQuarterEndBlob(XLSX, wb, { totalRowNumber: 3, totalColLetter: "F", lastDataRow: 2 });
+  const blob = await buildQuarterEndBlob(XLSX, wb, {
+    totalRowNumber: 3,
+    totalColLetter: "F",
+    lastDataRow: 2,
+    diffCellRefs: new Set(),
+    unloggedCellRefs: new Set()
+  });
   const buffer = Buffer.from(await blob.arrayBuffer());
   const zip = await JSZip.loadAsync(buffer);
 
@@ -810,6 +946,41 @@ test("addBoldStyleToColumnXml patches every cell of the given column within the 
   assert.doesNotMatch(patchedSheet, /<c r="B3"[^>]* s="\d+"/);
 });
 
+test("addFillStyleToCellsXml fills only the given cells with the given color, leaving everything else alone", () => {
+  const stylesXml =
+    '<styleSheet><fonts count="1"><font><sz val="12"/><name val="Calibri"/></font></fonts>' +
+    '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>' +
+    '<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs></styleSheet>';
+  const sheetXml =
+    "<worksheet><sheetData>" +
+    '<row r="2"><c r="E2"><v>100</v></c><c r="F2"><v>25</v></c></row>' +
+    '<row r="3"><c r="E3"><v>60</v></c></row>' +
+    "</sheetData></worksheet>";
+
+  const { stylesXml: patchedStyles, sheetXml: patchedSheet } = addFillStyleToCellsXml(
+    stylesXml,
+    sheetXml,
+    new Set(["E2", "E3"]),
+    "FFFFA500"
+  );
+
+  assert.match(patchedStyles, /<fills count="3">/);
+  assert.match(patchedStyles, /<fgColor rgb="FFFFA500"\/>/);
+  assert.match(patchedStyles, /<cellXfs count="2">/);
+  assert.match(patchedStyles, /<xf numFmtId="0" fontId="0" fillId="2"[^>]*applyFill="1"/);
+
+  // E2 and E3 (the given refs) are filled; F2 (not given) is not.
+  assert.match(patchedSheet, /<c r="E2" s="1">/);
+  assert.match(patchedSheet, /<c r="E3" s="1">/);
+  assert.doesNotMatch(patchedSheet, /<c r="F2"[^>]* s="\d+"/);
+});
+
+test("addFillStyleToCellsXml is a no-op when the ref set is empty", () => {
+  const result = addFillStyleToCellsXml("<styleSheet/>", "<worksheet/>", new Set(), "FFFFFF00");
+  assert.equal(result.stylesXml, "<styleSheet/>");
+  assert.equal(result.sheetXml, "<worksheet/>");
+});
+
 test("buildQuarterEndBlob produces a real .xlsx whose totals row is rendered bold", async () => {
   const XLSX = await import("xlsx");
   const JSZip = (await import("jszip")).default;
@@ -822,7 +993,13 @@ test("buildQuarterEndBlob produces a real .xlsx whose totals row is rendered bol
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "ACTIVITÉS");
 
-  const blob = await buildQuarterEndBlob(XLSX, wb, { totalRowNumber: 3, totalColLetter: "B", lastDataRow: 2 });
+  const blob = await buildQuarterEndBlob(XLSX, wb, {
+    totalRowNumber: 3,
+    totalColLetter: "B",
+    lastDataRow: 2,
+    diffCellRefs: new Set(),
+    unloggedCellRefs: new Set()
+  });
   const buffer = Buffer.from(await blob.arrayBuffer());
   const zip = await JSZip.loadAsync(buffer);
 

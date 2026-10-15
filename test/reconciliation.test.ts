@@ -13,7 +13,8 @@ import {
   reconcileLedger,
   reconciliationState,
   loadReconDecisions,
-  setReconDecision
+  setReconDecision,
+  getReconciliationIssuesByActivity
 } from "../src/services/reconciliation.ts";
 import { appState } from "../src/state/state.ts";
 
@@ -596,6 +597,48 @@ test("setReconDecision is a no-op when called with an empty key", async () => {
     assert.deepEqual(reconciliationState.decisions, {});
   } finally {
     reconciliationState.decisions = prevDecisions;
+  }
+});
+
+test("getReconciliationIssuesByActivity surfaces unresolved 'diff' and 'unlogged' results, grouped by activity", () => {
+  const prevResults = reconciliationState.results;
+  try {
+    reconciliationState.results = [
+      { status: "diff", activityId: "act-1", account_code: "892-1" },
+      // Same activity, a second account missing from the ledger entirely.
+      { status: "unlogged", activityId: "act-1", account_code: "892-2" },
+      // Manually reviewed — shouldn't count as still-inconsistent.
+      { status: "diff", activityId: "act-2", account_code: "892-1", reviewStatus: "validated" },
+      { status: "unlogged", activityId: "act-2", account_code: "892-2", reviewStatus: "ignored" },
+      // Not tied to any activity (present in the ledger, absent from the app) — can't map to a cell.
+      { status: "unentered", activityId: "", account_code: "892-1" },
+      // A clean match.
+      { status: "valid", activityId: "act-3", account_code: "892-1" }
+    ] as any[];
+
+    const result = getReconciliationIssuesByActivity();
+    assert.deepEqual([...result.keys()], ["act-1"]);
+    assert.deepEqual([...result.get("act-1")!.entries()].sort(), [
+      ["892-1", "diff"],
+      ["892-2", "unlogged"]
+    ]);
+  } finally {
+    reconciliationState.results = prevResults;
+  }
+});
+
+test("getReconciliationIssuesByActivity prefers 'diff' over 'unlogged' when both apply to the same account", () => {
+  const prevResults = reconciliationState.results;
+  try {
+    reconciliationState.results = [
+      { status: "unlogged", activityId: "act-1", account_code: "892-1" },
+      { status: "diff", activityId: "act-1", account_code: "892-1" }
+    ] as any[];
+
+    const result = getReconciliationIssuesByActivity();
+    assert.equal(result.get("act-1")!.get("892-1"), "diff");
+  } finally {
+    reconciliationState.results = prevResults;
   }
 });
 

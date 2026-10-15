@@ -480,6 +480,27 @@ function reconcileLedger() {
   });
 }
 
+// For the quarter-end Excel export: activityId -> (account code -> issue), for every account
+// carrying an unresolved reconciliation issue (not manually validated/ignored — see
+// reconciliation-view.tsx's review buttons) against the last-reconciled ledger: "diff" (an amount
+// mismatch) or "unlogged" (entered in the app, not found at all in the ledger). Used to highlight
+// those cells — in different colors per issue — so they get a second look; empty (no highlights)
+// when no reconciliation has been run this session. If both issues somehow apply to the same
+// account (distinct reference groups, one off, one missing), "diff" wins since a wrong amount is
+// the more concrete problem.
+function getReconciliationIssuesByActivity(): Map<string, Map<string, "diff" | "unlogged">> {
+  const map = new Map<string, Map<string, "diff" | "unlogged">>();
+  reconciliationState.results.forEach(r => {
+    if ((r.status !== "diff" && r.status !== "unlogged") || r.reviewStatus || !r.activityId) return;
+    if (!map.has(r.activityId)) map.set(r.activityId, new Map());
+    const accountIssues = map.get(r.activityId)!;
+    if (r.status === "diff" || !accountIssues.has(r.account_code)) {
+      accountIssues.set(r.account_code, r.status);
+    }
+  });
+  return map;
+}
+
 export {
   reconciliationState,
   loadReconDecisions,
@@ -492,5 +513,6 @@ export {
   matchDistributionsToLedger,
   daysBetweenDateStrs,
   attachFuzzyMatchSuggestions,
-  reconcileLedger
+  reconcileLedger,
+  getReconciliationIssuesByActivity
 };
