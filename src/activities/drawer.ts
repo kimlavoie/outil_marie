@@ -14,7 +14,7 @@ import { getActivities, getActivityById, replaceAllActivities, removeActivity } 
 import { showToast, elById } from "../utils/utils.ts";
 import { activitiesState, renderActivities } from "./render.ts";
 import { fillActivityFormFields, renderActivityStateBar, switchActivityTab } from "./form.ts";
-import { updateFormDatesHelper, saveActivityVersion } from "./history/index.ts";
+import { updateFormDatesHelper, saveActivityVersion, updateBillingUndoRedoButtons } from "./history/index.ts";
 import { activityUndoSnapshotTimer, showAutoSaveStatus, autoSaveActivityForm } from "./autosave.ts";
 import { trapFocus, type FocusTrapController } from "../utils/focus-trap.ts";
 
@@ -93,6 +93,7 @@ function openActivityDrawer(id: string, calendarReturn: any = null, initialTab: 
   activitiesState.openedActivitySnapshot = JSON.parse(JSON.stringify(act));
   activitiesState.undoStack = [JSON.parse(JSON.stringify(act))];
   activitiesState.redoStack = [];
+  updateBillingUndoRedoButtons();
 
   if (act.name.trim() !== "") {
     recordActivityView(act.id);

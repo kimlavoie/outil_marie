@@ -71,7 +71,8 @@ export {
   scheduleActivityUndoSnapshot,
   pushActivityUndoSnapshot,
   undoActivityFormChange,
-  redoActivityFormChange
+  redoActivityFormChange,
+  updateBillingUndoRedoButtons
 } from "./undo.ts";
 export {
   updateFormDatesHelper,

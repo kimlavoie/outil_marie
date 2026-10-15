@@ -168,6 +168,10 @@ function initFormHandlers() {
     autoSaveActivityForm();
   });
 
+  // Facturation tab Annuler/Rétablir buttons — same drawer-wide undo/redo stack as Ctrl+Z/Ctrl+Y
+  el("billing-undo-btn")?.addEventListener("click", () => undoActivityFormChange());
+  el("billing-redo-btn")?.addEventListener("click", () => redoActivityFormChange());
+
   // Bar revenue buttons
   const addBarRevenueBtn = document.getElementById("form-add-bar-revenue-btn");
   if (addBarRevenueBtn) {

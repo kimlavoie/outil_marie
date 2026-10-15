@@ -1011,6 +1011,24 @@ export const ActivityDrawer: React.FC = () => {
                     </span>
                   </span>
                   <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      type="button"
+                      id="billing-undo-btn"
+                      className="btn btn-secondary"
+                      style={{ padding: "6px 12px", fontSize: "0.8rem" }}
+                      title="Annuler la dernière modification (Ctrl+Z)"
+                    >
+                      ↶ Annuler
+                    </button>
+                    <button
+                      type="button"
+                      id="billing-redo-btn"
+                      className="btn btn-secondary"
+                      style={{ padding: "6px 12px", fontSize: "0.8rem" }}
+                      title="Rétablir la modification annulée (Ctrl+Y)"
+                    >
+                      ↷ Rétablir
+                    </button>
                     <button type="button" id="generate-billing-lines-btn" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "0.8rem" }}>
                       Générer les lignes de facturation
                     </button>

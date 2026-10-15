@@ -32,6 +32,17 @@ function pushActivityUndoSnapshot(act: any) {
   if (activitiesState.undoStack.length > ACTIVITY_UNDO_HISTORY_LIMIT) {
     activitiesState.undoStack.shift();
   }
+  updateBillingUndoRedoButtons();
+}
+
+// Reflects the undo/redo stacks onto the Annuler/Rétablir buttons in the Facturation tab — those
+// buttons stay in the DOM across tab switches (only their panel's "active" class changes), so this
+// just needs to run after every stack mutation (push/undo/redo/reset on drawer open-close).
+function updateBillingUndoRedoButtons() {
+  const undoBtn = document.getElementById("billing-undo-btn") as HTMLButtonElement | null;
+  const redoBtn = document.getElementById("billing-redo-btn") as HTMLButtonElement | null;
+  if (undoBtn) undoBtn.disabled = activitiesState.undoStack.length <= 1;
+  if (redoBtn) redoBtn.disabled = activitiesState.redoStack.length === 0;
 }
 
 // Replaces the open activity's record with `snapshot`, then rebuilds the whole form from it
@@ -83,6 +94,7 @@ function undoActivityFormChange() {
   if (popped) activitiesState.redoStack.push(popped);
   const previous = activitiesState.undoStack[activitiesState.undoStack.length - 1];
   if (previous) restoreActivitySnapshot(previous);
+  updateBillingUndoRedoButtons();
   showToast("Modification annulée.", "info", 2000);
 }
 
@@ -93,7 +105,14 @@ function redoActivityFormChange() {
   if (!next) return;
   activitiesState.undoStack.push(next);
   restoreActivitySnapshot(next);
+  updateBillingUndoRedoButtons();
   showToast("Modification rétablie.", "info", 2000);
 }
 
-export { scheduleActivityUndoSnapshot, pushActivityUndoSnapshot, undoActivityFormChange, redoActivityFormChange };
+export {
+  scheduleActivityUndoSnapshot,
+  pushActivityUndoSnapshot,
+  undoActivityFormChange,
+  redoActivityFormChange,
+  updateBillingUndoRedoButtons
+};
