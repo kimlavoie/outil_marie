@@ -118,6 +118,13 @@ export function getDefaultExportOptions(): ExcelExportOptions {
   };
 }
 
+// Revenue lines for an activity: its billing distributions plus its bar revenue lines (excluded
+// from billing but still booked to their own GL accounts — see bar-revenue-rows.ts and
+// account-report.ts, which applies the same combination for the "Grand Livre local" view).
+function getRevenueLines(act: any): { account_code: string; amount: number }[] {
+  return [...(act.distributions || []), ...(act.bar_revenue_lines || [])];
+}
+
 export function filterActivitiesForExport(activities: any[], filters: ExcelExportOptions["filters"]): any[] {
   return activities.filter(act => {
     if (act.deleted) return false;
@@ -203,10 +210,10 @@ export function filterActivitiesForExport(activities: any[], filters: ExcelExpor
 
     // Financial filters
     if (filters.financialFilter === "with_revenue") {
-      const totalRev = (act.distributions || []).reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
+      const totalRev = getRevenueLines(act).reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
       if (totalRev <= 0) return false;
     } else if (filters.financialFilter === "zero_revenue") {
-      const totalRev = (act.distributions || []).reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
+      const totalRev = getRevenueLines(act).reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
       if (totalRev > 0) return false;
     } else if (filters.financialFilter === "non_taxable") {
       if (!act.non_taxable) return false;
@@ -379,9 +386,10 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
       width: 18,
       accountCode: code,
       getValue: act => {
-        // An activity can have several billing lines on the same account (e.g. split amounts) —
-        // combine them, matching how the GL ledger reconciliation treats them (see reconciliation.ts).
-        return (act.distributions || [])
+        // An activity can have several billing lines on the same account (e.g. split amounts, or
+        // a bar revenue line booked to the same account) — combine them, matching how the GL
+        // ledger reconciliation treats them (see reconciliation.ts).
+        return getRevenueLines(act)
           .filter((d: any) => d.account_code === code)
           .reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
       }
@@ -397,7 +405,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
       width: 20,
       getValue: (act, rowIdx) => {
         if (selectedAccounts.length === 0) {
-          return (act.distributions || []).reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
+          return getRevenueLines(act).reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
         }
         if (options.sheets.useExcelFormulas) {
           const excelRow = rowIdx + 2;
@@ -405,15 +413,17 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
           const lastColLetter = getExcelColName(lastAccColIdx + 1);
           return { t: "n", f: `SUM(${firstColLetter}${excelRow}:${lastColLetter}${excelRow})` };
         }
-        return (act.distributions || [])
+        return getRevenueLines(act)
           .filter((d: any) => selectedAccounts.includes(d.account_code))
           .reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
       }
     });
   }
 
-  // Filter activities
-  const activeActivities = filterActivitiesForExport(getActivities(), options.filters);
+  // Filter activities, sorted by start date ascending (oldest first)
+  const activeActivities = filterActivitiesForExport(getActivities(), options.filters).sort((a, b) =>
+    (a.date_start || "").localeCompare(b.date_start || "")
+  );
 
   // Build rows
   const sheetData: any[][] = [activeCols.map(c => c.header)];
@@ -485,7 +495,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
     summaryData.push(["Type de client", "Nombre d'activités", "Revenus totaux ($)"]);
     ["interne", "externe"].forEach(ct => {
       const acts = activeActivities.filter(a => a.client_type === ct);
-      const rev = acts.reduce((s, a) => s + (a.distributions || []).reduce((ds: number, d: any) => ds + (Number(d.amount) || 0), 0), 0);
+      const rev = acts.reduce((s, a) => s + getRevenueLines(a).reduce((ds: number, d: any) => ds + (Number(d.amount) || 0), 0), 0);
       summaryData.push([ct === "interne" ? "Client Interne" : "Client Externe", acts.length, rev]);
     });
     summaryData.push([]);
@@ -496,7 +506,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
     const deptsMap = new Map<string, { count: number; rev: number }>();
     activeActivities.forEach(a => {
       const dept = a.department || "Non spécifié";
-      const rev = (a.distributions || []).reduce((ds: number, d: any) => ds + (Number(d.amount) || 0), 0);
+      const rev = getRevenueLines(a).reduce((ds: number, d: any) => ds + (Number(d.amount) || 0), 0);
       const entry = deptsMap.get(dept) || { count: 0, rev: 0 };
       entry.count += 1;
       entry.rev += rev;
@@ -513,7 +523,7 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
     (getAccounts() || []).forEach(acc => {
       let accTotal = 0;
       activeActivities.forEach(a => {
-        accTotal += (a.distributions || [])
+        accTotal += getRevenueLines(a)
           .filter((d: any) => d.account_code === acc.code)
           .reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
       });

@@ -142,6 +142,28 @@ test("runExportToExcel builds ACTIVITÉS/SALLES sheets, filtering out activities
   assert.match(xlsx.lastWriteFile!.filename, /^compta_marie_rapport_2025-2026_T1_/);
 });
 
+test("runExportToExcel sorts activities by date_start ascending by default", () => {
+  const xlsx = makeXlsxMock();
+  (globalThis as any).XLSX = xlsx;
+  appState.settings = baseSettings();
+  appState.activities = [
+    makeActivity({ id: "a-late", name: "Plus tard", date_start: "2025-10-01" }),
+    makeActivity({ id: "a-early", name: "Plus tôt", date_start: "2025-08-01" }),
+    makeActivity({ id: "a-mid", name: "Entre les deux", date_start: "2025-09-01" })
+  ];
+  appState.selected_year = "2025-2026";
+  appState.selected_quarters = [1, 2, 3, 4];
+
+  runExportToExcel(getExcelColName);
+
+  const rows: any[][] = xlsx.sheets["ACTIVITÉS"].data;
+  const bodyRows = rows.slice(1, -1);
+  assert.deepEqual(
+    bodyRows.map(r => r[2]),
+    ["Plus tôt", "Entre les deux", "Plus tard"]
+  );
+});
+
 test("runExportToExcel appends a TOTAUX row summing every account column", () => {
   const xlsx = makeXlsxMock();
   (globalThis as any).XLSX = xlsx;
@@ -237,6 +259,94 @@ test("combines several distributions on the same account within one activity, bo
   assert.equal(actRows[1][2], 100);
 
   const summaryRows: any[][] = xlsx.sheets["SOMMAIRE"].data;
+  const accRow = summaryRows.find(r => r[0] === "892-0000-00-000");
+  assert.ok(accRow);
+  assert.equal(accRow![2], 100);
+});
+
+test("includes bar revenue lines alongside distributions in the account column, financial filters and SOMMAIRE breakdowns", () => {
+  const xlsx = makeXlsxMock();
+  (globalThis as any).XLSX = xlsx;
+  appState.settings = baseSettings();
+  appState.activities = [
+    makeActivity({
+      id: "a1",
+      client_type: "externe",
+      department: "Musique",
+      date_start: "2025-08-01",
+      distributions: [{ account_code: "892-0000-00-000", amount: 60 }],
+      bar_revenue_lines: [{ account_code: "892-0000-00-000", amount: 40, receipt_number: "RI001" }]
+    })
+  ];
+  appState.selected_year = "2025-2026";
+  appState.selected_quarters = [1];
+
+  const customOptions = {
+    mode: "custom" as const,
+    filters: {
+      periodMode: "all" as const,
+      fiscalYear: "",
+      quarters: [],
+      startDate: "",
+      endDate: "",
+      states: [],
+      modes: [],
+      clientTypes: [],
+      departments: [],
+      rooms: [],
+      categories: [],
+      responsable: "",
+      searchText: "",
+      financialFilter: "with_revenue" as const
+    },
+    columns: {
+      id: true,
+      responsable: false,
+      name: false,
+      date_start: false,
+      date_end: false,
+      days_count: false,
+      client_type: false,
+      category: false,
+      rooms: false,
+      remi_time: false,
+      department: false,
+      room_sans_frais: false,
+      references: false,
+      state: false,
+      attendees_count: false,
+      manager_name: false,
+      manager_company: false,
+      manager_contact_info: false,
+      description: false,
+      notes: false,
+      accounts: ["892-0000-00-000"],
+      total_revenue: true
+    },
+    sheets: {
+      includeTotalRow: false,
+      useExcelFormulas: false,
+      includeRoomsSheet: false,
+      includeSummarySheet: true
+    }
+  };
+
+  runExportToExcel(getExcelColName, xlsx, customOptions);
+
+  const actRows: any[][] = xlsx.sheets["ACTIVITÉS"].data;
+  assert.equal(actRows.length, 2); // header + the one activity (financial filter kept it: total rev > 0)
+  assert.equal(actRows[1][1], 100); // account column: 60 (distribution) + 40 (bar revenue)
+  assert.equal(actRows[1][2], 100); // total revenue column
+
+  const summaryRows: any[][] = xlsx.sheets["SOMMAIRE"].data;
+  const clientTypeRow = summaryRows.find(r => r[0] === "Client Externe");
+  assert.ok(clientTypeRow);
+  assert.equal(clientTypeRow![2], 100);
+
+  const deptRow = summaryRows.find(r => r[0] === "Musique");
+  assert.ok(deptRow);
+  assert.equal(deptRow![2], 100);
+
   const accRow = summaryRows.find(r => r[0] === "892-0000-00-000");
   assert.ok(accRow);
   assert.equal(accRow![2], 100);
