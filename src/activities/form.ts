@@ -4,8 +4,9 @@
  * Part 2/5 of the activities module (see activities-render.ts for context).
  *
  * The activity drawer/form itself isn't yet React (React migration in progress — see
- * components/activities/ActivityDrawer.tsx for the fields already converted: Responsable,
- * Informations générales, and the reservation-card shell/add/remove), so like
+ * components/activities/ActivityDrawer.tsx for the fields already converted: Responsable de
+ * l'activité (manager), Responsable de la facturation, Informations générales, and the
+ * reservation-card shell/add/remove), so like
  * js/datepicker.ts, js/activities-file-links.ts, js/activities-history.ts,
  * js/activities-financials.ts and js/activities-render.ts, this stays a plain TS module.
  *
@@ -15,7 +16,7 @@
  * re-exports the others' public API so existing imports from "./form.ts" keep working.
  */
 import { getActivityById } from "../state/activities-repository.ts";
-import { debounce, generateUid, maskPhoneInput, initMultiSelectDropdown, maskPostalCodeInput, formatPostalCode } from "../utils/utils.ts";
+import { debounce, generateUid, initMultiSelectDropdown } from "../utils/utils.ts";
 import { activitiesState, renderActivities, initBulkActionsHandlers } from "./render.ts";
 import {
   openActivityDrawer,
@@ -275,22 +276,9 @@ function initFormHandlers() {
     generateBillingLines(act);
   });
 
-  // Phone and Postal code masks
-  const managerPhone = el("form-activity-manager-phone");
-  if (managerPhone) maskPhoneInput(managerPhone);
-
-  const managerPostalCode = el("form-activity-manager-postal-code");
-  if (managerPostalCode) maskPostalCodeInput(managerPostalCode);
-  // form-activity-responsable-postal-code is NOT masked here: it's a React-controlled input now
-  // (see components/activities/ActivityDrawer.tsx), which formats it inline in its own onChange.
-
-  // Manager "Fonction" = Externe reveals company/address fields. The "same as manager" client-type
-  // lock this used to also trigger here (applyResponsableSameAsManager) is now handled reactively
-  // in ActivityDrawer.tsx, which mirrors this field's value into React state for that purpose.
-  el("form-activity-manager-type")?.addEventListener("change", e => {
-    const externalGroup = el("form-activity-manager-external-group");
-    if (externalGroup) externalGroup.style.display = (e.target as HTMLInputElement).value === "externe" ? "block" : "none";
-  });
+  // form-activity-responsable-postal-code and form-activity-manager-* fields are NOT masked here:
+  // they're React-controlled inputs now (see components/activities/ActivityDrawer.tsx), which
+  // format/toggle themselves inline in their own onChange handlers and state.
 
   // Estimation / Soumission mode toggle
   initActivityModeToggle();
@@ -347,36 +335,13 @@ function initFormHandlers() {
 
 function fillActivityFormFields(act: any) {
   applyActivityFormMode(act.mode || "estimation", act.state !== "brouillon");
-  // COBA/name/attendees/description ("Informations générales") and Responsable firstname/
-  // lastname/client-type/address/city/province/postal-code are no longer populated here —
-  // ActivityDrawer.tsx seeds its own React state for them from `act` directly (see its "Seed the
-  // React-controlled Informations générales fields" / "...Responsable fields" effects).
+  // COBA/name/attendees/description ("Informations générales"), Responsable firstname/lastname/
+  // client-type/address/city/province/postal-code, and activity_manager's firstname/lastname/
+  // type/phone/email/company/coba-client-number/address/city/province/postal-code are no longer
+  // populated here — ActivityDrawer.tsx seeds its own React state for them from `act` directly
+  // (see its "Seed the React-controlled Responsable fields" / "...Manager fields" effects).
   const notesEl = el("form-activity-notes");
   if (notesEl) notesEl.value = act.notes || "";
-  const mgrFnEl = el("form-activity-manager-firstname");
-  if (mgrFnEl) mgrFnEl.value = act.activity_manager?.first_name || "";
-  const mgrLnEl = el("form-activity-manager-lastname");
-  if (mgrLnEl) mgrLnEl.value = act.activity_manager?.last_name || "";
-  const mgrTypeEl = el("form-activity-manager-type");
-  if (mgrTypeEl) mgrTypeEl.value = act.activity_manager?.type || "employe";
-  const mgrPhoneEl = el("form-activity-manager-phone");
-  if (mgrPhoneEl) mgrPhoneEl.value = act.activity_manager?.phone || "";
-  const mgrEmailEl = el("form-activity-manager-email");
-  if (mgrEmailEl) mgrEmailEl.value = act.activity_manager?.email || "";
-  const mgrCompanyEl = el("form-activity-manager-company");
-  if (mgrCompanyEl) mgrCompanyEl.value = act.activity_manager?.company_name || "";
-  const mgrClientNumEl = el("form-activity-manager-coba-client-number");
-  if (mgrClientNumEl) mgrClientNumEl.value = act.activity_manager?.coba_client_number || "";
-  const mgrAddrEl = el("form-activity-manager-address");
-  if (mgrAddrEl) mgrAddrEl.value = act.activity_manager?.address || "";
-  const mgrCityEl = el("form-activity-manager-city");
-  if (mgrCityEl) mgrCityEl.value = act.activity_manager?.city || "";
-  const mgrProvEl = el("form-activity-manager-province");
-  if (mgrProvEl) mgrProvEl.value = act.activity_manager?.province || "";
-  const mgrPcEl = el("form-activity-manager-postal-code");
-  if (mgrPcEl) mgrPcEl.value = formatPostalCode(act.activity_manager?.postal_code || "");
-  const mgrExtGrp = el("form-activity-manager-external-group");
-  if (mgrExtGrp) mgrExtGrp.style.display = act.activity_manager?.type === "externe" ? "block" : "none";
   // form-activity-responsable-same-as-manager is React-controlled now (ActivityDrawer.tsx seeds
   // it from act.responsable_same_as_manager directly) — nothing to do here.
 

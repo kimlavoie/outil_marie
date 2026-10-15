@@ -164,32 +164,25 @@ function maskTimeInput(input: HTMLInputElement | null) {
   input.addEventListener("blur", completeIfPartial);
 }
 
-function maskPhoneInput(input: HTMLInputElement | null) {
-  if (!input) return;
-  input.addEventListener("input", (e: Event) => {
-    // Let the user delete normally with backspace or delete key
-    if ((e as InputEvent).inputType === "deleteContentBackward" || (e as InputEvent).inputType === "deleteContentForward") {
-      return;
-    }
+function formatPhoneNumber(rawValue: string | undefined | null): string {
+  if (!rawValue) return "";
+  let value = rawValue.replace(/\D/g, ""); // Keep only digits
+  if (value.length > 10) {
+    value = value.substring(0, 10);
+  }
 
-    let value = input.value.replace(/\D/g, ""); // Keep only digits
-    if (value.length > 10) {
-      value = value.substring(0, 10);
-    }
+  let formatted = "";
+  if (value.length > 0) {
+    formatted += value.substring(0, 3); // XXX
+  }
+  if (value.length > 3) {
+    formatted += "-" + value.substring(3, 6); // -XXX
+  }
+  if (value.length > 6) {
+    formatted += "-" + value.substring(6, 10); // -XXXX
+  }
 
-    let formatted = "";
-    if (value.length > 0) {
-      formatted += value.substring(0, 3); // XXX
-    }
-    if (value.length > 3) {
-      formatted += "-" + value.substring(3, 6); // -XXX
-    }
-    if (value.length > 6) {
-      formatted += "-" + value.substring(6, 10); // -XXXX
-    }
-
-    input.value = formatted;
-  });
+  return formatted;
 }
 
 function formatPostalCode(rawValue: string | undefined | null): string {
@@ -236,7 +229,7 @@ export {
   formatDateMask,
   maskDateInput,
   maskTimeInput,
-  maskPhoneInput,
+  formatPhoneNumber,
   formatPostalCode,
   maskPostalCodeInput
 };

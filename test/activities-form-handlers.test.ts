@@ -172,19 +172,9 @@ test("Escape closes the read-only activity-details modal", () => {
   assert.equal(document.getElementById("activity-details-modal")!.classList.contains("active"), false);
 });
 
-test("changing 'form-activity-manager-type' to 'externe' reveals the external-manager fields", () => {
-  initFormHandlers();
-  const select = document.getElementById("form-activity-manager-type") as HTMLSelectElement;
-  const externalGroup = document.getElementById("form-activity-manager-external-group")!;
-
-  select.value = "externe";
-  select.dispatchEvent(new Event("change"));
-  assert.equal((externalGroup as HTMLElement).style.display, "block");
-
-  select.value = "employe";
-  select.dispatchEvent(new Event("change"));
-  assert.equal((externalGroup as HTMLElement).style.display, "none");
-});
+// The "form-activity-manager-type" change handler that used to live here (revealing the
+// external-manager fields) is gone — that's React-controlled state in
+// components/activities/ActivityDrawer.tsx now (see test/responsable-facturation-address.test.tsx).
 
 test("changing 'form-activity-event-type' to 'autre' reveals the free-text 'other' field", () => {
   initFormHandlers();

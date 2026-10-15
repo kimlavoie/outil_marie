@@ -3,7 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { InstallDismantleFields } from "./InstallDismantleFields.tsx";
 import { useAppState, recordActivityView } from "../../state/state.ts";
 import { getActivityById } from "../../state/activities-repository.ts";
-import { elById, debounce, formatPostalCode, generateUid } from "../../utils/utils.ts";
+import { debounce, formatPostalCode, formatPhoneNumber, generateUid } from "../../utils/utils.ts";
 import { activitiesState, renderActivities } from "../../activities/render.ts";
 import {
   fillActivityFormFields,
@@ -64,9 +64,22 @@ export const ActivityDrawer: React.FC = () => {
   const [responsableCity, setResponsableCity] = useState("");
   const [responsableProvince, setResponsableProvince] = useState("");
   const [responsablePostalCode, setResponsablePostalCode] = useState("");
-  // Mirrors #form-activity-manager-type's live value (that field stays legacy/uncontrolled) so we
-  // can derive the "manager is external + same-as-manager checked" client-type lock reactively.
-  const [managerTypeForLock, setManagerTypeForLock] = useState("");
+
+  // React-controlled "Responsable de l'activité" (manager) fields — same Phase-1-style conversion,
+  // applied so this section is wired the same way as "Responsable de la facturation" above instead
+  // of through activities/form.ts's legacy DOM writes (fillActivityFormFields's mgr*El assignments
+  // and initFormHandlers's manager-type change listener/phone+postal masks, all now deleted).
+  const [managerFirstName, setManagerFirstName] = useState("");
+  const [managerLastName, setManagerLastName] = useState("");
+  const [managerType, setManagerType] = useState("employe");
+  const [managerPhone, setManagerPhone] = useState("");
+  const [managerEmail, setManagerEmail] = useState("");
+  const [managerCompany, setManagerCompany] = useState("");
+  const [managerCobaClientNumber, setManagerCobaClientNumber] = useState("");
+  const [managerAddress, setManagerAddress] = useState("");
+  const [managerCity, setManagerCity] = useState("");
+  const [managerProvince, setManagerProvince] = useState("");
+  const [managerPostalCode, setManagerPostalCode] = useState("");
 
   // React-controlled "Informations générales" fields (next Phase-1-style slice of
   // activities/form.ts's conversion, same pattern as the Responsable fields above).
@@ -146,7 +159,26 @@ export const ActivityDrawer: React.FC = () => {
     setResponsableCity(act.responsable_city || "");
     setResponsableProvince(act.responsable_province || "");
     setResponsablePostalCode(formatPostalCode(act.responsable_postal_code || ""));
-    setManagerTypeForLock(act.activity_manager?.type || "employe");
+  }, [isOpen, activityId]);
+
+  // Seed the React-controlled Manager fields the same way — fillActivityFormFields() no longer
+  // touches these specific fields either.
+  useEffect(() => {
+    if (!isOpen || !activityId) return;
+    const act = getActivityById(activityId);
+    if (!act) return;
+
+    setManagerFirstName(act.activity_manager?.first_name || "");
+    setManagerLastName(act.activity_manager?.last_name || "");
+    setManagerType(act.activity_manager?.type || "employe");
+    setManagerPhone(act.activity_manager?.phone || "");
+    setManagerEmail(act.activity_manager?.email || "");
+    setManagerCompany(act.activity_manager?.company_name || "");
+    setManagerCobaClientNumber(act.activity_manager?.coba_client_number || "");
+    setManagerAddress(act.activity_manager?.address || "");
+    setManagerCity(act.activity_manager?.city || "");
+    setManagerProvince(act.activity_manager?.province || "");
+    setManagerPostalCode(formatPostalCode(act.activity_manager?.postal_code || ""));
   }, [isOpen, activityId]);
 
   // Seed the React-controlled "Informations générales" fields the same way.
@@ -251,64 +283,34 @@ export const ActivityDrawer: React.FC = () => {
     setReservationCardIds(ids => ids.filter(x => x !== id));
   };
 
-  // #form-activity-manager-type stays a legacy/uncontrolled <select> (outside this slice); mirror
-  // its live value into React state so the client-type lock below can react to it.
-  useEffect(() => {
-    if (!isOpen) return;
-    const managerTypeEl = document.getElementById("form-activity-manager-type") as HTMLSelectElement | null;
-    if (!managerTypeEl) return;
-    const handler = () => setManagerTypeForLock(managerTypeEl.value);
-    managerTypeEl.addEventListener("change", handler);
-    return () => managerTypeEl.removeEventListener("change", handler);
-  }, [isOpen, activityId]);
-
   // While "même personne que le responsable de l'activité" is checked, keep the Responsable
-  // fields mirroring the (legacy/uncontrolled) manager fields as the user edits them.
+  // fields mirroring the (now also React-controlled) manager fields as the user edits them.
   useEffect(() => {
     if (!isOpen || !responsableSameAsManager) return;
-    const ids = [
-      "form-activity-manager-firstname",
-      "form-activity-manager-lastname",
-      "form-activity-manager-address",
-      "form-activity-manager-city",
-      "form-activity-manager-province",
-      "form-activity-manager-postal-code"
-    ];
-    const inputs = ids.map(id => document.getElementById(id)).filter((el): el is HTMLInputElement => el !== null);
-    const handler = () => {
-      setResponsableFirstName(elById("form-activity-manager-firstname")?.value || "");
-      setResponsableLastName(elById("form-activity-manager-lastname")?.value || "");
-      setResponsableAddress(elById("form-activity-manager-address")?.value || "");
-      setResponsableCity(elById("form-activity-manager-city")?.value || "");
-      setResponsableProvince(elById("form-activity-manager-province")?.value || "");
-      setResponsablePostalCode(elById("form-activity-manager-postal-code")?.value || "");
-    };
-    inputs.forEach(input => input.addEventListener("input", handler));
-    return () => inputs.forEach(input => input.removeEventListener("input", handler));
-  }, [isOpen, responsableSameAsManager]);
+    setResponsableFirstName(managerFirstName);
+    setResponsableLastName(managerLastName);
+    setResponsableAddress(managerAddress);
+    setResponsableCity(managerCity);
+    setResponsableProvince(managerProvince);
+    setResponsablePostalCode(managerPostalCode);
+  }, [isOpen, responsableSameAsManager, managerFirstName, managerLastName, managerAddress, managerCity, managerProvince, managerPostalCode]);
 
-  // Client type gets force-locked to "externe" and disabled while the manager is external and
-  // "même personne..." is checked — mirrors applyResponsableSameAsManager()'s old lock branch,
-  // including the one-time updateSubmissionFinancialSummary() refresh when the lock first engages.
-  const lockExternalClient = responsableSameAsManager && managerTypeForLock === "externe";
+  // Client type gets force-locked and disabled while "même personne..." is checked — mirrors
+  // applyResponsableSameAsManager()'s old lock branch, including the one-time
+  // updateSubmissionFinancialSummary() refresh when the lock first engages. The locked value
+  // follows the manager's "Fonction": externe locks to "externe", employé/étudiant lock to
+  // "interne" (an internal employee or student can't be an external billing client).
+  const lockClientType = responsableSameAsManager;
+  const lockedClientType = managerType === "externe" ? "externe" : "interne";
   useEffect(() => {
-    if (lockExternalClient && clientType !== "externe") {
-      setClientType("externe");
+    if (lockClientType && clientType !== lockedClientType) {
+      setClientType(lockedClientType);
       updateSubmissionFinancialSummary();
     }
-  }, [lockExternalClient, clientType]);
+  }, [lockClientType, lockedClientType, clientType]);
 
   const handleSameAsManagerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const checked = e.target.checked;
-    setResponsableSameAsManager(checked);
-    if (checked) {
-      setResponsableFirstName(elById("form-activity-manager-firstname")?.value || "");
-      setResponsableLastName(elById("form-activity-manager-lastname")?.value || "");
-      setResponsableAddress(elById("form-activity-manager-address")?.value || "");
-      setResponsableCity(elById("form-activity-manager-city")?.value || "");
-      setResponsableProvince(elById("form-activity-manager-province")?.value || "");
-      setResponsablePostalCode(elById("form-activity-manager-postal-code")?.value || "");
-    }
+    setResponsableSameAsManager(e.target.checked);
   };
 
   const handleResponsablePostalCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -318,6 +320,24 @@ export const ActivityDrawer: React.FC = () => {
       return;
     }
     setResponsablePostalCode(formatPostalCode(e.target.value));
+  };
+
+  const handleManagerPostalCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputType = (e.nativeEvent as InputEvent).inputType;
+    if (inputType === "deleteContentBackward" || inputType === "deleteContentForward") {
+      setManagerPostalCode(e.target.value);
+      return;
+    }
+    setManagerPostalCode(formatPostalCode(e.target.value));
+  };
+
+  const handleManagerPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputType = (e.nativeEvent as InputEvent).inputType;
+    if (inputType === "deleteContentBackward" || inputType === "deleteContentForward") {
+      setManagerPhone(e.target.value);
+      return;
+    }
+    setManagerPhone(formatPhoneNumber(e.target.value));
   };
 
   // Populate form fields only when drawer opens or activityId changes
@@ -620,17 +640,37 @@ export const ActivityDrawer: React.FC = () => {
                   <div className="form-group-row">
                     <div className="form-group">
                       <label htmlFor="form-activity-manager-firstname">Prénom</label>
-                      <input type="text" id="form-activity-manager-firstname" className="form-input" placeholder="Prénom" />
+                      <input
+                        type="text"
+                        id="form-activity-manager-firstname"
+                        className="form-input"
+                        placeholder="Prénom"
+                        value={managerFirstName}
+                        onChange={e => setManagerFirstName(e.target.value)}
+                      />
                     </div>
                     <div className="form-group">
                       <label htmlFor="form-activity-manager-lastname">Nom</label>
-                      <input type="text" id="form-activity-manager-lastname" className="form-input" placeholder="Nom" />
+                      <input
+                        type="text"
+                        id="form-activity-manager-lastname"
+                        className="form-input"
+                        placeholder="Nom"
+                        value={managerLastName}
+                        onChange={e => setManagerLastName(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div className="form-group-row">
                     <div className="form-group">
                       <label htmlFor="form-activity-manager-type">Fonction</label>
-                      <select id="form-activity-manager-type" className="select-input" style={{ padding: "10px 14px" }}>
+                      <select
+                        id="form-activity-manager-type"
+                        className="select-input"
+                        style={{ padding: "10px 14px" }}
+                        value={managerType}
+                        onChange={e => setManagerType(e.target.value)}
+                      >
                         <option value="">Sélectionner...</option>
                         <option value="employe">Employé</option>
                         <option value="etudiant">Étudiant</option>
@@ -639,42 +679,98 @@ export const ActivityDrawer: React.FC = () => {
                     </div>
                     <div className="form-group">
                       <label htmlFor="form-activity-manager-phone">Numéro de téléphone</label>
-                      <input type="tel" id="form-activity-manager-phone" className="form-input" placeholder="Ex: 514-555-1234" />
+                      <input
+                        type="tel"
+                        id="form-activity-manager-phone"
+                        className="form-input"
+                        placeholder="Ex: 514-555-1234"
+                        value={managerPhone}
+                        onChange={handleManagerPhoneChange}
+                      />
                     </div>
                   </div>
                   <div className="form-group">
                     <label htmlFor="form-activity-manager-email">Courriel</label>
-                    <input type="email" id="form-activity-manager-email" className="form-input" placeholder="nom@exemple.com" />
+                    <input
+                      type="email"
+                      id="form-activity-manager-email"
+                      className="form-input"
+                      placeholder="nom@exemple.com"
+                      value={managerEmail}
+                      onChange={e => setManagerEmail(e.target.value)}
+                    />
                   </div>
 
-                  <div id="form-activity-manager-external-group" style={{ display: "none" }}>
+                  <div id="form-activity-manager-external-group" style={{ display: managerType === "externe" ? "block" : "none" }}>
                     <div className="form-group-row">
                       <div className="form-group">
                         <label htmlFor="form-activity-manager-company">Nom de l'entreprise</label>
-                        <input type="text" id="form-activity-manager-company" className="form-input" placeholder="Ex: Entreprise inc." />
+                        <input
+                          type="text"
+                          id="form-activity-manager-company"
+                          className="form-input"
+                          placeholder="Ex: Entreprise inc."
+                          value={managerCompany}
+                          onChange={e => setManagerCompany(e.target.value)}
+                        />
                       </div>
                       <div className="form-group">
                         <label htmlFor="form-activity-manager-coba-client-number">Numéro de client (COBA Finance)</label>
-                        <input type="text" id="form-activity-manager-coba-client-number" className="form-input" placeholder="Ex: 12345" />
+                        <input
+                          type="text"
+                          id="form-activity-manager-coba-client-number"
+                          className="form-input"
+                          placeholder="Ex: 12345"
+                          value={managerCobaClientNumber}
+                          onChange={e => setManagerCobaClientNumber(e.target.value)}
+                        />
                       </div>
                     </div>
                     <div className="form-group">
                       <label htmlFor="form-activity-manager-address">Adresse</label>
-                      <input type="text" id="form-activity-manager-address" className="form-input" placeholder="Ex: 123 rue Principale" />
+                      <input
+                        type="text"
+                        id="form-activity-manager-address"
+                        className="form-input"
+                        placeholder="Ex: 123 rue Principale"
+                        value={managerAddress}
+                        onChange={e => setManagerAddress(e.target.value)}
+                      />
                     </div>
                     <div className="form-group-row">
                       <div className="form-group">
                         <label htmlFor="form-activity-manager-city">Ville</label>
-                        <input type="text" id="form-activity-manager-city" className="form-input" placeholder="Ex: Montréal" />
+                        <input
+                          type="text"
+                          id="form-activity-manager-city"
+                          className="form-input"
+                          placeholder="Ex: Montréal"
+                          value={managerCity}
+                          onChange={e => setManagerCity(e.target.value)}
+                        />
                       </div>
                       <div className="form-group">
                         <label htmlFor="form-activity-manager-province">Province</label>
-                        <input type="text" id="form-activity-manager-province" className="form-input" placeholder="Ex: QC" />
+                        <input
+                          type="text"
+                          id="form-activity-manager-province"
+                          className="form-input"
+                          placeholder="Ex: QC"
+                          value={managerProvince}
+                          onChange={e => setManagerProvince(e.target.value)}
+                        />
                       </div>
                     </div>
                     <div className="form-group">
                       <label htmlFor="form-activity-manager-postal-code">Code postal</label>
-                      <input type="text" id="form-activity-manager-postal-code" className="form-input" placeholder="Ex: H1A 1A1" />
+                      <input
+                        type="text"
+                        id="form-activity-manager-postal-code"
+                        className="form-input"
+                        placeholder="Ex: H1A 1A1"
+                        value={managerPostalCode}
+                        onChange={handleManagerPostalCodeChange}
+                      />
                     </div>
                   </div>
                 </div>
@@ -700,7 +796,7 @@ export const ActivityDrawer: React.FC = () => {
                   </div>
                   <div className="form-group-row">
                     <div className="form-group">
-                      <label htmlFor="form-activity-responsable-firstname">Prénom du responsable</label>
+                      <label htmlFor="form-activity-responsable-firstname">Prénom</label>
                       <input
                         type="text"
                         id="form-activity-responsable-firstname"
@@ -712,7 +808,7 @@ export const ActivityDrawer: React.FC = () => {
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="form-activity-responsable-lastname">Nom du responsable</label>
+                      <label htmlFor="form-activity-responsable-lastname">Nom</label>
                       <input
                         type="text"
                         id="form-activity-responsable-lastname"
@@ -729,9 +825,9 @@ export const ActivityDrawer: React.FC = () => {
                     <label htmlFor="form-activity-client-type">Client interne ou externe</label>
                     <select
                       id="form-activity-client-type"
-                      className={`select-input${lockExternalClient ? " form-input-readonly" : ""}`}
+                      className={`select-input${lockClientType ? " form-input-readonly" : ""}`}
                       style={{ padding: "10px 14px" }}
-                      disabled={lockExternalClient}
+                      disabled={lockClientType}
                       value={clientType}
                       onChange={e => setClientType(e.target.value)}
                     >

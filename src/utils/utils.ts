@@ -22,7 +22,7 @@ export {
   formatDateMask,
   maskDateInput,
   maskTimeInput,
-  maskPhoneInput,
+  formatPhoneNumber,
   formatPostalCode,
   maskPostalCodeInput
 } from "./format.ts";

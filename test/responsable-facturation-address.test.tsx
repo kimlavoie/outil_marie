@@ -24,10 +24,11 @@ import { fillActivityFormFields } from "../src/activities/form.ts";
 import { ActivityDrawer, triggerOpenActivityDrawer } from "../src/components/activities/ActivityDrawer.tsx";
 
 // These tests used to drive activities/form.ts's imperative DOM writes (applyResponsableSameAsManager/
-// updateResponsableClientTypeDisplay) directly against a hand-built fixture. That logic now lives as
-// React-controlled state in components/activities/ActivityDrawer.tsx (see that file's "Seed the
-// React-controlled Responsable fields" effect and the ones right after it), so these tests drive the
-// real rendered drawer instead.
+// updateResponsableClientTypeDisplay, and the manager-type change listener/phone+postal masks) directly
+// against a hand-built fixture. That logic now lives as React-controlled state in
+// components/activities/ActivityDrawer.tsx (see that file's "Seed the React-controlled Responsable
+// fields"/"...Manager fields" effects and the ones right after them), so these tests drive the real
+// rendered drawer instead.
 
 function flush(ms = 100): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -181,7 +182,7 @@ test("autoSaveActivityForm persists responsable address when client type is exte
   assert.equal(savedAct?.department, "");
 });
 
-test("selecting external manager and checking same_as_manager locks client_type to externe", async () => {
+test("checking same_as_manager locks client_type to interne or externe depending on the manager's Fonction", async () => {
   await openDrawer(baseActivity({ client_type: "interne", activity_manager: { ...baseActivity().activity_manager, type: "employe" } }));
 
   const managerTypeSelect = document.getElementById("form-activity-manager-type") as HTMLSelectElement;
@@ -204,12 +205,19 @@ test("selecting external manager and checking same_as_manager locks client_type 
   assert.equal(clientTypeSelect.disabled, true);
   assert.equal(clientTypeSelect.classList.contains("form-input-readonly"), true);
 
-  // Changing manager type back to employe unlocks client_type
+  // Changing manager type to employé still locks client_type, but to "interne" now — an internal
+  // employee or student can't be an external billing client.
   fireEvent.change(managerTypeSelect, { target: { value: "employe" } });
-  assert.equal(clientTypeSelect.disabled, false);
-  assert.equal(clientTypeSelect.classList.contains("form-input-readonly"), false);
+  assert.equal(clientTypeSelect.value, "interne");
+  assert.equal(clientTypeSelect.disabled, true);
+  assert.equal(clientTypeSelect.classList.contains("form-input-readonly"), true);
 
-  // Changing manager type back to externe locks client_type again
+  // Changing manager type to étudiant also locks to "interne"
+  fireEvent.change(managerTypeSelect, { target: { value: "etudiant" } });
+  assert.equal(clientTypeSelect.value, "interne");
+  assert.equal(clientTypeSelect.disabled, true);
+
+  // Changing manager type back to externe locks client_type to "externe" again
   fireEvent.change(managerTypeSelect, { target: { value: "externe" } });
   assert.equal(clientTypeSelect.value, "externe");
   assert.equal(clientTypeSelect.disabled, true);
@@ -219,6 +227,52 @@ test("selecting external manager and checking same_as_manager locks client_type 
   fireEvent.click(sameCb);
   assert.equal(clientTypeSelect.disabled, false);
   assert.equal(clientTypeSelect.classList.contains("form-input-readonly"), false);
+});
+
+test("selecting manager type 'externe' reveals the external-manager fields", async () => {
+  await openDrawer(baseActivity({ activity_manager: { ...baseActivity().activity_manager, type: "employe" } }));
+
+  const managerTypeSelect = document.getElementById("form-activity-manager-type") as HTMLSelectElement;
+  const managerExtGroup = document.getElementById("form-activity-manager-external-group") as HTMLElement;
+
+  assert.equal(managerExtGroup.style.display, "none");
+
+  fireEvent.change(managerTypeSelect, { target: { value: "externe" } });
+  assert.equal(managerExtGroup.style.display, "block");
+
+  fireEvent.change(managerTypeSelect, { target: { value: "employe" } });
+  assert.equal(managerExtGroup.style.display, "none");
+});
+
+test("editing manager fields and autosaving persists the new values", async () => {
+  await openDrawer(baseActivity({ activity_manager: { ...baseActivity().activity_manager, type: "externe" } }));
+
+  const mgrFn = document.getElementById("form-activity-manager-firstname") as HTMLInputElement;
+  const mgrLn = document.getElementById("form-activity-manager-lastname") as HTMLInputElement;
+  const mgrPhone = document.getElementById("form-activity-manager-phone") as HTMLInputElement;
+  const mgrEmail = document.getElementById("form-activity-manager-email") as HTMLInputElement;
+  const mgrCompany = document.getElementById("form-activity-manager-company") as HTMLInputElement;
+  const mgrPostalCode = document.getElementById("form-activity-manager-postal-code") as HTMLInputElement;
+
+  fireEvent.change(mgrFn, { target: { value: "Sophie" } });
+  fireEvent.change(mgrLn, { target: { value: "Bernier" } });
+  fireEvent.change(mgrPhone, { target: { value: "5145551234" } });
+  fireEvent.change(mgrEmail, { target: { value: "sophie@example.com" } });
+  fireEvent.change(mgrCompany, { target: { value: "Nouvelle Cie" } });
+  fireEvent.change(mgrPostalCode, { target: { value: "h2x1y2" } });
+
+  assert.equal(mgrPhone.value, "514-555-1234");
+  assert.equal(mgrPostalCode.value, "H2X 1Y2");
+
+  autoSaveActivityForm();
+
+  const savedAct = appState.activities.find(a => a.id === "act-test-1");
+  assert.equal(savedAct?.activity_manager?.first_name, "Sophie");
+  assert.equal(savedAct?.activity_manager?.last_name, "Bernier");
+  assert.equal(savedAct?.activity_manager?.phone, "514-555-1234");
+  assert.equal(savedAct?.activity_manager?.email, "sophie@example.com");
+  assert.equal(savedAct?.activity_manager?.company_name, "Nouvelle Cie");
+  assert.equal(savedAct?.activity_manager?.postal_code, "H2X 1Y2");
 });
 
 test("opening an activity with an external manager and same_as_manager already set locks client_type to externe", async () => {

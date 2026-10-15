@@ -156,40 +156,20 @@ function val(id: string) {
   return (document.getElementById(id) as HTMLInputElement).value;
 }
 
-test("fillActivityFormFields binds the top-level and manager fields onto the form", () => {
+test("fillActivityFormFields binds the top-level fields onto the form", () => {
   fillActivityFormFields(ACTIVITY);
 
-  // form-activity-coba/name/attendees/description ("Informations générales") and
-  // form-activity-responsable-firstname/lastname/client-type ("Responsable") are no longer bound
-  // here — both are React-controlled state in components/activities/ActivityDrawer.tsx now (see
+  // form-activity-coba/name/attendees/description ("Informations générales"),
+  // form-activity-responsable-firstname/lastname/client-type ("Responsable de la facturation"),
+  // and form-activity-manager-* ("Responsable de l'activité") are no longer bound here — all
+  // three are React-controlled state in components/activities/ActivityDrawer.tsx now (see
   // test/responsable-facturation-address.test.tsx and test/activity-drawer-general-info.test.tsx).
   assert.equal(val("form-activity-notes"), "Prévoir du café");
-
-  assert.equal(val("form-activity-manager-firstname"), "Marie");
-  assert.equal(val("form-activity-manager-lastname"), "Gérante");
-  assert.equal(val("form-activity-manager-type"), "externe");
-  assert.equal(val("form-activity-manager-phone"), "418-555-1234");
-  assert.equal(val("form-activity-manager-email"), "marie@example.com");
-  assert.equal(val("form-activity-manager-company"), "Entreprise Inc.");
-  assert.equal(val("form-activity-manager-coba-client-number"), "CL-99");
-  assert.equal(val("form-activity-manager-address"), "123 rue Principale");
-  assert.equal(val("form-activity-manager-city"), "Saguenay");
-  assert.equal(val("form-activity-manager-province"), "QC");
-  assert.equal(val("form-activity-manager-postal-code"), "G7X 1X1");
-  assert.equal(document.getElementById("form-activity-manager-external-group")!.style.display, "block");
 
   assert.equal(val("form-activity-dept"), "DG");
   assert.equal(val("form-activity-event-type"), "autre");
   assert.equal(val("form-activity-event-type-other"), "Vernissage");
   assert.equal(document.getElementById("form-activity-event-type-other-group")!.style.display, "flex");
-});
-
-test("fillActivityFormFields defaults manager fields to blank/employe and hides the external group when there is no manager", () => {
-  fillActivityFormFields({ ...ACTIVITY, activity_manager: undefined });
-
-  assert.equal(val("form-activity-manager-firstname"), "");
-  assert.equal(val("form-activity-manager-type"), "employe");
-  assert.equal(document.getElementById("form-activity-manager-external-group")!.style.display, "none");
 });
 
 test("fillActivityFormFields applies the mode toggle and locks it once the activity is past brouillon", () => {
