@@ -52,12 +52,6 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   }
 
   sb.titleRow("Identification du client");
-  sb.labelRow(
-    "Responsable de l'activité",
-    `${manager.first_name || ""} ${manager.last_name || ""}`.trim() || undefined,
-    S.supplierLabel,
-    S.supplierValue
-  );
   if (manager.company_name) {
     sb.labelRow("Entreprise", manager.company_name, S.supplierLabel, S.supplierValue);
   }
@@ -80,7 +74,7 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
   sb.blankRows(1);
 
   sb.titleRow("Information du fournisseur");
-  sb.labelRow("Nom de l'organisme", SUPPLIER.org, S.supplierLabel, S.supplierValue);
+  sb.labelRow("Entreprise", SUPPLIER.org, S.supplierLabel, S.supplierValue);
   sb.labelRow("Responsable", SUPPLIER.responsable, S.supplierLabel, S.supplierValue);
   sb.labelRow("Adresse", SUPPLIER.address, S.supplierLabel, S.supplierValue);
   sb.labelRow("Téléphone", SUPPLIER.phone, S.supplierLabel, S.supplierValue);
