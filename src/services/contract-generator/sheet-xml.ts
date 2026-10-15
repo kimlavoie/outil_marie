@@ -45,7 +45,9 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     sb.blankRows(1);
   } else {
     // No header image for a soumission — a big title banner stands in for it instead.
-    sb.addRow(60, [{ col: "A", style: S.sectionTitle, value: "Soumission", mergeTo: "F" }]);
+    sb.addRow(60, [
+      { col: "A", style: S.sectionTitle, value: "Soumission - Cégep de Jonquière - Location de salle", mergeTo: "F" },
+    ]);
     sb.blankRows(1);
   }
 
@@ -56,6 +58,9 @@ function buildSheetXml(act: any, variant: "contrat" | "soumission") {
     S.supplierLabel,
     S.supplierValue
   );
+  if (manager.company_name) {
+    sb.labelRow("Entreprise", manager.company_name, S.supplierLabel, S.supplierValue);
+  }
   sb.labelRow(
     "Responsable de la facturation",
     `${act.responsable_first_name || ""} ${act.responsable_last_name || ""}`.trim() || undefined,
