@@ -389,9 +389,14 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
         // An activity can have several billing lines on the same account (e.g. split amounts, or
         // a bar revenue line booked to the same account) — combine them, matching how the GL
         // ledger reconciliation treats them (see reconciliation.ts).
-        return getRevenueLines(act)
+        const amounts = getRevenueLines(act)
           .filter((d: any) => d.account_code === code)
-          .reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
+          .map((d: any) => Number(d.amount) || 0);
+        if (options.sheets.useExcelFormulas && amounts.length > 1) {
+          // Show the addition instead of the combined total, so the individual amounts stay visible.
+          return { t: "n", f: amounts.join("+") };
+        }
+        return amounts.reduce((sum, a) => sum + a, 0);
       }
     });
   });

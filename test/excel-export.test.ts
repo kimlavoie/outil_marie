@@ -264,6 +264,82 @@ test("combines several distributions on the same account within one activity, bo
   assert.equal(accRow![2], 100);
 });
 
+test("combined distributions on the same account become an addition formula when useExcelFormulas is on", () => {
+  const xlsx = makeXlsxMock();
+  (globalThis as any).XLSX = xlsx;
+  appState.settings = baseSettings();
+  appState.activities = [
+    makeActivity({
+      id: "a1",
+      date_start: "2025-08-01",
+      distributions: [
+        { account_code: "892-0000-00-000", amount: 100, reference: "RI001" },
+        { account_code: "892-0000-00-000", amount: 100, reference: "RI002" },
+        { account_code: "892-0000-00-000", amount: 100, reference: "RI003" }
+      ]
+    })
+  ];
+  appState.selected_year = "2025-2026";
+  appState.selected_quarters = [1];
+
+  const customOptions = {
+    mode: "custom" as const,
+    filters: {
+      periodMode: "all" as const,
+      fiscalYear: "",
+      quarters: [],
+      startDate: "",
+      endDate: "",
+      states: [],
+      modes: [],
+      clientTypes: [],
+      departments: [],
+      rooms: [],
+      categories: [],
+      responsable: "",
+      searchText: "",
+      financialFilter: "all" as const
+    },
+    columns: {
+      id: true,
+      responsable: false,
+      name: false,
+      date_start: false,
+      date_end: false,
+      days_count: false,
+      client_type: false,
+      category: false,
+      rooms: false,
+      remi_time: false,
+      department: false,
+      room_sans_frais: false,
+      references: false,
+      state: false,
+      attendees_count: false,
+      manager_name: false,
+      manager_company: false,
+      manager_contact_info: false,
+      description: false,
+      notes: false,
+      accounts: ["892-0000-00-000"],
+      total_revenue: false
+    },
+    sheets: {
+      includeTotalRow: false,
+      useExcelFormulas: true,
+      includeRoomsSheet: false,
+      includeSummarySheet: false
+    }
+  };
+
+  runExportToExcel(getExcelColName, xlsx, customOptions);
+
+  const actRows: any[][] = xlsx.sheets["ACTIVITÉS"].data;
+  const cell = actRows[1][1];
+  assert.equal(cell.t, "n");
+  assert.equal(cell.f, "100+100+100");
+});
+
 test("includes bar revenue lines alongside distributions in the account column, financial filters and SOMMAIRE breakdowns", () => {
   const xlsx = makeXlsxMock();
   (globalThis as any).XLSX = xlsx;
