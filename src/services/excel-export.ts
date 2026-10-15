@@ -379,8 +379,11 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
       width: 18,
       accountCode: code,
       getValue: act => {
-        const dist = (act.distributions || []).find((d: any) => d.account_code === code);
-        return dist ? dist.amount : 0;
+        // An activity can have several billing lines on the same account (e.g. split amounts) —
+        // combine them, matching how the GL ledger reconciliation treats them (see reconciliation.ts).
+        return (act.distributions || [])
+          .filter((d: any) => d.account_code === code)
+          .reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
       }
     });
   });
@@ -510,8 +513,9 @@ function generateExcelWorkbook(xlsxInstance?: any, customOptions?: ExcelExportOp
     (getAccounts() || []).forEach(acc => {
       let accTotal = 0;
       activeActivities.forEach(a => {
-        const dist = (a.distributions || []).find((d: any) => d.account_code === acc.code);
-        if (dist) accTotal += Number(dist.amount) || 0;
+        accTotal += (a.distributions || [])
+          .filter((d: any) => d.account_code === acc.code)
+          .reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
       });
       summaryData.push([acc.code, acc.description, accTotal]);
     });
