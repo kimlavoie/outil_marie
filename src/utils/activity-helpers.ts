@@ -10,9 +10,13 @@ import { escapeHtml, calculateHoursFromTimes } from "./format.ts";
 import type { Activity, Reservation, DistributionRow } from "../types/activity.ts";
 import type { Account } from "../state/store.ts";
 
-// Joined list of distinct RI/Facture references across an activity's per-account distributions
+// Joined list of distinct RI/Facture/encaissement references across an activity's per-account
+// distributions and, when the bar is activated, its bar revenue lines
 function getActivityReferences(act: Partial<Activity>) {
-  const refs = (act.distributions || []).map((d: DistributionRow) => (d.reference || "").trim()).filter(Boolean);
+  const refs = [
+    ...(act.distributions || []).map((d: DistributionRow) => (d.reference || "").trim()),
+    ...(act.bar_revenue_lines || []).map((b: any) => (b.receipt_number || "").trim())
+  ].filter(Boolean);
   return [...new Set(refs)].join(", ");
 }
 
