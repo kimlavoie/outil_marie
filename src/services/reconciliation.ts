@@ -280,6 +280,70 @@ function matchDistributionsToLedger(activities: any[], ledgerTransactions: any[]
         });
       }
     });
+
+    // Revenus du bar : exclus de la facturation client (act.distributions) mais tout de même
+    // comptabilisés dans les codes budgétaires au Grand Livre, chacun via son propre account_code
+    // et son numéro d'encaissement en guise de référence (voir account-report.ts qui applique la
+    // même logique pour le rapport de comptes).
+    (act.bar_revenue_lines || []).forEach((bar: any, barIndex: number) => {
+      if (!bar.account_code || !(bar.amount > 0)) return;
+      const barRef = cleanRef(bar.receipt_number);
+
+      if (!barRef) {
+        results.push({
+          activityId: act.id,
+          activityName: act.name,
+          distIndex: barIndex,
+          isBarRevenue: true,
+          activity_date: act.date_start,
+          account_code: bar.account_code,
+          reference: "",
+          amount_saisi: bar.amount,
+          amount_gl: 0,
+          status: "unlogged"
+        });
+        return;
+      }
+
+      const key = `${bar.account_code}||${canonicalRefKey(barRef)}`;
+      const group = ledgerGroups[key];
+
+      if (group) {
+        matchedKeys.add(key);
+        const expectedRevenue = group.montant_somme * -1;
+        const diff = bar.amount - expectedRevenue;
+        const isMatch = Math.abs(diff) < 0.02;
+
+        results.push({
+          activityId: act.id,
+          activityName: act.name,
+          distIndex: barIndex,
+          isBarRevenue: true,
+          activity_date: act.date_start,
+          account_code: bar.account_code,
+          reference: barRef,
+          amount_saisi: bar.amount,
+          amount_gl: expectedRevenue,
+          status: isMatch ? "valid" : "diff",
+          diff: diff,
+          ledgerTxs: group.txs
+        });
+      } else {
+        results.push({
+          activityId: act.id,
+          activityName: act.name,
+          distIndex: barIndex,
+          isBarRevenue: true,
+          activity_date: act.date_start,
+          account_code: bar.account_code,
+          reference: barRef,
+          amount_saisi: bar.amount,
+          amount_gl: 0,
+          status: "unlogged",
+          diff: bar.amount
+        });
+      }
+    });
   });
 
   // 3. Find ledger groups not matched to any activity distribution

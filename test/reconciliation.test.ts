@@ -62,6 +62,62 @@ test("marks a distribution with no reference as unlogged", () => {
   assert.equal(results[0].status, "unlogged");
 });
 
+test("matches a bar revenue line against the ledger, by its own account_code and receipt_number", () => {
+  const activities = [
+    activity({
+      distributions: [],
+      bar_revenue_lines: [{ account_code: "892-2", amount: 50, receipt_number: "RI002" }]
+    })
+  ];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-2", "No référence": "RI002", "Montant courant": -50 }];
+
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "valid");
+  assert.equal((results[0] as any).isBarRevenue, true);
+});
+
+test("marks a bar revenue line as diff when the ledger amount doesn't match", () => {
+  const activities = [
+    activity({
+      distributions: [],
+      bar_revenue_lines: [{ account_code: "892-2", amount: 50, receipt_number: "RI002" }]
+    })
+  ];
+  const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-2", "No référence": "RI002", "Montant courant": -40 }];
+
+  const results = matchDistributionsToLedger(activities as any[], ledger, YEAR, ALL_QUARTERS);
+  assert.equal(results[0].status, "diff");
+  assert.equal((results[0] as any).diff, 10);
+});
+
+test("marks a bar revenue line without a matching ledger entry as unlogged", () => {
+  const activities = [
+    activity({
+      distributions: [],
+      bar_revenue_lines: [{ account_code: "892-2", amount: 50, receipt_number: "RI999" }]
+    })
+  ];
+
+  const results = matchDistributionsToLedger(activities as any[], [], YEAR, ALL_QUARTERS);
+  assert.equal(results[0].status, "unlogged");
+});
+
+test("ignores a bar revenue line with no account_code or a zero amount", () => {
+  const activities = [
+    activity({
+      distributions: [],
+      bar_revenue_lines: [
+        { account_code: "", amount: 50, receipt_number: "RI002" },
+        { account_code: "892-2", amount: 0, receipt_number: "RI003" }
+      ]
+    })
+  ];
+
+  const results = matchDistributionsToLedger(activities as any[], [], YEAR, ALL_QUARTERS);
+  assert.equal(results.length, 0);
+});
+
 test("marks a ledger entry with no matching activity distribution as unentered", () => {
   const ledger = [{ "Date versée": "2025-08-15", "Poste budgétaire": "892-1", "No référence": "RI001", "Montant courant": -100 }];
 

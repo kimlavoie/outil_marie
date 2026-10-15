@@ -41,6 +41,7 @@ const RECON_STATUS_LABELS: Record<string, string> = {
 function runReconciliationExcelExport(XLSX: any, excludeValid: boolean) {
   try {
     const header = [
+      "Date",
       "Compte",
       "Description du compte",
       "Activité",
@@ -60,6 +61,7 @@ function runReconciliationExcelExport(XLSX: any, excludeValid: boolean) {
       const activityLabel = r.activityId ? `${r.activityId} : ${r.activityName}` : r.activityName;
       const diff = r.status === "unlogged" ? r.amount_saisi : r.status === "unentered" ? -r.amount_gl : r.diff || 0;
       return [
+        r.activity_date || r.ledger_date || "",
         r.account_code,
         accountDesc,
         activityLabel,
@@ -73,7 +75,7 @@ function runReconciliationExcelExport(XLSX: any, excludeValid: boolean) {
     });
 
     const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-    ws["!cols"] = [{ wch: 18 }, { wch: 20 }, { wch: 35 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 20 }];
+    ws["!cols"] = [{ wch: 12 }, { wch: 18 }, { wch: 20 }, { wch: 35 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 20 }];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "RAPPROCHEMENT");
@@ -840,11 +842,20 @@ export function ReconciliationView() {
 
   const acceptSuggestion = (result: any, newReference: string) => {
     const act = getActivityById(result.activityId);
-    if (!act || !act.distributions[result.distIndex]) return;
-    const prevReference = act.distributions[result.distIndex].reference;
-    act.distributions[result.distIndex].reference = newReference;
+    const line = result.isBarRevenue ? act?.bar_revenue_lines?.[result.distIndex] : act?.distributions[result.distIndex];
+    if (!act || !line) return;
+    const prevReference = result.isBarRevenue ? line.receipt_number : line.reference;
+    if (result.isBarRevenue) {
+      line.receipt_number = newReference;
+    } else {
+      line.reference = newReference;
+    }
     saveDatabaseOrRollback(() => {
-      act.distributions[result.distIndex].reference = prevReference;
+      if (result.isBarRevenue) {
+        line.receipt_number = prevReference;
+      } else {
+        line.reference = prevReference;
+      }
     }, "La mise à jour de la référence n'a pas été enregistrée. Réessayez.").then(saved => {
       if (!saved) {
         bump();
