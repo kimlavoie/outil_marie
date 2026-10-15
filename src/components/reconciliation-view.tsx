@@ -38,7 +38,7 @@ const RECON_STATUS_LABELS: Record<string, string> = {
 // Excel export (button in the table toolbar)
 // ---------------------------------------------------------------------------
 
-function runReconciliationExcelExport(XLSX: any) {
+function runReconciliationExcelExport(XLSX: any, excludeValid: boolean) {
   try {
     const header = [
       "Compte",
@@ -52,7 +52,10 @@ function runReconciliationExcelExport(XLSX: any) {
       "Décision manuelle"
     ];
     const reviewLabels: Record<string, string> = { validated: "Validé manuellement", ignored: "Ignoré" };
-    const rows = reconciliationState.results.map((r: any) => {
+    const sourceResults = excludeValid
+      ? reconciliationState.results.filter((r: any) => r.status !== "valid")
+      : reconciliationState.results;
+    const rows = sourceResults.map((r: any) => {
       const accountDesc = getAccountByCode(r.account_code)?.description || "Inconnu";
       const activityLabel = r.activityId ? `${r.activityId} : ${r.activityName}` : r.activityName;
       const diff = r.status === "unlogged" ? r.amount_saisi : r.status === "unentered" ? -r.amount_gl : r.diff || 0;
@@ -79,7 +82,8 @@ function runReconciliationExcelExport(XLSX: any) {
       .sort()
       .map((q: number) => `T${q}`)
       .join("-");
-    const filename = `rapprochement_${appState.selected_year}_${qStr || "aucun"}_${new Date().toISOString().split("T")[0]}.xlsx`;
+    const suffix = excludeValid ? "_sans_conformes" : "";
+    const filename = `rapprochement_${appState.selected_year}_${qStr || "aucun"}${suffix}_${new Date().toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(wb, filename);
     showToast("Export du rapprochement terminé.", "success");
   } catch (err: any) {
@@ -90,16 +94,20 @@ function runReconciliationExcelExport(XLSX: any) {
   }
 }
 
-function exportReconciliationToExcel() {
+function exportReconciliationToExcel(excludeValid: boolean) {
   if (reconciliationState.results.length === 0) {
     showToast("Aucun rapprochement à exporter. Importez d'abord un fichier du Grand Livre.", "warning");
+    return;
+  }
+  if (excludeValid && reconciliationState.results.every((r: any) => r.status === "valid")) {
+    showToast("Tous les éléments sont conformes : rien à exporter avec ce filtre.", "warning");
     return;
   }
   showLoadingOverlay("Génération de l'export du rapprochement...");
   setTimeout(async () => {
     try {
       const xlsxModule = await import("xlsx");
-      runReconciliationExcelExport(xlsxModule);
+      runReconciliationExcelExport(xlsxModule, excludeValid);
     } catch (err: any) {
       logError("reconciliation", "importation de xlsx", err);
       showToast("La librairie Excel (XLSX) n'a pas pu être chargée.", "error");
@@ -431,6 +439,66 @@ function ReconDetailModal({ record, onClose }: { record: any; onClose: () => voi
 }
 
 // ---------------------------------------------------------------------------
+// Export options modal (shown before generating the Excel export)
+// ---------------------------------------------------------------------------
+
+function ExportOptionsModal({
+  isOpen,
+  excludeValid,
+  onExcludeValidChange,
+  onConfirm,
+  onClose
+}: {
+  isOpen: boolean;
+  excludeValid: boolean;
+  onExcludeValidChange: (value: boolean) => void;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      id="recon-export-modal"
+      className={`modal${isOpen ? " active" : ""}`}
+      style={{ width: 420, maxWidth: "95vw" }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="recon-export-modal-title"
+    >
+      <div className="modal-header">
+        <h3 className="modal-title" id="recon-export-modal-title">
+          Exporter le rapprochement
+        </h3>
+        <button className="btn-icon" aria-label="Fermer" onClick={onClose}>
+          <svg viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      {isOpen && (
+        <div className="modal-content">
+          <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={excludeValid}
+              onChange={e => onExcludeValidChange(e.target.checked)}
+            />
+            Exclure les éléments conformes
+          </label>
+        </div>
+      )}
+      <div className="modal-footer">
+        <button className="btn btn-secondary" onClick={onClose}>
+          Annuler
+        </button>
+        <button className="btn btn-primary" onClick={onConfirm}>
+          Exporter
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // One reconciliation result row
 // ---------------------------------------------------------------------------
 
@@ -603,6 +671,8 @@ export function ReconciliationView() {
   const [mappingHeaders, setMappingHeaders] = useState<string[] | null>(null);
   const [pendingLedgerRows, setPendingLedgerRows] = useState<any[]>([]);
   const [detailRecord, setDetailRecord] = useState<any>(null);
+  const [excludeValidOnExport, setExcludeValidOnExport] = useState(true);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [showHelp, setShowHelp] = useState(() => {
     try {
       return localStorage.getItem("outil_marie_recon_show_help") !== "false";
@@ -908,11 +978,11 @@ export function ReconciliationView() {
                   Non saisis ({unentered})
                 </button>
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <button className="btn btn-secondary" onClick={toggleHelp}>
                   {showHelp ? "Masquer l'aide" : "Afficher l'aide (?) "}
                 </button>
-                <button className="btn btn-secondary" onClick={exportReconciliationToExcel}>
+                <button className="btn btn-secondary" onClick={() => setShowExportModal(true)}>
                   Exporter le rapprochement
                 </button>
                 <button className="btn btn-secondary btn-danger" onClick={clearImport}>
@@ -995,6 +1065,16 @@ export function ReconciliationView() {
         onSubmit={applyColumnMappingAndImport}
       />
       <ReconDetailModal record={detailRecord} onClose={() => setDetailRecord(null)} />
+      <ExportOptionsModal
+        isOpen={showExportModal}
+        excludeValid={excludeValidOnExport}
+        onExcludeValidChange={setExcludeValidOnExport}
+        onConfirm={() => {
+          setShowExportModal(false);
+          exportReconciliationToExcel(excludeValidOnExport);
+        }}
+        onClose={() => setShowExportModal(false)}
+      />
     </>
   );
 }
