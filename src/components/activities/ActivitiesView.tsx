@@ -165,6 +165,9 @@ export const ActivitiesView: React.FC = () => {
           (d: any) =>
             (d.account_code || "").toLowerCase().includes(query) ||
             (d.reference || "").toLowerCase().includes(query)
+        ) ||
+        (act.bar_revenue_lines || []).some((b: any) =>
+          (b.receipt_number || "").toLowerCase().includes(query)
         );
 
       // Salle filter

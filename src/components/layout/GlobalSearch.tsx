@@ -54,7 +54,15 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSelectView }) => {
         act =>
           globalSearchMatches(act.id, normalizedQuery) ||
           globalSearchMatches(act.name, normalizedQuery) ||
-          globalSearchMatches(act.responsable || "", normalizedQuery)
+          globalSearchMatches(act.responsable || "", normalizedQuery) ||
+          (act.distributions || []).some(
+            (d: any) =>
+              globalSearchMatches(d.account_code || "", normalizedQuery) ||
+              globalSearchMatches(d.reference || "", normalizedQuery)
+          ) ||
+          (act.bar_revenue_lines || []).some((b: any) =>
+            globalSearchMatches(b.receipt_number || "", normalizedQuery)
+          )
       )
       .slice(0, GLOBAL_SEARCH_MAX_PER_CATEGORY);
   }, [activities, normalizedQuery]);
