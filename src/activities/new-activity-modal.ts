@@ -162,7 +162,7 @@ export function duplicateActivityAndOpen(sourceId: string) {
   const clone = JSON.parse(JSON.stringify(source));
   clone.id = generateNextActivityId();
   clone.state = "brouillon";
-  clone.planning_tasks = [];
+  clone.planning_tasks = (clone.planning_tasks || []).map((t: any) => ({ ...t, done: false }));
   clone.submission = { file_link_id: "", generated_at: "", sent_at: "" };
   clone.contract = { file_link_id: "", approved_at: "" };
   clone.form = { file_link_id: "", linked_at: "" };

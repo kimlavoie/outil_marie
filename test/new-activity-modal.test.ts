@@ -144,7 +144,11 @@ function baseState(overrides: any = {}) {
         submission: { file_link_id: "", generated_at: "", sent_at: "" },
         contract: { file_link_id: "", approved_at: "" },
         form: { file_link_id: "", linked_at: "" },
-        planning_tasks: []
+        notes: "Note importante",
+        planning_tasks: [
+          { id: "task-1", description: "Réserver la salle", done: true },
+          { id: "task-2", description: "Confirmer le traiteur", done: false }
+        ]
       }
     ],
     favorites: [],
@@ -206,6 +210,11 @@ test("duplicateActivityAndOpen clones an activity under a fresh id", () => {
   assert.notEqual(clone.id, "2025-001");
   assert.equal(clone.name, "Conférence");
   assert.equal(clone.state, "brouillon");
+  assert.equal(clone.notes, "Note importante");
+  assert.equal(clone.planning_tasks.length, 2);
+  assert.ok(clone.planning_tasks.every((t: any) => t.done === false));
+  assert.equal(clone.planning_tasks[0].description, "Réserver la salle");
+  assert.equal(clone.planning_tasks[1].description, "Confirmer le traiteur");
 });
 
 test("initNewActivityModal wires click/submit handlers", () => {
