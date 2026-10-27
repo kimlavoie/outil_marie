@@ -5,7 +5,7 @@
  */
 import { saveDatabase } from "../state/state.ts";
 import { addActivity, getActivityById } from "../state/activities-repository.ts";
-import { showToast } from "../utils/utils.ts";
+import { showToast, generateUid } from "../utils/utils.ts";
 import { requireNonEmpty } from "../utils/validation.ts";
 import { activitiesState, renderActivities } from "./render.ts";
 import { generateNextActivityId, openActivityDrawer } from "./financials.ts";
@@ -162,6 +162,12 @@ export function duplicateActivityAndOpen(sourceId: string) {
   const clone = JSON.parse(JSON.stringify(source));
   clone.id = generateNextActivityId();
   clone.state = "brouillon";
+  // Reservations keep the source's ids after a plain deep clone. ActivityDrawer.tsx uses each
+  // reservation's id as the React key for its card, so reusing the source's ids makes React treat
+  // the clone's cards as already-mounted (same keys) and skip (re-)initializing them — the
+  // "Personnel requis"/"Équipements"/"Autres frais" lists (and the room tariff, used to build
+  // billing lines) then come up empty/stale instead of reflecting the clone's own data.
+  clone.reservations = (clone.reservations || []).map((r: any) => ({ ...r, id: generateUid("res") }));
   clone.planning_tasks = (clone.planning_tasks || []).map((t: any) => ({ ...t, done: false }));
   clone.submission = { file_link_id: "", generated_at: "", sent_at: "" };
   clone.contract = { file_link_id: "", approved_at: "" };

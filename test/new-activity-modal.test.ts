@@ -137,7 +137,7 @@ function baseState(overrides: any = {}) {
         name: "Conférence",
         responsable: "",
         attendees_count: 0,
-        reservations: [],
+        reservations: [{ id: "res-1", room_name: "Salle A", slots: [] }],
         distributions: [],
         state: "brouillon",
         mode: "soumission",
@@ -215,6 +215,20 @@ test("duplicateActivityAndOpen clones an activity under a fresh id", () => {
   assert.ok(clone.planning_tasks.every((t: any) => t.done === false));
   assert.equal(clone.planning_tasks[0].description, "Réserver la salle");
   assert.equal(clone.planning_tasks[1].description, "Confirmer le traiteur");
+});
+
+test("duplicateActivityAndOpen gives cloned reservations fresh ids", () => {
+  // A cloned reservation keeping the source's id made ActivityDrawer.tsx (which uses it as the
+  // React key for the reservation card) treat the clone's card as already mounted and skip
+  // (re-)initializing its Personnel/Équipements/Autres frais lists and room tariff — the data the
+  // "Générer les lignes de facturation" button reads from. See the comment in
+  // duplicateActivityAndOpen for the full explanation.
+  duplicateActivityAndOpen("2025-001");
+
+  const clone = appState.activities[1];
+  assert.equal(clone.reservations.length, 1);
+  assert.notEqual(clone.reservations[0].id, "res-1");
+  assert.equal(clone.reservations[0].room_name, "Salle A");
 });
 
 test("initNewActivityModal wires click/submit handlers", () => {
