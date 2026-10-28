@@ -1,72 +1,17 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useAppState, appState, saveDatabase } from "../../state/state.ts";
 import { getActivityById } from "../../state/activities-repository.ts";
-import { getFiscalYear, getQuarterNumber, parseLocalDateStr } from "../../state/date-helpers.ts";
-import {
-  getActivityReferences,
-  getRoomsTariffTotal,
-  getReservationRoomAbbreviation,
-  formatCurrency,
-  calculateDaysCount,
-  showToast
-} from "../../utils/utils.ts";
+import { getFiscalYear, getQuarterNumber } from "../../state/date-helpers.ts";
+import { getActivityReferences, getRoomsTariffTotal, getReservationRoomAbbreviation, showToast } from "../../utils/utils.ts";
 import { reconciliationState, reconcileLedger } from "../../services/reconciliation.ts";
 import { openActivityDrawer } from "../../activities-dom/financials.ts";
-import { openCalendarModal } from "../calendar-view.tsx";
 import { showActivityContextMenu, closeActivityContextMenu } from "../../activities-dom/context-menu.ts";
-import { TECHNICAL_DIRECTOR_SALARY_ID, HOSTESS_SALARY_ID } from "../../activities-dom/reservations/subrows.ts";
 import type { Activity } from "../../types/activity.ts";
 
 import { getSavedUiState } from "../../state/ui-state.ts";
-
-const ACTIVITY_STATES = [
-  { value: "brouillon", label: "Brouillon" },
-  { value: "soumise", label: "Soumise au client" },
-  { value: "approuvee", label: "Approuvée" },
-  { value: "planifiee", label: "Planifiée" },
-  { value: "facturee", label: "Facturée" },
-  { value: "terminee", label: "Terminée" }
-];
-
-function getActivityStateLabel(state: string) {
-  return (ACTIVITY_STATES.find(s => s.value === state) || ACTIVITY_STATES[0]).label;
-}
-
-function getActivityStateBadgeClass(state: string) {
-  switch (state) {
-    case "terminee":
-      return "badge-success";
-    case "facturee":
-    case "planifiee":
-      return "badge-info";
-    case "approuvee":
-    case "soumise":
-      return "badge-warning";
-    default:
-      return "badge-danger";
-  }
-}
-
-function getPlanningProgress(act: Activity) {
-  const tasks = act.planning_tasks || [];
-  const done = tasks.filter((t: any) => t.done).length;
-  const total = tasks.length;
-  const percent = total > 0 ? Math.round((done / total) * 100) : 0;
-  return { done, total, percent };
-}
-
-// Total hostesses for the "Hôtesse" column/sort: the bar service's manual hostess_count field,
-// plus one per "Personnel requis" staff row using the "Hôte" salary (those are added separately,
-// e.g. when hostesses are needed without a hostess bar service).
-function getTotalHostesses(act: Activity) {
-  return (act.reservations || []).reduce(
-    (sum: number, r: any) =>
-      sum +
-      (r.bar_service?.hostess_count || 0) +
-      (r.staff || []).filter((s: any) => s.salary_id === HOSTESS_SALARY_ID).length,
-    0
-  );
-}
+import { ACTIVITY_STATES, getTotalHostesses } from "./activity-state-helpers.ts";
+import { ActivitiesToolbar } from "./ActivitiesToolbar.tsx";
+import { ActivityRow } from "./ActivityRow.tsx";
 
 export const ActivitiesView: React.FC = () => {
   const activities = useAppState(s => s.activities);
@@ -392,146 +337,25 @@ export const ActivitiesView: React.FC = () => {
 
   return (
     <div className="table-card">
-      {/* Toolbar */}
-      <div className="table-toolbar">
-        <div className="search-wrapper">
-          <svg className="search-icon" viewBox="0 0 24 24">
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-          </svg>
-          <label htmlFor="activity-search" className="sr-only">Rechercher une activité</label>
-          <input
-            type="text"
-            id="activity-search"
-            className="search-input"
-            placeholder="Rechercher par activité, responsable, facture..."
-            value={searchQuery}
-            onChange={e => {
-              setSearchQuery(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
-
-        <div className="filter-actions">
-          {/* Salle Filter Dropdown */}
-          <div className="multi-select" id="filter-salle-wrapper">
-            <button
-              type="button"
-              className="select-input multi-select-btn"
-              onClick={e => toggleDropdown(e, "salle")}
-              aria-haspopup="true"
-              aria-expanded={openDropdown === "salle"}
-            >
-              {selectedSalles.length === 0
-                ? "Toutes les salles"
-                : `${selectedSalles.length} salle${selectedSalles.length > 1 ? "s" : ""}`}
-            </button>
-            <div className="multi-select-panel" hidden={openDropdown !== "salle"} onClick={e => e.stopPropagation()}>
-              {rooms.map(r => (
-                <label key={r.name} className="multi-select-option">
-                  <input
-                    type="checkbox"
-                    checked={selectedSalles.includes(r.name)}
-                    onChange={() => handleToggleMultiSelectOption(selectedSalles, setSelectedSalles, r.name)}
-                  />
-                  {r.name}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Client Type Filter Dropdown */}
-          <div className="multi-select" id="filter-client-type-wrapper">
-            <button
-              type="button"
-              className="select-input multi-select-btn"
-              onClick={e => toggleDropdown(e, "client")}
-              aria-haspopup="true"
-              aria-expanded={openDropdown === "client"}
-            >
-              {selectedClientTypes.length === 0
-                ? "Tous types clients"
-                : `${selectedClientTypes.length} type${selectedClientTypes.length > 1 ? "s" : ""}`}
-            </button>
-            <div className="multi-select-panel" hidden={openDropdown !== "client"} onClick={e => e.stopPropagation()}>
-              <label className="multi-select-option">
-                <input
-                  type="checkbox"
-                  checked={selectedClientTypes.includes("interne")}
-                  onChange={() => handleToggleMultiSelectOption(selectedClientTypes, setSelectedClientTypes, "interne")}
-                />
-                Interne
-              </label>
-              <label className="multi-select-option">
-                <input
-                  type="checkbox"
-                  checked={selectedClientTypes.includes("externe")}
-                  onChange={() => handleToggleMultiSelectOption(selectedClientTypes, setSelectedClientTypes, "externe")}
-                />
-                Externe
-              </label>
-            </div>
-          </div>
-
-          {/* Status Filter Dropdown */}
-          <div className="multi-select" id="filter-status-wrapper">
-            <button
-              type="button"
-              className="select-input multi-select-btn"
-              onClick={e => toggleDropdown(e, "status")}
-              aria-haspopup="true"
-              aria-expanded={openDropdown === "status"}
-            >
-              {selectedStatuses.length === 0
-                ? "Tous les états"
-                : `${selectedStatuses.length} état${selectedStatuses.length > 1 ? "s" : ""}`}
-            </button>
-            <div className="multi-select-panel" hidden={openDropdown !== "status"} onClick={e => e.stopPropagation()}>
-              {ACTIVITY_STATES.map(s => (
-                <label key={s.value} className="multi-select-option">
-                  <input
-                    type="checkbox"
-                    checked={selectedStatuses.includes(s.value)}
-                    onChange={() => handleToggleMultiSelectOption(selectedStatuses, setSelectedStatuses, s.value)}
-                  />
-                  {s.label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Reset Filters */}
-          <button
-            type="button"
-            className="btn btn-secondary btn-reset-filters"
-            disabled={!hasActiveFilters}
-            onClick={handleResetFilters}
-            title="Réinitialiser tous les filtres de recherche et critères de sélection"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="reset-icon"
-              style={{ width: "16px", height: "16px", fill: "currentColor", marginRight: "6px", verticalAlign: "-3px" }}
-            >
-              <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
-            </svg>
-            Réinitialiser les filtres
-          </button>
-
-          {/* Calendar View Button */}
-          <button
-            type="button"
-            className="btn btn-secondary"
-            title="Voir le calendrier des événements"
-            onClick={() => openCalendarModal()}
-          >
-            <svg viewBox="0 0 24 24" style={{ width: "16px", height: "16px", fill: "currentColor", marginRight: "6px", verticalAlign: "-3px" }}>
-              <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H5V8h14v13zM7 10h5v5H7z" />
-            </svg>
-            Calendrier
-          </button>
-        </div>
-      </div>
+      <ActivitiesToolbar
+        searchQuery={searchQuery}
+        onSearchChange={value => {
+          setSearchQuery(value);
+          setPage(1);
+        }}
+        rooms={rooms}
+        selectedSalles={selectedSalles}
+        selectedClientTypes={selectedClientTypes}
+        selectedStatuses={selectedStatuses}
+        openDropdown={openDropdown}
+        toggleDropdown={toggleDropdown}
+        onToggleMultiSelectOption={(list, listName, val) => {
+          const setList = listName === "salle" ? setSelectedSalles : listName === "client" ? setSelectedClientTypes : setSelectedStatuses;
+          handleToggleMultiSelectOption(list, setList, val);
+        }}
+        hasActiveFilters={hasActiveFilters}
+        onResetFilters={handleResetFilters}
+      />
 
       {/* Table */}
       <div className="table-responsive">
@@ -587,158 +411,16 @@ export const ActivitiesView: React.FC = () => {
                 </td>
               </tr>
             ) : (
-              paginatedActivities.map(act => {
-                const isFilled = act.name.trim() !== "";
-                const totalRev = (act.distributions || []).reduce((sum: number, d: any) => sum + d.amount, 0);
-
-                // Date formatting
-                let datesText: React.ReactNode = "-";
-                if (act.date_start || act.date_end) {
-                  if (act.date_start && act.date_end) {
-                    if (act.date_start === act.date_end) {
-                      datesText = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric"
-                      });
-                    } else {
-                      const daysCount = calculateDaysCount(act.date_start, act.date_end);
-                      const start = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric"
-                      });
-                      const end = parseLocalDateStr(act.date_end).toLocaleDateString("fr-CA", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric"
-                      });
-                      datesText =
-                        daysCount > 0 ? (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "2px", lineHeight: "1.2" }}>
-                            <span>{start}</span>
-                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>au {end}</span>
-                          </div>
-                        ) : (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "2px", lineHeight: "1.2", color: "var(--danger)" }}>
-                            <span>⚠ {start}</span>
-                            <span style={{ fontSize: "0.75rem" }}>au {end}</span>
-                          </div>
-                        );
-                    }
-                  } else if (act.date_start) {
-                    const start = parseLocalDateStr(act.date_start).toLocaleDateString("fr-CA", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric"
-                    });
-                    datesText = `À partir du ${start}`;
-                  } else if (act.date_end) {
-                    const end = parseLocalDateStr(act.date_end).toLocaleDateString("fr-CA", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric"
-                    });
-                    datesText = `Jusqu'au ${end}`;
-                  }
-                }
-
-                const hasBarService = (act.reservations || []).some((r: any) => r.bar_service?.active);
-                const hasTechnicalDirector = (act.reservations || []).some((r: any) =>
-                  (r.staff || []).some(
-                    (s: any) =>
-                      s.salary_id === TECHNICAL_DIRECTOR_SALARY_ID && (s.count === undefined || s.count > 0 || !!s.date)
-                  )
-                );
-                const totalHostesses = getTotalHostesses(act);
-
-                // Reconciliation badge
-                const activityReferences = getActivityReferences(act);
-                let statusBadge = null;
-                if (reconciliationState.ledgerTransactions.length > 0 && isFilled && activityReferences) {
-                  const related = reconciliationState.results.filter(r => r.activityId === act.id);
-                  if (related.length > 0) {
-                    const hasDiff = related.some(r => r.status === "diff");
-                    const hasUnlogged = related.some(r => r.status === "unlogged");
-                    const allValid = related.every(r => r.status === "valid");
-
-                    if (allValid) {
-                      statusBadge = <span className="badge badge-success">Rapproché</span>;
-                    } else if (hasDiff) {
-                      statusBadge = <span className="badge badge-danger">Écart montant</span>;
-                    } else if (hasUnlogged) {
-                      statusBadge = <span className="badge badge-warning">Non dans GL</span>;
-                    }
-                  }
-                }
-
-                const progress = getPlanningProgress(act);
-                const isSelected = selectedIds.has(act.id);
-
-                return (
-                  <tr
-                    key={act.id}
-                    className={`activity-row ${isFilled ? "" : "row-empty"} ${isSelected ? "selected" : ""}`}
-                    onClick={() => openActivityDrawer(act.id)}
-                    onContextMenu={e => {
-                      e.preventDefault();
-                      showActivityContextMenu(e.nativeEvent, act.id);
-                    }}
-                    style={{ cursor: "pointer", opacity: isFilled ? 1 : 0.5, fontStyle: isFilled ? "normal" : "italic" }}
-                  >
-                    <td
-                      onClick={e => handleToggleSelectRow(e, act.id)}
-                      style={{ textAlign: "center", verticalAlign: "middle", width: "22px", paddingLeft: "8px", paddingRight: "2px" }}
-                    >
-                      <label style={{ cursor: "pointer" }}>
-                        <span className="sr-only">Sélectionner l'activité {act.id}</span>
-                        <input
-                          type="checkbox"
-                          className="activity-select-checkbox"
-                          checked={isSelected}
-                          onChange={() => {}}
-                          style={{ cursor: "pointer" }}
-                        />
-                      </label>
-                    </td>
-                    <td>{datesText}</td>
-                    <td className="font-mono">{isFilled && act.coba ? act.coba : "-"}</td>
-                    <td>
-                      <span className="bold">{isFilled ? act.name : "Vierge"}</span> {statusBadge}
-                    </td>
-                    <td>{isFilled ? (act.reservations || []).map(getReservationRoomAbbreviation).join(", ") : "-"}</td>
-                    <td>{isFilled ? (hasBarService ? "Oui" : "") : "-"}</td>
-                    <td>{isFilled ? (totalHostesses > 0 ? totalHostesses : "") : "-"}</td>
-                    <td>{isFilled ? (hasTechnicalDirector ? "Oui" : "") : "-"}</td>
-                    <td className="font-mono">{isFilled && activityReferences ? activityReferences : "-"}</td>
-                    <td className="bold">{isFilled ? formatCurrency(totalRev) : "-"}</td>
-                    <td>
-                      {isFilled ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                          <span className={`badge ${getActivityStateBadgeClass(act.state)}`}>
-                            {getActivityStateLabel(act.state)}
-                          </span>
-                          {progress.total > 0 && (
-                            <>
-                              <div className="progress-bar" title={`${progress.percent}%`}>
-                                <div
-                                  className={`progress-bar-fill ${progress.percent >= 100 ? "complete" : ""}`}
-                                  style={{ width: `${progress.percent}%` }}
-                                />
-                              </div>
-                              <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
-                                {progress.done}/{progress.total} tâches
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
+              paginatedActivities.map(act => (
+                <ActivityRow
+                  key={act.id}
+                  act={act}
+                  isSelected={selectedIds.has(act.id)}
+                  onOpen={openActivityDrawer}
+                  onContextMenu={(e, id) => showActivityContextMenu(e.nativeEvent, id)}
+                  onToggleSelect={handleToggleSelectRow}
+                />
+              ))
             )}
           </tbody>
         </table>
