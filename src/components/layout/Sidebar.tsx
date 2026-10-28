@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useAppState, saveDatabaseOrRollback } from "../../state/state.ts";
+import { getTheme, setTheme } from "../../state/settings-repository.ts";
 import { getCurrentUserRole, canAccessView } from "../../state/permissions.ts";
 import logoUrl from "../../assets/logo.png";
 
@@ -46,14 +47,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView, onO
     const newTheme = theme === "light" ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", newTheme);
 
-    import("../../state/state.ts").then(m => {
-      const prevTheme = m.appState.settings.theme;
-      m.appState.settings.theme = newTheme;
-      saveDatabaseOrRollback(() => {
-        m.appState.settings.theme = prevTheme;
-        document.documentElement.setAttribute("data-theme", prevTheme);
-      }, "Le changement de thème n'a pas été enregistré. Réessayez.");
-    });
+    const prevTheme = getTheme();
+    setTheme(newTheme);
+    saveDatabaseOrRollback(() => {
+      setTheme(prevTheme);
+      document.documentElement.setAttribute("data-theme", prevTheme);
+    }, "Le changement de thème n'a pas été enregistré. Réessayez.");
   };
 
   return (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState, appState, saveDatabase, saveDatabaseOrRollback, saveSafetyBackupToDb, seedDatabase } from "../../state/state.ts";
+import { getBackupReminderDays, setBackupReminderDays, setLastBackupDate } from "../../state/settings-repository.ts";
 import { showToast } from "../../utils/utils.ts";
 import { logError } from "../../utils/logger.ts";
 import { exportToExcel } from "../../services/excel-export.ts";
@@ -30,19 +31,17 @@ export const BackupView: React.FC = () => {
   }, []);
 
   const handleExportJson = async () => {
-    import("../../state/state.ts").then(async m => {
-      m.appState.settings.last_backup_date = new Date().toISOString().split("T")[0];
-      await saveDatabase();
-      checkBackupReminder();
+    setLastBackupDate(new Date().toISOString().split("T")[0]);
+    await saveDatabase();
+    checkBackupReminder();
 
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(m.appState, null, 2));
-      const dlAnchorElem = document.createElement("a");
-      dlAnchorElem.setAttribute("href", dataStr);
-      const timestamp = new Date().toISOString().split("T")[0];
-      dlAnchorElem.setAttribute("download", `compta_marie_sauvegarde_${timestamp}.json`);
-      dlAnchorElem.click();
-      showToast("Sauvegarde réussie.", "success");
-    });
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+    const dlAnchorElem = document.createElement("a");
+    dlAnchorElem.setAttribute("href", dataStr);
+    const timestamp = new Date().toISOString().split("T")[0];
+    dlAnchorElem.setAttribute("download", `compta_marie_sauvegarde_${timestamp}.json`);
+    dlAnchorElem.click();
+    showToast("Sauvegarde réussie.", "success");
   };
 
   const handleExportExcel = () => {
@@ -68,13 +67,11 @@ export const BackupView: React.FC = () => {
   const handleReminderDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10);
     if (!isNaN(val) && val >= 1 && val <= 365) {
-      import("../../state/state.ts").then(m => {
-        const prev = m.appState.settings.backup_reminder_days;
-        m.appState.settings.backup_reminder_days = val;
-        saveDatabaseOrRollback(() => {
-          m.appState.settings.backup_reminder_days = prev;
-        }, "Erreur de sauvegarde");
-      });
+      const prev = getBackupReminderDays();
+      setBackupReminderDays(val);
+      saveDatabaseOrRollback(() => {
+        setBackupReminderDays(prev);
+      }, "Erreur de sauvegarde");
     }
   };
 

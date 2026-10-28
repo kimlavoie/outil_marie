@@ -13,6 +13,7 @@
 import { logError } from "../../utils/logger.ts";
 import { openVersionedDb } from "../../state/db-utils.ts";
 import { appState, saveAppStateToDb } from "../../state/state.ts";
+import { getLastBackupDate, setLastBackupDate } from "../../state/settings-repository.ts";
 import { showToast, escapeHtml } from "../../utils/utils.ts";
 import { checkBackupReminder, renderBackupView } from "./reminder.ts";
 
@@ -531,8 +532,8 @@ async function writeAutoBackupNow() {
     // Saved directly (not via saveDatabase()) to avoid re-triggering this
     // same debounced write in a loop.
     const today = now.toISOString().split("T")[0];
-    if (appState.settings.last_backup_date !== today) {
-      appState.settings.last_backup_date = today;
+    if (getLastBackupDate() !== today) {
+      setLastBackupDate(today);
       await saveAppStateToDb(appState);
       checkBackupReminder();
       renderBackupView();

@@ -3,9 +3,9 @@
  * financial summary display, and the GL distribution total/warning.
  * Split out of activities-financials.ts (see that file for the rest of the module's history).
  */
-import { appState, getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
+import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../state/state.ts";
 import { getActivityById } from "../state/activities-repository.ts";
-import { getSalaryById, getServiceById } from "../state/settings-repository.ts";
+import { getSalaryById, getServiceById, getTaxRates } from "../state/settings-repository.ts";
 import { formatCurrency, escapeHtml, rateToPercentString, getRoomsTariffTotal, getSetupTeardownTotal, elById } from "../utils/utils.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
 import { updateStaffRowSubtotal, updateServiceRowSubtotal, getStaffRowHours } from "./reservations/subrows.ts";
@@ -26,7 +26,7 @@ function formatRatePercent(rate: number): string {
 // falls back to whatever override (or default rate) was already configured.
 // Shared by the live form summary and the saved-record summary (PDF sheet) so both stay in sync.
 function computeTaxes(subtotal: number, act: any) {
-  const defaultRates = appState.settings.tax_rates || { tps: 0.05, tvq: 0.09975 };
+  const defaultRates = getTaxRates() || { tps: 0.05, tvq: 0.09975 };
   const overrides: { tps?: TaxOverride; tvq?: TaxOverride } = act?.tax_overrides || {};
   const nonTaxable = !!act?.non_taxable;
 

@@ -66,6 +66,28 @@ function setTaxRates(rates: { tps: number; tvq: number }) {
   appState.settings.tax_rates = rates;
 }
 
+// Theme (singleton)
+function getTheme(): string {
+  return appState.settings.theme;
+}
+function setTheme(theme: string) {
+  appState.settings.theme = theme;
+}
+
+// Backup reminder (singleton pair: last backup date + reminder interval)
+function getLastBackupDate(): string {
+  return appState.settings.last_backup_date;
+}
+function setLastBackupDate(date: string) {
+  appState.settings.last_backup_date = date;
+}
+function getBackupReminderDays(): number {
+  return appState.settings.backup_reminder_days;
+}
+function setBackupReminderDays(days: number) {
+  appState.settings.backup_reminder_days = days;
+}
+
 // --- Write-side (settings panels: add/edit/delete with saveDatabaseOrRollback) ---
 // Each collection gets setXxx (wholesale replace, for rollback/sort), addXxx, replaceXxxAt (find
 // by key, replace the whole record — used for edits, since the key itself can change, e.g.
@@ -201,6 +223,12 @@ export {
   getSchedulableTasks,
   getTaxRates,
   setTaxRates,
+  getTheme,
+  setTheme,
+  getLastBackupDate,
+  setLastBackupDate,
+  getBackupReminderDays,
+  setBackupReminderDays,
   setRooms,
   addRoom,
   replaceRoomAt,

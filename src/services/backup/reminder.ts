@@ -2,18 +2,20 @@
  * backup/reminder.ts - "Have you backed up recently?" banner/badge logic, the list of automatic
  * safety snapshots taken before a destructive operation, and diagnostic log export.
  */
-import { appState, getSafetyBackupsFromDb, saveDatabaseOrRollback } from "../../state/state.ts";
+import { getSafetyBackupsFromDb, saveDatabaseOrRollback } from "../../state/state.ts";
 import { getActivities, getActivityById } from "../../state/activities-repository.ts";
+import { getLastBackupDate, getBackupReminderDays } from "../../state/settings-repository.ts";
 import { logError, getLogHistory } from "../../utils/logger.ts";
 import { showToast, escapeHtml } from "../../utils/utils.ts";
 import { parseLocalDateStr } from "../../state/date-helpers.ts";
 
 // Backup reminder helpers and views
 function getDaysSinceLastBackup(): number | null {
-  if (!appState.settings.last_backup_date) {
+  const lastBackupDateStr = getLastBackupDate();
+  if (!lastBackupDateStr) {
     return null;
   }
-  const parts = appState.settings.last_backup_date.split("-");
+  const parts = lastBackupDateStr.split("-");
   if (parts.length !== 3) return null;
 
   const lastBackupDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
@@ -51,8 +53,8 @@ function checkBackupReminder() {
     return;
   }
 
-  const lastBackup = appState.settings.last_backup_date;
-  const reminderDays = appState.settings.backup_reminder_days || 7;
+  const lastBackup = getLastBackupDate();
+  const reminderDays = getBackupReminderDays() || 7;
 
   if (!lastBackup) {
     alertTextEl.innerHTML = `

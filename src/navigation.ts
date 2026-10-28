@@ -15,8 +15,8 @@
  * period description, quick-access list building) now lives only in the React components, and the
  * three call sites above no longer call anything here — React already re-renders on its own.
  */
-import { appState, EVENT_TYPES } from "./state/state.ts";
-import { getDepartments } from "./state/settings-repository.ts";
+import { EVENT_TYPES } from "./state/state.ts";
+import { getDepartments, setTheme } from "./state/settings-repository.ts";
 import { escapeHtml } from "./utils/utils.ts";
 import { activitiesState, renderActivities } from "./activities/render.ts";
 import { renderReconciliation } from "./components/reconciliation-mount.ts";
@@ -31,7 +31,7 @@ import { getCurrentView, setCurrentView } from "./state/view-state.ts";
 // services/backup/restore.ts (to re-sync the <html data-theme> attribute after a JSON restore).
 function applyTheme(theme: string) {
   document.documentElement.setAttribute("data-theme", theme);
-  appState.settings.theme = theme;
+  setTheme(theme);
 }
 
 // Called by legacy modules that still trigger navigation imperatively (bulk-actions.ts,

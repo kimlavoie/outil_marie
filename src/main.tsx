@@ -3,7 +3,8 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
 import { logError } from "./utils/logger.ts";
 import { showToast } from "./utils/utils.ts";
-import { appState, loadDatabase } from "./state/state.ts";
+import { loadDatabase } from "./state/state.ts";
+import { getTheme } from "./state/settings-repository.ts";
 import { applyTheme } from "./navigation.ts";
 
 window.addEventListener("error", e => {
@@ -24,7 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // dropdown population, saved UI state) now happens in App.tsx's own mount effect instead —
   // it doesn't need to block the first paint, just to run once React has actually committed.
   await loadDatabase();
-  applyTheme(appState.settings.theme || "dark");
+  applyTheme(getTheme() || "dark");
 
   const rootElement = document.getElementById("root");
   if (rootElement) {
