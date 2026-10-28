@@ -199,9 +199,15 @@ plus petit qui câble les morceaux extraits :
 | `components/activities/ActivitiesView.tsx` (852 → 534) | `activity-state-helpers.ts`, `ActivitiesToolbar.tsx`, `ActivityRow.tsx` |
 | `components/settings/pricing-grid-editor.tsx` (736 → 257) | `PricingGridGuideBanner.tsx`, `HelpIndicatorButton.tsx`, `PricingGrid{Parameters,ClientTypes,Matrix}Step.tsx` |
 | `components/modals/ExcelExportModal.tsx` (672 → 266) | `components/modals/excel-export/{ExcelExportModeSelector,ExcelExportPresetsBar,ExcelExportFiltersTab,ExcelExportColumnsTab}.tsx` |
+| `activities-dom/reservations/subrows.ts` (613 → 57) | `{staff,service,fee}-rows.ts`, `row-dom-helpers.ts`, `incomplete-row-warnings.ts` |
 
 Chaque extraction a été vérifiée séparément (`npm run typecheck`,
 `npm run lint`, `npm test`, `npm run build`) avant d'être commise.
+`subrows.ts` mélangeait les trois types de lignes d'une carte de
+réservation (personnel, services, frais) — chacune a maintenant son
+propre fichier par type, et `subrows.ts` ne garde que
+`autoAddLinkedStaffAndFees()` (qui a besoin des deux) et le ré-export de
+compatibilité.
 
 ## 6. Tests
 
