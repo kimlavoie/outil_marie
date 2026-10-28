@@ -211,6 +211,7 @@ test("duplicateActivityAndOpen clones an activity under a fresh id", () => {
   assert.equal(clone.name, "Conférence");
   assert.equal(clone.state, "brouillon");
   assert.equal(clone.notes, "Note importante");
+  assert.ok(clone.planning_tasks);
   assert.equal(clone.planning_tasks.length, 2);
   assert.ok(clone.planning_tasks.every((t: any) => t.done === false));
   assert.equal(clone.planning_tasks[0].description, "Réserver la salle");
