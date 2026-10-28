@@ -1,5 +1,5 @@
 /**
- * activities/file-links/db.ts - Tiny IndexedDB store mapping a generated link id to the
+ * activities-dom/file-links/db.ts - Tiny IndexedDB store mapping a generated link id to the
  * FileSystemFileHandle it points at (plus the file's display name), so a linked file survives
  * page reloads. Split out of index.ts (see that file for why it stays a barrel importing/
  * re-exporting this alongside actions.ts/status.ts/preview.ts).

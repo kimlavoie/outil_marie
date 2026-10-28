@@ -5,8 +5,8 @@ import { dom } from "./dom-mock.ts";
 
 test.after(() => dom.window.close());
 
-import { listFolderEntries, writeFilesToFolder } from "../src/activities/supporting-docs/actions.ts";
-import { renderSupportingDocsStatus } from "../src/activities/supporting-docs/status.ts";
+import { listFolderEntries, writeFilesToFolder } from "../src/activities-dom/supporting-docs/actions.ts";
+import { renderSupportingDocsStatus } from "../src/activities-dom/supporting-docs/status.ts";
 import { setAppState } from "../src/state/state.ts";
 
 // --- Mock File System Access API primitives -------------------------------------------------
@@ -177,7 +177,7 @@ test("renderSupportingDocsStatus (linked) renders the search/sort toolbar, the d
     new MockFileHandle(makeFile("facture-avril.pdf", "x", new Date("2026-04-01").getTime())),
     new MockFileHandle(makeFile("recu-janvier.pdf", "x", new Date("2026-01-01").getTime()))
   ]);
-  const { idbSetSupportingDocsFolder } = await import("../src/activities/supporting-docs/db.ts");
+  const { idbSetSupportingDocsFolder } = await import("../src/activities-dom/supporting-docs/db.ts");
   await idbSetSupportingDocsFolder("link-1", { handle: root, name: "root" });
 
   const act = makeActivity({ supporting_docs: { folder_link_id: "link-1", linked_at: "2026-01-01" } });
@@ -198,7 +198,7 @@ test("renderSupportingDocsStatus search box filters the visible list without tou
     new MockFileHandle(makeFile("facture-avril.pdf")),
     new MockFileHandle(makeFile("recu-janvier.pdf"))
   ]);
-  const { idbSetSupportingDocsFolder } = await import("../src/activities/supporting-docs/db.ts");
+  const { idbSetSupportingDocsFolder } = await import("../src/activities-dom/supporting-docs/db.ts");
   await idbSetSupportingDocsFolder("link-2", { handle: root, name: "root" });
 
   const act = makeActivity({ supporting_docs: { folder_link_id: "link-2", linked_at: "2026-01-01" } });
@@ -221,7 +221,7 @@ test("renderSupportingDocsStatus sort select reorders the visible list by date",
     new MockFileHandle(makeFile("recent.pdf", "x", new Date("2026-06-01").getTime())),
     new MockFileHandle(makeFile("ancien.pdf", "x", new Date("2020-01-01").getTime()))
   ]);
-  const { idbSetSupportingDocsFolder } = await import("../src/activities/supporting-docs/db.ts");
+  const { idbSetSupportingDocsFolder } = await import("../src/activities-dom/supporting-docs/db.ts");
   await idbSetSupportingDocsFolder("link-3", { handle: root, name: "root" });
 
   const act = makeActivity({ supporting_docs: { folder_link_id: "link-3", linked_at: "2026-01-01" } });
@@ -240,7 +240,7 @@ test("dropping files onto the drop zone writes them into the linked folder and r
   const container = setupContainer();
 
   const root = new MockDirectoryHandle("root", [new MockFileHandle(makeFile("existant.pdf"))]);
-  const { idbSetSupportingDocsFolder } = await import("../src/activities/supporting-docs/db.ts");
+  const { idbSetSupportingDocsFolder } = await import("../src/activities-dom/supporting-docs/db.ts");
   await idbSetSupportingDocsFolder("link-4", { handle: root, name: "root" });
 
   const act = makeActivity({ supporting_docs: { folder_link_id: "link-4", linked_at: "2026-01-01" } });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState, toggleFavoriteActivity, getRecentlyViewedActivityIds, parseLocalDateStr } from "../../state/state.ts";
 import type { Activity } from "../../types/activity.ts";
-import { openActivityDrawer } from "../../activities/financials.ts";
+import { openActivityDrawer } from "../../activities-dom/financials.ts";
 
 const UPCOMING_ACTIVITY_WINDOW_DAYS = 30;
 const UPCOMING_ACTIVITY_LIMIT = 5;

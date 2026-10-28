@@ -11,10 +11,10 @@ import {
   showToast
 } from "../../utils/utils.ts";
 import { reconciliationState, reconcileLedger } from "../../services/reconciliation.ts";
-import { openActivityDrawer } from "../../activities/financials.ts";
+import { openActivityDrawer } from "../../activities-dom/financials.ts";
 import { openCalendarModal } from "../calendar-view.tsx";
-import { showActivityContextMenu, closeActivityContextMenu } from "../../activities/context-menu.ts";
-import { TECHNICAL_DIRECTOR_SALARY_ID, HOSTESS_SALARY_ID } from "../../activities/reservations/subrows.ts";
+import { showActivityContextMenu, closeActivityContextMenu } from "../../activities-dom/context-menu.ts";
+import { TECHNICAL_DIRECTOR_SALARY_ID, HOSTESS_SALARY_ID } from "../../activities-dom/reservations/subrows.ts";
 import type { Activity } from "../../types/activity.ts";
 
 import { getSavedUiState } from "../../state/ui-state.ts";

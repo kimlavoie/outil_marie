@@ -81,16 +81,16 @@ en composant React) :
 
 - `src/components/**/*.tsx` — vues/composants React (Dashboard, Activités
   (liste), Rapprochement GL, Configuration, Sauvegarde, Rapport de compte).
-- `src/activities/**/*.ts` — **toujours actif**, pas du code mort : c'est
+- `src/activities-dom/**/*.ts` — **toujours actif**, pas du code mort : c'est
   le tiroir (drawer) d'activité et son formulaire, encore en DOM-vanille
   (manipulation directe via `document.getElementById`). `ActivityDrawer.tsx`
   (React) n'enveloppe qu'une partie des champs (responsable, gestionnaire,
   infos générales, carte de réservation) et délègue le reste — onglets,
   historique, planification, facturation, pièces jointes — aux fonctions de
-  `src/activities/*.ts`.
+  `src/activities-dom/*.ts`.
 
   **Seule exception documentée** : le rendu de tableau dans
-  [render.ts](src/activities/render.ts) (`renderActivities()` et son appel
+  [render.ts](src/activities-dom/render.ts) (`renderActivities()` et son appel
   DOM) est mort en production — remplacé par
   [ActivitiesView.tsx](src/components/activities/ActivitiesView.tsx) — mais
   ses exports (`ACTIVITY_STATES`, `getActivityStateLabel`,
@@ -103,14 +103,14 @@ en composant React) :
   React que par le code DOM-vanille.
 
 **À retenir pour la suite** : ne pas supposer qu'un fichier dans
-`src/activities/` est mort simplement parce qu'il n'est pas un composant
+`src/activities-dom/` est mort simplement parce qu'il n'est pas un composant
 `.tsx` — vérifier ses appelants avant de le modifier ou de le supprimer.
 
 ## 3. Carte des dossiers
 
 ```
 src/
-  activities/        Tiroir/formulaire d'activité (DOM-vanille, voir §2)
+  activities-dom/        Tiroir/formulaire d'activité (DOM-vanille, voir §2)
     file-links/         Pièces jointes liées par dossier (File System Access API)
     file-preview/        Visionneuses (PDF, image, docx, eml, texte)
     history/             Undo/redo, conflits de salle, historique de versions

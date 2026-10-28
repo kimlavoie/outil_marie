@@ -1,5 +1,5 @@
 /**
- * activities/supporting-docs/status.ts - The "Lier un dossier / liste des fichiers / Retirer" UI
+ * activities-dom/supporting-docs/status.ts - The "Lier un dossier / liste des fichiers / Retirer" UI
  * shown for an activity's pièces justificatives folder. Split out of index.ts, mirroring
  * file-links/status.ts — but this render is async (permission check + directory listing both
  * require awaiting), unlike the synchronous renderFileLinkStatus.

@@ -90,8 +90,8 @@ function renderBackupView() {
 
 // Soft-deleted activities (see appState.activities[].deleted) so a user who removed one by
 // mistake can bring it back without restoring an entire JSON backup. Activities are only flagged
-// `deleted`, never physically removed from appState (see src/activities/context-menu.ts and
-// src/activities/bulk-actions.ts), so restoring is just clearing that flag. Kept behind a modal
+// `deleted`, never physically removed from appState (see src/activities-dom/context-menu.ts and
+// src/activities-dom/bulk-actions.ts), so restoring is just clearing that flag. Kept behind a modal
 // (opened from the "Voir les activités supprimées" button) with a search box instead of an inline
 // list, since that list has no upper bound over the life of the app.
 function getDeletedActivities() {
@@ -222,7 +222,7 @@ function closeDeletedActivitiesModal() {
 let returnToDeletedModalAfterPreview: string | null = null;
 
 // Preview reuses the existing read-only "Voir les détails" modal (see
-// src/activities/print-sheet.ts) rather than a bespoke view — it already renders a full activity
+// src/activities-dom/print-sheet.ts) rather than a bespoke view — it already renders a full activity
 // summary and doesn't care whether the activity is flagged deleted. Both modals share the same
 // #modal-backdrop, so the deleted-activities modal is closed first to avoid stacking them; closing
 // the details modal afterwards reopens the deleted-activities modal (see
@@ -231,7 +231,7 @@ async function previewDeletedActivity(id: string) {
   const searchInput = document.getElementById("deleted-activities-search") as HTMLInputElement | null;
   returnToDeletedModalAfterPreview = searchInput?.value || "";
   closeDeletedActivitiesModal();
-  const { openActivityDetailsModal } = await import("../../activities/financials.ts");
+  const { openActivityDetailsModal } = await import("../../activities-dom/financials.ts");
   openActivityDetailsModal(id);
 }
 

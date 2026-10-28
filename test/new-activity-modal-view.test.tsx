@@ -18,7 +18,7 @@ import { act } from "react";
 import { render, cleanup } from "@testing-library/react";
 import { setAppState } from "../src/state/state.ts";
 import { NewActivityModal } from "../src/components/modals/NewActivityModal.tsx";
-import { openNewActivityModal, closeNewActivityModal } from "../src/activities/new-activity-modal.ts";
+import { openNewActivityModal, closeNewActivityModal } from "../src/activities-dom/new-activity-modal.ts";
 
 // Regression test: form.ts's global Escape-key handler calls closeNewActivityModal() directly
 // (not through the React component's own onClick handlers). openNewActivityModal() already

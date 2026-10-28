@@ -6,8 +6,8 @@
  * static-content.ts/sheet-builder.ts) — kept separate from the style-borrowing bookkeeping
  * (styles.ts) since this is "what goes in the sheet", not "which style id a role points at".
  */
-import { computeActivityFinancials } from "../../activities/financials.ts";
-import { getAggregateEventDates } from "../../activities/reservations/index.ts";
+import { computeActivityFinancials } from "../../activities-dom/financials.ts";
+import { getAggregateEventDates } from "../../activities-dom/reservations/index.ts";
 import { getReservationRoomLabel, formatCurrency, calculateHoursFromTimes, formatPostalCode } from "../../utils/utils.ts";
 import { getActiveSalaryRate, getActiveSalaryOvertimeRate, getActiveServiceRate } from "../../state/state.ts";
 import { getRoomByName, getSalaryById, getServiceById } from "../../state/settings-repository.ts";

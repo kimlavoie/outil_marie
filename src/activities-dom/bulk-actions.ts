@@ -1,5 +1,5 @@
 /**
- * activities/bulk-actions.ts - The floating bulk-actions bar (select-all, clear selection, bulk
+ * activities-dom/bulk-actions.ts - The floating bulk-actions bar (select-all, clear selection, bulk
  * delete, bulk state change) shown once one or more activity rows are checked. Split out of
  * render.ts (see that file for why it stays a barrel re-exporting this alongside
  * context-menu.ts).

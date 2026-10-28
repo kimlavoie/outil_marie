@@ -18,9 +18,9 @@
  * toggling back on) instead of conditionally mounting/unmounting them.
  */
 import { useEffect, useRef, useState } from "react";
-import { updateFormDatesHelper } from "../../activities/history/index.ts";
-import { autoSaveActivityForm } from "../../activities/financials.ts";
-import { initDatepickerWrapper } from "../../activities/datepicker.ts";
+import { updateFormDatesHelper } from "../../activities-dom/history/index.ts";
+import { autoSaveActivityForm } from "../../activities-dom/financials.ts";
+import { initDatepickerWrapper } from "../../activities-dom/datepicker.ts";
 import { maskTimeInput } from "../../utils/utils.ts";
 
 interface PeriodDefaults {

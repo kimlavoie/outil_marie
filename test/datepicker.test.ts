@@ -13,7 +13,7 @@ test.after(() => dom.window.close());
 };
 
 import { setAppState } from "../src/state/state.ts";
-import { validateDateFieldFiscalYear, clearDateFieldErrors } from "../src/activities/datepicker.ts";
+import { validateDateFieldFiscalYear, clearDateFieldErrors } from "../src/activities-dom/datepicker.ts";
 
 function baseState(overrides: any = {}) {
   return {

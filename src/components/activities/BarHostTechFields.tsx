@@ -19,7 +19,7 @@
 import { useEffect, useRef } from "react";
 import { TECHNICAL_SERVICES, BAR_DRINK_TYPES, BAR_SERVICE_TYPES, HOST_DUTY_OPTIONS } from "../../state/state.ts";
 import { initPillToggleEl, initExclusivePillToggleEl, setExclusivePillValueEl, setPillGroupActiveEl } from "../../utils/utils.ts";
-import { autoSaveActivityForm } from "../../activities/financials.ts";
+import { autoSaveActivityForm } from "../../activities-dom/financials.ts";
 
 interface BarService {
   active?: boolean;

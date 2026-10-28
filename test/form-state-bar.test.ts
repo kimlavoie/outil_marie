@@ -13,7 +13,7 @@ test.after(() => dom.window.close());
 };
 
 import { setAppState } from "../src/state/state.ts";
-import { getActivityFormMode, switchActivityTab, updateFormTabIndicators } from "../src/activities/form-state-bar.ts";
+import { getActivityFormMode, switchActivityTab, updateFormTabIndicators } from "../src/activities-dom/form-state-bar.ts";
 
 function baseState(overrides: any = {}) {
   return {

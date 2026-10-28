@@ -13,9 +13,9 @@ test.after(() => dom.window.close());
 };
 
 import { setAppState } from "../src/state/state.ts";
-import { addReservationCard } from "../src/activities/reservations/index.ts";
-import { computeFormRevenueSubtotal, updateSubmissionFinancialSummary, updateDistributionTotal } from "../src/activities/financials.ts";
-import { addDistributionRow } from "../src/activities/distribution-rows.ts";
+import { addReservationCard } from "../src/activities-dom/reservations/index.ts";
+import { computeFormRevenueSubtotal, updateSubmissionFinancialSummary, updateDistributionTotal } from "../src/activities-dom/financials.ts";
+import { addDistributionRow } from "../src/activities-dom/distribution-rows.ts";
 
 const SALARY_DT = {
   id: "salary-dt",

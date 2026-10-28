@@ -4,8 +4,8 @@
  *
  * Used to create a second, detached React root at #validation-root so external mutations of
  * reconciliationState (services/reconciliation.ts) — from navigation/period-selector.ts,
- * activities/bulk-actions.ts, activities/context-menu.ts, services/backup/reminder.ts,
- * state/ui-state.ts, activities/history/undo.ts — could force a re-render via renderReconciliation().
+ * activities-dom/bulk-actions.ts, activities-dom/context-menu.ts, services/backup/reminder.ts,
+ * state/ui-state.ts, activities-dom/history/undo.ts — could force a re-render via renderReconciliation().
  * But #validation-root was never actually rendered anywhere in the DOM (App.tsx mounts
  * <ReconciliationView /> directly inside its own tree instead), so renderReconciliation() silently
  * did nothing — e.g. changing the fiscal year/quarter while the Reconciliation tab was open didn't

@@ -1,5 +1,5 @@
 /**
- * activities/file-links/actions.ts - File System Access API workflows: picking/generating a file
+ * activities-dom/file-links/actions.ts - File System Access API workflows: picking/generating a file
  * and linking it to an activity, opening a previously-linked file, and removing a link. Split out
  * of index.ts (see that file for why it stays a barrel importing/re-exporting this alongside
  * db.ts/status.ts/preview.ts).

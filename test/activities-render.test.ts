@@ -9,7 +9,7 @@ import {
   getPlanningProgress,
   deriveActivityState,
   buildProgressBarHtml
-} from "../src/activities/render.ts";
+} from "../src/activities-dom/render.ts";
 
 function activity(overrides: any = {}) {
   return {

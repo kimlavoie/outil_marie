@@ -15,14 +15,14 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { validateDateFieldFiscalYear } from "../../activities/datepicker.ts";
-import { WEEKDAY_PILL_OPTIONS } from "../../activities/form.ts";
+import { validateDateFieldFiscalYear } from "../../activities-dom/datepicker.ts";
+import { WEEKDAY_PILL_OPTIONS } from "../../activities-dom/form.ts";
 import { formatDateStrLocal, parseLocalDateStr } from "../../state/state.ts";
 import { generateUid, showToast, initPillToggleEl, maskDateInput, maskTimeInput } from "../../utils/utils.ts";
-import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../../activities/financials.ts";
-import { updateFormDatesHelper } from "../../activities/history/index.ts";
-import { propagateFirstSlotTimesToStaff } from "../../activities/reservations/subrows.ts";
-import { updateResolvedPriceDisplay } from "../../activities/reservations/tariff.ts";
+import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../../activities-dom/financials.ts";
+import { updateFormDatesHelper } from "../../activities-dom/history/index.ts";
+import { propagateFirstSlotTimesToStaff } from "../../activities-dom/reservations/subrows.ts";
+import { updateResolvedPriceDisplay } from "../../activities-dom/reservations/tariff.ts";
 
 export interface SlotData {
   date?: string;

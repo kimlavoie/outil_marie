@@ -15,7 +15,7 @@ import {
   migrateActivities
 } from "./migrations.ts";
 import { getAppStateFromDb, saveAppStateToDb, saveSafetyBackupToDb, clearAllActivityVersionsFromDb } from "./db.ts";
-import { activitiesState } from "../activities/activities-table-state.ts";
+import { activitiesState } from "../activities-dom/activities-table-state.ts";
 
 // Free technical services (no fee): paid technical items (location de projecteur, piano à
 // queue, projecteur / équipement informatique) live in appState.settings.services instead, so
@@ -293,7 +293,7 @@ async function saveDatabase(): Promise<boolean> {
 // Calls saveDatabase(), and if persistence fails, invokes restore() to revert the in-memory
 // mutation the caller already applied (plus an optional re-render) instead of leaving the UI
 // showing a change that never made it to disk. Mirrors the pattern used by the bulk
-// delete/state-change handlers (src/activities/render.ts).
+// delete/state-change handlers (src/activities-dom/render.ts).
 async function saveDatabaseOrRollback(
   restore: () => void,
   errorMessage = "La modification n'a pas été enregistrée. Réessayez.",

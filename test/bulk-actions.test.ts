@@ -6,8 +6,8 @@ import { dom } from "./dom-mock.ts";
 test.after(() => dom.window.close());
 
 import { appState, setAppState } from "../src/state/state.ts";
-import { activitiesState } from "../src/activities/render.ts";
-import { updateBulkActionsBar, initBulkActionsHandlers } from "../src/activities/bulk-actions.ts";
+import { activitiesState } from "../src/activities-dom/render.ts";
+import { updateBulkActionsBar, initBulkActionsHandlers } from "../src/activities-dom/bulk-actions.ts";
 
 function flush(ms = 100): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));

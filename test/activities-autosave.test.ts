@@ -18,7 +18,7 @@ import {
   showAutoSaveStatus,
   autoSaveActivityForm,
   setActivityUndoSnapshotTimer
-} from "../src/activities/autosave.ts";
+} from "../src/activities-dom/autosave.ts";
 
 function setupDom() {
   document.body.innerHTML = `

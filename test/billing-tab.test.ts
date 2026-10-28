@@ -8,11 +8,11 @@ test.after(() => dom.window.close());
 // generateBillingLines auto-populates distribution rows from whatever's currently on the
 // activity form (room tariffs, staff, services, autres frais) — this exercises the staff/
 // services/fees line-generation directly against a hand-built DOM fixture (mirroring the real
-// markup produced by src/activities/reservations/subrows.ts) rather than driving the full
+// markup produced by src/activities-dom/reservations/subrows.ts) rather than driving the full
 // reservation-card UI, since only these three lists (and #form-distribution-list) matter here.
 import { appState, getSafetyBackupsFromDb } from "../src/state/state.ts";
-import { generateBillingLines, hasHostessBarService, updateBarRevenueSectionVisibility } from "../src/activities/billing-tab.ts";
-import { addBarRevenueRow, updateBarRevenueTotal } from "../src/activities/financials.ts";
+import { generateBillingLines, hasHostessBarService, updateBarRevenueSectionVisibility } from "../src/activities-dom/billing-tab.ts";
+import { addBarRevenueRow, updateBarRevenueTotal } from "../src/activities-dom/financials.ts";
 import { formatCurrency } from "../src/utils/utils.ts";
 
 function baseSettings(overrides: any = {}) {

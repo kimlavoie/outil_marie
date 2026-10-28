@@ -1,11 +1,11 @@
 /**
- * activities/file-links/index.ts - Linking an activity submission/contract/form to a file on disk
+ * activities-dom/file-links/index.ts - Linking an activity submission/contract/form to a file on disk
  * via the File System Access API (Chrome/Edge only), and the resulting status UI.
  *
  * Barrel re-exporting db.ts (the tiny IndexedDB link store), actions.ts (the File System Access
  * workflows), status.ts (the status row UI) and preview.ts (the inline PDF/XLSX preview) under
  * this shared import path (the same pattern used by src/services/backup/index.ts and
- * src/activities/reservations/index.ts) — split out because the original file mixed those 4
+ * src/activities-dom/reservations/index.ts) — split out because the original file mixed those 4
  * largely independent concerns, including two near-identical PDF/XLSX preview implementations, in
  * one 570-line module.
  *

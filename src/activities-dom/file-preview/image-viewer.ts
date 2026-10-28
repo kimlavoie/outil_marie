@@ -1,5 +1,5 @@
 /**
- * activities/file-preview/image-viewer.ts - Image preview (.png, .jpg, .jpeg, .gif, .webp, .bmp,
+ * activities-dom/file-preview/image-viewer.ts - Image preview (.png, .jpg, .jpeg, .gif, .webp, .bmp,
  * .svg) for the generic file preview modal (see dispatch.ts). The created object URL is returned
  * so the caller can revoke it when the modal closes.
  */

@@ -1,5 +1,5 @@
 /**
- * activity-helpers.ts - appState-dependent read helpers for activities/reservations/rooms shared
+ * activity-helpers.ts - appState-dependent read helpers for activities-dom/reservations/rooms shared
  * across views (references, room totals/labels/colors, GL account options). Split out of
  * utils.ts (see that file for why it stays a barrel re-exporting this alongside the
  * format/DOM/searchable-select helper modules) — the real circular import with state.ts (state.ts

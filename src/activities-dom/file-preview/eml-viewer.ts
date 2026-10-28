@@ -1,5 +1,5 @@
 /**
- * activities/file-preview/eml-viewer.ts - Basic .eml (RFC 822 / MIME email) preview for the generic
+ * activities-dom/file-preview/eml-viewer.ts - Basic .eml (RFC 822 / MIME email) preview for the generic
  * file preview modal (see dispatch.ts). Handles what pièces justificatives actually contain — a
  * single text/plain or text/html body, or a multipart/alternative offering both — not a full MIME
  * reader (nested multipart/mixed attachments are ignored, not listed). The HTML body is rendered

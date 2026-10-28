@@ -4,23 +4,23 @@ import { InstallDismantleFields } from "./InstallDismantleFields.tsx";
 import { useAppState, recordActivityView } from "../../state/state.ts";
 import { getActivityById } from "../../state/activities-repository.ts";
 import { debounce, formatPostalCode, formatPhoneNumber, generateUid } from "../../utils/utils.ts";
-import { activitiesState, renderActivities } from "../../activities/render.ts";
+import { activitiesState, renderActivities } from "../../activities-dom/render.ts";
 import {
   fillActivityFormFields,
   switchActivityTab,
   renderActivityStateBar,
   commitActivityPatch,
   initFormHandlers
-} from "../../activities/form.ts";
-import { addReservationCard, collectSlotsFromCard } from "../../activities/reservations/index.ts";
-import { updateSubmissionFinancialSummary } from "../../activities/financial-summary.ts";
-import { showAutoSaveStatus, autoSaveActivityForm } from "../../activities/autosave.ts";
-import { cancelActivityDrawer, clearDrawerUiState } from "../../activities/drawer.ts";
-import { updateFormDatesHelper, loadAndRenderActivityHistory } from "../../activities/history/index.ts";
-import { renderPlanningTab } from "../../activities/planning-tab.ts";
-import { renderBillingStateStatus } from "../../activities/billing-tab.ts";
-import { renderFileLinkStatus } from "../../activities/file-links/index.ts";
-import { renderSupportingDocsStatus } from "../../activities/supporting-docs/index.ts";
+} from "../../activities-dom/form.ts";
+import { addReservationCard, collectSlotsFromCard } from "../../activities-dom/reservations/index.ts";
+import { updateSubmissionFinancialSummary } from "../../activities-dom/financial-summary.ts";
+import { showAutoSaveStatus, autoSaveActivityForm } from "../../activities-dom/autosave.ts";
+import { cancelActivityDrawer, clearDrawerUiState } from "../../activities-dom/drawer.ts";
+import { updateFormDatesHelper, loadAndRenderActivityHistory } from "../../activities-dom/history/index.ts";
+import { renderPlanningTab } from "../../activities-dom/planning-tab.ts";
+import { renderBillingStateStatus } from "../../activities-dom/billing-tab.ts";
+import { renderFileLinkStatus } from "../../activities-dom/file-links/index.ts";
+import { renderSupportingDocsStatus } from "../../activities-dom/supporting-docs/index.ts";
 import { populateDropdowns } from "../../navigation.ts";
 
 let openDrawerSubscriber: ((id: string, calendarReturn?: any, initialTab?: string) => void) | null = null;
@@ -52,7 +52,7 @@ export const ActivityDrawer: React.FC = () => {
   const [calendarReturn, setCalendarReturn] = useState<any>(null);
 
   // React-controlled "Responsable de la facturation" fields (first Phase-1-style slice of
-  // activities/form.ts's conversion — see that file's applyResponsableSameAsManager/
+  // activities-dom/form.ts's conversion — see that file's applyResponsableSameAsManager/
   // updateResponsableClientTypeDisplay, now deleted, for the imperative logic this replaces).
   // autoSaveActivityForm() still reads these via document.getElementById(...).value, which works
   // transparently against a controlled input's live DOM value — no change needed there.
@@ -67,7 +67,7 @@ export const ActivityDrawer: React.FC = () => {
 
   // React-controlled "Responsable de l'activité" (manager) fields — same Phase-1-style conversion,
   // applied so this section is wired the same way as "Responsable de la facturation" above instead
-  // of through activities/form.ts's legacy DOM writes (fillActivityFormFields's mgr*El assignments
+  // of through activities-dom/form.ts's legacy DOM writes (fillActivityFormFields's mgr*El assignments
   // and initFormHandlers's manager-type change listener/phone+postal masks, all now deleted).
   const [managerFirstName, setManagerFirstName] = useState("");
   const [managerLastName, setManagerLastName] = useState("");
@@ -82,7 +82,7 @@ export const ActivityDrawer: React.FC = () => {
   const [managerPostalCode, setManagerPostalCode] = useState("");
 
   // React-controlled "Informations générales" fields (next Phase-1-style slice of
-  // activities/form.ts's conversion, same pattern as the Responsable fields above).
+  // activities-dom/form.ts's conversion, same pattern as the Responsable fields above).
   const [coba, setCoba] = useState("");
   const [name, setName] = useState("");
   const [attendeesCount, setAttendeesCount] = useState("");

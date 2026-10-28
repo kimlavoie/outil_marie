@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getActivityById } from "../../state/activities-repository.ts";
-import { commitActivityPatch } from "../../activities/form-state-bar.ts";
-import { updateSubmissionFinancialSummary } from "../../activities/financial-summary.ts";
+import { commitActivityPatch } from "../../activities-dom/form-state-bar.ts";
+import { updateSubmissionFinancialSummary } from "../../activities-dom/financial-summary.ts";
 
 interface TaxSectionState {
   mode: "default" | "rate" | "amount";

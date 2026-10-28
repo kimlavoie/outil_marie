@@ -19,7 +19,7 @@
  * genuinely correct behavior, just behavior nothing in production triggers today.
  *
  * bulk-actions.ts (re-exported below) initBulkActionsHandlers() IS called live (from
- * activities/form.ts's initFormHandlers(), wired up at startup by main.tsx) — but it deliberately
+ * activities-dom/form.ts's initFormHandlers(), wired up at startup by main.tsx) — but it deliberately
  * does NOT attach a select-all-checkbox listener, precisely to avoid fighting ActivitiesView.tsx's
  * React-controlled #activities-select-all/.activity-select-checkbox (see its own comment for the
  * fixed DOM-ownership conflict this used to be).
@@ -37,7 +37,7 @@
  * ActivitiesView.tsx via its onContextMenu handler, no conflict there since it appends its own
  * detached popup to document.body) and bulk-actions.ts (the floating multi-select actions bar)
  * under this original shared import path (the same pattern used by src/services/backup/index.ts
- * and src/activities/reservations/index.ts) — split out because the original file mixed the table
+ * and src/activities-dom/reservations/index.ts) — split out because the original file mixed the table
  * itself with those two largely independent UI pieces. Both submodules import
  * activitiesState/renderActivities back from here — a real circular import, safe since nothing
  * runs during either module's top-level evaluation, same as the other circular imports already in

@@ -17,9 +17,9 @@ test.after(() => dom.window.close());
 import { act } from "react";
 import { render, cleanup, fireEvent } from "@testing-library/react";
 import { setAppState, appState } from "../src/state/state.ts";
-import { activitiesState } from "../src/activities/render.ts";
-import { autoSaveActivityForm } from "../src/activities/autosave.ts";
-import { fillActivityFormFields } from "../src/activities/form.ts";
+import { activitiesState } from "../src/activities-dom/render.ts";
+import { autoSaveActivityForm } from "../src/activities-dom/autosave.ts";
+import { fillActivityFormFields } from "../src/activities-dom/form.ts";
 import { ActivityDrawer, triggerOpenActivityDrawer } from "../src/components/activities/ActivityDrawer.tsx";
 
 // Covers the "Informations générales" fields (coba/name/attendees/description) now that they're

@@ -1,5 +1,5 @@
 /**
- * activities/context-menu.ts - Right-click context menu for an activity row (favorite, open in
+ * activities-dom/context-menu.ts - Right-click context menu for an activity row (favorite, open in
  * new tab, view details, duplicate, delete). Split out of render.ts (see that file for why it
  * stays a barrel re-exporting this alongside bulk-actions.ts) to save horizontal space instead of
  * a dedicated "Actions" column.

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "../../state/state.ts";
 import { textSimilarity } from "../../utils/fuzzy-match.ts";
-import { openActivityDrawer } from "../../activities/financials.ts";
+import { openActivityDrawer } from "../../activities-dom/financials.ts";
 import { openSettingsPanel, openAccountModal, openDeptModal } from "../../components/settings/mount.ts";
 
 const GLOBAL_SEARCH_MAX_PER_CATEGORY = 5;

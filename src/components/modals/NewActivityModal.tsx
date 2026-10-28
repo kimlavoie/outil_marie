@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { requireNonEmpty } from "../../utils/validation.ts";
 import { showToast } from "../../utils/utils.ts";
-import { createActivity, createDraftActivity } from "../../activities/new-activity-modal.ts";
-import { openActivityDrawer } from "../../activities/financials.ts";
+import { createActivity, createDraftActivity } from "../../activities-dom/new-activity-modal.ts";
+import { openActivityDrawer } from "../../activities-dom/financials.ts";
 
 let openSubscriber: ((intent: string) => void) | null = null;
 let closeSubscriber: (() => void) | null = null;

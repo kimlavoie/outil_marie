@@ -1,5 +1,5 @@
 /**
- * activities/file-links/status.ts - The "Lier un fichier / Ouvrir / Changer" status row (plus the
+ * activities-dom/file-links/status.ts - The "Lier un fichier / Ouvrir / Changer" status row (plus the
  * submission/contract state-transition button and inline preview toggle) shown for each of the
  * submission/contract/form file links. Split out of index.ts (see that file for why it stays
  * a barrel importing/re-exporting this alongside db.ts/actions.ts/preview.ts).

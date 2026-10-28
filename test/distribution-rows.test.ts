@@ -14,7 +14,7 @@ test.after(() => dom.window.close());
 };
 
 import { setAppState } from "../src/state/state.ts";
-import { addDistributionRow } from "../src/activities/distribution-rows.ts";
+import { addDistributionRow } from "../src/activities-dom/distribution-rows.ts";
 
 function baseState(overrides: any = {}) {
   return {

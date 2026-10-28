@@ -3,7 +3,7 @@
  * built from activity distributions.
  *
  * PRODUCTION STATUS (React migration audit): renderAccountReport()'s rendering body below is
- * unreachable in the running app, same situation as activities/render.ts's renderActivities() (see
+ * unreachable in the running app, same situation as activities-dom/render.ts's renderActivities() (see
  * that file's header comment for the fuller version of this story). components/account-report/
  * AccountReportView.tsx is a full, independent React reimplementation of this view (filter/sort/
  * pagination all in its own useState, now also saving/restoring its own localStorage slice — see

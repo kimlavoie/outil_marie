@@ -1,5 +1,5 @@
 /**
- * activities/file-preview/text-viewer.ts - Plain-text preview (.txt, .csv, .json, .md, .log, .xml)
+ * activities-dom/file-preview/text-viewer.ts - Plain-text preview (.txt, .csv, .json, .md, .log, .xml)
  * for the generic file preview modal (see dispatch.ts). No syntax highlighting (YAGNI) — just a
  * monospace, scrollable, escaped rendering.
  */

@@ -35,7 +35,7 @@ export const FilePreviewModal: React.FC = () => {
 
   // Escape closes this modal — except while a PDF/XLSX viewer inside it is in fullscreen mode,
   // where Escape should exit fullscreen instead (that viewer's own keydown handler does that;
-  // same fullscreen-takes-priority check as activities/form.ts's global Escape handler).
+  // same fullscreen-takes-priority check as activities-dom/form.ts's global Escape handler).
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -61,30 +61,30 @@ export const FilePreviewModal: React.FC = () => {
         if (ext === ".pdf") {
           const buffer = await currentFile!.arrayBuffer();
           if (cancelled) return;
-          const { PdfViewer } = await import("../../activities/pdf-viewer.ts");
+          const { PdfViewer } = await import("../../activities-dom/pdf-viewer.ts");
           await new PdfViewer(mount, buffer, currentFile!.name).init();
         } else if (ext === ".xlsx" || ext === ".xls") {
           const buffer = await currentFile!.arrayBuffer();
           if (cancelled) return;
-          const { XlsxViewer } = await import("../../activities/xlsx-viewer.ts");
+          const { XlsxViewer } = await import("../../activities-dom/xlsx-viewer.ts");
           await new XlsxViewer(mount, buffer, currentFile!.name).init();
         } else if (ext === ".docx") {
           const buffer = await currentFile!.arrayBuffer();
           if (cancelled) return;
-          const { renderDocxPreview } = await import("../../activities/file-preview/docx-viewer.ts");
+          const { renderDocxPreview } = await import("../../activities-dom/file-preview/docx-viewer.ts");
           await renderDocxPreview(mount, buffer);
         } else if (ext === ".eml") {
           const buffer = await currentFile!.arrayBuffer();
           if (cancelled) return;
-          const { renderEmlPreview } = await import("../../activities/file-preview/eml-viewer.ts");
+          const { renderEmlPreview } = await import("../../activities-dom/file-preview/eml-viewer.ts");
           renderEmlPreview(mount, buffer);
         } else if (TEXT_EXTENSIONS.has(ext)) {
           const buffer = await currentFile!.arrayBuffer();
           if (cancelled) return;
-          const { renderTextPreview } = await import("../../activities/file-preview/text-viewer.ts");
+          const { renderTextPreview } = await import("../../activities-dom/file-preview/text-viewer.ts");
           renderTextPreview(mount, buffer);
         } else if (IMAGE_EXTENSIONS.has(ext)) {
-          const { renderImagePreview } = await import("../../activities/file-preview/image-viewer.ts");
+          const { renderImagePreview } = await import("../../activities-dom/file-preview/image-viewer.ts");
           objectUrlRef.current = renderImagePreview(mount, currentFile!, currentFile!.name);
         } else {
           mount.innerHTML = `

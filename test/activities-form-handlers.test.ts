@@ -22,9 +22,9 @@ test.after(() => dom.window.close());
 };
 
 import { setAppState } from "../src/state/state.ts";
-import { activitiesState } from "../src/activities/render.ts";
-import { initFormHandlers } from "../src/activities/form.ts";
-import { openActivityDetailsModal, initActivityDetailsModal } from "../src/activities/financials.ts";
+import { activitiesState } from "../src/activities-dom/render.ts";
+import { initFormHandlers } from "../src/activities-dom/form.ts";
+import { openActivityDetailsModal, initActivityDetailsModal } from "../src/activities-dom/financials.ts";
 
 function baseState(overrides: any = {}) {
   return {

@@ -2,7 +2,7 @@
  * mount.ts - Shared command channel into the Settings view.
  *
  * Used to create a second, detached React root at #settings-root so imperative callers
- * (GlobalSearch.tsx, activities/form.ts, navigation.ts's renderView) could open a specific
+ * (GlobalSearch.tsx, activities-dom/form.ts, navigation.ts's renderView) could open a specific
  * settings tab/modal without going through App.tsx's props. But #settings-root was never
  * actually rendered anywhere in the DOM (App.tsx mounts <SettingsView /> directly inside its own
  * tree instead), so every call to openSettingsPanel/openAccountModal/openDeptModal/

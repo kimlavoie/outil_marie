@@ -1,5 +1,5 @@
 /**
- * activities/history/undo.ts - Undo/redo snapshot stack (Ctrl+Z / Ctrl+Y) for the activity
+ * activities-dom/history/undo.ts - Undo/redo snapshot stack (Ctrl+Z / Ctrl+Y) for the activity
  * drawer currently open. Split out of index.ts (see that file for why it stays a barrel
  * importing/re-exporting this alongside room-conflicts.ts/version-history.ts).
  */

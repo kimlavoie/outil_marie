@@ -8,7 +8,7 @@
  *
  * External entry points called from outside this module:
  * - main.ts's DOMContentLoaded bootstrap calls initCalendarModal()/initViewCalendarButtons() once
- * - src/activities/form.ts calls reopenCalendarModal(calendarReturn) ("back to calendar" button),
+ * - src/activities-dom/form.ts calls reopenCalendarModal(calendarReturn) ("back to calendar" button),
  *   via a dynamic import() since this is a .tsx file and that module must stay importable by
  *   plain `node --test` (Node can't load .tsx)
  * These go through a plain command store (useSyncExternalStore, same pattern as
@@ -20,8 +20,8 @@ import { parseLocalDateStr } from "../state/state.ts";
 import { getActivities } from "../state/activities-repository.ts";
 import { getRooms } from "../state/settings-repository.ts";
 import { getRoomColor, getReservationRoomLabel } from "../utils/utils.ts";
-import { openActivityDrawer, openActivityDetailModal } from "../activities/financials.ts";
-import { createDraftActivity } from "../activities/form.ts";
+import { openActivityDrawer, openActivityDetailModal } from "../activities-dom/financials.ts";
+import { createDraftActivity } from "../activities-dom/form.ts";
 
 const MONTH_NAMES_FR = [
   "Janvier",

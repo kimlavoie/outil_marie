@@ -1,5 +1,5 @@
 /**
- * activities/file-preview/dispatch.ts - Trigger for the generic "Aperçu du fichier" modal: given
+ * activities-dom/file-preview/dispatch.ts - Trigger for the generic "Aperçu du fichier" modal: given
  * any File, hands it to components/modals/FilePreviewModal.tsx (React), which picks the right
  * viewer by extension and mounts it. Backs the pièces justificatives folder preview
  * (supporting-docs/actions.ts), but is deliberately not tied to activities so it can be reused

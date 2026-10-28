@@ -22,7 +22,7 @@ test.after(() => dom.window.close());
 };
 
 import { setAppState } from "../src/state/state.ts";
-import { activitiesState, renderActivities } from "../src/activities/render.ts";
+import { activitiesState, renderActivities } from "../src/activities-dom/render.ts";
 
 function baseState(overrides: any = {}) {
   return {

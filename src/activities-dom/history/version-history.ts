@@ -1,5 +1,5 @@
 /**
- * activities/history/version-history.ts - Activity version snapshots (taken on every meaningful
+ * activities-dom/history/version-history.ts - Activity version snapshots (taken on every meaningful
  * drawer close), their diff against the current record, and the "Historique" tab's list/restore
  * UI. Split out of index.ts (see that file for why it stays a barrel importing/re-exporting this
  * alongside undo.ts/room-conflicts.ts).

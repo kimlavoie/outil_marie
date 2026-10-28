@@ -4,7 +4,7 @@ import { dom } from "./dom-mock.ts";
 
 test.after(() => dom.window.close());
 
-import { renderEmlPreview } from "../src/activities/file-preview/eml-viewer.ts";
+import { renderEmlPreview } from "../src/activities-dom/file-preview/eml-viewer.ts";
 
 function toBuffer(raw: string): ArrayBuffer {
   return new TextEncoder().encode(raw).buffer as ArrayBuffer;

@@ -1,8 +1,8 @@
 /**
- * activities/history/index.ts - Form submission and table sort init, plus a barrel re-exporting
+ * activities-dom/history/index.ts - Form submission and table sort init, plus a barrel re-exporting
  * undo.ts (undo/redo stack), room-conflicts.ts (dates helper + room-booking conflict detection)
  * and version-history.ts (version snapshots/diff/restore) under this shared import path (the same
- * pattern used by src/services/backup/index.ts and src/activities/reservations/index.ts) — split
+ * pattern used by src/services/backup/index.ts and src/activities-dom/reservations/index.ts) — split
  * out because the original file mixed those 4 largely independent concerns in one 610-line
  * module.
  *

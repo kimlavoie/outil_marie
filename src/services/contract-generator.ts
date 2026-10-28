@@ -21,7 +21,7 @@
  * workbook.xml boilerplate); it's also a barrel re-exporting contract-generator/styles.ts,
  * static-content.ts, sheet-builder.ts and sheet-xml.ts under this original shared import path
  * (the same pattern used by src/services/backup/index.ts and
- * src/activities/reservations/index.ts) — split out because the original file mixed the
+ * src/activities-dom/reservations/index.ts) — split out because the original file mixed the
  * style-borrowing bookkeeping, static contract text, generic sheet-building helpers, and the
  * actual document layout in one 890+-line module.
  */

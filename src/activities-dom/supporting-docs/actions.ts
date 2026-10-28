@@ -1,5 +1,5 @@
 /**
- * activities/supporting-docs/actions.ts - File System Access API workflows for linking a whole
+ * activities-dom/supporting-docs/actions.ts - File System Access API workflows for linking a whole
  * folder of pièces justificatives to an activity: picking/relinking the folder, resolving its
  * handle (with permission re-check), recursively listing its files, previewing/downloading one,
  * writing dropped files into it (drag-and-drop upload, which upgrades the stored handle's

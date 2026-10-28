@@ -5,7 +5,7 @@ import { dom } from "./dom-mock.ts";
 
 test.after(() => dom.window.close());
 
-import { renderFileLinkStatus, pickAndLinkFile, idbSetFileLink, idbGetFileLink, renderPdfPreview, renderXlsxPreview } from "../src/activities/file-links/index.ts";
+import { renderFileLinkStatus, pickAndLinkFile, idbSetFileLink, idbGetFileLink, renderPdfPreview, renderXlsxPreview } from "../src/activities-dom/file-links/index.ts";
 
 function makeActivity(overrides: any = {}) {
   return {

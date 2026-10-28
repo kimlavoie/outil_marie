@@ -8,7 +8,7 @@
  * logs, drop zone, reset DB, reminder-days input) via addEventListener on ids that
  * components/backup/BackupView.tsx (React) already owns and handles itself via onClick/onChange —
  * a duplicate-wiring risk of the same shape fixed elsewhere in this migration (see
- * activities/render.ts's header comment on bulk-actions.ts). In practice most of it was already
+ * activities-dom/render.ts's header comment on bulk-actions.ts). In practice most of it was already
  * inert rather than actively conflicting: main.tsx calls initBackupHandlers() once at startup,
  * before BackupView has necessarily mounted (it's only rendered when the user is on that view at
  * all), so document.getElementById() for those ids came back null and the listeners were never

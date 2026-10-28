@@ -13,7 +13,7 @@ test.after(() => dom.window.close());
 };
 
 import { setAppState } from "../src/state/state.ts";
-import { fillActivityFormFields } from "../src/activities/form.ts";
+import { fillActivityFormFields } from "../src/activities-dom/form.ts";
 
 function baseState(overrides: any = {}) {
   return {

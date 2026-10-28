@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useAppState, getFiscalYear, getQuarterNumber, parseLocalDateStr } from "../../state/state.ts";
 import { formatCurrency } from "../../utils/utils.ts";
-import { openActivityDrawer } from "../../activities/financials.ts";
+import { openActivityDrawer } from "../../activities-dom/financials.ts";
 import { getSavedUiState } from "../../state/ui-state.ts";
 
 interface Entry {

@@ -18,7 +18,7 @@ import {
   openTaxOverrideModal,
   closeTaxOverrideModal,
   initTaxOverrideModal
-} from "../src/activities/tax-override.ts";
+} from "../src/activities-dom/tax-override.ts";
 
 function setupDom() {
   document.body.innerHTML = `

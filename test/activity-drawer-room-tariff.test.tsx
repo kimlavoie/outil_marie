@@ -17,9 +17,9 @@ test.after(() => dom.window.close());
 import { act } from "react";
 import { render, cleanup, fireEvent } from "@testing-library/react";
 import { setAppState, appState } from "../src/state/state.ts";
-import { activitiesState } from "../src/activities/render.ts";
-import { fillActivityFormFields } from "../src/activities/form.ts";
-import { collectReservationsFromForm } from "../src/activities/reservations/index.ts";
+import { activitiesState } from "../src/activities-dom/render.ts";
+import { fillActivityFormFields } from "../src/activities-dom/form.ts";
+import { collectReservationsFromForm } from "../src/activities-dom/reservations/index.ts";
 import { ActivityDrawer, triggerOpenActivityDrawer } from "../src/components/activities/ActivityDrawer.tsx";
 
 // Covers Salle + Tarif ("sous-tranche D") through the real drawer.

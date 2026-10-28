@@ -1,5 +1,5 @@
 /**
- * activities/history/room-conflicts.ts - Form "dates helper" text and cross-activity
+ * activities-dom/history/room-conflicts.ts - Form "dates helper" text and cross-activity
  * room-booking conflict detection. Split out of index.ts (see that file for why it stays a
  * barrel importing/re-exporting this alongside undo.ts/version-history.ts).
  */

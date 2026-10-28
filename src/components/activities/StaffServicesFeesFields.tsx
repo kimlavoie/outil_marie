@@ -24,7 +24,7 @@
  * one-time initial population from `initialData`.
  */
 import { useEffect, useRef } from "react";
-import { addStaffRow, addServiceRow, addFeeRow } from "../../activities/reservations/subrows.ts";
+import { addStaffRow, addServiceRow, addFeeRow } from "../../activities-dom/reservations/subrows.ts";
 
 export function StaffServicesFeesFields({ card, initialData }: { card: HTMLElement; initialData: any }) {
   const staffListRef = useRef<HTMLDivElement>(null);

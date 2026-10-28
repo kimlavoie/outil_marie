@@ -2,7 +2,7 @@
  * utils.ts - Barrel re-exporting format.ts/activity-helpers.ts/dom-helpers.ts/select-helpers.ts/
  * searchable-select.ts under their original shared import path, so existing importers don't need
  * to change (the same pattern used by src/services/backup/index.ts and
- * src/activities/reservations/index.ts). Split out because the original file mixed formatting,
+ * src/activities-dom/reservations/index.ts). Split out because the original file mixed formatting,
  * appState-dependent activity/room helpers, generic DOM controls, multi-select filters, and the
  * searchable-select control in one 700+-line module.
  *

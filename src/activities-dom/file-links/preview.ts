@@ -1,5 +1,5 @@
 /**
- * activities/file-links/preview.ts - Inline preview of a linked submission/contract (.xlsx) or
+ * activities-dom/file-links/preview.ts - Inline preview of a linked submission/contract (.xlsx) or
  * form (.pdf) file, requesting File System Access read permission when needed. Split out of
  * index.ts (see that file for why it stays a barrel importing/re-exporting this alongside
  * db.ts/actions.ts/status.ts).

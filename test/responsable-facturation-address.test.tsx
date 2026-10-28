@@ -18,12 +18,12 @@ test.after(() => dom.window.close());
 import { act } from "react";
 import { render, cleanup, fireEvent } from "@testing-library/react";
 import { setAppState, appState } from "../src/state/state.ts";
-import { activitiesState } from "../src/activities/render.ts";
-import { autoSaveActivityForm } from "../src/activities/autosave.ts";
-import { fillActivityFormFields } from "../src/activities/form.ts";
+import { activitiesState } from "../src/activities-dom/render.ts";
+import { autoSaveActivityForm } from "../src/activities-dom/autosave.ts";
+import { fillActivityFormFields } from "../src/activities-dom/form.ts";
 import { ActivityDrawer, triggerOpenActivityDrawer } from "../src/components/activities/ActivityDrawer.tsx";
 
-// These tests used to drive activities/form.ts's imperative DOM writes (applyResponsableSameAsManager/
+// These tests used to drive activities-dom/form.ts's imperative DOM writes (applyResponsableSameAsManager/
 // updateResponsableClientTypeDisplay, and the manager-type change listener/phone+postal masks) directly
 // against a hand-built fixture. That logic now lives as React-controlled state in
 // components/activities/ActivityDrawer.tsx (see that file's "Seed the React-controlled Responsable

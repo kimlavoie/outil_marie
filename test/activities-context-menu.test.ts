@@ -14,7 +14,7 @@ test.after(() => dom.window.close());
 };
 
 import { setAppState, appState } from "../src/state/state.ts";
-import { showActivityContextMenu, closeActivityContextMenu } from "../src/activities/context-menu.ts";
+import { showActivityContextMenu, closeActivityContextMenu } from "../src/activities-dom/context-menu.ts";
 
 function setupDom() {
   document.body.innerHTML = `

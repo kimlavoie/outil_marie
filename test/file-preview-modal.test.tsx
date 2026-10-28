@@ -17,9 +17,9 @@ test.after(() => dom.window.close());
 import { act } from "react";
 import { render, cleanup, fireEvent } from "@testing-library/react";
 import { FilePreviewModal } from "../src/components/modals/FilePreviewModal.tsx";
-import { openFilePreviewModal } from "../src/activities/file-preview/dispatch.ts";
+import { openFilePreviewModal } from "../src/activities-dom/file-preview/dispatch.ts";
 
-// Regression test: activities/file-preview/dispatch.ts used to own this modal's DOM wiring
+// Regression test: activities-dom/file-preview/dispatch.ts used to own this modal's DOM wiring
 // (close button, backdrop, Escape) from before FilePreviewModal.tsx existed — all dead once it
 // did, since those ids (#file-preview-modal, #file-preview-modal-close...) are not rendered by the
 // live app. FilePreviewModal.tsx itself had no Escape handler of its own, so pressing Escape while

@@ -20,11 +20,11 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { escapeHtml, OTHER_ROOM_VALUE, buildSearchableSelectHtml, initSearchableSelectEl, rejectNegativeAmountOnBlur } from "../../utils/utils.ts";
-import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../../activities/financials.ts";
-import { updateFormDatesHelper } from "../../activities/history/index.ts";
-import { autoAddLinkedStaffAndFees } from "../../activities/reservations/subrows.ts";
-import { buildTariffClientTypeOptionsHtml, updateResolvedPriceDisplay, refreshReservationTariffSelect } from "../../activities/reservations/tariff.ts";
-import { buildRoomSelectItems } from "../../activities/reservations/card.tsx";
+import { updateSubmissionFinancialSummary, autoSaveActivityForm } from "../../activities-dom/financials.ts";
+import { updateFormDatesHelper } from "../../activities-dom/history/index.ts";
+import { autoAddLinkedStaffAndFees } from "../../activities-dom/reservations/subrows.ts";
+import { buildTariffClientTypeOptionsHtml, updateResolvedPriceDisplay, refreshReservationTariffSelect } from "../../activities-dom/reservations/tariff.ts";
+import { buildRoomSelectItems } from "../../activities-dom/reservations/card.tsx";
 
 export function RoomTariffFields({
   card,

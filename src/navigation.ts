@@ -7,7 +7,7 @@
  * component sharing the same ids/classes (GlobalSearch.tsx, QuickAccess.tsx, PeriodSelector.tsx —
  * see components/layout/Header.tsx). global-search.ts and period-selector.ts's init*() functions
  * had no live caller left at all; quick-access.ts's renderQuickAccessAll() was still called from
- * three real call sites (activities/context-menu.ts, activities/drawer.ts,
+ * three real call sites (activities-dom/context-menu.ts, activities-dom/drawer.ts,
  * components/activities/ActivityDrawer.tsx) — a real DOM-ownership conflict, since it wrote into
  * #quick-access-list-global via innerHTML, the very node QuickAccess.tsx renders (conditionally,
  * only while its dropdown is open) and already keeps in sync reactively via useAppState. All three
@@ -18,7 +18,7 @@
 import { EVENT_TYPES } from "./state/state.ts";
 import { getDepartments, setTheme } from "./state/settings-repository.ts";
 import { escapeHtml } from "./utils/utils.ts";
-import { activitiesState, renderActivities } from "./activities/render.ts";
+import { activitiesState, renderActivities } from "./activities-dom/render.ts";
 import { renderReconciliation } from "./components/reconciliation-mount.ts";
 import { renderAccountReport } from "./services/account-report.ts";
 import { checkBackupReminder } from "./services/backup/reminder.ts";

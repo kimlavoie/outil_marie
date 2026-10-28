@@ -460,7 +460,7 @@ async function previewBackupActivity(act: any) {
   returnToRestoreModalAfterPreview = true;
   document.getElementById("restore-options-modal")?.classList.remove("active");
 
-  const { buildActivityDetailsHtml } = await import("../../activities/print-sheet.ts");
+  const { buildActivityDetailsHtml } = await import("../../activities-dom/print-sheet.ts");
   const content = document.getElementById("activity-details-content");
   if (content) content.innerHTML = buildActivityDetailsHtml(act);
   document.getElementById("activity-details-modal")?.classList.add("active");

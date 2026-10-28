@@ -27,7 +27,7 @@ import {
   autoAddProjectorIfNeeded,
   autoRemoveProjectorIfNeeded,
   PROJECTOR_SERVICE_ID
-} from "../../src/activities/reservations/subrows.ts";
+} from "../../src/activities-dom/reservations/subrows.ts";
 
 const SALARY_DT = {
   id: "salary-dt",

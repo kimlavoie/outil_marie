@@ -14,12 +14,12 @@ test.after(() => dom.window.close());
 };
 
 import { setAppState, appState } from "../src/state/state.ts";
-import { activitiesState } from "../src/activities/render.ts";
+import { activitiesState } from "../src/activities-dom/render.ts";
 import {
   pushActivityUndoSnapshot,
   undoActivityFormChange,
   redoActivityFormChange
-} from "../src/activities/history/index.ts";
+} from "../src/activities-dom/history/index.ts";
 
 function setupDom() {
   document.body.innerHTML = `

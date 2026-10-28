@@ -18,7 +18,7 @@ import {
   buildTariffClientTypeOptionsHtml,
   updateResolvedPriceDisplay,
   refreshReservationTariffSelect
-} from "../../src/activities/reservations/tariff.ts";
+} from "../../src/activities-dom/reservations/tariff.ts";
 
 const ROOM = {
   name: "Salle A",

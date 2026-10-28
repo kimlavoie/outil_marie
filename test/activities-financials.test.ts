@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 // object) rather than reading it as a global, so we set up its test fixture by mutating that same
 // imported object's .settings rather than replacing the binding.
 import { appState } from "../src/state/state.ts";
-import { computeActivityFinancials, generateNextActivityId, buildPrintActivitySheetHtml, buildActivityDetailsHtml } from "../src/activities/financials.ts";
+import { computeActivityFinancials, generateNextActivityId, buildPrintActivitySheetHtml, buildActivityDetailsHtml } from "../src/activities-dom/financials.ts";
 
 appState.settings = {
   theme: "dark",

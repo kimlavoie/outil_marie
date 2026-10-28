@@ -21,7 +21,7 @@ import {
   createActivity,
   createDraftActivity,
   duplicateActivityAndOpen
-} from "../src/activities/new-activity-modal.ts";
+} from "../src/activities-dom/new-activity-modal.ts";
 
 function setupDom() {
   document.body.innerHTML = `

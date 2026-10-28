@@ -1,5 +1,5 @@
 /**
- * activities/supporting-docs/db.ts - Tiny IndexedDB store mapping a generated link id to the
+ * activities-dom/supporting-docs/db.ts - Tiny IndexedDB store mapping a generated link id to the
  * FileSystemDirectoryHandle it points at (plus the folder's display name), so a linked
  * supporting-documents folder survives page reloads. Separate database from
  * file-links/db.ts (outil_marie_file_links) since a folder handle isn't a file handle and mixing

@@ -125,7 +125,7 @@ export interface ConditionGroup {
 }
 
 // A planning task auto-suggested on an activity when its conditions (event type, client type,
-// department, rooms/services reserved, attendee count...) match. See activities/planning-tab.ts.
+// department, rooms/services reserved, attendee count...) match. See activities-dom/planning-tab.ts.
 export interface SchedulableTask {
   id: string;
   description: string;

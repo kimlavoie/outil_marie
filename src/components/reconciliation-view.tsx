@@ -22,9 +22,9 @@ import {
   findBestColumnMatch,
   reconcileLedger
 } from "../services/reconciliation.ts";
-import { createActivity, switchActivityTab } from "../activities/form.ts";
-import { renderActivities } from "../activities/render.ts";
-import { openActivityDrawer, addDistributionRow } from "../activities/financials.ts";
+import { createActivity, switchActivityTab } from "../activities-dom/form.ts";
+import { renderActivities } from "../activities-dom/render.ts";
+import { openActivityDrawer, addDistributionRow } from "../activities-dom/financials.ts";
 import { useReconciliationRefreshToken } from "./reconciliation-mount.ts";
 
 const RECON_STATUS_LABELS: Record<string, string> = {

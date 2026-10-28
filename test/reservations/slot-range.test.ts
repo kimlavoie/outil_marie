@@ -13,7 +13,7 @@ test.after(() => dom.window.close());
 };
 
 import { setAppState } from "../../src/state/state.ts";
-import { addReservationCard } from "../../src/activities/reservations/index.ts";
+import { addReservationCard } from "../../src/activities-dom/reservations/index.ts";
 
 function baseState(overrides: any = {}) {
   return {

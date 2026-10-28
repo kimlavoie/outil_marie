@@ -1,5 +1,5 @@
 /**
- * activities/file-preview/docx-viewer.ts - Word (.docx) preview for the generic file preview modal
+ * activities-dom/file-preview/docx-viewer.ts - Word (.docx) preview for the generic file preview modal
  * (see dispatch.ts).
  *
  * Uses docx-preview rather than mammoth: mammoth deliberately produces "semantic" HTML and drops
