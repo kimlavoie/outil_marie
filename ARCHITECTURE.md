@@ -200,6 +200,7 @@ plus petit qui câble les morceaux extraits :
 | `components/settings/pricing-grid-editor.tsx` (736 → 257) | `PricingGridGuideBanner.tsx`, `HelpIndicatorButton.tsx`, `PricingGrid{Parameters,ClientTypes,Matrix}Step.tsx` |
 | `components/modals/ExcelExportModal.tsx` (672 → 266) | `components/modals/excel-export/{ExcelExportModeSelector,ExcelExportPresetsBar,ExcelExportFiltersTab,ExcelExportColumnsTab}.tsx` |
 | `activities-dom/reservations/subrows.ts` (613 → 57) | `{staff,service,fee}-rows.ts`, `row-dom-helpers.ts`, `incomplete-row-warnings.ts` |
+| `services/backup/auto-backup.ts` (561 → 427) | `auto-backup-db.ts` |
 
 Chaque extraction a été vérifiée séparément (`npm run typecheck`,
 `npm run lint`, `npm test`, `npm run build`) avant d'être commise.
@@ -207,7 +208,17 @@ Chaque extraction a été vérifiée séparément (`npm run typecheck`,
 réservation (personnel, services, frais) — chacune a maintenant son
 propre fichier par type, et `subrows.ts` ne garde que
 `autoAddLinkedStaffAndFees()` (qui a besoin des deux) et le ré-export de
-compatibilité.
+compatibilité. `auto-backup.ts` mélangeait la persistance IndexedDB du
+handle de dossier et des horodatages avec l'orchestration réelle de la
+File System Access API (connexion/écriture/rendu du statut) — la couche
+IndexedDB, pure et sans DOM, est maintenant dans `auto-backup-db.ts`.
+
+`services/backup/diff.ts` (548 lignes) a aussi été examiné mais **n'a
+pas été découpé** : contrairement aux fichiers ci-dessus, il n'a qu'une
+seule responsabilité (`computeBackupDiff()`), répartie sur la comparaison
+d'activités et de 8 catégories de configuration qui ne sont utilisées
+que par cette fonction — le découper ajouterait de la cérémonie sans
+réduire de couplage réel.
 
 ## 6. Tests
 

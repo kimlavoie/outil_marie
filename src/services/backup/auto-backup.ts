@@ -11,16 +11,19 @@
  * - rapport_activites.xlsx (Excel report updated on every database save)
  */
 import { logError } from "../../utils/logger.ts";
-import { openVersionedDb } from "../../state/db-utils.ts";
 import { appState, saveAppStateToDb } from "../../state/state.ts";
 import { getLastBackupDate, setLastBackupDate } from "../../state/settings-repository.ts";
 import { showToast, escapeHtml } from "../../utils/utils.ts";
 import { checkBackupReminder, renderBackupView } from "./reminder.ts";
-
-const AUTO_BACKUP_DB_NAME = "outil_marie_autobackup";
-const AUTO_BACKUP_STORE = "handles";
-const AUTO_BACKUP_KEY = "backup_directory";
-const AUTO_BACKUP_DB_VERSION = 1;
+import {
+  idbGetAutoBackupHandle,
+  idbSetAutoBackupHandle,
+  idbClearAutoBackupHandle,
+  idbGetLastWrites,
+  idbSetLastWrite,
+  idbClearAllLastWrites
+} from "./auto-backup-db.ts";
+export { openAutoBackupDb, idbGetAutoBackupHandle, idbSetAutoBackupHandle, idbClearAutoBackupHandle } from "./auto-backup-db.ts";
 
 let autoBackupHandle: any = null; // Stores the FileSystemDirectoryHandle
 let autoBackupWriteTimer: any = null;
@@ -31,139 +34,6 @@ let lastWriteHeure: Date | null = null;
 let lastWriteJour: Date | null = null;
 let lastWriteSemaine: Date | null = null;
 let lastWriteExcel: Date | null = null;
-
-function upgradeAutoBackupDb(db: IDBDatabase, oldVersion: number) {
-  if (oldVersion < 1 && !db.objectStoreNames.contains(AUTO_BACKUP_STORE)) {
-    db.createObjectStore(AUTO_BACKUP_STORE);
-  }
-}
-
-function openAutoBackupDb(): Promise<IDBDatabase> {
-  return openVersionedDb(AUTO_BACKUP_DB_NAME, AUTO_BACKUP_DB_VERSION, upgradeAutoBackupDb);
-}
-
-async function idbGetAutoBackupHandle(): Promise<any> {
-  const db = await openAutoBackupDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(AUTO_BACKUP_STORE, "readonly");
-    const req = tx.objectStore(AUTO_BACKUP_STORE).get(AUTO_BACKUP_KEY);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function idbSetAutoBackupHandle(handle: any): Promise<void> {
-  const db = await openAutoBackupDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(AUTO_BACKUP_STORE, "readwrite");
-    tx.objectStore(AUTO_BACKUP_STORE).put(handle, AUTO_BACKUP_KEY);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function idbClearAutoBackupHandle(): Promise<void> {
-  const db = await openAutoBackupDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(AUTO_BACKUP_STORE, "readwrite");
-    tx.objectStore(AUTO_BACKUP_STORE).delete(AUTO_BACKUP_KEY);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function idbGetLastWrites(): Promise<{
-  regulier: Date | null;
-  min15: Date | null;
-  heure: Date | null;
-  jour: Date | null;
-  semaine: Date | null;
-  excel: Date | null;
-}> {
-  const db = await openAutoBackupDb();
-  return new Promise(resolve => {
-    const tx = db.transaction(AUTO_BACKUP_STORE, "readonly");
-    const store = tx.objectStore(AUTO_BACKUP_STORE);
-    const reqReg = store.get("last_write_regulier");
-    const req15 = store.get("last_write_15min");
-    const reqH = store.get("last_write_heure");
-    const reqJ = store.get("last_write_jour");
-    const reqS = store.get("last_write_semaine");
-    const reqE = store.get("last_write_excel");
-
-    let doneCount = 0;
-    const res = {
-      regulier: null as Date | null,
-      min15: null as Date | null,
-      heure: null as Date | null,
-      jour: null as Date | null,
-      semaine: null as Date | null,
-      excel: null as Date | null
-    };
-
-    const checkDone = () => {
-      doneCount++;
-      if (doneCount === 6) resolve(res);
-    };
-
-    reqReg.onsuccess = () => {
-      if (reqReg.result) res.regulier = new Date(reqReg.result);
-      checkDone();
-    };
-    reqReg.onerror = checkDone;
-    req15.onsuccess = () => {
-      if (req15.result) res.min15 = new Date(req15.result);
-      checkDone();
-    };
-    req15.onerror = checkDone;
-    reqH.onsuccess = () => {
-      if (reqH.result) res.heure = new Date(reqH.result);
-      checkDone();
-    };
-    reqH.onerror = checkDone;
-    reqJ.onsuccess = () => {
-      if (reqJ.result) res.jour = new Date(reqJ.result);
-      checkDone();
-    };
-    reqJ.onerror = checkDone;
-    reqS.onsuccess = () => {
-      if (reqS.result) res.semaine = new Date(reqS.result);
-      checkDone();
-    };
-    reqS.onerror = checkDone;
-    reqE.onsuccess = () => {
-      if (reqE.result) res.excel = new Date(reqE.result);
-      checkDone();
-    };
-    reqE.onerror = checkDone;
-  });
-}
-
-async function idbSetLastWrite(key: string, date: Date): Promise<void> {
-  const db = await openAutoBackupDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(AUTO_BACKUP_STORE, "readwrite");
-    tx.objectStore(AUTO_BACKUP_STORE).put(date.getTime(), key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function idbClearAllLastWrites(): Promise<void> {
-  const db = await openAutoBackupDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(AUTO_BACKUP_STORE, "readwrite");
-    const store = tx.objectStore(AUTO_BACKUP_STORE);
-    store.delete("last_write_regulier");
-    store.delete("last_write_15min");
-    store.delete("last_write_heure");
-    store.delete("last_write_jour");
-    store.delete("last_write_semaine");
-    store.delete("last_write_excel");
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
 
 function formatLastWrite(date: Date | null, showDate = false): string {
   if (!date) return "En attente";
@@ -546,10 +416,6 @@ async function writeAutoBackupNow() {
 }
 
 export {
-  openAutoBackupDb,
-  idbGetAutoBackupHandle,
-  idbSetAutoBackupHandle,
-  idbClearAutoBackupHandle,
   renderAutoBackupStatus,
   updateAutoBackupBanner,
   initAutoBackup,
