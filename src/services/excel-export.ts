@@ -8,7 +8,7 @@
  * (generateExcelWorkbook's column definitions) and the export entry point, and re-exports the
  * others' public API so existing imports from "./excel-export.ts" keep working.
  */
-import { appState, getActivePricingGrid, getFlattenedRoomTarifs } from "../state/state.ts";
+import { getActivePricingGrid, getFlattenedRoomTarifs, getSelectedYear, getSelectedQuarters } from "../state/state.ts";
 import { getActivities } from "../state/activities-repository.ts";
 import { getAccounts, getRooms } from "../state/settings-repository.ts";
 import { logError } from "../utils/logger.ts";
@@ -422,8 +422,8 @@ async function runExportToExcel(_getExcelColName: (colIdx: number) => string, xl
     const wb = generateExcelWorkbook(lib, customOptions);
 
     const options = customOptions || getDefaultExportOptions();
-    let filenameSuffix = `${appState.selected_year}_${
-      (appState.selected_quarters || [])
+    let filenameSuffix = `${getSelectedYear()}_${
+      (getSelectedQuarters() || [])
         .sort()
         .map(q => `T${q}`)
         .join("-") || "tous"

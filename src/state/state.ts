@@ -54,6 +54,33 @@ function toggleFavoriteActivity(id: string) {
   saveDatabase();
 }
 
+// Bulk/rollback-style favorites access (e.g. removing favorites for a batch of deleted
+// activities, with a snapshot to restore if the save fails) — same rationale as
+// activities-repository.ts/settings-repository.ts: callers stop reaching into
+// appState.favorites directly.
+function getFavorites(): string[] {
+  return appState.favorites || [];
+}
+function setFavorites(ids: string[]): void {
+  appState.favorites = ids;
+}
+
+// Active fiscal period (top-level appState.selected_year/selected_quarters, set from the
+// PeriodSelector widget). Read almost everywhere a report/filter needs "the period currently
+// in view"; write only from PeriodSelector itself.
+function getSelectedYear(): string {
+  return appState.selected_year;
+}
+function setSelectedYear(year: string): void {
+  appState.selected_year = year;
+}
+function getSelectedQuarters(): number[] {
+  return appState.selected_quarters;
+}
+function setSelectedQuarters(quarters: number[]): void {
+  appState.selected_quarters = quarters;
+}
+
 // Recently-viewed activities (ephemeral browsing history for the "Accès rapide" list — kept in
 // localStorage rather than appState since it's per-device UI history, not app data to back up).
 const RECENT_ACTIVITIES_KEY = "outil_marie_recent_activities";
@@ -320,6 +347,12 @@ export {
   setAppState,
   isFavoriteActivity,
   toggleFavoriteActivity,
+  getFavorites,
+  setFavorites,
+  getSelectedYear,
+  setSelectedYear,
+  getSelectedQuarters,
+  setSelectedQuarters,
   getRecentlyViewedActivityIds,
   recordActivityView,
   loadDatabase,

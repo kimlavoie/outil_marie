@@ -8,7 +8,7 @@
  * since nothing runs during either module's top-level evaluation, same as the other circular
  * imports already in this codebase (e.g. utils.ts <-> state.ts).
  */
-import { appState, saveDatabase } from "../state/state.ts";
+import { saveDatabase, getFavorites, setFavorites } from "../state/state.ts";
 import { getActivityById } from "../state/activities-repository.ts";
 import { showToast } from "../utils/utils.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
@@ -101,7 +101,7 @@ function initBulkActionsHandlers() {
 
       const ids = new Set(activitiesState.selectedIds);
       const touched: { act: Activity; prevDeleted?: boolean }[] = [];
-      const prevFavorites = appState.favorites ? [...appState.favorites] : [];
+      const prevFavorites = [...getFavorites()];
 
       ids.forEach(id => {
         const act = getActivityById(id);
@@ -110,7 +110,7 @@ function initBulkActionsHandlers() {
           act.deleted = true;
         }
       });
-      appState.favorites = (appState.favorites || []).filter(f => !ids.has(f));
+      setFavorites(getFavorites().filter(f => !ids.has(f)));
 
       const saved = await saveDatabase();
       if (!saved) {
@@ -119,7 +119,7 @@ function initBulkActionsHandlers() {
         touched.forEach(({ act, prevDeleted }) => {
           act.deleted = prevDeleted;
         });
-        appState.favorites = prevFavorites;
+        setFavorites(prevFavorites);
         showToast("La suppression n'a pas été enregistrée. Réessayez.", "error", 8000);
         return;
       }

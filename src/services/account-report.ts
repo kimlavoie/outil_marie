@@ -14,7 +14,7 @@
  * production triggers today. renderAccountReport() stays exported/called from navigation.ts's
  * renderView() for the same reason renderActivities() does.
  */
-import { appState, getFiscalYear, getQuarterNumber, saveUiState, parseLocalDateStr } from "../state/state.ts";
+import { getFiscalYear, getQuarterNumber, saveUiState, parseLocalDateStr, getSelectedYear, getSelectedQuarters } from "../state/state.ts";
 import { getActivities } from "../state/activities-repository.ts";
 import { getAccounts } from "../state/settings-repository.ts";
 import { escapeHtml, formatCurrency, buildPaginationBarHtml } from "../utils/utils.ts";
@@ -61,7 +61,7 @@ function renderAccountReport() {
     // Period filter
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || actQuarter === null || !appState.selected_quarters.includes(actQuarter)) {
+    if (actYear !== getSelectedYear() || actQuarter === null || !getSelectedQuarters().includes(actQuarter)) {
       return;
     }
 

@@ -3,7 +3,7 @@
  * built-in presets: the "standard" default (user-configurable from there via ExcelExportModal.tsx)
  * and the fixed "quarter_end" report.
  */
-import { appState } from "../state/state.ts";
+import { getSelectedYear, getSelectedQuarters } from "../state/state.ts";
 import { getAccounts } from "../state/settings-repository.ts";
 
 export interface ExcelExportOptions {
@@ -61,8 +61,8 @@ export function getDefaultExportOptions(): ExcelExportOptions {
     mode: "standard",
     filters: {
       periodMode: "active",
-      fiscalYear: appState.selected_year || "",
-      quarters: appState.selected_quarters ? [...appState.selected_quarters] : [1, 2, 3, 4],
+      fiscalYear: getSelectedYear() || "",
+      quarters: getSelectedQuarters() ? [...getSelectedQuarters()] : [1, 2, 3, 4],
       startDate: "",
       endDate: "",
       states: [],

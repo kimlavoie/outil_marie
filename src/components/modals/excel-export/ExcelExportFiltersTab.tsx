@@ -1,4 +1,4 @@
-import { appState } from "../../../state/state.ts";
+import { getSelectedYear } from "../../../state/state.ts";
 import type { ExcelExportOptions } from "../../../services/excel-export.ts";
 
 const STATE_OPTIONS = [
@@ -39,7 +39,7 @@ export function ExcelExportFiltersTab({
         <div className="excel-grid-2">
           <label className="form-label-radio">
             <input type="radio" name="period_mode" checked={filters.periodMode === "active"} onChange={() => patchFilters({ periodMode: "active" })} />
-            Période active de l'application ({appState.selected_year || "Année courante"})
+            Période active de l'application ({getSelectedYear() || "Année courante"})
           </label>
           <label className="form-label-radio">
             <input type="radio" name="period_mode" checked={filters.periodMode === "all"} onChange={() => patchFilters({ periodMode: "all" })} />

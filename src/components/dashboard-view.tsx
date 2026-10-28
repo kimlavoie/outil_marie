@@ -20,7 +20,7 @@
  */
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Chart, type ChartConfiguration } from "chart.js/auto";
-import { appState, getFiscalYear, getQuarterNumber, getQuarter, useAppState } from "../state/state.ts";
+import { getFiscalYear, getQuarterNumber, getQuarter, useAppState, getSelectedYear, getSelectedQuarters } from "../state/state.ts";
 import { getActivities } from "../state/activities-repository.ts";
 import { getReservationRoomLabel, formatCurrency } from "../utils/utils.ts";
 import { computeDashboardStats, computeEmployeeStats, computeJobsYearlyHours } from "../dashboard.ts";
@@ -37,7 +37,7 @@ function buildQuarterlyRevenuesConfig(textColor: string, gridColor: string): Cha
   getActivities().forEach(act => {
     if (act.deleted) return;
     if (act.name.trim() === "") return;
-    if (getFiscalYear(act.date_start) !== appState.selected_year) return;
+    if (getFiscalYear(act.date_start) !== getSelectedYear()) return;
 
     const q = getQuarter(act.date_start);
     if (q && Object.prototype.hasOwnProperty.call(quarterlySums, q)) {
@@ -81,7 +81,7 @@ function buildSalleShareConfig(isDark: boolean, textColor: string): ChartConfigu
 
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || actQuarter === null || !appState.selected_quarters.includes(actQuarter)) {
+    if (actYear !== getSelectedYear() || actQuarter === null || !getSelectedQuarters().includes(actQuarter)) {
       return;
     }
 
@@ -128,7 +128,7 @@ function buildAccountsVolumeConfig(textColor: string, gridColor: string): ChartC
 
     const actYear = getFiscalYear(act.date_start);
     const actQuarter = getQuarterNumber(act.date_start);
-    if (actYear !== appState.selected_year || actQuarter === null || !appState.selected_quarters.includes(actQuarter)) {
+    if (actYear !== getSelectedYear() || actQuarter === null || !getSelectedQuarters().includes(actQuarter)) {
       return;
     }
 
@@ -214,7 +214,7 @@ export function DashboardView() {
   useChart(accountsRef, () => buildAccountsVolumeConfig(textColor, gridColor));
 
   const empStats = selectedEmployeeId
-    ? computeEmployeeStats(selectedEmployeeId, getActivities(), appState.selected_year, appState.selected_quarters, salaries)
+    ? computeEmployeeStats(selectedEmployeeId, getActivities(), getSelectedYear(), getSelectedQuarters(), salaries)
     : null;
 
   return (
@@ -275,7 +275,7 @@ export function DashboardView() {
       <div className="charts-grid" style={{ gridTemplateColumns: "1fr", marginTop: "20px" }}>
         <div className="chart-card" style={{ minHeight: "auto" }}>
           <div className="chart-header">
-            <span className="chart-title">Heures totales par type d'emploi pour l'année financière {appState.selected_year}</span>
+            <span className="chart-title">Heures totales par type d'emploi pour l'année financière {getSelectedYear()}</span>
           </div>
           <div className="table-responsive">
             <table style={{ width: "100%", fontSize: "0.85rem" }}>
@@ -404,7 +404,7 @@ export function DashboardView() {
                         </tr>
                       </thead>
                       <tbody>
-                        {appState.selected_quarters.map(qNum => {
+                        {getSelectedQuarters().map(qNum => {
                           const qData = empStats.quarterDetails[qNum] || { normalHours: 0, overtimeHours: 0, amount: 0 };
                           return (
                             <tr key={qNum}>

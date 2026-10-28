@@ -3,7 +3,7 @@
  * accounts) make it into the Excel export, plus the quarter-end report's reconciliation-issue
  * cell references used to highlight mismatches in the generated file.
  */
-import { appState, getFiscalYear, getQuarterNumber } from "../state/state.ts";
+import { getFiscalYear, getQuarterNumber, getSelectedYear, getSelectedQuarters } from "../state/state.ts";
 import { getActivities } from "../state/activities-repository.ts";
 import { getAccounts } from "../state/settings-repository.ts";
 import { getActivityReferences } from "../utils/utils.ts";
@@ -20,7 +20,7 @@ export function filterActivitiesForExport(activities: any[], filters: ExcelExpor
     if (filters.periodMode === "active") {
       const actYear = getFiscalYear(act.date_start);
       const actQuarter = getQuarterNumber(act.date_start);
-      if (actYear !== appState.selected_year || actQuarter === null || !appState.selected_quarters.includes(actQuarter)) {
+      if (actYear !== getSelectedYear() || actQuarter === null || !getSelectedQuarters().includes(actQuarter)) {
         return false;
       }
     } else if (filters.periodMode === "fiscal_year") {

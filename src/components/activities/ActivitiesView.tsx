@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { useAppState, appState, saveDatabase } from "../../state/state.ts";
+import { useAppState, saveDatabase, getFavorites, setFavorites } from "../../state/state.ts";
 import { getActivityById } from "../../state/activities-repository.ts";
 import { getFiscalYear, getQuarterNumber } from "../../state/date-helpers.ts";
 import { getActivityReferences, getRoomsTariffTotal, getReservationRoomAbbreviation, showToast } from "../../utils/utils.ts";
@@ -271,7 +271,7 @@ export const ActivitiesView: React.FC = () => {
 
     const ids = new Set(selectedIds);
     const touched: { act: Activity; prevDeleted?: boolean }[] = [];
-    const prevFavorites = appState.favorites ? [...appState.favorites] : [];
+    const prevFavorites = [...getFavorites()];
 
     ids.forEach(id => {
       const act = getActivityById(id);
@@ -280,14 +280,14 @@ export const ActivitiesView: React.FC = () => {
         act.deleted = true;
       }
     });
-    appState.favorites = (appState.favorites || []).filter(f => !ids.has(f));
+    setFavorites(getFavorites().filter(f => !ids.has(f)));
 
     const saved = await saveDatabase();
     if (!saved) {
       touched.forEach(({ act, prevDeleted }) => {
         act.deleted = prevDeleted;
       });
-      appState.favorites = prevFavorites;
+      setFavorites(prevFavorites);
       showToast("La suppression n'a pas été enregistrée. Réessayez.", "error", 8000);
       return;
     }

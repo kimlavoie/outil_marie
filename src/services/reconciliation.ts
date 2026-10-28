@@ -10,13 +10,14 @@ import { validateRules } from "../utils/validation.ts";
 import { logError, logWarn } from "../utils/logger.ts";
 import { textSimilarity } from "../utils/fuzzy-match.ts";
 import {
-  appState,
   getFiscalYear,
   getQuarterNumber,
   parseLocalDateStr,
   getReconDecisionsFromDb,
   saveReconDecisionToDb,
-  deleteReconDecisionFromDb
+  deleteReconDecisionFromDb,
+  getSelectedYear,
+  getSelectedQuarters
 } from "../state/state.ts";
 import { getActivities } from "../state/activities-repository.ts";
 import { getAccounts } from "../state/settings-repository.ts";
@@ -467,8 +468,8 @@ function reconcileLedger() {
   reconciliationState.results = matchDistributionsToLedger(
     getActivities(),
     reconciliationState.ledgerTransactions,
-    appState.selected_year,
-    appState.selected_quarters
+    getSelectedYear(),
+    getSelectedQuarters()
   );
 
   // Attach any previously-saved manual decision (validated/ignored) to each result, keyed the

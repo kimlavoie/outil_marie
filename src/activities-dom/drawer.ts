@@ -9,7 +9,7 @@
  * during either module's top-level evaluation.
  */
 import { clearDateFieldErrors } from "./datepicker.ts";
-import { appState, saveDatabaseOrRollback, recordActivityView } from "../state/state.ts";
+import { getSelectedYear, saveDatabaseOrRollback, recordActivityView } from "../state/state.ts";
 import { getActivities, getActivityById, replaceAllActivities, removeActivity } from "../state/activities-repository.ts";
 import { showToast, elById } from "../utils/utils.ts";
 import { activitiesState, renderActivities } from "./render.ts";
@@ -46,7 +46,7 @@ function getSavedDrawerUiState(): { id: string; tab: string } | null {
 }
 
 function generateNextActivityId() {
-  const prefix = appState.selected_year
+  const prefix = getSelectedYear()
     .split("-")
     .map(y => y.substring(2))
     .join("");

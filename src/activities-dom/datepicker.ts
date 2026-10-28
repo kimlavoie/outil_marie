@@ -8,7 +8,7 @@
  * React component. Its call sites (activities-form.js, activities-reservations.js) are still
  * vanilla and haven't had their turn in Phase 4 yet.
  */
-import { appState, parseLocalDateStr, getFiscalYearRange } from "../state/state.ts";
+import { getSelectedYear, parseLocalDateStr, getFiscalYearRange } from "../state/state.ts";
 import { maskDateInput } from "../utils/utils.ts";
 
 // Validates a date input's value against the active fiscal year and shows/hides
@@ -19,7 +19,7 @@ function validateDateFieldFiscalYear(input: any) {
 
   const value = input.value.trim();
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  const fyRange = getFiscalYearRange(appState.selected_year);
+  const fyRange = getFiscalYearRange(getSelectedYear());
 
   let message = "";
   if (value && dateRegex.test(value) && fyRange) {
@@ -27,7 +27,7 @@ function validateDateFieldFiscalYear(input: any) {
     const minDate = parseLocalDateStr(fyRange.start);
     const maxDate = parseLocalDateStr(fyRange.end);
     if (!isNaN(d.getTime()) && (d < minDate || d > maxDate)) {
-      message = `Cette date doit être comprise dans l'année financière active (${appState.selected_year}).`;
+      message = `Cette date doit être comprise dans l'année financière active (${getSelectedYear()}).`;
     }
   }
 
@@ -150,7 +150,7 @@ function renderCalendar(popover: any, input: any, displayDate: Date) {
   const activeMonth = activeDate ? activeDate.getMonth() : null;
   const activeDay = activeDate ? activeDate.getDate() : null;
 
-  const fyRange = getFiscalYearRange(appState.selected_year);
+  const fyRange = getFiscalYearRange(getSelectedYear());
   const minDate = fyRange ? parseLocalDateStr(fyRange.start) : null;
   const maxDate = fyRange ? parseLocalDateStr(fyRange.end) : null;
 

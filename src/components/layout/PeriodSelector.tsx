@@ -1,5 +1,14 @@
 import React from "react";
-import { useAppState, saveDatabaseOrRollback, getFiscalYear, getDefaultFiscalYear } from "../../state/state.ts";
+import {
+  useAppState,
+  saveDatabaseOrRollback,
+  getFiscalYear,
+  getDefaultFiscalYear,
+  getSelectedYear,
+  setSelectedYear,
+  getSelectedQuarters,
+  setSelectedQuarters
+} from "../../state/state.ts";
 import { reconciliationState, reconcileLedger } from "../../services/reconciliation.ts";
 
 const FISCAL_YEAR_RANGE_PAST = 1;
@@ -105,17 +114,14 @@ export const PeriodSelector: React.FC = () => {
         value={selectedYear}
         onChange={e => {
           const val = e.target.value;
-          import("../../state/state.ts").then(m => {
-            const prev = m.appState.selected_year;
-            m.appState.selected_year = val;
-            m.notifyAppStateChange();
-            saveDatabaseOrRollback(() => {
-              m.appState.selected_year = prev;
-            }, "Le changement d'année n'a pas été enregistré. Réessayez.").then(() => {
-              if (reconciliationState.ledgerTransactions.length > 0) {
-                reconcileLedger();
-              }
-            });
+          const prev = getSelectedYear();
+          setSelectedYear(val);
+          saveDatabaseOrRollback(() => {
+            setSelectedYear(prev);
+          }, "Le changement d'année n'a pas été enregistré. Réessayez.").then(() => {
+            if (reconciliationState.ledgerTransactions.length > 0) {
+              reconcileLedger();
+            }
           });
         }}
       >
@@ -139,21 +145,14 @@ export const PeriodSelector: React.FC = () => {
               className={`quarter-toggle ${isActive ? "active" : ""}`}
               data-q={q}
               onClick={() => {
-                import("../../state/state.ts").then(m => {
-                  const prev = [...m.appState.selected_quarters];
-                  if (isActive) {
-                    m.appState.selected_quarters = m.appState.selected_quarters.filter(x => x !== q);
-                  } else {
-                    m.appState.selected_quarters = [...m.appState.selected_quarters, q];
+                const prev = [...getSelectedQuarters()];
+                setSelectedQuarters(isActive ? getSelectedQuarters().filter(x => x !== q) : [...getSelectedQuarters(), q]);
+                saveDatabaseOrRollback(() => {
+                  setSelectedQuarters(prev);
+                }, "La sélection de trimestre n'a pas été enregistrée. Réessayez.").then(() => {
+                  if (reconciliationState.ledgerTransactions.length > 0) {
+                    reconcileLedger();
                   }
-                  m.notifyAppStateChange();
-                  saveDatabaseOrRollback(() => {
-                    m.appState.selected_quarters = prev;
-                  }, "La sélection de trimestre n'a pas été enregistrée. Réessayez.").then(() => {
-                    if (reconciliationState.ledgerTransactions.length > 0) {
-                      reconcileLedger();
-                    }
-                  });
                 });
               }}
             >

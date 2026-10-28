@@ -2,7 +2,7 @@
  * reconciliation/excel-export.ts - Excel export of the reconciliation results table (the
  * "Exporter le rapprochement" button in reconciliation-view.tsx's table toolbar).
  */
-import { appState } from "../../state/state.ts";
+import { getSelectedYear, getSelectedQuarters } from "../../state/state.ts";
 import { getAccountByCode } from "../../state/settings-repository.ts";
 import { showToast, showLoadingOverlay, hideLoadingOverlay } from "../../utils/utils.ts";
 import { logError } from "../../utils/logger.ts";
@@ -51,12 +51,12 @@ function runReconciliationExcelExport(XLSX: any, excludeValid: boolean) {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "RAPPROCHEMENT");
 
-    const qStr = appState.selected_quarters
+    const qStr = getSelectedQuarters()
       .sort()
       .map((q: number) => `T${q}`)
       .join("-");
     const suffix = excludeValid ? "_sans_conformes" : "";
-    const filename = `rapprochement_${appState.selected_year}_${qStr || "aucun"}${suffix}_${new Date().toISOString().split("T")[0]}.xlsx`;
+    const filename = `rapprochement_${getSelectedYear()}_${qStr || "aucun"}${suffix}_${new Date().toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(wb, filename);
     showToast("Export du rapprochement terminé.", "success");
   } catch (err: any) {

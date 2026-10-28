@@ -42,6 +42,12 @@ appState = {
     pour chaque sous-collection de `appState.settings` (salles, salaires,
     services, comptes, départements, tâches, taux de taxes, thème, dates de
     sauvegarde...).
+  - Les trois derniers champs de premier niveau (`favorites`,
+    `selected_year`, `selected_quarters`) passent par de simples paires
+    get/set exportées directement par [state.ts](src/state/state.ts)
+    (`getFavorites`/`setFavorites`, `getSelectedYear`/`setSelectedYear`,
+    `getSelectedQuarters`/`setSelectedQuarters`) plutôt que par un
+    repository dédié — trop petits pour justifier leur propre fichier.
 
   Ce ne sont **pas** des couches d'abstraction génériques — ce sont de
   simples fonctions qui lisent/écrivent le même objet en mémoire. Mais parce
@@ -50,12 +56,17 @@ appState = {
   boucle de chargement/sauvegarde dans `state.ts`)** — aucun écran, aucun
   composant n'a besoin de changer.
 
-  Quelques accès directs à `appState.activities`/`appState.settings`
-  subsistent volontairement dans `state.ts` et
-  `services/backup/restore.ts` : ce sont les points d'entrée du
-  chargement initial, de la migration de schéma et de la restauration
-  JSON complète — un accès "en bloc" à tout l'état, pas une lecture/écriture
-  ponctuelle qu'un écran ferait.
+  Quelques accès directs à `appState.activities`/`appState.settings`/
+  `appState` au complet subsistent volontairement dans `state.ts`,
+  `services/backup/restore-apply.ts` et les endroits qui sérialisent tout
+  l'état (export JSON, écriture auto-backup, diff de restauration) : ce
+  sont les points d'entrée du chargement initial, de la migration de
+  schéma et de la restauration JSON complète — un accès "en bloc" à tout
+  l'état, pas une lecture/écriture ponctuelle qu'un écran ferait. Tout le
+  reste du code (écrans, services d'export, rapprochement) passe
+  maintenant par les repositories ou les accesseurs ci-dessus — plus aucun
+  fichier hors de ce petit noyau n'importe `appState` pour lire ou écrire
+  un champ précis.
 
 ### Pour l'équipe Firebase
 

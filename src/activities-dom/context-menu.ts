@@ -8,7 +8,7 @@
  * since nothing runs during either module's top-level evaluation, same as the other circular
  * imports already in this codebase (e.g. utils.ts <-> state.ts).
  */
-import { appState, isFavoriteActivity, toggleFavoriteActivity, saveDatabaseOrRollback } from "../state/state.ts";
+import { isFavoriteActivity, toggleFavoriteActivity, saveDatabaseOrRollback, getFavorites, setFavorites } from "../state/state.ts";
 import { getActivityById } from "../state/activities-repository.ts";
 import { reconciliationState, reconcileLedger } from "../services/reconciliation.ts";
 import { openActivityDetailsModal } from "./financials.ts";
@@ -62,14 +62,14 @@ function showActivityContextMenu(e: MouseEvent, id: string) {
       if (confirm(`Voulez-vous vraiment supprimer l'activité ${id} ?`)) {
         const target = getActivityById(id);
         const prevDeleted = target?.deleted;
-        const prevFavorites = appState.favorites ? [...appState.favorites] : [];
+        const prevFavorites = [...getFavorites()];
         if (target) {
           target.deleted = true;
         }
-        appState.favorites = (appState.favorites || []).filter((f: string) => f !== id);
+        setFavorites(getFavorites().filter((f: string) => f !== id));
         saveDatabaseOrRollback(() => {
           if (target) target.deleted = prevDeleted;
-          appState.favorites = prevFavorites;
+          setFavorites(prevFavorites);
         }, "La suppression n'a pas été enregistrée. Réessayez.").then(() => {
           if (reconciliationState.ledgerTransactions.length > 0) {
             reconcileLedger();

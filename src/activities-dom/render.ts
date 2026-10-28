@@ -43,7 +43,7 @@
  * runs during either module's top-level evaluation, same as the other circular imports already in
  * this codebase (e.g. utils.ts <-> state.ts).
  */
-import { appState, subscribeAppState, getFiscalYear, getQuarterNumber, parseLocalDateStr, saveUiState } from "../state/state.ts";
+import { subscribeAppState, getFiscalYear, getQuarterNumber, parseLocalDateStr, saveUiState, getSelectedYear, getSelectedQuarters } from "../state/state.ts";
 import { getActivities } from "../state/activities-repository.ts";
 import {
   getReservationRoomAbbreviation,
@@ -204,7 +204,7 @@ function renderActivities() {
     } else {
       const fy = getFiscalYear(act.date_start);
       const q = getQuarterNumber(act.date_start);
-      matchesPeriod = fy === appState.selected_year && q !== null && appState.selected_quarters.includes(q);
+      matchesPeriod = fy === getSelectedYear() && q !== null && getSelectedQuarters().includes(q);
     }
 
     return matchesSearch && matchesSalle && matchesClientType && matchesStatus && matchesPeriod;
