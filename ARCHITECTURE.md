@@ -152,7 +152,39 @@ src/
   utils/             Fonctions utilitaires génériques
 ```
 
-## 4. Découpage des gros fichiers (fait)
+## 4. Convention de nommage des fichiers dans `src/components/`
+
+`src/components/` mélange deux casses de nommage — ce n'est pas une
+incohérence à corriger en renommant, mais deux conventions réelles
+appliquées à deux catégories de fichiers différentes :
+
+- **PascalCase** (`ActivityDrawer.tsx`, `GeneralInfoFields.tsx`,
+  `HelpIndicatorButton.tsx`, `ReconciliationRow.tsx`...) : le fichier
+  exporte **un seul composant React**, et le nom du fichier correspond
+  exactement au nom du composant. C'est la convention à suivre pour tout
+  nouveau composant, y compris un sous-composant extrait d'un fichier
+  trop volumineux (voir §5) — `components/activities/*Fields.tsx`,
+  `components/modals/*.tsx`, `components/layout/*.tsx` et les extractions
+  de la Phase 3 la suivent déjà.
+- **kebab-case** (`rooms.tsx`, `calendar-view.tsx`,
+  `pricing-grid-editor.tsx`, `reconciliation/modals.tsx`...) : le fichier
+  exporte soit **plusieurs composants** liés entre eux (ex. `rooms.tsx`
+  exporte `RoomsPanel` et `RoomModal`; `reconciliation/modals.tsx` exporte
+  trois modales), soit **aucun composant** (logique pure, helpers,
+  constantes — ex. `activity-state-helpers.ts`,
+  `reconciliation/status-labels.ts`). C'est la même convention que le
+  reste du dépôt (`state/`, `services/`, `utils/`) pour les fichiers
+  non-composants.
+
+  Trois exceptions historiques ne suivent ni l'une ni l'autre règle à la
+  lettre : `calendar-view.tsx`, `dashboard-view.tsx` et
+  `reconciliation-view.tsx` exportent chacun un seul composant mais sont
+  restés en kebab-case — ils datent des toutes premières conversions vers
+  React (juillet 2026), avant que la convention PascalCase ne s'impose.
+  Les renommer toucherait leurs nombreux points d'import pour un gain
+  purement cosmétique ; ils sont laissés tels quels.
+
+## 5. Découpage des gros fichiers (fait)
 
 Les 7 fichiers qui mélangeaient plusieurs responsabilités ont été découpés
 par sous-dossier/sous-composant, chacun gardant un fichier "orchestrateur"
@@ -171,7 +203,7 @@ plus petit qui câble les morceaux extraits :
 Chaque extraction a été vérifiée séparément (`npm run typecheck`,
 `npm run lint`, `npm test`, `npm run build`) avant d'être commise.
 
-## 5. Tests
+## 6. Tests
 
 `npm test` lance tous les fichiers sous `test/` (un seul dossier plat, pas
 de miroir de l'arborescence `src/`). `npm run typecheck` et `npm run lint`
