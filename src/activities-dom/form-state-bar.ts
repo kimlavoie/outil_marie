@@ -6,14 +6,9 @@
  */
 import { saveDatabaseOrRollback } from "../state/state.ts";
 import { getActivities, getActivityIndex } from "../state/activities-repository.ts";
-import {
-  activitiesState,
-  getPlanningProgress,
-  buildProgressBarHtml,
-  getActivityStateBadgeClass,
-  getActivityStateLabel,
-  renderActivities
-} from "./render.ts";
+import { activitiesState } from "./activities-table-state.ts";
+import { getPlanningProgress, buildProgressBarHtml, getActivityStateBadgeClass, getActivityStateLabel } from "./activity-state.ts";
+import { renderActivities } from "./render.ts";
 import { persistDrawerUiState } from "./financials.ts";
 import { saveActivityVersion } from "./history/index.ts";
 

@@ -19,7 +19,7 @@ import { addDistributionRow, updateDistributionTotal } from "./financials.ts";
 import { collectReservationsFromForm, getAggregateEventDates } from "./reservations/index.ts";
 import { getStaffRowHours } from "./reservations/subrows.ts";
 import { commitActivityPatch } from "./form-state-bar.ts";
-import { deriveActivityState } from "./render.ts";
+import { deriveActivityState } from "./activity-state.ts";
 import { renderSafetyBackupsList } from "../services/backup/reminder.ts";
 import type { Activity, Reservation } from "../types/activity.ts";
 import type { Tarif, GridClientType } from "../state/store.ts";

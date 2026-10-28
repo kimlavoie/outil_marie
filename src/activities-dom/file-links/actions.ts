@@ -7,7 +7,7 @@
 import { getActivityById } from "../../state/activities-repository.ts";
 import { generateUid, showToast } from "../../utils/utils.ts";
 import { commitActivityPatch } from "../form.ts";
-import { deriveActivityState } from "../render.ts";
+import { deriveActivityState } from "../activity-state.ts";
 import { generateContractXlsx, generateSoumissionXlsx, sanitizeFilenamePart } from "../../services/contract-generator.ts";
 import { idbSetFileLink, idbGetFileLink } from "./db.ts";
 import { renderFileLinkStatus, expandedXlsxPreviews } from "./status.ts";

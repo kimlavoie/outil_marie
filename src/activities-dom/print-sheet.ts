@@ -15,7 +15,7 @@ import {
   formatPostalCode
 } from "../utils/utils.ts";
 import { isNonEmptyString } from "../utils/validation.ts";
-import { getActivityStateLabel } from "./render.ts";
+import { getActivityStateLabel } from "./activity-state.ts";
 import { computeActivityFinancials, overrideMarkerHtml } from "./financial-summary.ts";
 
 function getSortedSlotsForReservation(r: any) {

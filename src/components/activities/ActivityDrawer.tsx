@@ -7,7 +7,8 @@ import { ResponsableFacturationFields } from "./ResponsableFacturationFields.tsx
 import { useAppState, recordActivityView } from "../../state/state.ts";
 import { getActivityById } from "../../state/activities-repository.ts";
 import { debounce, formatPostalCode, formatPhoneNumber, generateUid } from "../../utils/utils.ts";
-import { activitiesState, renderActivities } from "../../activities-dom/render.ts";
+import { activitiesState } from "../../activities-dom/activities-table-state.ts";
+import { renderActivities } from "../../activities-dom/render.ts";
 import {
   fillActivityFormFields,
   switchActivityTab,

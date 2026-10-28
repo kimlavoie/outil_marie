@@ -18,6 +18,14 @@
  * (test/activities-render-extra.test.ts) that build a matching legacy DOM fixture and verify
  * genuinely correct behavior, just behavior nothing in production triggers today.
  *
+ * Those "still live" helpers no longer actually live here: ACTIVITY_STATES/getActivityStateLabel/
+ * getActivityStateBadgeClass/getPlanningProgress/deriveActivityState/buildProgressBarHtml moved to
+ * activity-state.ts (pure, no DOM) and activitiesState moved to activities-table-state.ts (already
+ * the case before this file existed) — both re-exported here unchanged so nothing importing them
+ * from "./render.ts" had to change. Callers that only need one of those two leaf modules (most of
+ * the list above) now import directly from them instead of through this file, so this file's own
+ * real dependency surface is just renderActivities() itself.
+ *
  * bulk-actions.ts (re-exported below) initBulkActionsHandlers() IS called live (from
  * activities-dom/form.ts's initFormHandlers(), wired up at startup by main.tsx) — but it deliberately
  * does NOT attach a select-all-checkbox listener, precisely to avoid fighting ActivitiesView.tsx's
@@ -38,10 +46,11 @@
  * detached popup to document.body) and bulk-actions.ts (the floating multi-select actions bar)
  * under this original shared import path (the same pattern used by src/services/backup/index.ts
  * and src/activities-dom/reservations/index.ts) — split out because the original file mixed the table
- * itself with those two largely independent UI pieces. Both submodules import
- * activitiesState/renderActivities back from here — a real circular import, safe since nothing
- * runs during either module's top-level evaluation, same as the other circular imports already in
- * this codebase (e.g. utils.ts <-> state.ts).
+ * itself with those two largely independent UI pieces. Both submodules still import
+ * renderActivities back from here (to refresh the — dead, see above — table after a delete/
+ * favorite change) — a real circular import, safe since nothing runs during either module's
+ * top-level evaluation, same as the other circular imports already in this codebase (e.g.
+ * utils.ts <-> state.ts). This is now the only remaining cycle this file is part of.
  */
 import { subscribeAppState, getFiscalYear, getQuarterNumber, parseLocalDateStr, saveUiState, getSelectedYear, getSelectedQuarters } from "../state/state.ts";
 import { getActivities } from "../state/activities-repository.ts";
@@ -83,75 +92,15 @@ function getTotalHostesses(act: any): number {
 import { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT } from "./activities-table-state.ts";
 export { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT };
 
-// Activity lifecycle states, in order
-const ACTIVITY_STATES = [
-  { value: "brouillon", label: "Brouillon" },
-  { value: "soumise", label: "Soumise au client" },
-  { value: "approuvee", label: "Approuvée" },
-  { value: "planifiee", label: "Planifiée" },
-  { value: "facturee", label: "Facturée" },
-  { value: "terminee", label: "Terminée" }
-];
-
-function getActivityStateLabel(state: string) {
-  return (ACTIVITY_STATES.find(s => s.value === state) || ACTIVITY_STATES[0]).label;
-}
-
-function getActivityStateBadgeClass(state: string) {
-  switch (state) {
-    case "terminee":
-      return "badge-success";
-    case "facturee":
-    case "planifiee":
-      return "badge-info";
-    case "approuvee":
-      return "badge-warning";
-    case "soumise":
-      return "badge-warning";
-    default:
-      return "badge-danger";
-  }
-}
-
-// {done, total, percent} of an activity's planning tasks
-function getPlanningProgress(act: any) {
-  const tasks = act.planning_tasks || [];
-  const done = tasks.filter((t: any) => t.done).length;
-  const total = tasks.length;
-  const percent = total > 0 ? Math.round((done / total) * 100) : 0;
-  return { done, total, percent };
-}
-
-// Recomputes the lifecycle state from whichever stage markers are still established (submission
-// sent, contract approved, planning complete, billed, completed) instead of trusting a stored
-// value — so unchecking a later marker falls back to the highest earlier one still standing,
-// rather than clearing the state outright.
-function deriveActivityState(act: any) {
-  const progress = getPlanningProgress(act);
-  const established = new Set(["brouillon"]);
-  if (act.submission?.sent_at) established.add("soumise");
-  if (act.contract?.approved_at) established.add("approuvee");
-  if (progress.total > 0 && progress.done === progress.total && (act.submission?.sent_at || act.contract?.approved_at)) {
-    established.add("planifiee");
-  }
-  if (act.billed_at) established.add("facturee");
-  if (act.completed_at) established.add("terminee");
-
-  let result = ACTIVITY_STATES[0].value;
-  ACTIVITY_STATES.forEach(s => {
-    if (established.has(s.value)) result = s.value;
-  });
-  return result;
-}
-
-// Small progress-bar HTML snippet reused in the activities list and the Planification tab
-function buildProgressBarHtml(percent: number) {
-  return `
-    <div class="progress-bar" title="${percent}%">
-      <div class="progress-bar-fill ${percent >= 100 ? "complete" : ""}" style="width: ${percent}%;"></div>
-    </div>
-  `;
-}
+import {
+  ACTIVITY_STATES,
+  getActivityStateLabel,
+  getActivityStateBadgeClass,
+  getPlanningProgress,
+  deriveActivityState,
+  buildProgressBarHtml
+} from "./activity-state.ts";
+export { ACTIVITY_STATES, getActivityStateLabel, getActivityStateBadgeClass, getPlanningProgress, deriveActivityState, buildProgressBarHtml };
 
 function renderActivities() {
   saveUiState();
@@ -424,13 +373,5 @@ subscribeAppState(() => {
   }
 });
 
-export {
-  ACTIVITY_STATES,
-  getActivityStateLabel,
-  getActivityStateBadgeClass,
-  getPlanningProgress,
-  deriveActivityState,
-  buildProgressBarHtml,
-  renderActivities
-};
+export { renderActivities };
 export { updateBulkActionsBar, initBulkActionsHandlers } from "./bulk-actions.ts";

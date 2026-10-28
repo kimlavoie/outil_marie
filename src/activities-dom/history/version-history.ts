@@ -14,7 +14,9 @@ import {
 import { getActivityById, getActivities, getActivityIndex, replaceActivity } from "../../state/activities-repository.ts";
 import { showToast, escapeHtml, formatCurrency, rateToPercentString } from "../../utils/utils.ts";
 import { logError } from "../../utils/logger.ts";
-import { activitiesState, renderActivities, getActivityStateLabel, getActivityStateBadgeClass } from "../render.ts";
+import { activitiesState } from "../activities-table-state.ts";
+import { getActivityStateLabel, getActivityStateBadgeClass } from "../activity-state.ts";
+import { renderActivities } from "../render.ts";
 import { fillActivityFormFields, renderActivityStateBar } from "../form.ts";
 
 function formatTimestampToFrench(isoString: string) {

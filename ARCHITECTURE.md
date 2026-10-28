@@ -109,6 +109,20 @@ en composant React) :
   Ce fichier reste donc en place tel quel ; voir son commentaire d'en-tête
   pour le détail.
 
+  Ces helpers purs (sans DOM) vivent maintenant dans
+  [activity-state.ts](src/activities-dom/activity-state.ts) —
+  `ACTIVITY_STATES`, `getActivityStateLabel`, `getActivityStateBadgeClass`,
+  `getPlanningProgress`, `deriveActivityState`, `buildProgressBarHtml` —
+  et `activitiesState` dans
+  [activities-table-state.ts](src/activities-dom/activities-table-state.ts).
+  `render.ts` les ré-exporte tels quels (rien à changer pour les imports
+  existants), mais la plupart des fichiers qui n'ont besoin que de ces
+  helpers importent désormais directement ces deux modules plutôt que
+  `render.ts` — ne restent couplés à `render.ts` (et à son seul vrai
+  cycle d'imports avec `bulk-actions.ts`/`context-menu.ts`, documenté dans
+  son commentaire d'en-tête) que les fichiers qui appellent vraiment
+  `renderActivities()`.
+
 - `src/services/` — logique métier sans DOM (export Excel, génération de
   contrat, sauvegarde, rapprochement GL) : consommée aussi bien par le code
   React que par le code DOM-vanille.

@@ -7,7 +7,8 @@ import { saveDatabaseOrRollback } from "../../state/state.ts";
 import { getActivities, getActivityIndex, replaceActivity } from "../../state/activities-repository.ts";
 import { showToast } from "../../utils/utils.ts";
 import { reconciliationState, reconcileLedger } from "../../services/reconciliation.ts";
-import { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT, renderActivities } from "../render.ts";
+import { activitiesState, ACTIVITY_UNDO_HISTORY_LIMIT } from "../activities-table-state.ts";
+import { renderActivities } from "../render.ts";
 import { activityUndoSnapshotTimer, ACTIVITY_UNDO_DEBOUNCE_MS, setActivityUndoSnapshotTimer } from "../autosave.ts";
 import { fillActivityFormFields, renderActivityStateBar } from "../form.ts";
 

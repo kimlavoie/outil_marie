@@ -7,7 +7,8 @@ import { saveDatabase } from "../state/state.ts";
 import { addActivity, getActivityById } from "../state/activities-repository.ts";
 import { showToast, generateUid } from "../utils/utils.ts";
 import { requireNonEmpty } from "../utils/validation.ts";
-import { activitiesState, renderActivities } from "./render.ts";
+import { activitiesState } from "./activities-table-state.ts";
+import { renderActivities } from "./render.ts";
 import { generateNextActivityId, openActivityDrawer } from "./financials.ts";
 import { trapFocus, type FocusTrapController } from "../utils/focus-trap.ts";
 

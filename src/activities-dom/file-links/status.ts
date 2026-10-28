@@ -6,7 +6,7 @@
  */
 import { getActivityById } from "../../state/activities-repository.ts";
 import { commitActivityPatch } from "../form.ts";
-import { deriveActivityState } from "../render.ts";
+import { deriveActivityState } from "../activity-state.ts";
 import { autoSaveActivityForm } from "../financials.ts";
 import { pickAndLinkFile, openLinkedFile, unlinkFile, generateAndLinkFile } from "./actions.ts";
 import { renderPdfPreview, renderXlsxPreview, XLSX_PREVIEW_CONTAINER_IDS } from "./preview.ts";

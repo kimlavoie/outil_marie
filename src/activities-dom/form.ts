@@ -17,7 +17,8 @@
  */
 import { getActivityById } from "../state/activities-repository.ts";
 import { debounce, generateUid, initMultiSelectDropdown } from "../utils/utils.ts";
-import { activitiesState, renderActivities, initBulkActionsHandlers } from "./render.ts";
+import { activitiesState } from "./activities-table-state.ts";
+import { renderActivities, initBulkActionsHandlers } from "./render.ts";
 import {
   openActivityDrawer,
   autoSaveActivityForm,

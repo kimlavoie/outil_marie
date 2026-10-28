@@ -7,9 +7,8 @@ import { activityMatchesTask } from "../state/state.ts";
 import { getActivityById } from "../state/activities-repository.ts";
 import { getRoomByName, getGlobalTasks, getSchedulableTasks } from "../state/settings-repository.ts";
 import { generateUid, escapeHtml, getReservationRoomLabel, OTHER_ROOM_VALUE, debounce } from "../utils/utils.ts";
-import { getPlanningProgress, buildProgressBarHtml } from "./render.ts";
+import { getPlanningProgress, buildProgressBarHtml, deriveActivityState } from "./activity-state.ts";
 import { commitActivityPatch } from "./form-state-bar.ts";
-import { deriveActivityState } from "./render.ts";
 
 // Typed shorthand for document.getElementById — see activities-financials.ts's `el` helper doc
 // comment for why this cast is needed/safe.

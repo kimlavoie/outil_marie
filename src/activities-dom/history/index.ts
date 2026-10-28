@@ -12,7 +12,8 @@
  */
 import { requireNonEmpty } from "../../utils/validation.ts";
 import { showToast } from "../../utils/utils.ts";
-import { activitiesState, renderActivities } from "../render.ts";
+import { activitiesState } from "../activities-table-state.ts";
+import { renderActivities } from "../render.ts";
 import { closeActivityDrawer } from "../drawer.ts";
 import { autoSaveActivityForm } from "../autosave.ts";
 
