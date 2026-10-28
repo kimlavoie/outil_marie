@@ -127,20 +127,24 @@ src/
   utils/             Fonctions utilitaires génériques
 ```
 
-## 4. Fichiers volumineux repérés (non traités dans cette passe)
+## 4. Découpage des gros fichiers (fait)
 
-Ces fichiers mélangent plusieurs responsabilités et sont candidats à un
-découpage (prochaine étape du refactoring, pas encore faite) :
+Les 7 fichiers qui mélangeaient plusieurs responsabilités ont été découpés
+par sous-dossier/sous-composant, chacun gardant un fichier "orchestrateur"
+plus petit qui câble les morceaux extraits :
 
-| Fichier | Lignes | Découpage envisagé |
-| --- | --- | --- |
-| `components/activities/ActivityDrawer.tsx` | ~1160 | Un sous-composant par section de champs (responsable, gestionnaire, infos générales) |
-| `services/backup/restore.ts` | ~1127 | Validation / migration / snapshot de sécurité / application, déjà des sections distinctes dans le fichier |
-| `components/reconciliation-view.tsx` | ~1099 | Drop-zone + mapping de colonnes / tableau de résultats / modal de détail |
-| `services/excel-export.ts` | ~1013 | Un module par feuille générée ("ACTIVITÉS", "SALLES"), sur le modèle de `services/contract-generator/` |
-| `components/activities/ActivitiesView.tsx` | ~852 | — |
-| `components/settings/pricing-grid-editor.tsx` | ~736 | Séparer état du formulaire et rendu du tableau |
-| `components/modals/ExcelExportModal.tsx` | ~672 | — |
+| Fichier (avant → après) | Extrait vers |
+| --- | --- |
+| `components/activities/ActivityDrawer.tsx` (1160 → 881) | `GeneralInfoFields.tsx`, `ManagerFields.tsx`, `ResponsableFacturationFields.tsx` |
+| `services/backup/restore.ts` (1127 → 692) | `restore-modal-html.ts`, `restore-apply.ts` |
+| `components/reconciliation-view.tsx` (1099 → 472) | `components/reconciliation/{status-labels,excel-export,widgets,modals,ReconciliationRow}` |
+| `services/excel-export.ts` (1013 → 464) | `excel-export-{utils,options,filters,xlsx-styling}.ts` |
+| `components/activities/ActivitiesView.tsx` (852 → 534) | `activity-state-helpers.ts`, `ActivitiesToolbar.tsx`, `ActivityRow.tsx` |
+| `components/settings/pricing-grid-editor.tsx` (736 → 257) | `PricingGridGuideBanner.tsx`, `HelpIndicatorButton.tsx`, `PricingGrid{Parameters,ClientTypes,Matrix}Step.tsx` |
+| `components/modals/ExcelExportModal.tsx` (672 → 266) | `components/modals/excel-export/{ExcelExportModeSelector,ExcelExportPresetsBar,ExcelExportFiltersTab,ExcelExportColumnsTab}.tsx` |
+
+Chaque extraction a été vérifiée séparément (`npm run typecheck`,
+`npm run lint`, `npm test`, `npm run build`) avant d'être commise.
 
 ## 5. Tests
 
