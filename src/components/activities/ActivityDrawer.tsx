@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { InstallDismantleFields } from "./InstallDismantleFields.tsx";
+import { GeneralInfoFields } from "./GeneralInfoFields.tsx";
+import { ManagerFields } from "./ManagerFields.tsx";
+import { ResponsableFacturationFields } from "./ResponsableFacturationFields.tsx";
 import { useAppState, recordActivityView } from "../../state/state.ts";
 import { getActivityById } from "../../state/activities-repository.ts";
 import { debounce, formatPostalCode, formatPhoneNumber, generateUid } from "../../utils/utils.ts";
@@ -562,343 +565,61 @@ export const ActivityDrawer: React.FC = () => {
                 </div>
               </div>
 
-              {/* Informations générales */}
-              <details className="form-accordion-section" id="accordion-section-general" open>
-                <summary className="form-accordion-summary">
-                  <span className="form-accordion-check" id="accordion-check-general" />
-                  <span>Informations générales</span>
-                </summary>
-                <div className="form-accordion-content">
-                  <div className="form-group-row">
-                    <div className="form-group">
-                      <label htmlFor="form-activity-id" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        Numéro d'activité <span className="badge badge-auto">Auto</span>
-                      </label>
-                      <input type="text" id="form-activity-id" className="form-input input-auto" placeholder="Généré automatiquement" disabled />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="form-activity-coba">Références COBA collégial</label>
-                      <input
-                        type="text"
-                        id="form-activity-coba"
-                        className="form-input"
-                        placeholder="Ex: 123456; 789012"
-                        value={coba}
-                        onChange={e => setCoba(e.target.value)}
-                      />
-                    </div>
-                  </div>
+              <GeneralInfoFields
+                coba={coba}
+                setCoba={setCoba}
+                name={name}
+                setName={setName}
+                attendeesCount={attendeesCount}
+                setAttendeesCount={setAttendeesCount}
+                description={description}
+                setDescription={setDescription}
+              />
 
-                  <div className="form-group-row">
-                    <div className="form-group">
-                      <label htmlFor="form-activity-name">Nom de l'activité *</label>
-                      <input
-                        type="text"
-                        id="form-activity-name"
-                        className="form-input"
-                        required
-                        placeholder="Ex: Réunion SCOUTS"
-                        value={name}
-                        onChange={e => setName(e.target.value)}
-                      />
-                    </div>
-                    <div className="form-group estimation-hide">
-                      <label htmlFor="form-activity-attendees">Nombre de personnes attendues</label>
-                      <input
-                        type="number"
-                        id="form-activity-attendees"
-                        className="form-input"
-                        min="0"
-                        placeholder="Ex: 50"
-                        value={attendeesCount}
-                        onChange={e => setAttendeesCount(e.target.value)}
-                      />
-                    </div>
-                  </div>
+              <ManagerFields
+                managerFirstName={managerFirstName}
+                setManagerFirstName={setManagerFirstName}
+                managerLastName={managerLastName}
+                setManagerLastName={setManagerLastName}
+                managerType={managerType}
+                setManagerType={setManagerType}
+                managerPhone={managerPhone}
+                onManagerPhoneChange={handleManagerPhoneChange}
+                managerEmail={managerEmail}
+                setManagerEmail={setManagerEmail}
+                managerCompany={managerCompany}
+                setManagerCompany={setManagerCompany}
+                managerCobaClientNumber={managerCobaClientNumber}
+                setManagerCobaClientNumber={setManagerCobaClientNumber}
+                managerAddress={managerAddress}
+                setManagerAddress={setManagerAddress}
+                managerCity={managerCity}
+                setManagerCity={setManagerCity}
+                managerProvince={managerProvince}
+                setManagerProvince={setManagerProvince}
+                managerPostalCode={managerPostalCode}
+                onManagerPostalCodeChange={handleManagerPostalCodeChange}
+              />
 
-                  <div className="form-group estimation-hide">
-                    <label htmlFor="form-activity-description">Description de l'activité</label>
-                    <textarea
-                      id="form-activity-description"
-                      className="form-input"
-                      rows={2}
-                      placeholder="Décrivez l'activité..."
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </details>
-
-              {/* Responsable de l'activité */}
-              <details className="form-accordion-section estimation-hide" id="accordion-section-manager">
-                <summary className="form-accordion-summary">
-                  <span className="form-accordion-check" id="accordion-check-manager" />
-                  <span>Responsable de l'activité</span>
-                </summary>
-                <div className="form-accordion-content">
-                  <div className="form-group-row">
-                    <div className="form-group">
-                      <label htmlFor="form-activity-manager-firstname">Prénom</label>
-                      <input
-                        type="text"
-                        id="form-activity-manager-firstname"
-                        className="form-input"
-                        placeholder="Prénom"
-                        value={managerFirstName}
-                        onChange={e => setManagerFirstName(e.target.value)}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="form-activity-manager-lastname">Nom</label>
-                      <input
-                        type="text"
-                        id="form-activity-manager-lastname"
-                        className="form-input"
-                        placeholder="Nom"
-                        value={managerLastName}
-                        onChange={e => setManagerLastName(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="form-group-row">
-                    <div className="form-group">
-                      <label htmlFor="form-activity-manager-type">Fonction</label>
-                      <select
-                        id="form-activity-manager-type"
-                        className="select-input"
-                        style={{ padding: "10px 14px" }}
-                        value={managerType}
-                        onChange={e => setManagerType(e.target.value)}
-                      >
-                        <option value="">Sélectionner...</option>
-                        <option value="employe">Employé</option>
-                        <option value="etudiant">Étudiant</option>
-                        <option value="externe">Externe</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="form-activity-manager-phone">Numéro de téléphone</label>
-                      <input
-                        type="tel"
-                        id="form-activity-manager-phone"
-                        className="form-input"
-                        placeholder="Ex: 514-555-1234"
-                        value={managerPhone}
-                        onChange={handleManagerPhoneChange}
-                      />
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="form-activity-manager-email">Courriel</label>
-                    <input
-                      type="email"
-                      id="form-activity-manager-email"
-                      className="form-input"
-                      placeholder="nom@exemple.com"
-                      value={managerEmail}
-                      onChange={e => setManagerEmail(e.target.value)}
-                    />
-                  </div>
-
-                  <div id="form-activity-manager-external-group" style={{ display: managerType === "externe" ? "block" : "none" }}>
-                    <div className="form-group-row">
-                      <div className="form-group">
-                        <label htmlFor="form-activity-manager-company">Nom de l'entreprise</label>
-                        <input
-                          type="text"
-                          id="form-activity-manager-company"
-                          className="form-input"
-                          placeholder="Ex: Entreprise inc."
-                          value={managerCompany}
-                          onChange={e => setManagerCompany(e.target.value)}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="form-activity-manager-coba-client-number">Numéro de client (COBA Finance)</label>
-                        <input
-                          type="text"
-                          id="form-activity-manager-coba-client-number"
-                          className="form-input"
-                          placeholder="Ex: 12345"
-                          value={managerCobaClientNumber}
-                          onChange={e => setManagerCobaClientNumber(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="form-activity-manager-address">Adresse</label>
-                      <input
-                        type="text"
-                        id="form-activity-manager-address"
-                        className="form-input"
-                        placeholder="Ex: 123 rue Principale"
-                        value={managerAddress}
-                        onChange={e => setManagerAddress(e.target.value)}
-                      />
-                    </div>
-                    <div className="form-group-row">
-                      <div className="form-group">
-                        <label htmlFor="form-activity-manager-city">Ville</label>
-                        <input
-                          type="text"
-                          id="form-activity-manager-city"
-                          className="form-input"
-                          placeholder="Ex: Montréal"
-                          value={managerCity}
-                          onChange={e => setManagerCity(e.target.value)}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="form-activity-manager-province">Province</label>
-                        <input
-                          type="text"
-                          id="form-activity-manager-province"
-                          className="form-input"
-                          placeholder="Ex: QC"
-                          value={managerProvince}
-                          onChange={e => setManagerProvince(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="form-activity-manager-postal-code">Code postal</label>
-                      <input
-                        type="text"
-                        id="form-activity-manager-postal-code"
-                        className="form-input"
-                        placeholder="Ex: H1A 1A1"
-                        value={managerPostalCode}
-                        onChange={handleManagerPostalCodeChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </details>
-
-              {/* Responsable de la facturation */}
-              <details className="form-accordion-section estimation-hide" id="accordion-section-billing">
-                <summary className="form-accordion-summary">
-                  <span className="form-accordion-check" id="accordion-check-billing" />
-                  <span>Responsable de la facturation</span>
-                </summary>
-                <div className="form-accordion-content">
-                  <div className="form-group form-checkbox-group">
-                    <label className="form-checkbox-label">
-                      <input
-                        type="checkbox"
-                        id="form-activity-responsable-same-as-manager"
-                        checked={responsableSameAsManager}
-                        onChange={handleSameAsManagerChange}
-                      />
-                      <span>Même personne que le responsable de l'activité</span>
-                    </label>
-                  </div>
-                  <div className="form-group-row">
-                    <div className="form-group">
-                      <label htmlFor="form-activity-responsable-firstname">Prénom</label>
-                      <input
-                        type="text"
-                        id="form-activity-responsable-firstname"
-                        className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
-                        placeholder="Prénom"
-                        readOnly={responsableSameAsManager}
-                        value={responsableFirstName}
-                        onChange={e => setResponsableFirstName(e.target.value)}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="form-activity-responsable-lastname">Nom</label>
-                      <input
-                        type="text"
-                        id="form-activity-responsable-lastname"
-                        className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
-                        placeholder="Nom"
-                        readOnly={responsableSameAsManager}
-                        value={responsableLastName}
-                        onChange={e => setResponsableLastName(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="form-activity-client-type">Client interne ou externe</label>
-                    <select
-                      id="form-activity-client-type"
-                      className={`select-input${lockClientType ? " form-input-readonly" : ""}`}
-                      style={{ padding: "10px 14px" }}
-                      disabled={lockClientType}
-                      value={clientType}
-                      onChange={e => setClientType(e.target.value)}
-                    >
-                      <option value="">Sélectionner...</option>
-                      <option value="interne">Interne</option>
-                      <option value="externe">Externe</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group" id="form-activity-dept-group" style={{ display: clientType === "externe" ? "none" : "block" }}>
-                    <label htmlFor="form-activity-dept">Département</label>
-                    <select id="form-activity-dept" className="select-input" style={{ padding: "10px 14px" }} />
-                  </div>
-
-                  <div
-                    id="form-activity-responsable-external-group"
-                    style={{ display: clientType === "externe" ? "block" : "none" }}
-                  >
-                    <div className="form-group">
-                      <label htmlFor="form-activity-responsable-address">Adresse</label>
-                      <input
-                        type="text"
-                        id="form-activity-responsable-address"
-                        className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
-                        placeholder="Ex: 123 rue Principale"
-                        readOnly={responsableSameAsManager}
-                        value={responsableAddress}
-                        onChange={e => setResponsableAddress(e.target.value)}
-                      />
-                    </div>
-                    <div className="form-group-row">
-                      <div className="form-group">
-                        <label htmlFor="form-activity-responsable-city">Ville</label>
-                        <input
-                          type="text"
-                          id="form-activity-responsable-city"
-                          className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
-                          placeholder="Ex: Montréal"
-                          readOnly={responsableSameAsManager}
-                          value={responsableCity}
-                          onChange={e => setResponsableCity(e.target.value)}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="form-activity-responsable-province">Province</label>
-                        <input
-                          type="text"
-                          id="form-activity-responsable-province"
-                          className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
-                          placeholder="Ex: QC"
-                          readOnly={responsableSameAsManager}
-                          value={responsableProvince}
-                          onChange={e => setResponsableProvince(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="form-activity-responsable-postal-code">Code postal</label>
-                      <input
-                        type="text"
-                        id="form-activity-responsable-postal-code"
-                        className={`form-input${responsableSameAsManager ? " form-input-readonly" : ""}`}
-                        placeholder="Ex: H1A 1A1"
-                        readOnly={responsableSameAsManager}
-                        value={responsablePostalCode}
-                        onChange={handleResponsablePostalCodeChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </details>
+              <ResponsableFacturationFields
+                responsableSameAsManager={responsableSameAsManager}
+                onSameAsManagerChange={handleSameAsManagerChange}
+                responsableFirstName={responsableFirstName}
+                setResponsableFirstName={setResponsableFirstName}
+                responsableLastName={responsableLastName}
+                setResponsableLastName={setResponsableLastName}
+                clientType={clientType}
+                setClientType={setClientType}
+                lockClientType={lockClientType}
+                responsableAddress={responsableAddress}
+                setResponsableAddress={setResponsableAddress}
+                responsableCity={responsableCity}
+                setResponsableCity={setResponsableCity}
+                responsableProvince={responsableProvince}
+                setResponsableProvince={setResponsableProvince}
+                responsablePostalCode={responsablePostalCode}
+                onResponsablePostalCodeChange={handleResponsablePostalCodeChange}
+              />
 
               {/* Réservations de salle */}
               <details className="form-accordion-section" id="accordion-section-rooms">
